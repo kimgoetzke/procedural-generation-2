@@ -12,11 +12,23 @@ pub const WINDOW_HEIGHT: f32 = 720.;
 pub const BG_COLOR: (u8, u8, u8) = (181, 212, 220);
 
 // Sprites
-pub const TILE_WIDTH: usize = 32;
-pub const TILE_HEIGHT: usize = 32;
+pub const TILE_SIZE: u32 = 32;
+const TILE_WIDTH: usize = 32;
+const TILE_HEIGHT: usize = 32;
 pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
-pub const GRASS_TILES: (u32, u32) = (0, 0);
-pub const WATER_TILES: (u32, u32) = (0, 0);
+pub const TILE_SET_DEFAULT_COLUMNS: u32 = 9;
+pub const TILE_SET_DEFAULT_ROWS: u32 = 3;
+pub const TILE_SET_TEST_PATH: &str = "tilesets/test_tileset.png";
+pub const TILE_SET_TEST_COLUMNS: u32 = 4;
+pub const TILE_SET_TEST_ROWS: u32 = 1;
+
+pub const WATER_TILE: usize = 0;
+pub const SAND_TILE: usize = 1;
+pub const GRASS_TILE: usize = 2;
+pub const FOREST_TILE: usize = 3;
+
+// Chunks
+pub const CHUNK_SIZE: i32 = 32;
 
 // Colours
 pub(crate) const RED: Color = Color::hsl(0.59, 0.32, 0.52);

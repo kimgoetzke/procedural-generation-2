@@ -7,8 +7,7 @@ use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
 use bevy_pancam::PanCam;
 
-pub const UI_LAYER: RenderLayers = RenderLayers::layer(1);
-pub const IN_GAME_LAYER: RenderLayers = RenderLayers::layer(0);
+pub const WORLD_LAYER: RenderLayers = RenderLayers::layer(0);
 
 pub struct CameraPlugin;
 
@@ -17,6 +16,7 @@ impl Plugin for CameraPlugin {
     app
       .add_systems(Startup, setup_camera_system)
       .add_systems(Update, player_controls_system)
+      .insert_resource(Msaa::Off)
       .insert_resource(ClearColor(VERY_DARK_2));
   }
 }
@@ -24,29 +24,20 @@ impl Plugin for CameraPlugin {
 #[derive(Component)]
 struct WorldCamera;
 
-#[derive(Component)]
-struct UiCamera;
-
 fn setup_camera_system(mut commands: Commands) {
-  debug!("Setting up cameras");
-
-  // Camera rending world
   commands.spawn((
     Camera2dBundle {
-      camera: Camera { order: -1, ..default() },
+      camera: Camera { order: 2, ..default() },
       tonemapping: Tonemapping::TonyMcMapface,
       ..default()
     },
     WorldCamera,
-    IN_GAME_LAYER,
+    WORLD_LAYER,
     BloomSettings::SCREEN_BLUR,
     Name::new("Camera: In Game"),
     SpatialListener::new(10.),
     PanCam::default(),
   ));
-
-  // Camera rendering UI
-  commands.spawn((Camera2dBundle::default(), UiCamera, UI_LAYER, Name::new("Camera: UI")));
 }
 
 fn player_controls_system(
