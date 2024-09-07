@@ -1,5 +1,6 @@
 mod camera;
 mod settings;
+mod shared;
 mod shared_events;
 mod world;
 

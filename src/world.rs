@@ -1,14 +1,13 @@
 use crate::settings::{
-  CHUNK_SIZE, FOREST_TILE, GRASS_TILE, SAND_TILE, TILE_SET_DEFAULT_COLUMNS, TILE_SET_DEFAULT_PATH,
-  TILE_SET_DEFAULT_ROWS, TILE_SET_TEST_COLUMNS, TILE_SET_TEST_PATH, TILE_SET_TEST_ROWS, TILE_SIZE, WATER_TILE,
+  CHUNK_SIZE, FOREST_TILE, GRASS_TILE, SAND_TILE, TILE_SET_TEST_COLUMNS, TILE_SET_TEST_PATH, TILE_SET_TEST_ROWS,
+  TILE_SIZE, WATER_TILE,
 };
+use crate::shared::*;
 use crate::shared_events::RefreshWorldEvent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::prelude::*;
-use bevy::scene::ron::de::Position;
-use bevy::utils::{HashMap, HashSet};
+use bevy::utils::HashSet;
 use noise::{NoiseFn, Perlin};
-use rand::{random, Rng};
 
 pub struct WorldPlugin;
 
@@ -17,47 +16,12 @@ impl Plugin for WorldPlugin {
     app
       .add_systems(Startup, generate_world_system)
       .add_systems(Update, refresh_world_event)
-      .insert_resource(GroundTiles(HashSet::new()))
       .insert_resource(Seed(1));
-  }
-}
-
-#[derive(Debug, Eq, PartialEq, Hash)]
-struct Tile {
-  position_grid: Point,
-  position_world: Point,
-  sprite_index: usize,
-  z_index: i32,
-}
-
-impl Tile {
-  fn new(grid_location: Point, sprite_index: usize, z_index: i32) -> Self {
-    Self {
-      position_grid: grid_location.clone(),
-      position_world: Point::new(grid_location.x * TILE_SIZE as i32, grid_location.y * TILE_SIZE as i32),
-      sprite_index,
-      z_index,
-    }
-  }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-struct Point {
-  x: i32,
-  y: i32,
-}
-
-impl Point {
-  fn new(x: i32, y: i32) -> Self {
-    Self { x, y }
   }
 }
 
 #[derive(Component)]
 struct TileComponent;
-
-#[derive(Resource)]
-pub struct GroundTiles(pub HashSet<(i32, i32)>);
 
 #[derive(Resource)]
 struct Seed(u32);
@@ -86,56 +50,75 @@ fn generate_world(
     None,
   );
   let texture_atlas_layout = texture_atlas_layouts.add(layout);
-  let world = commands.spawn((Name::new("World - Layer 0"), SpatialBundle::default())).id();
-  let tiles = generate_chunk(seed, Point::new(0, 0));
+  let world = commands
+    .spawn((Name::new("World - Layer 0"), SpatialBundle::default()))
+    .id();
 
   commands.entity(world).with_children(|parent| {
-    for tile in tiles.iter() {
-      parent.spawn((
-        Name::new(
-          "Tile (".to_string() + &tile.position_grid.x.to_string() + "," + &tile.position_grid.y.to_string() + ")",
-        ),
-        SpriteBundle {
-          texture: texture.clone(),
-          transform: Transform::from_xyz(
-            tile.position_world.x as f32,
-            tile.position_world.y as f32,
-            tile.z_index as f32,
-          ),
-          ..Default::default()
-        },
-        TextureAtlas {
-          layout: texture_atlas_layout.clone(),
-          index: tile.sprite_index,
-        },
-        TileComponent,
-      ));
-    }
+    let chunk = generate_chunk(seed, Point::new(0, 0));
+    get_neighbours(chunk.clone()).iter().for_each(|neighbour| {
+      let neighbour_chunk = generate_chunk(seed, neighbour.clone());
+      spawn_tile(texture.clone(), texture_atlas_layout.clone(), parent, neighbour_chunk);
+    });
+    spawn_tile(texture, texture_atlas_layout, parent, chunk);
   });
 }
 
-fn generate_chunk(seed: u32, start: Point) -> HashSet<Tile> {
+fn spawn_tile(
+  texture: Handle<Image>,
+  texture_atlas_layout: Handle<TextureAtlasLayout>,
+  parent: &mut ChildBuilder,
+  chunk: Chunk,
+) {
+  for tile in chunk.tiles.iter() {
+    parent.spawn((
+      Name::new("Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")"),
+      SpriteBundle {
+        texture: texture.clone(),
+        transform: Transform::from_xyz(
+          tile.coords.world.x as f32,
+          tile.coords.world.y as f32,
+          tile.layer as f32,
+        ),
+        ..Default::default()
+      },
+      TextureAtlas {
+        layout: texture_atlas_layout.clone(),
+        index: tile.sprite_index,
+      },
+      TileComponent,
+    ));
+  }
+}
+
+fn generate_chunk(seed: u32, start: Point) -> Chunk {
+  debug!("Generating chunk at {:?}", start);
   let mut tiles = HashSet::new();
   let perlin = Perlin::new(seed);
   let end = Point::new(start.x + CHUNK_SIZE - 1, start.y + CHUNK_SIZE - 1);
-
   for x in start.x..end.x {
     for y in (start.y..end.y).rev() {
       let noise = perlin.get([x as f64 / CHUNK_SIZE as f64, y as f64 / CHUNK_SIZE as f64]);
-      let sprite_index = match noise {
-        n if n > 0.7 => FOREST_TILE,
-        n if n > 0.5 => GRASS_TILE,
-        n if n > 0.3 => SAND_TILE,
-        _ => WATER_TILE,
+      let tile_type = match noise {
+        n if n > 0.7 => TileType::Forest,
+        n if n > 0.5 => TileType::Grass,
+        n if n > 0.3 => TileType::Sand,
+        _ => TileType::Water,
+      };
+      let sprite_index = match tile_type {
+        TileType::Water => WATER_TILE,
+        TileType::Sand => SAND_TILE,
+        TileType::Grass => GRASS_TILE,
+        TileType::Forest => FOREST_TILE,
       };
       let grid_location = Point::new(x, y);
-      let tile = Tile::new(grid_location.clone(), sprite_index, 0);
-      debug!("{:?} => Noise: {}", &tile, noise);
+      let tile = Tile::new(grid_location.clone(), tile_type, sprite_index, 0);
+      trace!("{:?} => Noise: {}", &tile, noise);
       tiles.insert(tile);
     }
   }
 
-  tiles
+  Chunk::new(start, tiles)
 }
 
 fn refresh_world_event(

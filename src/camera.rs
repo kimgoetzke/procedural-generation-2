@@ -1,4 +1,4 @@
-use crate::settings::VERY_DARK_2;
+use crate::settings::{CHUNK_SIZE, TILE_SIZE, VERY_DARK_2};
 use crate::shared_events::RefreshWorldEvent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::core_pipeline::bloom::BloomSettings;
@@ -29,6 +29,11 @@ fn setup_camera_system(mut commands: Commands) {
     Camera2dBundle {
       camera: Camera { order: 2, ..default() },
       tonemapping: Tonemapping::TonyMcMapface,
+      transform: Transform::from_xyz(
+        (CHUNK_SIZE / 2 * TILE_SIZE as i32) as f32,
+        (CHUNK_SIZE / 2 * TILE_SIZE as i32) as f32,
+        100.,
+      ),
       ..default()
     },
     WorldCamera,
