@@ -1,1 +1,2 @@
-# procedural-generation-2
+# Procedural Generation Project 2
+
