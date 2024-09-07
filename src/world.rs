@@ -26,16 +26,21 @@ struct TileComponent;
 #[derive(Resource)]
 struct Seed(u32);
 
+#[derive(Resource)]
+struct GeneratedChunks {
+  chunks: Vec<Chunk>,
+}
+
 fn generate_world_system(
   mut commands: Commands,
   seed: Res<Seed>,
   asset_server: Res<AssetServer>,
   mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-  generate_world(&mut commands, seed.0, asset_server, &mut texture_atlas_layouts);
+  spawn_world(&mut commands, seed.0, asset_server, &mut texture_atlas_layouts);
 }
 
-fn generate_world(
+fn spawn_world(
   commands: &mut Commands,
   seed: u32,
   asset_server: Res<AssetServer>,
@@ -50,48 +55,70 @@ fn generate_world(
     None,
   );
   let texture_atlas_layout = texture_atlas_layouts.add(layout);
-  let world = commands
-    .spawn((Name::new("World - Layer 0"), SpatialBundle::default()))
-    .id();
 
-  commands.entity(world).with_children(|parent| {
-    let chunk = generate_chunk(seed, Point::new(0, 0));
-    get_neighbours(chunk.clone()).iter().for_each(|neighbour| {
-      let neighbour_chunk = generate_chunk(seed, neighbour.clone());
-      spawn_tile(texture.clone(), texture_atlas_layout.clone(), parent, neighbour_chunk);
+  commands
+    .spawn((Name::new("World - Layer 0"), SpatialBundle::default()))
+    .with_children(|parent| {
+      // Generate data for the initial chunk
+      let chunk = generate_chunk_data(seed, Point::new(0, 0));
+      let mut chunks: Vec<Chunk> = vec![chunk.clone()];
+
+      // Generate data for the neighbouring chunks
+      get_chunk_neighbour_points(chunk).iter().for_each(|point| {
+        chunks.push(generate_chunk_data(seed, point.clone()));
+      });
+
+      // Spawn all chunks
+      for chunk in chunks {
+        spawn_chunk(texture.clone(), texture_atlas_layout.clone(), parent, chunk);
+      }
     });
-    spawn_tile(texture, texture_atlas_layout, parent, chunk);
-  });
+}
+
+fn spawn_chunk(
+  texture: Handle<Image>,
+  texture_atlas_layout: Handle<TextureAtlasLayout>,
+  world_child_builder: &mut ChildBuilder,
+  chunk: Chunk,
+) {
+  world_child_builder
+    .spawn((
+      Name::new(format!("Chunk ({},{})", chunk.coords.world.x, chunk.coords.world.y)),
+      SpatialBundle::default(),
+    ))
+    .with_children(|parent| {
+      for tile in chunk.tiles.iter() {
+        spawn_tile(texture.clone(), texture_atlas_layout.clone(), parent, &tile);
+      }
+    });
 }
 
 fn spawn_tile(
   texture: Handle<Image>,
   texture_atlas_layout: Handle<TextureAtlasLayout>,
-  parent: &mut ChildBuilder,
-  chunk: Chunk,
+  chunk_child_builder: &mut ChildBuilder,
+  tile: &Tile,
 ) {
-  for tile in chunk.tiles.iter() {
-    parent.spawn((
-      Name::new("Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")"),
-      SpriteBundle {
-        texture: texture.clone(),
-        transform: Transform::from_xyz(
-          tile.coords.world.x as f32,
-          tile.coords.world.y as f32,
-          tile.layer as f32,
-        ),
-        ..Default::default()
-      },
-      TextureAtlas {
-        layout: texture_atlas_layout.clone(),
-        index: tile.sprite_index,
-      },
-      TileComponent,
-    ));
-  }
+  chunk_child_builder.spawn((
+    Name::new("Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")"),
+    SpriteBundle {
+      texture: texture.clone(),
+      transform: Transform::from_xyz(
+        tile.coords.world.x as f32,
+        tile.coords.world.y as f32,
+        tile.layer as f32,
+      ),
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: texture_atlas_layout.clone(),
+      index: tile.sprite_index,
+    },
+    TileComponent,
+  ));
 }
 
-fn generate_chunk(seed: u32, start: Point) -> Chunk {
+fn generate_chunk_data(seed: u32, start: Point) -> Chunk {
   debug!("Generating chunk at {:?}", start);
   let mut tiles = HashSet::new();
   let perlin = Perlin::new(seed);
@@ -135,6 +162,6 @@ fn refresh_world_event(
       commands.entity(entity).despawn();
     }
     seed.0 += 1;
-    generate_world(&mut commands, seed.0, asset_server, &mut texture_atlas_layouts);
+    spawn_world(&mut commands, seed.0, asset_server, &mut texture_atlas_layouts);
   }
 }

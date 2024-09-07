@@ -4,12 +4,14 @@ use bevy::utils::HashSet;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
   pub coords: Coords,
+  pub center: Point,
   pub tiles: HashSet<Tile>,
 }
 
 impl Chunk {
   pub fn new(world_location: Point, tiles: HashSet<Tile>) -> Self {
     Self {
+      center: Point::new(world_location.x + (CHUNK_SIZE / 2), world_location.y + (CHUNK_SIZE / 2)),
       coords: Coords::new_world(world_location),
       tiles,
     }
@@ -77,7 +79,7 @@ pub enum TileType {
   Forest,
 }
 
-pub fn get_neighbours(chunk: Chunk) -> [Point; 8] {
+pub fn get_chunk_neighbour_points(chunk: Chunk) -> [Point; 8] {
   [
     Point::new(
       (chunk.coords.world.x - 1) * (CHUNK_SIZE - 1),
