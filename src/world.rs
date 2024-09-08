@@ -8,6 +8,7 @@ use bevy::app::{App, Plugin, Startup};
 use bevy::prelude::*;
 use bevy::utils::HashSet;
 use noise::{NoiseFn, Perlin};
+use std::time::SystemTime;
 
 pub struct WorldPlugin;
 
@@ -46,6 +47,10 @@ fn spawn_world(
   asset_server: Res<AssetServer>,
   texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
 ) {
+  let timestamp = SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .unwrap()
+    .as_millis();
   let texture = asset_server.load(TILE_SET_TEST_PATH);
   let layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
@@ -73,6 +78,15 @@ fn spawn_world(
         spawn_chunk(texture.clone(), texture_atlas_layout.clone(), parent, chunk);
       }
     });
+
+  info!(
+    "✅  World generation took {}ms",
+    SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .unwrap()
+      .as_millis()
+      - timestamp
+  );
 }
 
 fn spawn_chunk(
@@ -126,20 +140,20 @@ fn generate_chunk_data(seed: u32, start: Point) -> Chunk {
   for x in start.x..end.x {
     for y in (start.y..end.y).rev() {
       let noise = perlin.get([x as f64 / CHUNK_SIZE as f64, y as f64 / CHUNK_SIZE as f64]);
-      let tile_type = match noise {
-        n if n > 0.7 => TileType::Forest,
-        n if n > 0.5 => TileType::Grass,
-        n if n > 0.3 => TileType::Sand,
-        _ => TileType::Water,
+      let terrain_type = match noise {
+        n if n > 0.7 => TerrainType::Forest,
+        n if n > 0.5 => TerrainType::Grass,
+        n if n > 0.3 => TerrainType::Sand,
+        _ => TerrainType::Water,
       };
-      let sprite_index = match tile_type {
-        TileType::Water => WATER_TILE,
-        TileType::Sand => SAND_TILE,
-        TileType::Grass => GRASS_TILE,
-        TileType::Forest => FOREST_TILE,
+      let sprite_index = match terrain_type {
+        TerrainType::None | TerrainType::Water => WATER_TILE,
+        TerrainType::Sand => SAND_TILE,
+        TerrainType::Grass => GRASS_TILE,
+        TerrainType::Forest => FOREST_TILE,
       };
       let grid_location = Point::new(x, y);
-      let tile = Tile::new(grid_location.clone(), tile_type, sprite_index, 0);
+      let tile = Tile::new(grid_location.clone(), terrain_type, sprite_index, 0);
       trace!("{:?} => Noise: {}", &tile, noise);
       tiles.insert(tile);
     }

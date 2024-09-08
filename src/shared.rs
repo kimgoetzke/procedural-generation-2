@@ -21,16 +21,16 @@ impl Chunk {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Tile {
   pub coords: Coords,
-  pub tile_type: TileType,
+  pub terrain: TerrainType,
   pub sprite_index: usize,
   pub layer: i32,
 }
 
 impl Tile {
-  pub fn new(grid_location: Point, tile_type: TileType, sprite_index: usize, z_index: i32) -> Self {
+  pub fn new(grid_location: Point, terrain: TerrainType, sprite_index: usize, z_index: i32) -> Self {
     Self {
       coords: Coords::new_grid(grid_location, TILE_SIZE),
-      tile_type,
+      terrain,
       sprite_index,
       layer: z_index,
     }
@@ -72,11 +72,42 @@ impl Point {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum TileType {
+pub enum TerrainType {
   Water,
   Sand,
   Grass,
   Forest,
+  None,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum NeighbourLocations {
+  TopLeft,
+  Top,
+  TopRight,
+  Left,
+  Center,
+  Right,
+  BottomLeft,
+  Bottom,
+  BottomRight,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum TileType {
+  Fill,
+  InnerCornerBottomLeft,
+  InnerCornerBottomRight,
+  InnerCornerTopLeft,
+  InnerCornerTopRight,
+  OuterCornerBottomLeft,
+  OuterCornerBottomRight,
+  OuterCornerTopLeft,
+  OuterCornerTopRight,
+  RightFillHorizontal,
+  LeftFillHorizontal,
+  RightFillVertical,
+  LeftFillVertical,
 }
 
 pub fn get_chunk_neighbour_points(chunk: Chunk) -> [Point; 8] {
