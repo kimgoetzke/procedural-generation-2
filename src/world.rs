@@ -1,4 +1,4 @@
-use crate::settings::{CHUNK_SIZE, FOREST_TILE, GRASS_TILE, SAND_TILE, SHORE_TILE, TILE_SET_TEST_COLUMNS, TILE_SET_TEST_PATH, TILE_SET_TEST_ROWS, TILE_SIZE, WATER_TILE};
+use crate::settings::*;
 use crate::shared::*;
 use crate::shared_events::RefreshWorldEvent;
 use bevy::app::{App, Plugin, Startup};
@@ -24,11 +24,6 @@ struct TileComponent;
 #[derive(Resource)]
 struct Seed(u32);
 
-#[derive(Resource)]
-struct GeneratedChunks {
-  chunks: Vec<Chunk>,
-}
-
 fn generate_world_system(
   mut commands: Commands,
   seed: Res<Seed>,
@@ -44,76 +39,52 @@ fn spawn_world(
   asset_server: Res<AssetServer>,
   texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
 ) {
-  let timestamp = SystemTime::now()
-    .duration_since(std::time::UNIX_EPOCH)
-    .unwrap()
-    .as_millis();
-  let texture = asset_server.load(TILE_SET_TEST_PATH);
-  let layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    TILE_SET_TEST_COLUMNS,
-    TILE_SET_TEST_ROWS,
-    None,
-    None,
-  );
-  let texture_atlas_layout = texture_atlas_layouts.add(layout);
+  let timestamp = get_timestamp();
+  let asset_packs = get_asset_packs(&asset_server, texture_atlas_layouts);
 
   commands
     .spawn((Name::new("World - Layer 0"), SpatialBundle::default()))
     .with_children(|parent| {
       // Generate data for the initial chunk
-      let chunk = generate_chunk_data(seed, Point::new(0, 0));
+      let chunk = generate_chunk_layer_data(seed, Point::new(0, 0));
       let mut chunks: Vec<Chunk> = vec![chunk.clone()];
 
-      // Generate data for the neighbouring chunks
+      // Generate data for all neighbouring chunks
       get_chunk_neighbour_points(chunk).iter().for_each(|point| {
-        chunks.push(generate_chunk_data(seed, point.clone()));
+        chunks.push(generate_chunk_layer_data(seed, point.clone()));
       });
 
       // Spawn all chunks
-      for chunk in chunks {
-        spawn_chunk(texture.clone(), texture_atlas_layout.clone(), parent, chunk);
+      for mut chunk in chunks {
+        chunk.determine_tile_types();
+        spawn_chunk(&asset_packs, parent, chunk);
       }
     });
 
-  info!(
-    "✅  World generation took {}ms",
-    SystemTime::now()
-      .duration_since(std::time::UNIX_EPOCH)
-      .unwrap()
-      .as_millis()
-      - timestamp
-  );
+  info!("✅  World generation took {} ms", get_timestamp() - timestamp);
 }
 
-fn spawn_chunk(
-  texture: Handle<Image>,
-  texture_atlas_layout: Handle<TextureAtlasLayout>,
-  world_child_builder: &mut ChildBuilder,
-  chunk: Chunk,
-) {
+fn spawn_chunk(asset_packs: &AssetPacks, world_child_builder: &mut ChildBuilder, chunk: Chunk) {
   world_child_builder
     .spawn((
       Name::new(format!("Chunk ({},{})", chunk.coords.world.x, chunk.coords.world.y)),
       SpatialBundle::default(),
     ))
     .with_children(|parent| {
-      for tile in chunk.tiles.iter() {
-        spawn_tile(texture.clone(), texture_atlas_layout.clone(), parent, &tile);
+      for (_, tile) in chunk.tiles.iter() {
+        spawn_tile(asset_packs, parent, &tile);
       }
     });
 }
 
-fn spawn_tile(
-  texture: Handle<Image>,
-  texture_atlas_layout: Handle<TextureAtlasLayout>,
-  chunk_child_builder: &mut ChildBuilder,
-  tile: &Tile,
-) {
+fn spawn_tile(asset_packs: &AssetPacks, chunk_child_builder: &mut ChildBuilder, tile: &Tile) {
   chunk_child_builder.spawn((
     Name::new("Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")"),
     SpriteBundle {
-      texture: texture.clone(),
+      texture: match tile.terrain {
+        TerrainType::Sand => asset_packs.sand.texture.clone(),
+        _ => asset_packs.default.texture.clone(),
+      },
       transform: Transform::from_xyz(
         tile.coords.world.x as f32,
         tile.coords.world.y as f32,
@@ -122,15 +93,21 @@ fn spawn_tile(
       ..Default::default()
     },
     TextureAtlas {
-      layout: texture_atlas_layout.clone(),
-      index: tile.sprite_index,
+      layout: match tile.terrain {
+        TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
+        _ => asset_packs.default.texture_atlas_layout.clone(),
+      },
+      index: match tile.terrain {
+        TerrainType::Sand => get_sprite_index(&tile),
+        _ => tile.default_sprite_index,
+      },
     },
     TileComponent,
   ));
 }
 
-fn generate_chunk_data(seed: u32, start: Point) -> Chunk {
-  debug!("Generating chunk at {:?}", start);
+fn generate_chunk_layer_data(seed: u32, start: Point) -> Chunk {
+  let timestamp = get_timestamp();
   let mut tiles = HashSet::new();
   let perlin = Perlin::new(seed);
   let end = Point::new(start.x + CHUNK_SIZE - 1, start.y + CHUNK_SIZE - 1);
@@ -144,21 +121,31 @@ fn generate_chunk_data(seed: u32, start: Point) -> Chunk {
         n if n > 0.1 => TerrainType::Shore,
         _ => TerrainType::Water,
       };
-      let sprite_index = match terrain_type {
-        TerrainType::None | TerrainType::Water => WATER_TILE,
-        TerrainType::Shore => SHORE_TILE,
-        TerrainType::Sand => SAND_TILE,
-        TerrainType::Grass => GRASS_TILE,
-        TerrainType::Forest => FOREST_TILE,
+      let tile = match terrain_type {
+        TerrainType::Water => Tile::new(Point::new(x, y), terrain_type, WATER_TILE, WATER_TILE as i32),
+        TerrainType::Shore => Tile::new(Point::new(x, y), terrain_type, SHORE_TILE, SHORE_TILE as i32),
+        TerrainType::Sand => Tile::new(Point::new(x, y), terrain_type, SAND_TILE, SAND_TILE as i32),
+        TerrainType::Grass => Tile::new(Point::new(x, y), terrain_type, GRASS_TILE, GRASS_TILE as i32),
+        TerrainType::Forest => Tile::new(Point::new(x, y), terrain_type, FOREST_TILE, FOREST_TILE as i32),
       };
-      let grid_location = Point::new(x, y);
-      let tile = Tile::new(grid_location.clone(), terrain_type, sprite_index, 0);
-      info!("{:?} => Noise: {}", &tile, noise);
+      trace!("{:?} => Noise: {}", &tile, noise);
       tiles.insert(tile);
     }
   }
+  debug!(
+    "✅  Generated chunk layer data for chunk at {:?} within {} ms",
+    start,
+    get_timestamp() - timestamp
+  );
 
   Chunk::new(start, tiles)
+}
+
+fn get_timestamp() -> u128 {
+  SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .unwrap()
+    .as_millis()
 }
 
 fn refresh_world_event(
