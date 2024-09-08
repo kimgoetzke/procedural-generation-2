@@ -18,14 +18,15 @@ const TILE_HEIGHT: usize = 32;
 pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
 pub const TILE_SET_DEFAULT_COLUMNS: u32 = 9;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 3;
-pub const TILE_SET_TEST_PATH: &str = "tilesets/test_tileset.png";
-pub const TILE_SET_TEST_COLUMNS: u32 = 4;
-pub const TILE_SET_TEST_ROWS: u32 = 1;
 
+pub const TILE_SET_TEST_PATH: &str = "tilesets/test_tileset.png";
+pub const TILE_SET_TEST_COLUMNS: u32 = 5;
+pub const TILE_SET_TEST_ROWS: u32 = 1;
 pub const WATER_TILE: usize = 0;
-pub const SAND_TILE: usize = 1;
-pub const GRASS_TILE: usize = 2;
-pub const FOREST_TILE: usize = 3;
+pub const SHORE_TILE: usize = 1;
+pub const SAND_TILE: usize = 2;
+pub const GRASS_TILE: usize = 3;
+pub const FOREST_TILE: usize = 4;
 
 // Chunks
 pub const CHUNK_SIZE: i32 = 32;

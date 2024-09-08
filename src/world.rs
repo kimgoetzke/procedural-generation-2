@@ -1,7 +1,4 @@
-use crate::settings::{
-  CHUNK_SIZE, FOREST_TILE, GRASS_TILE, SAND_TILE, TILE_SET_TEST_COLUMNS, TILE_SET_TEST_PATH, TILE_SET_TEST_ROWS,
-  TILE_SIZE, WATER_TILE,
-};
+use crate::settings::{CHUNK_SIZE, FOREST_TILE, GRASS_TILE, SAND_TILE, SHORE_TILE, TILE_SET_TEST_COLUMNS, TILE_SET_TEST_PATH, TILE_SET_TEST_ROWS, TILE_SIZE, WATER_TILE};
 use crate::shared::*;
 use crate::shared_events::RefreshWorldEvent;
 use bevy::app::{App, Plugin, Startup};
@@ -141,20 +138,22 @@ fn generate_chunk_data(seed: u32, start: Point) -> Chunk {
     for y in (start.y..end.y).rev() {
       let noise = perlin.get([x as f64 / CHUNK_SIZE as f64, y as f64 / CHUNK_SIZE as f64]);
       let terrain_type = match noise {
-        n if n > 0.7 => TerrainType::Forest,
-        n if n > 0.5 => TerrainType::Grass,
-        n if n > 0.3 => TerrainType::Sand,
+        n if n > 0.9 => TerrainType::Forest,
+        n if n > 0.6 => TerrainType::Grass,
+        n if n > 0.4 => TerrainType::Sand,
+        n if n > 0.1 => TerrainType::Shore,
         _ => TerrainType::Water,
       };
       let sprite_index = match terrain_type {
         TerrainType::None | TerrainType::Water => WATER_TILE,
+        TerrainType::Shore => SHORE_TILE,
         TerrainType::Sand => SAND_TILE,
         TerrainType::Grass => GRASS_TILE,
         TerrainType::Forest => FOREST_TILE,
       };
       let grid_location = Point::new(x, y);
       let tile = Tile::new(grid_location.clone(), terrain_type, sprite_index, 0);
-      trace!("{:?} => Noise: {}", &tile, noise);
+      info!("{:?} => Noise: {}", &tile, noise);
       tiles.insert(tile);
     }
   }

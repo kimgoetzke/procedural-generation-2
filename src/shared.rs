@@ -74,12 +74,14 @@ impl Point {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TerrainType {
   Water,
+  Shore,
   Sand,
   Grass,
   Forest,
   None,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum NeighbourLocations {
   TopLeft,
