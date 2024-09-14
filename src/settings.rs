@@ -2,6 +2,14 @@
 
 use bevy::color::Color;
 
+// Animation
+pub const BASE_DELAY: f32 = 0.; // 0.0025
+pub const LAYER_DELAY: f32 = 2.;
+
+// Settings
+pub const DRAW_SPRITES: bool = false;
+pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
+
 // Window
 pub const GRID_COLS: usize = 1000;
 pub const GRID_ROWS: usize = 800;
@@ -10,6 +18,9 @@ pub const GRID_H: usize = GRID_ROWS * TILE_HEIGHT;
 pub const WINDOW_WIDTH: f32 = 1280.;
 pub const WINDOW_HEIGHT: f32 = 720.;
 pub const BG_COLOR: (u8, u8, u8) = (181, 212, 220);
+
+// Chunks
+pub const CHUNK_SIZE: i32 = 32;
 
 // Sprites
 pub const TILE_SIZE: u32 = 32;
@@ -51,9 +62,6 @@ pub const BOTTOM_FILL: usize = 1;
 pub const RIGHT_FILL: usize = 3;
 pub const LEFT_FILL: usize = 5;
 pub const ERROR: usize = 26;
-
-// Chunks
-pub const CHUNK_SIZE: i32 = 32;
 
 // Colours
 pub(crate) const RED: Color = Color::hsl(0.59, 0.32, 0.52);

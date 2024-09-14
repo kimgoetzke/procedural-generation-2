@@ -1,12 +1,15 @@
 mod camera;
+mod controls;
+mod events;
+mod resources;
 mod settings;
-mod shared;
-mod shared_events;
 mod world;
 
 use crate::camera::CameraPlugin;
+use crate::controls::ControlPlugin;
+use crate::events::SharedEventsPlugin;
+use crate::resources::SharedResourcesPlugin;
 use crate::settings::{WINDOW_HEIGHT, WINDOW_WIDTH};
-use crate::shared_events::SharedEventsPlugin;
 use crate::world::WorldPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};
@@ -48,7 +51,7 @@ fn main() {
     )
     .add_plugins(PanCamPlugin::default())
     .add_plugins(CameraPlugin)
-    .add_plugins((WorldPlugin, SharedEventsPlugin));
+    .add_plugins((WorldPlugin, SharedEventsPlugin, SharedResourcesPlugin, ControlPlugin));
 
   #[cfg(feature = "dev")]
   app.add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)));
