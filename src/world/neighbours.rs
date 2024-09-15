@@ -175,6 +175,10 @@ impl NeighbourTiles {
       == expected
   }
 
+  pub fn all_sides_same(&self) -> bool {
+    self.top.same && self.right.same && self.bottom.same && self.left.same
+  }
+
   pub fn put(&mut self, tile: NeighbourTile) {
     match (tile.direction.x, tile.direction.y) {
       (-1, 1) => self.top_left = tile,

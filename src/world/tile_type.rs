@@ -19,7 +19,7 @@ pub enum TileType {
   BottomFill,
   RightFill,
   LeftFill,
-  Empty,
+  Single,
   Unknown,
 }
 
@@ -40,6 +40,7 @@ pub fn get_sprite_index(tile: &Tile) -> usize {
     TileType::BottomFill => BOTTOM_FILL,
     TileType::RightFill => RIGHT_FILL,
     TileType::LeftFill => LEFT_FILL,
+    TileType::Single => SINGLE,
     _ => ERROR,
   }
 }

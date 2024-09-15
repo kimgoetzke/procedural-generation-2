@@ -8,8 +8,8 @@ pub const LAYER_DELAY: f32 = 2.;
 
 // Settings
 pub const SHOW_SETTINGS_UI: bool = true;
-pub const SPAWN_TILE_DEBUG_INFO: bool = false;
-pub const DRAW_SPRITES: bool = false;
+pub const SPAWN_TILE_DEBUG_INFO: bool = true;
+pub const DRAW_SPRITES: bool = true;
 pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
 
 // Window
@@ -63,6 +63,7 @@ pub const TOP_FILL: usize = 10;
 pub const BOTTOM_FILL: usize = 1;
 pub const RIGHT_FILL: usize = 3;
 pub const LEFT_FILL: usize = 5;
+pub const SINGLE: usize = 18;
 pub const ERROR: usize = 26;
 
 // Colours
