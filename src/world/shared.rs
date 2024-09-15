@@ -2,7 +2,7 @@ use crate::settings::*;
 use crate::world::tile::Tile;
 use bevy::asset::{AssetServer, Assets};
 use bevy::math::UVec2;
-use bevy::prelude::{Handle, Image, Res, ResMut, TextureAtlasLayout};
+use bevy::prelude::{Font, Handle, Image, Res, ResMut, TextureAtlasLayout};
 use std::cmp::PartialOrd;
 use std::fmt;
 

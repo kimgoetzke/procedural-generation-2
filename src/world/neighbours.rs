@@ -6,7 +6,7 @@ use bevy::log::*;
 pub struct NeighbourTile {
   pub direction: Point,
   pub terrain: TerrainType,
-  pub is_same: bool,
+  pub same: bool,
   pub is_any: bool,
 }
 
@@ -15,7 +15,7 @@ impl NeighbourTile {
     Self {
       direction,
       terrain: TerrainType::Any,
-      is_same: false,
+      same: false,
       is_any: true,
     }
   }
@@ -24,7 +24,7 @@ impl NeighbourTile {
     NeighbourTile {
       direction,
       terrain: terrain_type,
-      is_same,
+      same: is_same,
       is_any: terrain_type == TerrainType::Any,
     }
   }
@@ -79,97 +79,97 @@ impl NeighbourTiles {
   }
 
   pub fn all_direction_top_left_same(&self) -> bool {
-    self.top_left.is_same && self.top.is_same && self.left.is_same
+    self.top_left.same && self.top.same && self.left.same
   }
 
   pub fn all_direction_top_right_same(&self) -> bool {
-    self.top.is_same && self.top_right.is_same && self.right.is_same
+    self.top.same && self.top_right.same && self.right.same
   }
 
   pub fn all_direction_bottom_left_same(&self) -> bool {
-    self.left.is_same && self.bottom.is_same && self.bottom_left.is_same
+    self.left.same && self.bottom.same && self.bottom_left.same
   }
 
   pub fn all_direction_bottom_right_same(&self) -> bool {
-    self.bottom.is_same && self.bottom_right.is_same && self.right.is_same
+    self.bottom.same && self.bottom_right.same && self.right.same
   }
 
   pub fn all_direction_top_left_different(&self) -> bool {
-    !self.top_left.is_same && !self.top.is_same && !self.left.is_same
+    !self.top_left.same && !self.top.same && !self.left.same
   }
 
   pub fn all_direction_top_right_different(&self) -> bool {
-    !self.top.is_same && !self.top_right.is_same && !self.right.is_same
+    !self.top.same && !self.top_right.same && !self.right.same
   }
 
   pub fn all_direction_bottom_left_different(&self) -> bool {
-    !self.left.is_same && !self.bottom.is_same && !self.bottom_left.is_same
+    !self.left.same && !self.bottom.same && !self.bottom_left.same
   }
 
   pub fn all_direction_bottom_right_different(&self) -> bool {
-    !self.bottom.is_same && !self.bottom_right.is_same && !self.right.is_same
+    !self.bottom.same && !self.bottom_right.same && !self.right.same
   }
 
   pub fn all_top_same(&self) -> bool {
-    self.top_left.is_same && self.top.is_same && self.top_right.is_same
+    self.top_left.same && self.top.same && self.top_right.same
   }
 
   pub fn all_top_different(&self) -> bool {
-    !self.top_left.is_same && !self.top.is_same && !self.top_right.is_same
+    !self.top_left.same && !self.top.same && !self.top_right.same
   }
 
   pub fn top_same(&self, expected: usize) -> bool {
     [self.top_left, self.top, self.top_right]
       .iter()
-      .filter(|&&tile| tile.is_same)
+      .filter(|&&tile| tile.same)
       .count()
       == expected
   }
 
   pub fn all_bottom_same(&self) -> bool {
-    self.bottom_left.is_same && self.bottom.is_same && self.bottom_right.is_same
+    self.bottom_left.same && self.bottom.same && self.bottom_right.same
   }
 
   pub fn all_bottom_different(&self) -> bool {
-    !self.bottom_left.is_same && !self.bottom.is_same && !self.bottom_right.is_same
+    !self.bottom_left.same && !self.bottom.same && !self.bottom_right.same
   }
 
   pub fn bottom_same(&self, expected: usize) -> bool {
     [self.bottom_left, self.bottom, self.bottom_right]
       .iter()
-      .filter(|&&tile| tile.is_same)
+      .filter(|&&tile| tile.same)
       .count()
       == expected
   }
 
   pub fn all_left_same(&self) -> bool {
-    self.top_left.is_same && self.left.is_same && self.bottom_left.is_same
+    self.top_left.same && self.left.same && self.bottom_left.same
   }
 
   pub fn all_left_different(&self) -> bool {
-    !self.top_left.is_same && !self.left.is_same && !self.bottom_left.is_same
+    !self.top_left.same && !self.left.same && !self.bottom_left.same
   }
 
   pub fn left_same(&self, expected: usize) -> bool {
     [self.top_left, self.left, self.bottom_left]
       .iter()
-      .filter(|&&tile| tile.is_same)
+      .filter(|&&tile| tile.same)
       .count()
       == expected
   }
 
   pub fn all_right_same(&self) -> bool {
-    self.top_right.is_same && self.right.is_same && self.bottom_right.is_same
+    self.top_right.same && self.right.same && self.bottom_right.same
   }
 
   pub fn all_right_different(&self) -> bool {
-    !self.top_right.is_same && !self.right.is_same && !self.bottom_right.is_same
+    !self.top_right.same && !self.right.same && !self.bottom_right.same
   }
 
   pub fn right_same(&self, expected: usize) -> bool {
     [self.top_right, self.right, self.bottom_right]
       .iter()
-      .filter(|&&tile| tile.is_same)
+      .filter(|&&tile| tile.same)
       .count()
       == expected
   }
@@ -203,7 +203,7 @@ impl NeighbourTiles {
       self.bottom_right,
     ]
     .iter()
-    .filter(|&&tile| tile.is_same)
+    .filter(|&&tile| tile.same)
     .count()
   }
 

@@ -24,7 +24,7 @@ impl DraftChunk {
   }
 
   pub fn to_chunk(self, settings: &Res<Settings>) -> Chunk {
-    let tiles = determine_tile_types(&self.draft_tiles, settings);
+    let tiles = determine_tile_types(self.draft_tiles, settings);
     Chunk {
       coords: self.coords,
       center: self.center,
@@ -40,12 +40,12 @@ pub struct Chunk {
   pub tiles: Vec<Tile>,
 }
 
-fn determine_tile_types(draft_tiles: &Vec<DraftTile>, settings: &Res<Settings>) -> Vec<Tile> {
+fn determine_tile_types(draft_tiles: Vec<DraftTile>, settings: &Res<Settings>) -> Vec<Tile> {
   let neighbours_map: HashMap<Point, NeighbourTiles> = {
-    let tiles = draft_tiles;
+    let tiles = &draft_tiles;
     let mut map = HashMap::new();
 
-    for draft_tile in draft_tiles {
+    for draft_tile in &draft_tiles {
       let mut neighbours = NeighbourTiles::empty();
       let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
 
@@ -82,40 +82,32 @@ fn determine_tile_types(draft_tiles: &Vec<DraftTile>, settings: &Res<Settings>) 
 
     let tile_type = match same_neighbours {
       8 => TileType::Fill,
-      7 if !ns.top_left.is_same => TileType::OuterCornerTopLeft,
-      7 if !ns.top_right.is_same => TileType::OuterCornerTopRight,
-      7 if !ns.bottom_left.is_same => TileType::OuterCornerBottomLeft,
-      7 if !ns.bottom_right.is_same => TileType::OuterCornerBottomRight,
-      6 if ns.all_right_same() && (ns.top_left.is_same || ns.bottom_left.is_same) && !ns.left.is_same => {
-        TileType::RightFill
-      }
-      6 if ns.all_left_same() && (ns.top_right.is_same || ns.bottom_right.is_same) && !ns.right.is_same => {
-        TileType::LeftFill
-      }
-      6 if ns.all_bottom_same() && (ns.top_left.is_same || ns.top_right.is_same) && !ns.top.is_same => {
-        TileType::BottomFill
-      }
-      6 if ns.all_top_same() && (ns.bottom_left.is_same || ns.bottom_right.is_same) && !ns.bottom.is_same => {
-        TileType::TopFill
-      }
-      6 if !ns.top_right.is_same && !ns.bottom_left.is_same => TileType::TopLeftToBottomRightBridge,
-      6 if !ns.top_left.is_same && !ns.bottom_right.is_same => TileType::TopRightToBottomLeftBridge,
-      5 if ns.all_top_same() && ns.left.is_same && ns.right.is_same => TileType::TopFill,
-      5 if ns.all_bottom_same() && ns.left.is_same && ns.right.is_same => TileType::BottomFill,
-      5 if ns.all_left_same() && ns.top.is_same && ns.bottom.is_same => TileType::LeftFill,
-      5 if ns.all_right_same() && ns.top.is_same && ns.bottom.is_same => TileType::RightFill,
+      7 if !ns.top_left.same => TileType::OuterCornerTopLeft,
+      7 if !ns.top_right.same => TileType::OuterCornerTopRight,
+      7 if !ns.bottom_left.same => TileType::OuterCornerBottomLeft,
+      7 if !ns.bottom_right.same => TileType::OuterCornerBottomRight,
+      6 if ns.all_right_same() && (ns.top_left.same || ns.bottom_left.same) && !ns.left.same => TileType::RightFill,
+      6 if ns.all_left_same() && (ns.top_right.same || ns.bottom_right.same) && !ns.right.same => TileType::LeftFill,
+      6 if ns.all_bottom_same() && (ns.top_left.same || ns.top_right.same) && !ns.top.same => TileType::BottomFill,
+      6 if ns.all_top_same() && (ns.bottom_left.same || ns.bottom_right.same) && !ns.bottom.same => TileType::TopFill,
+      6 if !ns.top_right.same && !ns.bottom_left.same => TileType::TopLeftToBottomRightBridge,
+      6 if !ns.top_left.same && !ns.bottom_right.same => TileType::TopRightToBottomLeftBridge,
+      5 if ns.all_top_same() && ns.left.same && ns.right.same => TileType::TopFill,
+      5 if ns.all_bottom_same() && ns.left.same && ns.right.same => TileType::BottomFill,
+      5 if ns.all_left_same() && ns.top.same && ns.bottom.same => TileType::LeftFill,
+      5 if ns.all_right_same() && ns.top.same && ns.bottom.same => TileType::RightFill,
       5 if ns.all_top_same() && ns.all_right_same() => TileType::InnerCornerTopRight,
       5 if ns.all_top_same() && ns.all_left_same() => TileType::InnerCornerTopLeft,
       5 if ns.all_bottom_same() && ns.all_right_same() => TileType::InnerCornerBottomRight,
       5 if ns.all_bottom_same() && ns.all_left_same() => TileType::InnerCornerBottomLeft,
-      4 if ns.all_left_different() && !ns.top.is_same => TileType::InnerCornerBottomRight,
-      4 if ns.all_left_different() && !ns.bottom.is_same => TileType::InnerCornerTopRight,
-      4 if ns.all_right_different() && !ns.top.is_same => TileType::InnerCornerBottomLeft,
-      4 if ns.all_right_different() && !ns.bottom.is_same => TileType::InnerCornerTopLeft,
-      4 if ns.all_top_different() && !ns.right.is_same => TileType::InnerCornerBottomLeft,
-      4 if ns.all_top_different() && !ns.left.is_same => TileType::InnerCornerBottomRight,
-      4 if ns.all_bottom_different() && !ns.left.is_same => TileType::InnerCornerTopRight,
-      4 if ns.all_bottom_different() && !ns.right.is_same => TileType::InnerCornerTopLeft,
+      4 if ns.all_left_different() && !ns.top.same => TileType::InnerCornerBottomRight,
+      4 if ns.all_left_different() && !ns.bottom.same => TileType::InnerCornerTopRight,
+      4 if ns.all_right_different() && !ns.top.same => TileType::InnerCornerBottomLeft,
+      4 if ns.all_right_different() && !ns.bottom.same => TileType::InnerCornerTopLeft,
+      4 if ns.all_top_different() && !ns.right.same => TileType::InnerCornerBottomLeft,
+      4 if ns.all_top_different() && !ns.left.same => TileType::InnerCornerBottomRight,
+      4 if ns.all_bottom_different() && !ns.left.same => TileType::InnerCornerTopRight,
+      4 if ns.all_bottom_different() && !ns.right.same => TileType::InnerCornerTopLeft,
       4 if ns.all_direction_top_left_different() => TileType::OuterCornerTopLeft,
       4 if ns.all_direction_top_right_different() => TileType::OuterCornerTopRight,
       4 if ns.all_direction_bottom_left_different() => TileType::OuterCornerBottomLeft,
@@ -125,8 +117,8 @@ fn determine_tile_types(draft_tiles: &Vec<DraftTile>, settings: &Res<Settings>) 
       3 if ns.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
       3 if ns.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
       2 => TileType::Fill,
-      1 if ns.top.is_same && ns.right.is_same && ns.bottom.is_same && ns.left.is_same => TileType::Fill,
-      1 if ns.top.is_same => TileType::Unknown,
+      1 if ns.top.same && ns.right.same && ns.bottom.same && ns.left.same => TileType::Fill,
+      1 if ns.top.same => TileType::Unknown,
       1 => TileType::Unknown,
       _ => TileType::Unknown,
     };
@@ -158,9 +150,10 @@ fn determine_tile_types(draft_tiles: &Vec<DraftTile>, settings: &Res<Settings>) 
   final_tiles
 }
 
-pub fn get_chunk_neighbour_points(coords: &Coords) -> [Point; 8] {
+#[allow(dead_code)]
+pub fn get_neighbour_world_points(coords: &Coords, adjustment: i32) -> [Point; 8] {
   let point = coords.world;
-  let adjustment = CHUNK_SIZE - 1;
+  let adjustment = adjustment - 1;
   [
     Point::new(point.x - adjustment, point.y + adjustment),
     Point::new(point.x, point.y + adjustment),

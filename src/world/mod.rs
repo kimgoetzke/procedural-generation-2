@@ -1,7 +1,7 @@
 use crate::events::{RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::{Settings, ShowDebugInfo};
 use crate::settings::*;
-use crate::world::chunk::{get_chunk_neighbour_points, Chunk, DraftChunk};
+use crate::world::chunk::{get_neighbour_world_points, Chunk, DraftChunk};
 use crate::world::shared::*;
 use crate::world::tile::DraftTile;
 use bevy::app::{App, Plugin, Startup};
@@ -83,11 +83,11 @@ fn spawn_world(
       let mut draft_chunks: Vec<DraftChunk> = vec![draft_chunk.clone()];
 
       // Generate data for all neighbouring chunks
-      get_chunk_neighbour_points(&draft_chunk.coords)
-        .iter()
-        .for_each(|point| {
-          draft_chunks.push(generate_chunk_layer_data(seed, point.clone()));
-        });
+      // get_neighbour_world_points(&draft_chunk.coords, CHUNK_SIZE)
+      //   .iter()
+      //   .for_each(|point| {
+      //     draft_chunks.push(generate_chunk_layer_data(seed, point.clone()));
+      //   });
 
       // Spawn all chunks
       for draft in draft_chunks {
