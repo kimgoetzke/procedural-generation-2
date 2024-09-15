@@ -1,14 +1,16 @@
 use crate::constants::*;
 use crate::events::{RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::{Settings, ShowDebugInfo};
-use crate::world::asset_packs::{get_asset_packs, AssetPacks};
-use crate::world::chunk::{get_neighbour_world_points, Chunk, DraftChunk};
+use crate::world::asset_packs::{get_asset_packs, AssetPack, AssetPacks};
+use crate::world::chunk::{get_chunk_spawn_points, Chunk, DraftChunk};
 use crate::world::coords::Point;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::DraftTile;
 use crate::world::tile_type::*;
 use bevy::app::{App, Plugin, Startup};
+use bevy::ecs::system::EntityCommands;
 use bevy::prelude::*;
+use bevy_inspector_egui::egui::TextBuffer;
 use noise::{NoiseFn, Perlin};
 use std::time::SystemTime;
 use tile::Tile;
@@ -49,6 +51,17 @@ struct AnimationTimer {
   timer: Timer,
 }
 
+struct TileData {
+  entity: Entity,
+  tile: Tile,
+}
+
+impl TileData {
+  fn new(entity: Entity, tile: Tile) -> Self {
+    Self { entity, tile }
+  }
+}
+
 fn generate_world_system(
   mut commands: Commands,
   asset_server: Res<AssetServer>,
@@ -64,160 +77,185 @@ fn spawn_world(
   texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
   settings: &Res<Settings>,
 ) {
-  let timestamp = get_time();
+  let t1 = get_time();
   let asset_packs = get_asset_packs(&asset_server, texture_atlas_layouts);
 
+  // Generate draft chunks
+  let mut draft_chunks: Vec<DraftChunk> = Vec::new();
+  let spawn_point = Point::new(-(CHUNK_SIZE / 2), -(CHUNK_SIZE / 2));
+  get_chunk_spawn_points(&spawn_point, CHUNK_SIZE)
+    .iter()
+    .for_each(|point| {
+      if settings.generate_neighbour_chunks {
+        let chunk_layer_data = generate_chunk_layer_data(point.clone(), settings);
+        draft_chunks.push(chunk_layer_data);
+      } else {
+        if point.x == spawn_point.x && point.y == spawn_point.y {
+          debug!("Skipped generating neighbour chunks because it's disabled");
+          let draft_chunk = generate_chunk_layer_data(point.clone(), settings);
+          draft_chunks.push(draft_chunk);
+        }
+      }
+    });
+  debug!("Generated draft chunk(s)");
+
+  let mut final_chunks: Vec<Chunk> = Vec::new();
+  for draft in draft_chunks {
+    let chunk = draft.to_chunk(settings);
+    final_chunks.push(chunk);
+  }
+  debug!("Converted draft chunk(s) to chunk(s)");
+
+  let mut tile_data = Vec::new();
   commands
     .spawn((Name::new("World - Layer 0"), SpatialBundle::default(), WorldComponent))
     .with_children(|parent| {
-      // Generate data for the initial chunk
-      let spawn_point = Point::new(-(CHUNK_SIZE / 2), -(CHUNK_SIZE / 2));
-      let draft_chunk = generate_chunk_layer_data(spawn_point, settings);
-      let mut draft_chunks: Vec<DraftChunk> = vec![draft_chunk.clone()];
-
-      // Generate data for all neighbouring chunks
-      // get_neighbour_world_points(&draft_chunk.coords, CHUNK_SIZE)
-      //   .iter()
-      //   .for_each(|point| {
-      //     draft_chunks.push(generate_chunk_layer_data(seed, point.clone()));
-      //   });
-
-      // Spawn all chunks
-      for draft in draft_chunks {
-        let chunk = draft.to_chunk(settings);
-        spawn_chunk(&asset_packs, parent, chunk, settings);
+      for chunk in final_chunks.iter() {
+        let entry = spawn_chunk(&asset_packs, parent, &chunk, settings);
+        tile_data.extend(entry);
       }
     });
+  debug!("Spawned world and chunk entities");
 
-  info!("✅  World generation took {} ms", get_time() - timestamp);
+  // Spawn each layer
+  for i in 0..TerrainType::length() {
+    let t2 = get_time();
+    let terrain_type = TerrainType::from(i);
+    for tile in &tile_data {
+      let tile_commands = commands.entity(tile.entity);
+      spawn_tile(tile_commands, &tile.tile, &asset_packs, &settings, terrain_type);
+    }
+    debug!("Spawned [{:?}] tiles within {} ms", terrain_type, get_time() - t2);
+  }
+
+  info!("✅  World generation took {} ms", get_time() - t1);
 }
 
 fn spawn_chunk(
   asset_packs: &AssetPacks,
   world_child_builder: &mut ChildBuilder,
-  chunk: Chunk,
+  chunk: &Chunk,
   settings: &Res<Settings>,
-) {
+) -> Vec<TileData> {
+  let mut tile_data = Vec::new();
   world_child_builder
     .spawn((
       Name::new(format!("Chunk ({},{})", chunk.coords.world.x, chunk.coords.world.y)),
       SpatialBundle::default(),
     ))
     .with_children(|parent| {
-      let mut visibility_delay = 0.;
       for tile in chunk.tiles.iter() {
-        spawn_tile(asset_packs, parent, &tile, visibility_delay, settings);
-        visibility_delay += BASE_DELAY;
+        let tile_entity = parent
+          .spawn((
+            Name::new(
+              "Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")",
+            ),
+            SpatialBundle {
+              transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
+              ..Default::default()
+            },
+          ))
+          .with_children(|tile_parent| {
+            if !settings.draw_terrain_sprites {
+              tile_parent.spawn(default_sprite(asset_packs, tile));
+            }
+            if settings.spawn_tile_debug_info {
+              tile_parent.spawn(tile_info(asset_packs, &tile));
+            }
+          })
+          .id();
+        tile_data.push(TileData::new(tile_entity, tile.clone()));
       }
     });
+
+  tile_data
+}
+
+fn tile_info(asset_packs: &AssetPacks, tile: &&Tile) -> (Name, Text2dBundle, TileDebugInfoComponent) {
+  (
+    Name::new("Tile Debug Info"),
+    Text2dBundle {
+      text: Text::from_section(
+        format!(
+          "g{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
+          tile.coords.grid,
+          tile.terrain,
+          tile.tile_type,
+          get_sprite_index(&tile),
+          tile.layer
+        ),
+        TextStyle {
+          font: asset_packs.font.clone(),
+          font_size: 22.,
+          color: Color::WHITE,
+        },
+      )
+      .with_justify(JustifyText::Center),
+      visibility: Visibility::Hidden,
+      transform: Transform {
+        scale: Vec3::splat(0.1),
+        translation: Vec3::new(0.0, 0.0, tile.layer as f32 + 20.),
+        ..Default::default()
+      },
+      ..default()
+    },
+    TileDebugInfoComponent,
+  )
 }
 
 fn spawn_tile(
-  asset_packs: &AssetPacks,
-  chunk_child_builder: &mut ChildBuilder,
+  mut commands: EntityCommands,
   tile: &Tile,
-  delay: f32,
+  asset_packs: &AssetPacks,
   settings: &Res<Settings>,
+  terrain: TerrainType,
 ) {
-  chunk_child_builder
-    .spawn((
-      Name::new("Tile (".to_string() + &tile.coords.grid.x.to_string() + "," + &tile.coords.grid.y.to_string() + ")"),
-      SpatialBundle {
-        transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
-        ..Default::default()
-      },
-    ))
-    .with_children(|parent| {
-      // The default sprite as a base colour
-      if !settings.draw_terrain_sprites || tile.terrain == TerrainType::Water {
-        parent.spawn(default_sprite(asset_packs, tile, delay));
-      }
-
-      if settings.draw_terrain_sprites {
-        // Lower layer terrain sprite
-        // if tile.layer > 1 {
-        //   parent.spawn((
-        //     Name::new("Lower Layer Terrain Sprite"),
-        //     SpriteBundle {
-        //       texture: match tile.terrain {
-        //         TerrainType::Sand => asset_packs.sand.texture.clone(),
-        //         _ => asset_packs.default.texture.clone(),
-        //       },
-        //       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 5.),
-        //       ..Default::default()
-        //     },
-        //     TextureAtlas {
-        //       layout: match tile.terrain {
-        //         TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
-        //         _ => asset_packs.default.texture_atlas_layout.clone(),
-        //       },
-        //       index: FILL,
-        //     },
-        //     TerrainSpriteTileComponent,
-        //     AnimationTimer {
-        //       timer: Timer::from_seconds(delay + LAYER_DELAY / 2., TimerMode::Once),
-        //     },
-        //   ));
-        // }
-
-        // The terrain sprite
-        if tile.terrain != TerrainType::Water {
-          parent.spawn(terrain_sprite(asset_packs, &tile, delay));
+  commands.with_children(|parent| {
+    if settings.draw_terrain_sprites {
+      match (terrain, tile.layer) {
+        (TerrainType::Water, _) => {
+          parent.spawn(terrain_fill_sprite(&asset_packs.default, terrain as usize));
         }
+        (TerrainType::Shore, layer) if layer > SHORE_LAYER as i32 => {
+          parent.spawn(terrain_fill_sprite(&asset_packs.shore, terrain as usize));
+        }
+        (TerrainType::Shore, layer) if layer == SHORE_LAYER as i32 => {
+          parent.spawn(terrain_sprite(tile, asset_packs));
+        }
+        (TerrainType::Sand, layer) if layer > SAND_LAYER as i32 => {
+          parent.spawn(terrain_fill_sprite(&asset_packs.sand, terrain as usize));
+        }
+        (TerrainType::Sand, layer) if layer == SAND_LAYER as i32 => {
+          parent.spawn(terrain_sprite(tile, asset_packs));
+        }
+        (TerrainType::Grass, layer) if layer > GRASS_LAYER as i32 => {
+          parent.spawn(terrain_fill_sprite(&asset_packs.grass, terrain as usize));
+        }
+        (TerrainType::Grass, layer) if layer == GRASS_LAYER as i32 => {
+          parent.spawn(terrain_sprite(tile, asset_packs));
+        }
+        (TerrainType::Forest, layer) if layer > FOREST_LAYER as i32 => {
+          parent.spawn(terrain_fill_sprite(&asset_packs.forest, terrain as usize));
+        }
+        (TerrainType::Forest, layer) if layer == FOREST_LAYER as i32 => {
+          parent.spawn(terrain_sprite(tile, asset_packs));
+        }
+        _ => {}
       }
-
-      // The tile debug info
-      if settings.spawn_tile_debug_info {
-        parent.spawn((
-          Name::new("Tile Debug Info"),
-          Text2dBundle {
-            text: Text::from_section(
-              format!(
-                "g{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
-                tile.coords.grid,
-                tile.terrain,
-                tile.tile_type,
-                get_sprite_index(&tile),
-                tile.layer
-              ),
-              TextStyle {
-                font: asset_packs.font.clone(),
-                font_size: 22.,
-                color: Color::WHITE,
-              },
-            )
-            .with_justify(JustifyText::Center),
-            visibility: Visibility::Hidden,
-            transform: Transform {
-              scale: Vec3::splat(0.1),
-              translation: Vec3::new(0.0, 0.0, tile.layer as f32 + 20.),
-              ..Default::default()
-            },
-            ..default()
-          },
-          TileDebugInfoComponent,
-        ));
-      }
-    });
+    }
+    return;
+  });
 }
 
 fn default_sprite(
   asset_packs: &AssetPacks,
   tile: &Tile,
-  delay: f32,
-) -> (
-  Name,
-  SpriteBundle,
-  TextureAtlas,
-  DefaultSpriteTileComponent,
-  AnimationTimer,
-) {
+) -> (Name, SpriteBundle, TextureAtlas, DefaultSpriteTileComponent) {
   (
     Name::new("Default Sprite"),
     SpriteBundle {
       texture: asset_packs.default.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-      visibility: Visibility::Hidden,
       ..Default::default()
     },
     TextureAtlas {
@@ -225,23 +263,28 @@ fn default_sprite(
       index: tile.default_sprite_index,
     },
     DefaultSpriteTileComponent,
-    AnimationTimer {
-      timer: Timer::from_seconds(delay, TimerMode::Once),
+  )
+}
+
+fn terrain_fill_sprite(asset_pack: &AssetPack, layer: usize) -> (Name, SpriteBundle, TextureAtlas) {
+  (
+    Name::new("Layer Fill ".as_str().to_owned() + layer.to_string().as_str()),
+    SpriteBundle {
+      texture: asset_pack.texture.clone(),
+      transform: Transform::from_xyz(0.0, 0.0, layer as f32 + 1.),
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: asset_pack.texture_atlas_layout.clone(),
+      index: if layer == WATER_LAYER { 0 } else { FILL },
     },
   )
 }
 
 fn terrain_sprite(
+  tile: &Tile,
   asset_packs: &AssetPacks,
-  tile: &&Tile,
-  delay: f32,
-) -> (
-  Name,
-  SpriteBundle,
-  TextureAtlas,
-  TerrainSpriteTileComponent,
-  AnimationTimer,
-) {
+) -> (Name, SpriteBundle, TextureAtlas, TerrainSpriteTileComponent) {
   (
     Name::new("Terrain Sprite"),
     SpriteBundle {
@@ -252,8 +295,7 @@ fn terrain_sprite(
         TerrainType::Forest => asset_packs.forest.texture.clone(),
         _ => panic!("Invalid terrain type for drawing a terrain sprite"),
       },
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 10.),
-      visibility: Visibility::Hidden,
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 2.),
       ..Default::default()
     },
     TextureAtlas {
@@ -267,9 +309,9 @@ fn terrain_sprite(
       index: get_sprite_index(&tile),
     },
     TerrainSpriteTileComponent,
-    AnimationTimer {
-      timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
-    },
+    // AnimationTimer {
+    //   timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
+    // },
   )
 }
 
@@ -303,11 +345,11 @@ fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChu
 
       // Determine terrain type based on noise
       let tile = match adjusted_noise {
-        n if n > 0.75 => DraftTile::new(Point::new(x, y), TerrainType::Forest, FOREST_TILE),
-        n if n > 0.6 => DraftTile::new(Point::new(x, y), TerrainType::Grass, GRASS_TILE),
-        n if n > 0.45 => DraftTile::new(Point::new(x, y), TerrainType::Sand, SAND_TILE),
-        n if n > 0.3 => DraftTile::new(Point::new(x, y), TerrainType::Shore, SHORE_TILE),
-        _ => DraftTile::new(Point::new(x, y), TerrainType::Water, WATER_TILE),
+        n if n > 0.75 => DraftTile::new(Point::new(x, y), TerrainType::Forest, FOREST_LAYER),
+        n if n > 0.6 => DraftTile::new(Point::new(x, y), TerrainType::Grass, GRASS_LAYER),
+        n if n > 0.45 => DraftTile::new(Point::new(x, y), TerrainType::Sand, SAND_LAYER),
+        n if n > 0.3 => DraftTile::new(Point::new(x, y), TerrainType::Shore, SHORE_LAYER),
+        _ => DraftTile::new(Point::new(x, y), TerrainType::Water, WATER_LAYER),
       };
 
       noise_stats.0 = noise_stats.0.min(normalised_noise);

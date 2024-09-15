@@ -1,4 +1,6 @@
-use crate::constants::{DRAW_SPRITES, PERMIT_TILE_LAYER_ADJUSTMENTS, SPAWN_TILE_DEBUG_INFO};
+use crate::constants::{
+  DRAW_TERRAIN_SPRITES, GENERATE_NEIGHBOUR_CHUNKS, PERMIT_TILE_LAYER_ADJUSTMENTS, SPAWN_TILE_DEBUG_INFO,
+};
 use bevy::app::{App, Plugin};
 use bevy::prelude::{Reflect, ReflectResource, Resource};
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -31,6 +33,7 @@ impl ShowDebugInfo {
 
 #[derive(Resource, Reflect)]
 pub struct Settings {
+  pub generate_neighbour_chunks: bool,
   pub spawn_tile_debug_info: bool, // Disabling massively speeds up the generation process
   pub draw_terrain_sprites: bool,
   pub permit_tile_layer_adjustments: bool,
@@ -40,8 +43,9 @@ pub struct Settings {
 impl Default for Settings {
   fn default() -> Self {
     Self {
+      generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       spawn_tile_debug_info: SPAWN_TILE_DEBUG_INFO,
-      draw_terrain_sprites: DRAW_SPRITES,
+      draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       permit_tile_layer_adjustments: PERMIT_TILE_LAYER_ADJUSTMENTS,
       world_gen: WorldGenerationSettings::default(),
     }

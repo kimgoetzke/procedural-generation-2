@@ -166,17 +166,18 @@ fn determine_tile_types(draft_tiles: Vec<DraftTile>, settings: &Res<Settings>) -
 }
 
 #[allow(dead_code)]
-pub fn get_neighbour_world_points(coords: &Coords, adjustment: i32) -> [Point; 8] {
-  let point = coords.world;
+pub fn get_chunk_spawn_points(spawn_point: &Point, adjustment: i32) -> [Point; 9] {
+  let p = spawn_point;
   let adjustment = adjustment - 1;
   [
-    Point::new(point.x - adjustment, point.y + adjustment),
-    Point::new(point.x, point.y + adjustment),
-    Point::new(point.x + adjustment, point.y + adjustment),
-    Point::new(point.x - adjustment, point.y),
-    Point::new(point.x + adjustment, point.y),
-    Point::new(point.x - adjustment, point.y - adjustment),
-    Point::new(point.x, point.y - adjustment),
-    Point::new(point.x + adjustment, point.y - adjustment),
+    Point::new(p.x - adjustment, p.y + adjustment),
+    Point::new(p.x, p.y + adjustment),
+    Point::new(p.x + adjustment, p.y + adjustment),
+    Point::new(p.x - adjustment, p.y),
+    Point::new(p.x, p.y),
+    Point::new(p.x + adjustment, p.y),
+    Point::new(p.x - adjustment, p.y - adjustment),
+    Point::new(p.x, p.y - adjustment),
+    Point::new(p.x + adjustment, p.y - adjustment),
   ]
 }

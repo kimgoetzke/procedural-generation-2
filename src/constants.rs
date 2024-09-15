@@ -8,8 +8,9 @@ pub const LAYER_DELAY: f32 = 2.;
 
 // Settings
 pub const SHOW_SETTINGS_UI: bool = true;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const SPAWN_TILE_DEBUG_INFO: bool = true;
-pub const DRAW_SPRITES: bool = true;
+pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
 
 // Window
@@ -34,12 +35,12 @@ pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
 pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
 
-// Default tiles
-pub const WATER_TILE: usize = 0;
-pub const SHORE_TILE: usize = 1;
-pub const SAND_TILE: usize = 2;
-pub const GRASS_TILE: usize = 3;
-pub const FOREST_TILE: usize = 4;
+// Layers
+pub const WATER_LAYER: usize = 0;
+pub const SHORE_LAYER: usize = 1;
+pub const SAND_LAYER: usize = 2;
+pub const GRASS_LAYER: usize = 3;
+pub const FOREST_LAYER: usize = 4;
 
 // Detailed tile sets
 pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
