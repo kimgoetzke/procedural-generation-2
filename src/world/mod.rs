@@ -214,32 +214,33 @@ fn spawn_tile(
 
 fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChunk {
   let mut tiles: Vec<DraftTile> = Vec::new();
-  let mut noise_stats: (f64, f64, f64, f64) = (0., 0., 0., 0.);
+  let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin = Perlin::new(settings.world_gen.noise_seed);
   let end = Point::new(start.x + CHUNK_SIZE - 1, start.y + CHUNK_SIZE - 1);
   let center = Point::new((start.x + end.x) / 2, (start.y + end.y) / 2);
-  let max_distance = (CHUNK_SIZE as f64) / 2.0;
+  let max_distance = (CHUNK_SIZE as f64) / 2.;
   let frequency = settings.world_gen.noise_frequency;
-  let scale_factor = settings.world_gen.noise_scale_factor;
+  let amplitude = settings.world_gen.noise_amplitude;
+  let elevation = settings.world_gen.elevation;
   let falloff_strength = settings.world_gen.falloff_strength;
 
   for x in start.x..end.x {
     for y in (start.y..end.y).rev() {
+      // Calculate noise value
       let noise = perlin.get([x as f64 * frequency, y as f64 * frequency]);
-      let normalized_noise = (noise + 1.0) / 2.0;
-      let scaled_noise = normalized_noise * scale_factor;
+      let clamped_noise = (noise * amplitude).clamp(-1., 1.);
+      let normalised_noise = (clamped_noise + 1.) / 2.;
+      let normalised_noise = (normalised_noise + elevation).clamp(0., 1.);
 
+      // Adjust noise based on distance from center using falloff map
       let distance_x = (x - center.x).abs() as f64 / max_distance;
       let distance_y = (y - center.y).abs() as f64 / max_distance;
-      let distance_from_center = distance_x.max(distance_y); // Square-like falloff
-      let falloff = (1.0 - distance_from_center).max(0.0).powf(falloff_strength);
+      let distance_from_center = distance_x.max(distance_y);
+      let falloff = (1. - distance_from_center).max(0.).powf(falloff_strength);
+      let adjusted_noise = normalised_noise * falloff;
 
-      let adjusted_noise = (scaled_noise * 0.6) + (falloff * 0.4);
-
-      // let tile = if distance > max_distance * 0.95 {
-      //   DraftTile::new(Point::new(x, y), TerrainType::Water, WATER_TILE)
-      // } else {
+      // Determine terrain type based on noise
       let tile = match adjusted_noise {
         n if n > 0.75 => DraftTile::new(Point::new(x, y), TerrainType::Forest, FOREST_TILE),
         n if n > 0.6 => DraftTile::new(Point::new(x, y), TerrainType::Grass, GRASS_TILE),
@@ -248,12 +249,12 @@ fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChu
         _ => DraftTile::new(Point::new(x, y), TerrainType::Water, WATER_TILE),
       };
 
-      noise_stats.0 = noise_stats.0.min(noise);
-      noise_stats.1 = noise_stats.1.max(noise);
+      noise_stats.0 = noise_stats.0.min(normalised_noise);
+      noise_stats.1 = noise_stats.1.max(normalised_noise);
       noise_stats.2 = noise_stats.2.min(adjusted_noise);
       noise_stats.3 = noise_stats.3.max(adjusted_noise);
-
       trace!("{:?} => Noise: {}", &tile, noise);
+
       tiles.push(tile);
     }
   }

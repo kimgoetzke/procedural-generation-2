@@ -53,11 +53,13 @@ impl Default for Settings {
 pub struct WorldGenerationSettings {
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
   pub noise_seed: u32,
-  #[inspector(min = 0.0, max = 5.0, display = NumberDisplay::Slider)]
+  #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   pub noise_frequency: f64,
-  #[inspector(min = 0.0, max = 2.0, display = NumberDisplay::Slider)]
-  pub noise_scale_factor: f64,
-  #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
+  #[inspector(min = 0., max = 3.0, display = NumberDisplay::Slider)]
+  pub noise_amplitude: f64,
+  #[inspector(min = -1., max = 1., display = NumberDisplay::Slider)]
+  pub elevation: f64,
+  #[inspector(min = 0.0, max = 2.5, display = NumberDisplay::Slider)]
   pub falloff_strength: f64,
 }
 
@@ -65,9 +67,10 @@ impl Default for WorldGenerationSettings {
   fn default() -> Self {
     Self {
       noise_seed: 1,
-      noise_frequency: 0.1,
-      noise_scale_factor: 1.,
-      falloff_strength: 1., // Higher values should result in more water at edges
+      noise_frequency: 0.1, // The higher the frequency, the more detailed the terrain
+      noise_amplitude: 1.,  // The higher the amplitude, the higher the peaks and lower the valleys
+      elevation: 0.,        // Shifts the entire terrain up or down
+      falloff_strength: 1., // The higher the falloff strength, the closer to the center the falloff begins
     }
   }
 }

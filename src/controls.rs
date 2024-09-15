@@ -68,17 +68,11 @@ fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut setti
 
   // Scale factor
   if keyboard_input.just_pressed(KeyCode::KeyY) {
-    settings.world_gen.noise_scale_factor += 0.5;
-    info!(
-      "[Y] Increased noise scale factor to [{}]",
-      settings.world_gen.noise_scale_factor
-    );
+    settings.world_gen.elevation += 0.5;
+    info!("[Y] Increased noise scale factor to [{}]", settings.world_gen.elevation);
   } else if keyboard_input.just_pressed(KeyCode::KeyH) {
-    settings.world_gen.noise_scale_factor -= 0.5;
-    info!(
-      "[H] Decreased noise scale factor to [{}]",
-      settings.world_gen.noise_scale_factor
-    );
+    settings.world_gen.elevation -= 0.5;
+    info!("[H] Decreased noise scale factor to [{}]", settings.world_gen.elevation);
   }
 
   // Falloff strength
