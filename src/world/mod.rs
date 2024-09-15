@@ -185,26 +185,25 @@ fn spawn_tile(
       }
 
       // The tile debug info
-      let text = format!(
-        "{:?}\n{:?}\n{:?}\nSprite index {:?}\nBase layer {:?}",
-        tile.coords.grid,
-        tile.terrain,
-        tile.tile_type,
-        get_sprite_index(&tile),
-        tile.layer
-      );
       parent.spawn((
         Name::new("Tile Debug Info"),
         Text2dBundle {
           text: Text::from_section(
-            text,
+            format!(
+              "g{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
+              tile.coords.grid,
+              tile.terrain,
+              tile.tile_type,
+              get_sprite_index(&tile),
+              tile.layer
+            ),
             TextStyle {
-              font: Default::default(),
+              font: asset_packs.font.clone(),
               font_size: 22.,
               color: Color::WHITE,
             },
           )
-          .with_justify(JustifyText::Left),
+          .with_justify(JustifyText::Center),
           visibility: Visibility::Hidden,
           transform: Transform {
             scale: Vec3::splat(0.1),

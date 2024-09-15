@@ -84,4 +84,6 @@ pub(crate) fn get_blue() -> Color {
 }
 
 // Fonts
-pub(crate) const DEFAULT_FONT: &str = "fonts/bulkypix.ttf";
+pub(crate) const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
+pub(crate) const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
+pub(crate) const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";

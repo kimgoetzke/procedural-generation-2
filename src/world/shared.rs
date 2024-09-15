@@ -119,6 +119,7 @@ pub fn get_sprite_index(tile: &Tile) -> usize {
 
 #[derive(Debug, Clone)]
 pub struct AssetPacks {
+  pub font: Handle<Font>,
   pub default: AssetPack,
   pub sand: AssetPack,
 }
@@ -145,6 +146,7 @@ pub fn get_asset_packs(
   let default_texture_atlas_layout = texture_atlas_layouts.add(default_layout);
 
   AssetPacks {
+    font: asset_server.load(DEFAULT_FONT),
     default: AssetPack {
       texture: asset_server.load(TILE_SET_DEFAULT_PATH),
       texture_atlas_layout: default_texture_atlas_layout,
