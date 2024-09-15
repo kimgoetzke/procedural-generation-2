@@ -1,6 +1,6 @@
 use crate::constants::{
   DEFAULT_FONT, TILE_SET_COLUMNS, TILE_SET_DEFAULT_COLUMNS, TILE_SET_DEFAULT_PATH, TILE_SET_DEFAULT_ROWS,
-  TILE_SET_ROWS, TILE_SET_SAND_PATH, TILE_SIZE,
+  TILE_SET_FOREST_PATH, TILE_SET_GRASS_PATH, TILE_SET_ROWS, TILE_SET_SAND_PATH, TILE_SET_SHORE_PATH, TILE_SIZE,
 };
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::math::UVec2;
@@ -10,7 +10,10 @@ use bevy::prelude::{Font, Image, Res, ResMut, TextureAtlasLayout};
 pub struct AssetPacks {
   pub font: Handle<Font>,
   pub default: AssetPack,
+  pub shore: AssetPack,
   pub sand: AssetPack,
+  pub grass: AssetPack,
+  pub forest: AssetPack,
 }
 
 #[derive(Debug, Clone)]
@@ -40,13 +43,21 @@ pub fn get_asset_packs(
       texture: asset_server.load(TILE_SET_DEFAULT_PATH),
       texture_atlas_layout: default_texture_atlas_layout,
     },
+    shore: AssetPack {
+      texture: asset_server.load(TILE_SET_SHORE_PATH),
+      texture_atlas_layout: texture_atlas_layout.clone(),
+    },
     sand: AssetPack {
       texture: asset_server.load(TILE_SET_SAND_PATH),
       texture_atlas_layout: texture_atlas_layout.clone(),
     },
-    // grass: AssetPack {
-    //   texture: asset_server.load(TILE_SET_GRASS_PATH),
-    //   texture_atlas_layout: texture_atlas_layout.clone(),
-    // },
+    grass: AssetPack {
+      texture: asset_server.load(TILE_SET_GRASS_PATH),
+      texture_atlas_layout: texture_atlas_layout.clone(),
+    },
+    forest: AssetPack {
+      texture: asset_server.load(TILE_SET_FOREST_PATH),
+      texture_atlas_layout: texture_atlas_layout.clone(),
+    },
   }
 }

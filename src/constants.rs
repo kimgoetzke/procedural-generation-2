@@ -42,8 +42,10 @@ pub const GRASS_TILE: usize = 3;
 pub const FOREST_TILE: usize = 4;
 
 // Detailed tile sets
+pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
 pub const TILE_SET_SAND_PATH: &str = "tilesets/sand.png";
 pub const TILE_SET_GRASS_PATH: &str = "tilesets/grass.png";
+pub const TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
 pub const TILE_SET_COLUMNS: u32 = 9;
 pub const TILE_SET_ROWS: u32 = 3;
 

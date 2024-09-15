@@ -129,52 +129,41 @@ fn spawn_tile(
     ))
     .with_children(|parent| {
       // The default sprite as a base colour
-      parent.spawn((
-        Name::new("Default Sprite"),
-        SpriteBundle {
-          texture: asset_packs.default.texture.clone(),
-          transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-          visibility: Visibility::Hidden,
-          ..Default::default()
-        },
-        TextureAtlas {
-          layout: asset_packs.default.texture_atlas_layout.clone(),
-          index: tile.default_sprite_index,
-        },
-        DefaultSpriteTileComponent,
-        AnimationTimer {
-          timer: Timer::from_seconds(delay, TimerMode::Once),
-        },
-      ));
+      if !settings.draw_terrain_sprites || tile.terrain == TerrainType::Water {
+        parent.spawn(default_sprite(asset_packs, tile, delay));
+      }
 
-      // The terrain sprite
       if settings.draw_terrain_sprites {
-        parent.spawn((
-          Name::new("Terrain Sprite"),
-          SpriteBundle {
-            texture: match tile.terrain {
-              TerrainType::Sand => asset_packs.sand.texture.clone(),
-              _ => asset_packs.default.texture.clone(),
-            },
-            transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 10.),
-            visibility: Visibility::Hidden,
-            ..Default::default()
-          },
-          TextureAtlas {
-            layout: match tile.terrain {
-              TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
-              _ => asset_packs.default.texture_atlas_layout.clone(),
-            },
-            index: match tile.terrain {
-              TerrainType::Sand => get_sprite_index(&tile),
-              _ => tile.default_sprite_index,
-            },
-          },
-          TerrainSpriteTileComponent,
-          AnimationTimer {
-            timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
-          },
-        ));
+        // Lower layer terrain sprite
+        // if tile.layer > 1 {
+        //   parent.spawn((
+        //     Name::new("Lower Layer Terrain Sprite"),
+        //     SpriteBundle {
+        //       texture: match tile.terrain {
+        //         TerrainType::Sand => asset_packs.sand.texture.clone(),
+        //         _ => asset_packs.default.texture.clone(),
+        //       },
+        //       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 5.),
+        //       ..Default::default()
+        //     },
+        //     TextureAtlas {
+        //       layout: match tile.terrain {
+        //         TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
+        //         _ => asset_packs.default.texture_atlas_layout.clone(),
+        //       },
+        //       index: FILL,
+        //     },
+        //     TerrainSpriteTileComponent,
+        //     AnimationTimer {
+        //       timer: Timer::from_seconds(delay + LAYER_DELAY / 2., TimerMode::Once),
+        //     },
+        //   ));
+        // }
+
+        // The terrain sprite
+        if tile.terrain != TerrainType::Water {
+          parent.spawn(terrain_sprite(asset_packs, &tile, delay));
+        }
       }
 
       // The tile debug info
@@ -210,6 +199,78 @@ fn spawn_tile(
         ));
       }
     });
+}
+
+fn default_sprite(
+  asset_packs: &AssetPacks,
+  tile: &Tile,
+  delay: f32,
+) -> (
+  Name,
+  SpriteBundle,
+  TextureAtlas,
+  DefaultSpriteTileComponent,
+  AnimationTimer,
+) {
+  (
+    Name::new("Default Sprite"),
+    SpriteBundle {
+      texture: asset_packs.default.texture.clone(),
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+      visibility: Visibility::Hidden,
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: asset_packs.default.texture_atlas_layout.clone(),
+      index: tile.default_sprite_index,
+    },
+    DefaultSpriteTileComponent,
+    AnimationTimer {
+      timer: Timer::from_seconds(delay, TimerMode::Once),
+    },
+  )
+}
+
+fn terrain_sprite(
+  asset_packs: &AssetPacks,
+  tile: &&Tile,
+  delay: f32,
+) -> (
+  Name,
+  SpriteBundle,
+  TextureAtlas,
+  TerrainSpriteTileComponent,
+  AnimationTimer,
+) {
+  (
+    Name::new("Terrain Sprite"),
+    SpriteBundle {
+      texture: match tile.terrain {
+        TerrainType::Shore => asset_packs.shore.texture.clone(),
+        TerrainType::Sand => asset_packs.sand.texture.clone(),
+        TerrainType::Grass => asset_packs.grass.texture.clone(),
+        TerrainType::Forest => asset_packs.forest.texture.clone(),
+        _ => panic!("Invalid terrain type for drawing a terrain sprite"),
+      },
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 10.),
+      visibility: Visibility::Hidden,
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: match tile.terrain {
+        TerrainType::Shore => asset_packs.shore.texture_atlas_layout.clone(),
+        TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
+        TerrainType::Grass => asset_packs.grass.texture_atlas_layout.clone(),
+        TerrainType::Forest => asset_packs.forest.texture_atlas_layout.clone(),
+        _ => panic!("Invalid terrain type for drawing a terrain sprite"),
+      },
+      index: get_sprite_index(&tile),
+    },
+    TerrainSpriteTileComponent,
+    AnimationTimer {
+      timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
+    },
+  )
 }
 
 fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChunk {
