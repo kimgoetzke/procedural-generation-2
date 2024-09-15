@@ -1,4 +1,5 @@
-use crate::world::shared::{Point, TerrainType};
+use crate::world::coords::Point;
+use crate::world::terrain_type::TerrainType;
 use crate::world::tile::Tile;
 use bevy::log::*;
 

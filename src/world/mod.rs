@@ -1,19 +1,25 @@
 use crate::events::{RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::{Settings, ShowDebugInfo};
 use crate::settings::*;
+use crate::world::asset_packs::{get_asset_packs, AssetPacks};
 use crate::world::chunk::{get_neighbour_world_points, Chunk, DraftChunk};
-use crate::world::shared::*;
+use crate::world::coords::Point;
 use crate::world::tile::DraftTile;
+use crate::world::tile_type::*;
 use bevy::app::{App, Plugin, Startup};
 use bevy::prelude::*;
 use noise::{NoiseFn, Perlin};
 use std::time::SystemTime;
 use tile::Tile;
+use crate::world::terrain_type::TerrainType;
 
+mod asset_packs;
 mod chunk;
+mod coords;
 mod neighbours;
-mod shared;
+mod terrain_type;
 mod tile;
+mod tile_type;
 
 pub struct WorldPlugin;
 

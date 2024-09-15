@@ -1,5 +1,6 @@
-use crate::settings::TILE_SIZE;
-use crate::world::shared::{Coords, Point, TerrainType, TileType};
+use crate::world::coords::{Coords, Point};
+use crate::world::terrain_type::TerrainType;
+use crate::world::tile_type::TileType;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftTile {
@@ -11,7 +12,7 @@ pub struct DraftTile {
 impl DraftTile {
   pub fn new(grid_location: Point, terrain: TerrainType, layer: usize) -> Self {
     Self {
-      coords: Coords::new_grid(grid_location, TILE_SIZE),
+      coords: Coords::new_grid(grid_location),
       terrain,
       layer: layer as i32,
     }

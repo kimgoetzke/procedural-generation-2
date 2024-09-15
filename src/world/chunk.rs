@@ -1,8 +1,10 @@
 use crate::resources::Settings;
 use crate::settings::CHUNK_SIZE;
+use crate::world::coords::{Coords, Point};
 use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
-use crate::world::shared::{Coords, Point, TerrainType, TileType};
+use crate::world::terrain_type::TerrainType;
 use crate::world::tile::{DraftTile, Tile};
+use crate::world::tile_type::TileType;
 use bevy::log::warn;
 use bevy::prelude::Res;
 use bevy::utils::HashMap;
