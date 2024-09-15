@@ -14,10 +14,6 @@ pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
 
 // Window
-pub const GRID_COLS: usize = 1000;
-pub const GRID_ROWS: usize = 800;
-pub const GRID_W: usize = GRID_COLS * TILE_WIDTH;
-pub const GRID_H: usize = GRID_ROWS * TILE_HEIGHT;
 pub const WINDOW_WIDTH: f32 = 1280.;
 pub const WINDOW_HEIGHT: f32 = 720.;
 pub const BG_COLOR: (u8, u8, u8) = (181, 212, 220);

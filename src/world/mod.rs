@@ -125,7 +125,7 @@ fn spawn_world(
       let tile_commands = commands.entity(tile.entity);
       spawn_tile(tile_commands, &tile.tile, &asset_packs, &settings, terrain_type);
     }
-    debug!("Spawned [{:?}] tiles within {} ms", terrain_type, get_time() - t2);
+    debug!("Spawned all [{:?}] tiles within {} ms", terrain_type, get_time() - t2);
   }
 
   info!("✅  World generation took {} ms", get_time() - t1);
@@ -361,8 +361,8 @@ fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChu
       tiles.push(tile);
     }
   }
-  debug!("Noise: {:.2} to {:.2}", noise_stats.0, noise_stats.1);
-  debug!("Adjusted noise: {:.2} to {:.2}", noise_stats.2, noise_stats.3);
+  trace!("Noise: {:.2} to {:.2}", noise_stats.0, noise_stats.1);
+  trace!("Adjusted noise: {:.2} to {:.2}", noise_stats.2, noise_stats.3);
   debug!("Generated draft chunk at {:?} within {} ms", start, get_time() - time);
 
   DraftChunk::new(start, tiles)
