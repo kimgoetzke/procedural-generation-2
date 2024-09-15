@@ -1,4 +1,4 @@
-use crate::settings::{CHUNK_SIZE, TILE_SIZE};
+use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use std::fmt;
 
 #[derive(Clone, Eq, PartialEq, Hash)]

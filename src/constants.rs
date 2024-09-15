@@ -7,6 +7,8 @@ pub const BASE_DELAY: f32 = 0.; // 0.0025
 pub const LAYER_DELAY: f32 = 2.;
 
 // Settings
+pub const SHOW_SETTINGS_UI: bool = true;
+pub const SPAWN_TILE_DEBUG_INFO: bool = false;
 pub const DRAW_SPRITES: bool = false;
 pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
 
@@ -20,7 +22,7 @@ pub const WINDOW_HEIGHT: f32 = 720.;
 pub const BG_COLOR: (u8, u8, u8) = (181, 212, 220);
 
 // Chunks
-pub const CHUNK_SIZE: i32 = 32;
+pub const CHUNK_SIZE: i32 = 64;
 
 // Sprites
 pub const TILE_SIZE: u32 = 32;

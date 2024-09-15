@@ -1,4 +1,4 @@
-use crate::settings::VERY_DARK_2;
+use crate::constants::VERY_DARK_2;
 use bevy::app::{App, Plugin, Startup};
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::core_pipeline::tonemapping::Tonemapping;

@@ -1,4 +1,4 @@
-use crate::settings::*;
+use crate::constants::*;
 use crate::world::tile::Tile;
 
 #[allow(dead_code)]

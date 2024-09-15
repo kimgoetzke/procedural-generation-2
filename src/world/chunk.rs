@@ -1,5 +1,5 @@
+use crate::constants::CHUNK_SIZE;
 use crate::resources::Settings;
-use crate::settings::CHUNK_SIZE;
 use crate::world::coords::{Coords, Point};
 use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::world::terrain_type::TerrainType;

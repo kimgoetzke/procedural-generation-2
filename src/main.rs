@@ -1,25 +1,26 @@
 mod camera;
+mod constants;
 mod controls;
 mod events;
 mod resources;
-mod settings;
+mod ui;
 mod world;
 
 use crate::camera::CameraPlugin;
+use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
 use crate::events::SharedEventsPlugin;
 use crate::resources::SharedResourcesPlugin;
-use crate::settings::{WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::ui::UiPlugin;
 use crate::world::WorldPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};
-#[cfg(feature = "dev")]
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
-#[cfg(feature = "dev")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_pancam::PanCamPlugin;
 
 fn main() {
@@ -50,11 +51,18 @@ fn main() {
         .build(),
     )
     .add_plugins(PanCamPlugin::default())
-    .add_plugins(CameraPlugin)
-    .add_plugins((WorldPlugin, SharedEventsPlugin, SharedResourcesPlugin, ControlPlugin));
+    .add_plugins((
+      CameraPlugin,
+      WorldPlugin,
+      SharedEventsPlugin,
+      SharedResourcesPlugin,
+      ControlPlugin,
+      UiPlugin,
+    ));
 
-  #[cfg(feature = "dev")]
-  app.add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)));
+  app
+    .add_plugins(DefaultInspectorConfigPlugin)
+    .add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)));
 
   app.run();
 }

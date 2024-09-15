@@ -1,5 +1,9 @@
 # Procedural Generation Project 2
 
+## Attribution
+
+- Minimal 5x5 & 5x7 Pixel Fonts by [kheftel](https://opengameart.org/content/minimalist-pixel-fonts) under CC0.
+
 ## How to develop
 
 ### Using Nix Flakes, JetBrains RustRover & Direnv
