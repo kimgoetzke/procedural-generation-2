@@ -18,7 +18,11 @@ impl Plugin for SharedResourcesPlugin {
       .register_type::<Settings>()
       .insert_resource(Settings::default())
       .init_resource::<GeneralGenerationSettings>()
-      .init_resource::<WorldGenerationSettings>();
+      .register_type::<GeneralGenerationSettings>()
+      .insert_resource(GeneralGenerationSettings::default())
+      .init_resource::<WorldGenerationSettings>()
+      .register_type::<WorldGenerationSettings>()
+      .insert_resource(WorldGenerationSettings::default());
   }
 }
 

@@ -10,9 +10,9 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(grid_location: Point, terrain: TerrainType, layer: usize) -> Self {
+  pub fn new(chunk_location: Point, grid_location: Point, terrain: TerrainType, layer: usize) -> Self {
     Self {
-      coords: Coords::new_grid(grid_location),
+      coords: Coords::new_grid_for_tile(chunk_location, grid_location),
       terrain,
       layer: layer as i32,
     }

@@ -13,11 +13,6 @@ pub const SPAWN_TILE_DEBUG_INFO: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
 
-// Window
-pub const WINDOW_WIDTH: f32 = 1280.;
-pub const WINDOW_HEIGHT: f32 = 720.;
-pub const BG_COLOR: (u8, u8, u8) = (181, 212, 220);
-
 // Chunks
 pub const CHUNK_SIZE: i32 = 64;
 
@@ -26,17 +21,17 @@ pub const TILE_SIZE: u32 = 32;
 const TILE_WIDTH: usize = 32;
 const TILE_HEIGHT: usize = 32;
 
-// Default tile set
-pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
-pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
-pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
-
 // Layers
 pub const WATER_LAYER: usize = 0;
 pub const SHORE_LAYER: usize = 1;
 pub const SAND_LAYER: usize = 2;
 pub const GRASS_LAYER: usize = 3;
 pub const FOREST_LAYER: usize = 4;
+
+// Default tile set
+pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
+pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
+pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
 
 // Detailed tile sets
 pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
@@ -46,7 +41,7 @@ pub const TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
 pub const TILE_SET_COLUMNS: u32 = 9;
 pub const TILE_SET_ROWS: u32 = 3;
 
-// Detailed tiles
+// Tile set sprite indices
 pub const FILL: usize = 4;
 pub const INNER_CORNER_BOTTOM_LEFT: usize = 2;
 pub const INNER_CORNER_BOTTOM_RIGHT: usize = 0;
@@ -89,3 +84,7 @@ pub(crate) fn get_blue() -> Color {
 pub(crate) const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
 pub(crate) const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
 pub(crate) const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";
+
+// Window
+pub const WINDOW_WIDTH: f32 = 1280.;
+pub const WINDOW_HEIGHT: f32 = 720.;

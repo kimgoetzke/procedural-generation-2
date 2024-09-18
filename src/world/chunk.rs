@@ -7,21 +7,41 @@ use crate::world::tile::{DraftTile, Tile};
 use crate::world::tile_type::TileType;
 use bevy::log::warn;
 use bevy::prelude::Res;
-use bevy::utils::HashMap;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Plane {
+  plane: Vec<Vec<Option<DraftTile>>>,
+}
+
+impl Plane {
+  pub fn new(plane: Vec<Vec<Option<DraftTile>>>) -> Self {
+    Self { plane }
+  }
+
+  pub fn get(&self, x: i32, y: i32) -> Option<&DraftTile> {
+    let i = x as usize;
+    let j = y as usize;
+    if i < self.plane.len() && j < self.plane[0].len() {
+      self.plane[i][j].as_ref()
+    } else {
+      None
+    }
+  }
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftChunk {
   pub coords: Coords,
   center: Point,
-  draft_tiles: Vec<DraftTile>,
+  draft_tiles: Plane,
 }
 
 impl DraftChunk {
-  pub fn new(world_location: Point, draft_tiles: Vec<DraftTile>) -> Self {
+  pub fn new(world_location: Point, draft_tiles: Vec<Vec<Option<DraftTile>>>) -> Self {
     Self {
       center: Point::new(world_location.x + (CHUNK_SIZE / 2), world_location.y + (CHUNK_SIZE / 2)),
-      coords: Coords::new_world(world_location),
-      draft_tiles,
+      coords: Coords::new_world_for_chunk(world_location),
+      draft_tiles: Plane::new(draft_tiles),
     }
   }
 
@@ -42,127 +62,125 @@ pub struct Chunk {
   pub tiles: Vec<Tile>,
 }
 
-fn determine_tile_types(draft_tiles: Vec<DraftTile>, settings: &Res<Settings>) -> Vec<Tile> {
-  let neighbours_map: HashMap<Point, NeighbourTiles> = {
-    let tiles = &draft_tiles;
-    let mut map = HashMap::new();
+fn get_neighbours(of: &DraftTile, from: &Plane) -> NeighbourTiles {
+  let x = of.coords.chunk.x;
+  let y = of.coords.chunk.y;
+  let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
+  let mut neighbours = NeighbourTiles::empty();
 
-    for draft_tile in &draft_tiles {
-      let mut neighbours = NeighbourTiles::empty();
-      let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
-
-      for point in neighbour_points.iter() {
-        if let Some(neighbour) = tiles
-          .iter()
-          .find(|t| t.coords.grid == Point::new(draft_tile.coords.grid.x + point.0, draft_tile.coords.grid.y + point.1))
-        {
-          neighbours.put(NeighbourTile::new(
-            Point::new(point.0, point.1),
-            neighbour.terrain,
-            neighbour.terrain == draft_tile.terrain || neighbour.layer > draft_tile.layer,
-          ));
-        } else {
-          neighbours.put(NeighbourTile::default(Point::new(point.0, point.1)));
-        }
-      }
-
-      map.insert(draft_tile.coords.grid.clone(), neighbours);
+  for point in neighbour_points.iter() {
+    if let Some(neighbour) = &from.get(x + point.0, y + point.1) {
+      let neighbour_tile = NeighbourTile::new(
+        Point::new(point.0, point.1),
+        neighbour.terrain,
+        neighbour.terrain == of.terrain || neighbour.layer > of.layer,
+      );
+      neighbours.put(neighbour_tile);
+    } else {
+      let neighbour_tile = NeighbourTile::default(Point::new(point.0, point.1));
+      neighbours.put(neighbour_tile);
     }
+  }
 
-    map
-  };
+  neighbours
+}
 
+fn determine_tile_types(draft_tiles: Plane, settings: &Res<Settings>) -> Vec<Tile> {
   let mut final_tiles = Vec::new();
-  for tile in draft_tiles.iter() {
-    if tile.terrain == TerrainType::Water {
-      final_tiles.push(Tile::from(tile.clone(), TileType::Fill));
-      continue;
-    }
+  for row in &draft_tiles.plane {
+    for cell in row {
+      if let Some(draft_tile) = cell {
+        if draft_tile.terrain == TerrainType::Water {
+          final_tiles.push(Tile::from(draft_tile.clone(), TileType::Fill));
+          continue;
+        }
 
-    let ns = neighbours_map.get(&tile.coords.grid).unwrap();
-    let same_neighbours = ns.count_same();
+        let n = get_neighbours(draft_tile, &draft_tiles);
+        let same_neighbours = n.count_same();
 
-    let tile_type = match same_neighbours {
-      8 => TileType::Fill,
-      7 if !ns.top_left.same => TileType::OuterCornerTopLeft,
-      7 if !ns.top_right.same => TileType::OuterCornerTopRight,
-      7 if !ns.bottom_left.same => TileType::OuterCornerBottomLeft,
-      7 if !ns.bottom_right.same => TileType::OuterCornerBottomRight,
-      7 if ns.all_top_same() && !ns.bottom.same => TileType::TopFill,
-      7 if ns.all_right_same() && !ns.left.same => TileType::RightFill,
-      7 if ns.all_bottom_same() && !ns.top.same => TileType::BottomFill,
-      7 if ns.all_left_same() && !ns.right.same => TileType::LeftFill,
-      6 if ns.all_top_same() && (ns.bottom_left.same || ns.bottom_right.same) && !ns.bottom.same => TileType::TopFill,
-      6 if ns.all_right_same() && (ns.top_left.same || ns.bottom_left.same) && !ns.left.same => TileType::RightFill,
-      6 if ns.all_bottom_same() && (ns.top_left.same || ns.top_right.same) && !ns.top.same => TileType::BottomFill,
-      6 if ns.all_left_same() && (ns.top_right.same || ns.bottom_right.same) && !ns.right.same => TileType::LeftFill,
-      6 if !ns.top_right.same && !ns.bottom_left.same => TileType::TopLeftToBottomRightBridge,
-      6 if !ns.top_left.same && !ns.bottom_right.same => TileType::TopRightToBottomLeftBridge,
-      6 if ns.all_top_same() && ns.all_sides_same() => TileType::TopFill,
-      6 if ns.all_right_same() && ns.all_sides_same() => TileType::RightFill,
-      6 if ns.all_bottom_same() && ns.all_sides_same() => TileType::BottomFill,
-      6 if ns.all_left_same() && ns.all_sides_same() => TileType::LeftFill,
-      5 if ns.all_top_same() && ns.left.same && ns.right.same => TileType::TopFill,
-      5 if ns.all_right_same() && ns.top.same && ns.bottom.same => TileType::RightFill,
-      5 if ns.all_bottom_same() && ns.left.same && ns.right.same => TileType::BottomFill,
-      5 if ns.all_left_same() && ns.top.same && ns.bottom.same => TileType::LeftFill,
-      5 if ns.all_top_same() && ns.all_right_same() => TileType::InnerCornerTopRight,
-      5 if ns.all_top_same() && ns.all_left_same() => TileType::InnerCornerTopLeft,
-      5 if ns.all_bottom_same() && ns.all_right_same() => TileType::InnerCornerBottomRight,
-      5 if ns.all_bottom_same() && ns.all_left_same() => TileType::InnerCornerBottomLeft,
-      5 if ns.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
-      5 if ns.all_direction_top_right_same() => TileType::InnerCornerTopRight,
-      5 if ns.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
-      5 if ns.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
-      4 if ns.all_left_different() && !ns.top.same => TileType::InnerCornerBottomRight,
-      4 if ns.all_left_different() && !ns.bottom.same => TileType::InnerCornerTopRight,
-      4 if ns.all_right_different() && !ns.top.same => TileType::InnerCornerBottomLeft,
-      4 if ns.all_right_different() && !ns.bottom.same => TileType::InnerCornerTopLeft,
-      4 if ns.all_top_different() && !ns.right.same => TileType::InnerCornerBottomLeft,
-      4 if ns.all_top_different() && !ns.left.same => TileType::InnerCornerBottomRight,
-      4 if ns.all_bottom_different() && !ns.left.same => TileType::InnerCornerTopRight,
-      4 if ns.all_bottom_different() && !ns.right.same => TileType::InnerCornerTopLeft,
-      4 if ns.all_direction_top_left_different() => TileType::OuterCornerTopLeft,
-      4 if ns.all_direction_top_right_different() => TileType::OuterCornerTopRight,
-      4 if ns.all_direction_bottom_left_different() => TileType::OuterCornerBottomLeft,
-      4 if ns.all_direction_bottom_right_different() => TileType::OuterCornerBottomRight,
-      4 if ns.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
-      4 if ns.all_direction_top_right_same() => TileType::InnerCornerTopRight,
-      4 if ns.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
-      4 if ns.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
-      4 => TileType::Single,
-      3 if ns.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
-      3 if ns.all_direction_top_right_same() => TileType::InnerCornerTopRight,
-      3 if ns.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
-      3 if ns.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
-      3 => TileType::Single,
-      2 => TileType::Single,
-      1 => TileType::Single,
-      _ => TileType::Unknown,
-    };
+        let tile_type = match same_neighbours {
+          8 => TileType::Fill,
+          7 if !n.top_left.same => TileType::OuterCornerTopLeft,
+          7 if !n.top_right.same => TileType::OuterCornerTopRight,
+          7 if !n.bottom_left.same => TileType::OuterCornerBottomLeft,
+          7 if !n.bottom_right.same => TileType::OuterCornerBottomRight,
+          7 if n.all_top_same() && !n.bottom.same => TileType::TopFill,
+          7 if n.all_right_same() && !n.left.same => TileType::RightFill,
+          7 if n.all_bottom_same() && !n.top.same => TileType::BottomFill,
+          7 if n.all_left_same() && !n.right.same => TileType::LeftFill,
+          6 if n.all_top_same() && (n.bottom_left.same || n.bottom_right.same) && !n.bottom.same => TileType::TopFill,
+          6 if n.all_right_same() && (n.top_left.same || n.bottom_left.same) && !n.left.same => TileType::RightFill,
+          6 if n.all_bottom_same() && (n.top_left.same || n.top_right.same) && !n.top.same => TileType::BottomFill,
+          6 if n.all_left_same() && (n.top_right.same || n.bottom_right.same) && !n.right.same => TileType::LeftFill,
+          6 if !n.top_right.same && !n.bottom_left.same => TileType::TopLeftToBottomRightBridge,
+          6 if !n.top_left.same && !n.bottom_right.same => TileType::TopRightToBottomLeftBridge,
+          6 if n.all_top_same() && n.all_sides_same() => TileType::TopFill,
+          6 if n.all_right_same() && n.all_sides_same() => TileType::RightFill,
+          6 if n.all_bottom_same() && n.all_sides_same() => TileType::BottomFill,
+          6 if n.all_left_same() && n.all_sides_same() => TileType::LeftFill,
+          5 if n.all_top_same() && n.left.same && n.right.same => TileType::TopFill,
+          5 if n.all_right_same() && n.top.same && n.bottom.same => TileType::RightFill,
+          5 if n.all_bottom_same() && n.left.same && n.right.same => TileType::BottomFill,
+          5 if n.all_left_same() && n.top.same && n.bottom.same => TileType::LeftFill,
+          5 if n.all_top_same() && n.all_right_same() => TileType::InnerCornerTopRight,
+          5 if n.all_top_same() && n.all_left_same() => TileType::InnerCornerTopLeft,
+          5 if n.all_bottom_same() && n.all_right_same() => TileType::InnerCornerBottomRight,
+          5 if n.all_bottom_same() && n.all_left_same() => TileType::InnerCornerBottomLeft,
+          5 if n.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
+          5 if n.all_direction_top_right_same() => TileType::InnerCornerTopRight,
+          5 if n.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
+          5 if n.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
+          4 if n.all_left_different() && !n.top.same => TileType::InnerCornerBottomRight,
+          4 if n.all_left_different() && !n.bottom.same => TileType::InnerCornerTopRight,
+          4 if n.all_right_different() && !n.top.same => TileType::InnerCornerBottomLeft,
+          4 if n.all_right_different() && !n.bottom.same => TileType::InnerCornerTopLeft,
+          4 if n.all_top_different() && !n.right.same => TileType::InnerCornerBottomLeft,
+          4 if n.all_top_different() && !n.left.same => TileType::InnerCornerBottomRight,
+          4 if n.all_bottom_different() && !n.left.same => TileType::InnerCornerTopRight,
+          4 if n.all_bottom_different() && !n.right.same => TileType::InnerCornerTopLeft,
+          4 if n.all_direction_top_left_different() => TileType::OuterCornerTopLeft,
+          4 if n.all_direction_top_right_different() => TileType::OuterCornerTopRight,
+          4 if n.all_direction_bottom_left_different() => TileType::OuterCornerBottomLeft,
+          4 if n.all_direction_bottom_right_different() => TileType::OuterCornerBottomRight,
+          4 if n.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
+          4 if n.all_direction_top_right_same() => TileType::InnerCornerTopRight,
+          4 if n.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
+          4 if n.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
+          4 => TileType::Single,
+          3 if n.all_direction_top_left_same() => TileType::InnerCornerTopLeft,
+          3 if n.all_direction_top_right_same() => TileType::InnerCornerTopRight,
+          3 if n.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
+          3 if n.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
+          3 => TileType::Single,
+          2 => TileType::Single,
+          1 => TileType::Single,
+          _ => TileType::Unknown,
+        };
 
-    let mut final_tile = Tile::from(tile.clone(), tile_type);
+        let mut final_tile = Tile::from(draft_tile.clone(), tile_type);
 
-    if settings.general.permit_tile_layer_adjustments {
-      if final_tile.tile_type == TileType::Fill && ns.count_same() != 8 {
-        final_tile.move_to_lower_terrain_layer();
-        warn!("Adjusted before finalising: {:?}...", tile);
-      } else if final_tile.tile_type == TileType::Unknown && ns.count_same() == 4 {
-        final_tile.move_to_lower_terrain_layer();
-        final_tile.tile_type = TileType::Fill;
-        warn!("Adjusted before finalising: {:?}...", tile);
-      } else if final_tile.tile_type == TileType::Unknown
-        && (ns.all_left_same() || ns.all_right_same() || ns.all_top_same() || ns.all_bottom_same())
-        && ns.count_same() == 3
-      {
-        final_tile.move_to_lower_terrain_layer();
-        final_tile.tile_type = TileType::Fill;
-        warn!("Adjusted before finalising: {:?}...", tile);
+        if settings.general.permit_tile_layer_adjustments {
+          if final_tile.tile_type == TileType::Fill && n.count_same() != 8 {
+            final_tile.move_to_lower_terrain_layer();
+            warn!("Adjusted before finalising: {:?}...", cell);
+          } else if final_tile.tile_type == TileType::Unknown && n.count_same() == 4 {
+            final_tile.move_to_lower_terrain_layer();
+            final_tile.tile_type = TileType::Fill;
+            warn!("Adjusted before finalising: {:?}...", cell);
+          } else if final_tile.tile_type == TileType::Unknown
+            && (n.all_left_same() || n.all_right_same() || n.all_top_same() || n.all_bottom_same())
+            && n.count_same() == 3
+          {
+            final_tile.move_to_lower_terrain_layer();
+            final_tile.tile_type = TileType::Fill;
+            warn!("Adjusted before finalising: {:?}...", cell);
+          }
+        }
+
+        n.print(&final_tile, same_neighbours);
+        final_tiles.push(final_tile);
       }
     }
-
-    ns.print(&final_tile, same_neighbours);
-    final_tiles.push(final_tile);
   }
 
   final_tiles
