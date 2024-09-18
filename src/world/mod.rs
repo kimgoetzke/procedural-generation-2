@@ -86,7 +86,7 @@ fn spawn_world(
   get_chunk_spawn_points(&spawn_point, CHUNK_SIZE)
     .iter()
     .for_each(|point| {
-      if settings.generate_neighbour_chunks {
+      if settings.general.generate_neighbour_chunks {
         let chunk_layer_data = generate_chunk_layer_data(point.clone(), settings);
         draft_chunks.push(chunk_layer_data);
       } else {
@@ -156,10 +156,10 @@ fn spawn_chunk(
             },
           ))
           .with_children(|tile_parent| {
-            if !settings.draw_terrain_sprites {
+            if !settings.general.draw_terrain_sprites {
               tile_parent.spawn(default_sprite(asset_packs, tile));
             }
-            if settings.spawn_tile_debug_info {
+            if settings.general.spawn_tile_debug_info {
               tile_parent.spawn(tile_info(asset_packs, &tile));
             }
           })
@@ -211,7 +211,7 @@ fn spawn_tile(
   terrain: TerrainType,
 ) {
   commands.with_children(|parent| {
-    if settings.draw_terrain_sprites {
+    if settings.general.draw_terrain_sprites {
       match (terrain, tile.layer) {
         (TerrainType::Water, _) => {
           parent.spawn(terrain_fill_sprite(&asset_packs.default, terrain as usize));
@@ -319,14 +319,14 @@ fn generate_chunk_layer_data(start: Point, settings: &Res<Settings>) -> DraftChu
   let mut tiles: Vec<DraftTile> = Vec::new();
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
-  let perlin = Perlin::new(settings.world_gen.noise_seed);
+  let perlin = Perlin::new(settings.world.noise_seed);
   let end = Point::new(start.x + CHUNK_SIZE - 1, start.y + CHUNK_SIZE - 1);
   let center = Point::new((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE as f64) / 2.;
-  let frequency = settings.world_gen.noise_frequency;
-  let amplitude = settings.world_gen.noise_amplitude;
-  let elevation = settings.world_gen.elevation;
-  let falloff_strength = settings.world_gen.falloff_strength;
+  let frequency = settings.world.noise_frequency;
+  let amplitude = settings.world.noise_amplitude;
+  let elevation = settings.world.elevation;
+  let falloff_strength = settings.world.falloff_strength;
 
   for x in start.x..end.x {
     for y in (start.y..end.y).rev() {

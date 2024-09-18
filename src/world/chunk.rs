@@ -143,7 +143,7 @@ fn determine_tile_types(draft_tiles: Vec<DraftTile>, settings: &Res<Settings>) -
 
     let mut final_tile = Tile::from(tile.clone(), tile_type);
 
-    if settings.permit_tile_layer_adjustments {
+    if settings.general.permit_tile_layer_adjustments {
       if final_tile.tile_type == TileType::Fill && ns.count_same() != 8 {
         final_tile.move_to_lower_terrain_layer();
         warn!("Adjusted before finalising: {:?}...", tile);

@@ -44,73 +44,70 @@ fn non_settings_controls_system(
 fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut settings: ResMut<Settings>) {
   // Seed
   if keyboard_input.just_pressed(KeyCode::KeyR) {
-    settings.world_gen.noise_seed = settings.world_gen.noise_seed.saturating_add(1);
-    info!("[R] Increased noise seed to [{}]", settings.world_gen.noise_seed);
+    settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
+    info!("[R] Increased noise seed to [{}]", settings.world.noise_seed);
   } else if keyboard_input.just_pressed(KeyCode::KeyF) {
-    settings.world_gen.noise_seed = settings.world_gen.noise_seed.saturating_sub(1);
-    info!("[F] Decreased noise seed to [{}]", settings.world_gen.noise_seed);
+    settings.world.noise_seed = settings.world.noise_seed.saturating_sub(1);
+    info!("[F] Decreased noise seed to [{}]", settings.world.noise_seed);
   }
 
   // Frequency
   if keyboard_input.just_pressed(KeyCode::KeyT) {
-    settings.world_gen.noise_frequency += 0.1;
-    info!(
-      "[T] Increased noise frequency to [{}]",
-      settings.world_gen.noise_frequency
-    );
+    settings.world.noise_frequency += 0.1;
+    info!("[T] Increased noise frequency to [{}]", settings.world.noise_frequency);
   } else if keyboard_input.just_pressed(KeyCode::KeyG) {
-    settings.world_gen.noise_frequency -= 0.1;
-    info!(
-      "[G] Decreased noise frequency to [{}]",
-      settings.world_gen.noise_frequency
-    );
+    settings.world.noise_frequency -= 0.1;
+    info!("[G] Decreased noise frequency to [{}]", settings.world.noise_frequency);
   }
 
   // Scale factor
   if keyboard_input.just_pressed(KeyCode::KeyY) {
-    settings.world_gen.elevation += 0.5;
-    info!("[Y] Increased noise scale factor to [{}]", settings.world_gen.elevation);
+    settings.world.elevation += 0.5;
+    info!("[Y] Increased noise scale factor to [{}]", settings.world.elevation);
   } else if keyboard_input.just_pressed(KeyCode::KeyH) {
-    settings.world_gen.elevation -= 0.5;
-    info!("[H] Decreased noise scale factor to [{}]", settings.world_gen.elevation);
+    settings.world.elevation -= 0.5;
+    info!("[H] Decreased noise scale factor to [{}]", settings.world.elevation);
   }
 
   // Falloff strength
   if keyboard_input.just_pressed(KeyCode::KeyU) {
-    settings.world_gen.falloff_strength += 0.1;
+    settings.world.falloff_strength += 0.1;
     info!(
       "[U] Increased falloff strength to [{}]",
-      settings.world_gen.falloff_strength
+      settings.world.falloff_strength
     );
   } else if keyboard_input.just_pressed(KeyCode::KeyJ) {
-    settings.world_gen.falloff_strength -= 0.1;
+    settings.world.falloff_strength -= 0.1;
     info!(
       "[J] Decreased falloff strength to [{}]",
-      settings.world_gen.falloff_strength
+      settings.world.falloff_strength
     );
   }
 
   // Draw terrain sprites
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
-    settings.draw_terrain_sprites = !settings.draw_terrain_sprites;
+    settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
     info!(
       "[Z] Toggled terrain sprite drawing to [{}]",
-      settings.draw_terrain_sprites
+      settings.general.draw_terrain_sprites
     );
   }
 
   // Permit tile layer adjustments
   if keyboard_input.just_pressed(KeyCode::KeyX) {
-    settings.permit_tile_layer_adjustments = !settings.permit_tile_layer_adjustments;
+    settings.general.permit_tile_layer_adjustments = !settings.general.permit_tile_layer_adjustments;
     info!(
       "[X] Toggled tile layer adjustments to [{}]",
-      settings.permit_tile_layer_adjustments
+      settings.general.permit_tile_layer_adjustments
     );
   }
 
   // Spawn tile debug info
   if keyboard_input.just_pressed(KeyCode::KeyC) {
-    settings.spawn_tile_debug_info = !settings.spawn_tile_debug_info;
-    info!("[C] Toggled tile debug info to [{}]", settings.spawn_tile_debug_info);
+    settings.general.spawn_tile_debug_info = !settings.general.spawn_tile_debug_info;
+    info!(
+      "[C] Toggled tile debug info to [{}]",
+      settings.general.spawn_tile_debug_info
+    );
   }
 }

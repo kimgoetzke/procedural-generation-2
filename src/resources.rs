@@ -16,7 +16,9 @@ impl Plugin for SharedResourcesPlugin {
       .insert_resource(ShowDebugInfo::off())
       .init_resource::<Settings>()
       .register_type::<Settings>()
-      .insert_resource(Settings::default());
+      .insert_resource(Settings::default())
+      .init_resource::<GeneralGenerationSettings>()
+      .init_resource::<WorldGenerationSettings>();
   }
 }
 
@@ -33,26 +35,40 @@ impl ShowDebugInfo {
 
 #[derive(Resource, Reflect)]
 pub struct Settings {
+  pub general: GeneralGenerationSettings,
+  pub world: WorldGenerationSettings,
+}
+
+impl Default for Settings {
+  fn default() -> Self {
+    Self {
+      general: GeneralGenerationSettings::default(),
+      world: WorldGenerationSettings::default(),
+    }
+  }
+}
+
+#[derive(Clone, Resource, Reflect, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+pub struct GeneralGenerationSettings {
   pub generate_neighbour_chunks: bool,
   pub spawn_tile_debug_info: bool, // Disabling massively speeds up the generation process
   pub draw_terrain_sprites: bool,
   pub permit_tile_layer_adjustments: bool,
-  pub world_gen: WorldGenerationSettings,
 }
 
-impl Default for Settings {
+impl Default for GeneralGenerationSettings {
   fn default() -> Self {
     Self {
       generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       spawn_tile_debug_info: SPAWN_TILE_DEBUG_INFO,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       permit_tile_layer_adjustments: PERMIT_TILE_LAYER_ADJUSTMENTS,
-      world_gen: WorldGenerationSettings::default(),
     }
   }
 }
 
-#[derive(Resource, Reflect, InspectorOptions)]
+#[derive(Clone, Resource, Reflect, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub struct WorldGenerationSettings {
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
