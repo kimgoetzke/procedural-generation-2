@@ -76,7 +76,7 @@ fn handle_ui_events_system(
   mut state: ResMut<UiEventsResource>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
-  world_gen: Res<WorldGenerationSettings>,
+  mut world_gen: ResMut<WorldGenerationSettings>,
 ) {
   settings.general = general.clone();
   settings.world = world_gen.clone();
@@ -88,6 +88,7 @@ fn handle_ui_events_system(
 
   if state.generate_next {
     settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
+    world_gen.noise_seed = settings.world.noise_seed;
     events.send(RefreshWorldEvent {});
     state.generate_next = false;
   }
