@@ -34,6 +34,7 @@ pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
 
 // Detailed tile sets
+pub const TILE_SET_WATER_PATH: &str = "tilesets/water.png";
 pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
 pub const TILE_SET_SAND_PATH: &str = "tilesets/sand.png";
 pub const TILE_SET_GRASS_PATH: &str = "tilesets/grass.png";

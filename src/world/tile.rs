@@ -17,6 +17,14 @@ impl DraftTile {
       layer: layer as i32,
     }
   }
+
+  pub fn clone_with_new_terrain(&self, terrain: TerrainType) -> Self {
+    Self {
+      coords: self.coords.clone(),
+      terrain,
+      layer: self.layer,
+    }
+  }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

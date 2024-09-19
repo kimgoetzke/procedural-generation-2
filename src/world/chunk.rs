@@ -1,59 +1,14 @@
-use crate::constants::CHUNK_SIZE;
 use crate::resources::Settings;
 use crate::world::coords::{Coords, Point};
+use crate::world::draft_chunk::DraftChunk;
+use crate::world::layered_plane::LayeredPlane;
 use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
+use crate::world::plane::Plane;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::{DraftTile, Tile};
 use crate::world::tile_type::TileType;
 use bevy::log::warn;
 use bevy::prelude::Res;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Plane {
-  plane: Vec<Vec<Option<DraftTile>>>,
-}
-
-impl Plane {
-  pub fn new(plane: Vec<Vec<Option<DraftTile>>>) -> Self {
-    Self { plane }
-  }
-
-  pub fn get(&self, x: i32, y: i32) -> Option<&DraftTile> {
-    let i = x as usize;
-    let j = y as usize;
-    if i < self.plane.len() && j < self.plane[0].len() {
-      self.plane[i][j].as_ref()
-    } else {
-      None
-    }
-  }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct DraftChunk {
-  pub coords: Coords,
-  center: Point,
-  draft_tiles: Plane,
-}
-
-impl DraftChunk {
-  pub fn new(world_location: Point, draft_tiles: Vec<Vec<Option<DraftTile>>>) -> Self {
-    Self {
-      center: Point::new(world_location.x + (CHUNK_SIZE / 2), world_location.y + (CHUNK_SIZE / 2)),
-      coords: Coords::new_world_for_chunk(world_location),
-      draft_tiles: Plane::new(draft_tiles),
-    }
-  }
-
-  pub fn to_chunk(self, settings: &Res<Settings>) -> Chunk {
-    let tiles = determine_tile_types(self.draft_tiles, settings);
-    Chunk {
-      coords: self.coords,
-      center: self.center,
-      tiles,
-    }
-  }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
@@ -62,22 +17,34 @@ pub struct Chunk {
   pub tiles: Vec<Tile>,
 }
 
+impl Chunk {
+  pub fn new(draft_chunk: DraftChunk, settings: &Res<Settings>) -> Self {
+    let layered_plane = LayeredPlane::new(draft_chunk.plane);
+    let tiles = determine_tile_types(layered_plane.planes[0].clone(), settings);
+    Chunk {
+      coords: draft_chunk.coords,
+      center: draft_chunk.center,
+      tiles,
+    }
+  }
+}
+
 fn get_neighbours(of: &DraftTile, from: &Plane) -> NeighbourTiles {
   let x = of.coords.chunk.x;
   let y = of.coords.chunk.y;
   let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
   let mut neighbours = NeighbourTiles::empty();
 
-  for point in neighbour_points.iter() {
-    if let Some(neighbour) = &from.get(x + point.0, y + point.1) {
+  for p in neighbour_points.iter() {
+    if let Some(neighbour) = &from.get(x + p.0, y + p.1) {
       let neighbour_tile = NeighbourTile::new(
-        Point::new(point.0, point.1),
+        Point::new(p.0, p.1),
         neighbour.terrain,
         neighbour.terrain == of.terrain || neighbour.layer > of.layer,
       );
       neighbours.put(neighbour_tile);
     } else {
-      let neighbour_tile = NeighbourTile::default(Point::new(point.0, point.1));
+      let neighbour_tile = NeighbourTile::default(Point::new(p.0, p.1));
       neighbours.put(neighbour_tile);
     }
   }
@@ -85,9 +52,9 @@ fn get_neighbours(of: &DraftTile, from: &Plane) -> NeighbourTiles {
   neighbours
 }
 
-fn determine_tile_types(draft_tiles: Plane, settings: &Res<Settings>) -> Vec<Tile> {
+pub(crate) fn determine_tile_types(plane: Plane, settings: &Res<Settings>) -> Vec<Tile> {
   let mut final_tiles = Vec::new();
-  for row in &draft_tiles.plane {
+  for row in &plane.data {
     for cell in row {
       if let Some(draft_tile) = cell {
         if draft_tile.terrain == TerrainType::Water {
@@ -95,7 +62,7 @@ fn determine_tile_types(draft_tiles: Plane, settings: &Res<Settings>) -> Vec<Til
           continue;
         }
 
-        let n = get_neighbours(draft_tile, &draft_tiles);
+        let n = get_neighbours(draft_tile, &plane);
         let same_neighbours = n.count_same();
 
         let tile_type = match same_neighbours {
