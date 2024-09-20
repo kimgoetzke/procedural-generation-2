@@ -72,16 +72,10 @@ fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut setti
   // Falloff strength
   if keyboard_input.just_pressed(KeyCode::KeyU) {
     settings.world.falloff_strength += 0.1;
-    info!(
-      "[U] Increased falloff strength to [{}]",
-      settings.world.falloff_strength
-    );
+    info!("[U] Increased falloff strength to [{}]", settings.world.falloff_strength);
   } else if keyboard_input.just_pressed(KeyCode::KeyJ) {
     settings.world.falloff_strength -= 0.1;
-    info!(
-      "[J] Decreased falloff strength to [{}]",
-      settings.world.falloff_strength
-    );
+    info!("[J] Decreased falloff strength to [{}]", settings.world.falloff_strength);
   }
 
   // Draw terrain sprites
@@ -105,9 +99,6 @@ fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut setti
   // Spawn tile debug info
   if keyboard_input.just_pressed(KeyCode::KeyC) {
     settings.general.spawn_tile_debug_info = !settings.general.spawn_tile_debug_info;
-    info!(
-      "[C] Toggled tile debug info to [{}]",
-      settings.general.spawn_tile_debug_info
-    );
+    info!("[C] Toggled tile debug info to [{}]", settings.general.spawn_tile_debug_info);
   }
 }

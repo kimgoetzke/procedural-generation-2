@@ -86,20 +86,18 @@ fn spawn_world(
   let t2 = get_time();
   let mut draft_chunks: Vec<DraftChunk> = Vec::new();
   let spawn_point = Point::new(-(CHUNK_SIZE / 2), -(CHUNK_SIZE / 2));
-  get_chunk_spawn_points(&spawn_point, CHUNK_SIZE)
-    .iter()
-    .for_each(|point| {
-      if settings.general.generate_neighbour_chunks {
+  get_chunk_spawn_points(&spawn_point, CHUNK_SIZE).iter().for_each(|point| {
+    if settings.general.generate_neighbour_chunks {
+      let draft_chunk = DraftChunk::new(point.clone(), settings);
+      draft_chunks.push(draft_chunk);
+    } else {
+      if point.x == spawn_point.x && point.y == spawn_point.y {
+        debug!("Skipped generating neighbour chunks because it's disabled");
         let draft_chunk = DraftChunk::new(point.clone(), settings);
         draft_chunks.push(draft_chunk);
-      } else {
-        if point.x == spawn_point.x && point.y == spawn_point.y {
-          debug!("Skipped generating neighbour chunks because it's disabled");
-          let draft_chunk = DraftChunk::new(point.clone(), settings);
-          draft_chunks.push(draft_chunk);
-        }
       }
-    });
+    }
+  });
   debug!("Generated draft chunk(s) in {} ms", get_time() - t2);
 
   // Convert draft chunks to chunks
@@ -282,10 +280,7 @@ fn spawn_tile(
   });
 }
 
-fn default_sprite(
-  asset_packs: &AssetPacks,
-  tile: &Tile,
-) -> (Name, SpriteBundle, TextureAtlas, DefaultSpriteTileComponent) {
+fn default_sprite(asset_packs: &AssetPacks, tile: &Tile) -> (Name, SpriteBundle, TextureAtlas, DefaultSpriteTileComponent) {
   (
     Name::new("Default Sprite"),
     SpriteBundle {
@@ -316,10 +311,7 @@ fn terrain_fill_sprite(asset_pack: &AssetPack, layer: usize) -> (Name, SpriteBun
   )
 }
 
-fn terrain_sprite(
-  tile: &Tile,
-  asset_packs: &AssetPacks,
-) -> (Name, SpriteBundle, TextureAtlas, TerrainSpriteTileComponent) {
+fn terrain_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle, TextureAtlas, TerrainSpriteTileComponent) {
   (
     Name::new("Terrain Sprite"),
     SpriteBundle {
@@ -353,10 +345,7 @@ fn terrain_sprite(
 }
 
 fn get_time() -> u128 {
-  SystemTime::now()
-    .duration_since(std::time::UNIX_EPOCH)
-    .unwrap()
-    .as_millis()
+  SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()
 }
 
 fn update_visibility_system(time: Res<Time>, mut query: Query<(&mut Visibility, &mut AnimationTimer)>) {
