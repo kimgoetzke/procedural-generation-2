@@ -1,4 +1,4 @@
-use crate::constants::{CHUNK_SIZE, FOREST_LAYER, GRASS_LAYER, SAND_LAYER, SHORE_LAYER, WATER_LAYER};
+use crate::constants::CHUNK_SIZE;
 use crate::resources::Settings;
 use crate::world::coords::{Coords, Point};
 use crate::world::get_time;

@@ -10,11 +10,11 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(chunk_location: Point, grid_location: Point, terrain: TerrainType, layer: usize) -> Self {
+  pub fn new(chunk_location: Point, grid_location: Point, terrain: TerrainType) -> Self {
     Self {
       coords: Coords::new_grid_for_tile(chunk_location, grid_location),
       terrain,
-      layer: layer as i32,
+      layer: terrain as i32,
     }
   }
 
@@ -45,22 +45,5 @@ impl Tile {
       layer: draft_tile.layer,
       tile_type,
     }
-  }
-
-  pub fn move_to_lower_terrain_layer(&mut self) {
-    let new_terrain = match self.terrain {
-      TerrainType::Shore => TerrainType::Water,
-      TerrainType::Sand => TerrainType::Shore,
-      TerrainType::Grass => TerrainType::Sand,
-      TerrainType::Forest => TerrainType::Grass,
-      _ => TerrainType::Water,
-    };
-    self.update_terrain(new_terrain);
-  }
-
-  fn update_terrain(&mut self, terrain_type: TerrainType) {
-    self.terrain = terrain_type;
-    self.layer = terrain_type as i32;
-    self.default_sprite_index = terrain_type as usize;
   }
 }
