@@ -1,7 +1,8 @@
 use crate::constants::CHUNK_SIZE;
 use crate::resources::Settings;
-use crate::world::plane::{DraftPlane, Plane};
+use crate::world::plane::Plane;
 use crate::world::terrain_type::TerrainType;
+use crate::world::tile::DraftTile;
 use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -11,7 +12,7 @@ pub struct LayeredPlane {
 }
 
 impl LayeredPlane {
-  pub fn new(plane: DraftPlane, settings: &Res<Settings>) -> Self {
+  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Res<Settings>) -> Self {
     let mut final_layers = Vec::new();
 
     // Create a plane for each layer, except water because water is not rendered
@@ -19,9 +20,9 @@ impl LayeredPlane {
       let mut current_layer = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
 
       // Populate the layer using the draft plane and adjust terrain if necessary
-      for x in 0..plane.data.len() {
-        for y in 0..plane.data[0].len() {
-          if let Some(tile) = &plane.data[x][y] {
+      for x in 0..draft_tiles.len() {
+        for y in 0..draft_tiles[0].len() {
+          if let Some(tile) = &draft_tiles[x][y] {
             if tile.layer == layer as i32 {
               current_layer[x][y] = Some(tile.clone());
             } else if tile.layer > layer as i32 {
@@ -32,14 +33,13 @@ impl LayeredPlane {
         }
       }
 
-      let draft_plane = DraftPlane::new(current_layer);
-      let plane = Plane::new(draft_plane, Some(layer), settings);
+      let plane = Plane::new(current_layer, Some(layer), settings);
       final_layers.push(plane);
     }
 
     Self {
       planes: final_layers,
-      flat: Plane::new(plane, None, settings),
+      flat: Plane::new(draft_tiles, None, settings),
     }
   }
 

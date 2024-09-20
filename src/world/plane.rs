@@ -8,39 +8,15 @@ use bevy::log::warn;
 use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct DraftPlane {
-  pub(crate) data: Vec<Vec<Option<DraftTile>>>,
-}
-
-impl DraftPlane {
-  pub fn new(plane_data: Vec<Vec<Option<DraftTile>>>) -> Self {
-    Self { data: plane_data }
-  }
-
-  pub fn get(&self, x: i32, y: i32) -> Option<&DraftTile> {
-    let i = x as usize;
-    let j = y as usize;
-    if i < self.data.len() && j < self.data[0].len() {
-      self.data[i][j].as_ref()
-    } else {
-      None
-    }
-  }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
   pub layer: Option<usize>,
   pub data: Vec<Vec<Option<Tile>>>,
 }
 
 impl Plane {
-  pub fn new(draft_plane: DraftPlane, layer: Option<usize>, settings: &Res<Settings>) -> Self {
-    let plane_data = determine_tile_types(&draft_plane, settings);
-    Self {
-      data: plane_data,
-      layer,
-    }
+  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, settings: &Res<Settings>) -> Self {
+    let plane_data = determine_tile_types(&draft_tiles, settings);
+    Self { data: plane_data, layer }
   }
 }
 
@@ -54,14 +30,14 @@ pub fn get(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<&DraftT
   }
 }
 
-fn get_neighbours(of: &DraftTile, from: &DraftPlane) -> NeighbourTiles {
+fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles {
   let x = of.coords.chunk.x;
   let y = of.coords.chunk.y;
   let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
   let mut neighbours = NeighbourTiles::empty();
 
   for p in neighbour_points.iter() {
-    if let Some(neighbour) = &from.get(x + p.0, y + p.1) {
+    if let Some(neighbour) = get(x + p.0, y + p.1, from) {
       let neighbour_tile = NeighbourTile::new(
         Point::new(p.0, p.1),
         neighbour.terrain,
@@ -77,9 +53,9 @@ fn get_neighbours(of: &DraftTile, from: &DraftPlane) -> NeighbourTiles {
   neighbours
 }
 
-pub(crate) fn determine_tile_types(plane: &DraftPlane, settings: &Res<Settings>) -> Vec<Vec<Option<Tile>>> {
-  let mut final_tiles = vec![vec![None; plane.data.len()]; plane.data.len()];
-  for row in &plane.data {
+pub fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>, settings: &Res<Settings>) -> Vec<Vec<Option<Tile>>> {
+  let mut final_tiles = vec![vec![None; draft_tiles.len()]; draft_tiles[0].len()];
+  for row in draft_tiles {
     for cell in row {
       if let Some(draft_tile) = cell {
         if draft_tile.terrain == TerrainType::Water {
@@ -88,7 +64,7 @@ pub(crate) fn determine_tile_types(plane: &DraftPlane, settings: &Res<Settings>)
           continue;
         }
 
-        let n = get_neighbours(draft_tile, &plane);
+        let n = get_neighbours(draft_tile, &draft_tiles);
         let same_neighbours = n.count_same();
 
         let tile_type = match same_neighbours {
