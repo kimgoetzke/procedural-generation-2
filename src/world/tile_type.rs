@@ -41,6 +41,6 @@ pub fn get_sprite_index(tile: &Tile) -> usize {
     TileType::RightFill => RIGHT_FILL,
     TileType::LeftFill => LEFT_FILL,
     TileType::Single => SINGLE,
-    _ => ERROR,
+    TileType::Unknown => ERROR,
   }
 }

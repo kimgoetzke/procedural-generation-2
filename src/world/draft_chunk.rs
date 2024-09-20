@@ -2,10 +2,10 @@ use crate::constants::{CHUNK_SIZE, FOREST_LAYER, GRASS_LAYER, SAND_LAYER, SHORE_
 use crate::resources::Settings;
 use crate::world::coords::{Coords, Point};
 use crate::world::get_time;
-use crate::world::plane::Plane;
+use crate::world::plane::DraftPlane;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::DraftTile;
-use bevy::log::{debug, trace};
+use bevy::log::trace;
 use bevy::prelude::Res;
 use noise::{NoiseFn, Perlin};
 
@@ -13,7 +13,7 @@ use noise::{NoiseFn, Perlin};
 pub struct DraftChunk {
   pub coords: Coords,
   pub center: Point,
-  pub plane: Plane,
+  pub plane: DraftPlane,
 }
 
 impl DraftChunk {
@@ -27,7 +27,7 @@ impl DraftChunk {
   }
 }
 
-fn generate_plane(start: &Point, settings: &Res<Settings>) -> Plane {
+fn generate_plane(start: &Point, settings: &Res<Settings>) -> DraftPlane {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin = Perlin::new(settings.world.noise_seed);
@@ -81,9 +81,13 @@ fn generate_plane(start: &Point, settings: &Res<Settings>) -> Plane {
     cx += 1;
     cy = 0;
   }
-  trace!("Noise: {:.2} to {:.2}", noise_stats.0, noise_stats.1);
-  trace!("Adjusted noise: {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  debug!("Generated draft chunk at {:?} within {} ms", start, get_time() - time);
+  trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
+  trace!(
+    "Adjusted noise ranges from {:.2} to {:.2}",
+    noise_stats.2,
+    noise_stats.3
+  );
+  trace!("Generated draft chunk at {:?} within {} ms", start, get_time() - time);
 
-  Plane::new(tiles)
+  DraftPlane::new(tiles)
 }

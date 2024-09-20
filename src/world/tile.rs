@@ -18,11 +18,11 @@ impl DraftTile {
     }
   }
 
-  pub fn clone_with_new_terrain(&self, terrain: TerrainType) -> Self {
+  pub fn clone_with_modified_terrain(&self, terrain: TerrainType) -> Self {
     Self {
       coords: self.coords.clone(),
       terrain,
-      layer: self.layer,
+      layer: terrain as i32,
     }
   }
 }
