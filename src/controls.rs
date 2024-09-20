@@ -89,10 +89,10 @@ fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut setti
 
   // Permit tile layer adjustments
   if keyboard_input.just_pressed(KeyCode::KeyX) {
-    settings.general.permit_tile_layer_adjustments = !settings.general.permit_tile_layer_adjustments;
+    settings.general.layer_post_processing = !settings.general.layer_post_processing;
     info!(
       "[X] Toggled tile layer adjustments to [{}]",
-      settings.general.permit_tile_layer_adjustments
+      settings.general.layer_post_processing
     );
   }
 

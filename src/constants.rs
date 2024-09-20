@@ -11,7 +11,7 @@ pub const SHOW_SETTINGS_UI: bool = true;
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const SPAWN_TILE_DEBUG_INFO: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
-pub const PERMIT_TILE_LAYER_ADJUSTMENTS: bool = false;
+pub const LAYER_POST_PROCESSING: bool = false;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
 
 // Chunks

@@ -61,11 +61,11 @@ fn generate_plane(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<Dra
 
       // Determine terrain type based on noise
       let tile = match adjusted_noise {
-        n if n > 0.75 => DraftTile::new(chunk_location, grid_location, TerrainType::Forest, FOREST_LAYER),
-        n if n > 0.6 => DraftTile::new(chunk_location, grid_location, TerrainType::Grass, GRASS_LAYER),
-        n if n > 0.45 => DraftTile::new(chunk_location, grid_location, TerrainType::Sand, SAND_LAYER),
-        n if n > 0.3 => DraftTile::new(chunk_location, grid_location, TerrainType::Shore, SHORE_LAYER),
-        _ => DraftTile::new(chunk_location, grid_location, TerrainType::Water, WATER_LAYER),
+        n if n > 0.75 => DraftTile::new(chunk_location, grid_location, TerrainType::Forest),
+        n if n > 0.6 => DraftTile::new(chunk_location, grid_location, TerrainType::Grass),
+        n if n > 0.45 => DraftTile::new(chunk_location, grid_location, TerrainType::Sand),
+        n if n > 0.3 => DraftTile::new(chunk_location, grid_location, TerrainType::Shore),
+        _ => DraftTile::new(chunk_location, grid_location, TerrainType::Water),
       };
 
       noise_stats.0 = noise_stats.0.min(normalised_noise);

@@ -1,5 +1,5 @@
 use crate::constants::{
-  DRAW_TERRAIN_SPRITES, GENERATE_NEIGHBOUR_CHUNKS, PERMIT_TILE_LAYER_ADJUSTMENTS, SPAWN_TILE_DEBUG_INFO, SPAWN_UP_TO_LAYER,
+  DRAW_TERRAIN_SPRITES, GENERATE_NEIGHBOUR_CHUNKS, LAYER_POST_PROCESSING, SPAWN_TILE_DEBUG_INFO, SPAWN_UP_TO_LAYER,
 };
 use bevy::app::{App, Plugin};
 use bevy::prelude::{Reflect, ReflectResource, Resource};
@@ -58,7 +58,7 @@ pub struct GeneralGenerationSettings {
   pub generate_neighbour_chunks: bool,
   pub spawn_tile_debug_info: bool, // Disabling massively speeds up the generation process
   pub draw_terrain_sprites: bool,
-  pub permit_tile_layer_adjustments: bool,
+  pub layer_post_processing: bool,
   #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
 }
@@ -69,7 +69,7 @@ impl Default for GeneralGenerationSettings {
       generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       spawn_tile_debug_info: SPAWN_TILE_DEBUG_INFO,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
-      permit_tile_layer_adjustments: PERMIT_TILE_LAYER_ADJUSTMENTS,
+      layer_post_processing: LAYER_POST_PROCESSING,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
     }
   }

@@ -105,6 +105,7 @@ fn spawn_world(
   let mut final_chunks: Vec<Chunk> = Vec::new();
   for draft_chunk in draft_chunks {
     let chunk = Chunk::new(draft_chunk, settings);
+    // TODO: Add post-processing step that removes single tiles if layer below is not fill
     final_chunks.push(chunk);
   }
   debug!("Converted draft chunk(s) to chunk(s) in {} ms", get_time() - t2);
@@ -152,11 +153,7 @@ fn spawn_world(
           spawn_tile(tile_commands, tile, &asset_packs, &settings, tile.terrain);
         }
       }
-      debug!(
-        "Spawned all [{:?}] tiles within {} ms",
-        TerrainType::from(layer),
-        get_time() - t2
-      );
+      debug!("Spawned [{:?}] tiles within {} ms", TerrainType::from(layer), get_time() - t2);
     }
   }
 
