@@ -32,7 +32,6 @@ impl DraftTile {
 pub struct Tile {
   pub coords: Coords,
   pub terrain: TerrainType,
-  pub default_sprite_index: usize,
   pub layer: i32,
   pub tile_type: TileType,
 }
@@ -42,7 +41,6 @@ impl Tile {
     Self {
       coords: draft_tile.coords,
       terrain: draft_tile.terrain,
-      default_sprite_index: draft_tile.layer as usize,
       layer: draft_tile.layer,
       tile_type,
     }

@@ -194,7 +194,7 @@ fn default_sprite(
     },
     TextureAtlas {
       layout: asset_packs.default.texture_atlas_layout.clone(),
-      index: tile.default_sprite_index,
+      index: tile.terrain as usize,
     },
     TileComponent {
       tile: tile.clone(),
