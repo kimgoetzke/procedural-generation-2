@@ -26,7 +26,7 @@ impl Plugin for TileDebuggerPlugin {
       .observe(on_left_mouse_click_trigger)
       .observe(on_remove_tile_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, refresh_world_event))
-      .init_resource::<TileEntityIndex>()
+      .init_resource::<TileComponentIndex>()
       .init_resource::<ChunkComponentIndex>();
   }
 }
@@ -35,17 +35,17 @@ impl Plugin for TileDebuggerPlugin {
 struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
-struct TileEntityIndex {
-  pub grid: HashMap<Point, HashSet<Entity>>,
+struct TileComponentIndex {
+  pub grid: HashMap<Point, HashSet<TileComponent>>,
 }
 
-impl TileEntityIndex {
-  pub fn get_entities(&self, point: Point) -> Vec<Entity> {
-    let mut entities = Vec::new();
-    if let Some(tiles) = self.grid.get(&point) {
-      entities.extend(tiles.iter());
+impl TileComponentIndex {
+  pub fn get_entities(&self, point: Point) -> Vec<&TileComponent> {
+    let mut tile_components = Vec::new();
+    if let Some(t) = self.grid.get(&point) {
+      tile_components.extend(t.iter());
     }
-    entities
+    tile_components
   }
 }
 
@@ -55,9 +55,9 @@ struct ChunkComponentIndex {
 }
 
 impl ChunkComponentIndex {
-  pub fn get(&self, point: Point) -> Option<ChunkComponent> {
+  pub fn get(&self, point: Point) -> Option<&ChunkComponent> {
     if let Some(entity) = self.grid.get(&point) {
-      Some(entity.clone())
+      Some(entity)
     } else {
       None
     }
@@ -86,42 +86,33 @@ fn on_remove_chunk_component_trigger(
 fn on_add_tile_component_trigger(
   trigger: Trigger<OnAdd, TileComponent>,
   query: Query<&TileComponent>,
-  mut index: ResMut<TileEntityIndex>,
+  mut index: ResMut<TileComponentIndex>,
 ) {
   let tc = query.get(trigger.entity()).unwrap();
-  index
-    .grid
-    .entry(tc.tile.coords.world_grid)
-    .or_default()
-    .insert(trigger.entity());
+  index.grid.entry(tc.tile.coords.world_grid).or_default().insert(tc.clone());
 }
 
 fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
-  tile_components: Query<&TileComponent>,
-  tile_index: Res<TileEntityIndex>,
+  tile_index: Res<TileComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
   let event = trigger.event();
-  let tile_component = tile_index
+  if let Some(tc) = tile_index
     .get_entities(event.coords.world_grid)
     .iter()
-    .max_by_key(|e| tile_components.get(**e).unwrap().tile.layer)
-    .map(|entity| {
-      let tile_component = tile_components.get(*entity).unwrap();
-      commands.spawn(tile_info(&asset_packs, &tile_component.tile, event.coords.world, &settings));
-      tile_component
-    });
-
-  if let Some(tile_component) = tile_component {
-    let parent_wg = tile_component.tile.get_parent_chunk_world_point();
+    .max_by_key(|tc| tc.tile.layer)
+  {
+    debug!("Debugging {:?}...", event.coords);
+    commands.spawn(tile_info(&asset_packs, &tc.tile, event.coords.world, &settings));
+    let parent_wg = tc.tile.get_parent_chunk_world_point();
     if let Some(parent_chunk) = chunk_index.get(parent_wg) {
-      debug!("Parent chunk at w{:?} contains the tiles listed below", parent_wg);
+      debug!("Parent is chunk w{:?}; any tiles are listed below", parent_wg);
       for plane in &parent_chunk.layered_plane.planes {
-        if let Some(tile) = plane.get_tile(tile_component.tile.coords.chunk_grid) {
+        if let Some(tile) = plane.get_tile(tc.tile.coords.chunk_grid) {
           let neighbours = plane.get_neighbours(tile);
           neighbours.print(tile, neighbours.count_same());
         }
@@ -129,7 +120,7 @@ fn on_left_mouse_click_trigger(
     } else {
       warn!(
         "Failed to find parent chunk at w{} for tile at {:?}",
-        parent_wg, tile_component.tile.coords
+        parent_wg, tc.tile.coords
       );
     }
   }
@@ -138,11 +129,11 @@ fn on_left_mouse_click_trigger(
 fn on_remove_tile_component_trigger(
   trigger: Trigger<OnRemove, TileComponent>,
   query: Query<&TileComponent>,
-  mut index: ResMut<TileEntityIndex>,
+  mut index: ResMut<TileComponentIndex>,
 ) {
   let tc = query.get(trigger.entity()).unwrap();
   index.grid.entry(tc.tile.coords.world_grid).and_modify(|set| {
-    set.remove(&trigger.entity());
+    set.remove(&tc.clone());
   });
 }
 
