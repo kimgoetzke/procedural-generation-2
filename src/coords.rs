@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::constants::{CHUNK_SIZE, TILE_SIZE};
+use crate::constants::TILE_SIZE;
 use bevy::math::Vec2;
 use std::fmt;
 
@@ -84,15 +84,15 @@ impl Point {
 
   pub fn new_chunk_grid_from_world_vec2(world: Vec2) -> Self {
     Self {
-      x: (world.x / CHUNK_SIZE as f32).round() as i32,
-      y: (world.y / CHUNK_SIZE as f32).round() as i32,
+      x: (world.x / TILE_SIZE as f32).round() as i32,
+      y: (world.y / TILE_SIZE as f32).round() as i32,
     }
   }
 
   pub fn new_chunk_grid_from_world_point(world: Point) -> Self {
     Self {
-      x: world.x / CHUNK_SIZE,
-      y: world.y / CHUNK_SIZE,
+      x: world.x / TILE_SIZE as i32,
+      y: world.y / TILE_SIZE as i32,
     }
   }
 }
