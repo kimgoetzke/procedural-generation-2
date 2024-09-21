@@ -16,11 +16,11 @@ pub struct DraftChunk {
 }
 
 impl DraftChunk {
-  pub fn new(world_location: Point, settings: &Res<Settings>) -> Self {
-    let plane = generate_plane(&world_location, settings);
+  pub fn new(world: Point, settings: &Res<Settings>) -> Self {
+    let plane = generate_plane(&world, settings);
     Self {
-      center: Point::new(world_location.x + (CHUNK_SIZE / 2), world_location.y + (CHUNK_SIZE / 2)),
-      coords: Coords::new_for_chunk(world_location),
+      center: Point::new(world.x + (CHUNK_SIZE / 2), world.y + (CHUNK_SIZE / 2)),
+      coords: Coords::new_for_chunk(world),
       plane,
     }
   }
@@ -43,8 +43,8 @@ fn generate_plane(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<Dra
 
   for gx in start.x..=end.x {
     for gy in start.y..=end.y {
+      let world_grid = Point::new(gx, gy);
       let chunk_grid = Point::new(cx, cy);
-      let tile_grid = Point::new(gx, gy);
 
       // Calculate noise value
       let noise = perlin.get([gx as f64 * frequency, gy as f64 * frequency]);
@@ -61,11 +61,11 @@ fn generate_plane(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<Dra
 
       // Determine terrain type based on noise
       let tile = match adjusted_noise {
-        n if n > 0.75 => DraftTile::new(chunk_grid, tile_grid, TerrainType::Forest),
-        n if n > 0.6 => DraftTile::new(chunk_grid, tile_grid, TerrainType::Grass),
-        n if n > 0.45 => DraftTile::new(chunk_grid, tile_grid, TerrainType::Sand),
-        n if n > 0.3 => DraftTile::new(chunk_grid, tile_grid, TerrainType::Shore),
-        _ => DraftTile::new(chunk_grid, tile_grid, TerrainType::Water),
+        n if n > 0.75 => DraftTile::new(chunk_grid, world_grid, TerrainType::Forest),
+        n if n > 0.6 => DraftTile::new(chunk_grid, world_grid, TerrainType::Grass),
+        n if n > 0.45 => DraftTile::new(chunk_grid, world_grid, TerrainType::Sand),
+        n if n > 0.3 => DraftTile::new(chunk_grid, world_grid, TerrainType::Shore),
+        _ => DraftTile::new(chunk_grid, world_grid, TerrainType::Water),
       };
 
       noise_stats.0 = noise_stats.0.min(normalised_noise);

@@ -75,10 +75,13 @@ fn handle_click_system(
       .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
       .map(|ray| ray.origin.truncate())
     {
-      let tile = Point::new_tile_from_world_vec2(vec2);
-      let chunk = Point::new_chunk_from_world_vec2(vec2);
-      let coords = Coords::new_from_tile_and_chunk(tile, chunk);
-      info!("[Left Mouse Button] Clicked at t{:?}...", coords.tile);
+      let world_grid = Point::new_world_grid_from_world_vec2(vec2);
+      let chunk_grid = Point::new_chunk_grid_from_world_vec2(vec2);
+      let coords = Coords::new(world_grid, chunk_grid);
+      info!(
+        "[Left Mouse Button] Clicked on w{:?} wg{:?}...",
+        coords.world, coords.world_grid
+      );
       commands.trigger(MouseClickEvent { coords });
     }
   }

@@ -17,16 +17,49 @@ impl Plane {
     let plane_data = determine_tile_types(&draft_tiles);
     Self { data: plane_data, layer }
   }
+
+  pub fn get_tile(&self, point: Point) -> Option<&Tile> {
+    let i = point.x as usize;
+    let j = point.y as usize;
+    if i < self.data.len() && j < self.data[0].len() {
+      self.data[i][j].as_ref()
+    } else {
+      None
+    }
+  }
+
+  pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles {
+    let x = of.coords.chunk_grid.x;
+    let y = of.coords.chunk_grid.y;
+    let mut neighbours = NeighbourTiles::empty();
+
+    for p in neighbour_points().iter() {
+      let point = Point::new(x + p.0, y + p.1);
+      if let Some(neighbour) = self.get_tile(point) {
+        let neighbour_tile = NeighbourTile::new(
+          Point::new(p.0, p.1),
+          neighbour.terrain,
+          neighbour.terrain == of.terrain || neighbour.layer > of.layer,
+        );
+        neighbours.put(neighbour_tile);
+      } else {
+        let neighbour_tile = NeighbourTile::default(Point::new(p.0, p.1));
+        neighbours.put(neighbour_tile);
+      }
+    }
+
+    neighbours
+  }
 }
 
-pub fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Option<Tile>>> {
+fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Option<Tile>>> {
   let mut final_tiles = vec![vec![None; draft_tiles.len()]; draft_tiles[0].len()];
   for row in draft_tiles {
     for cell in row {
       if let Some(draft_tile) = cell {
         if draft_tile.terrain == TerrainType::Water {
           let tile = Tile::from(draft_tile.clone(), TileType::Fill);
-          final_tiles[draft_tile.coords.chunk.x as usize][draft_tile.coords.chunk.y as usize] = Some(tile);
+          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(tile);
           continue;
         } else {
           let neighbour_tiles = get_neighbours(draft_tile, &draft_tiles);
@@ -34,7 +67,7 @@ pub fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Ve
           let tile_type = determine_tile_type(neighbour_tiles, same_neighbours_count);
           let final_tile = Tile::from(draft_tile.clone(), tile_type);
           neighbour_tiles.print(&final_tile, same_neighbours_count);
-          final_tiles[draft_tile.coords.chunk.x as usize][draft_tile.coords.chunk.y as usize] = Some(final_tile);
+          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
         }
       }
     }
@@ -103,12 +136,11 @@ fn determine_tile_type(n: NeighbourTiles, same_neighbours: usize) -> TileType {
 }
 
 fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles {
-  let x = of.coords.chunk.x;
-  let y = of.coords.chunk.y;
-  let neighbour_points = vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)];
+  let x = of.coords.chunk_grid.x;
+  let y = of.coords.chunk_grid.y;
   let mut neighbours = NeighbourTiles::empty();
 
-  for p in neighbour_points.iter() {
+  for p in neighbour_points().iter() {
     if let Some(neighbour) = get_draft_tile(x + p.0, y + p.1, from) {
       let neighbour_tile = NeighbourTile::new(
         Point::new(p.0, p.1),
@@ -125,7 +157,11 @@ fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> Neighbo
   neighbours
 }
 
-pub fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<&DraftTile> {
+fn neighbour_points() -> Vec<(i32, i32)> {
+  vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)]
+}
+
+fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<&DraftTile> {
   let i = x as usize;
   let j = y as usize;
   if i < from.len() && j < from[0].len() {

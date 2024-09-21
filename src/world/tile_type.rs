@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::world::tile::Tile;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TileType {
   Fill,
   InnerCornerBottomLeft,

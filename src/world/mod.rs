@@ -128,7 +128,7 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
         if let Some(tile) = tile {
           let tile_data = tile_data.iter().find(|x| x.tile.coords == tile.coords).unwrap();
           let tile_commands = commands.entity(tile_data.entity);
-          spawn_tile(tile_commands, tile, &asset_packs, &settings);
+          spawn_tile(tile_commands, tile, tile_data.parent_entity, &asset_packs, &settings);
         }
       }
       debug!("Spawned [{:?}] tiles within {} ms", TerrainType::from(layer), get_time() - t2);
@@ -140,12 +140,14 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
 
 fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
   let mut tile_data = Vec::new();
+  debug!("Spawning chunk at {:?}", chunk.coords);
   world_child_builder
     .spawn((
-      Name::new(format!("Chunk ({},{})", chunk.coords.world.x, chunk.coords.world.y)),
+      Name::new(format!("Chunk w{}", chunk.coords.world)),
       SpatialBundle::default(),
       ChunkComponent {
         layered_plane: chunk.layered_plane.clone(),
+        coords: chunk.coords.clone(),
       },
     ))
     .with_children(|parent| {
@@ -153,9 +155,7 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
         if let Some(tile) = cell {
           let tile_entity = parent
             .spawn((
-              Name::new(
-                "Tile g(".to_string() + &tile.coords.tile.x.to_string() + "," + &tile.coords.tile.y.to_string() + ")",
-              ),
+              Name::new("Tile wg".to_string() + &tile.coords.world_grid.to_string()),
               SpatialBundle {
                 transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
                 ..Default::default()
@@ -170,19 +170,23 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   tile_data
 }
 
-fn spawn_tile(mut commands: EntityCommands, tile: &Tile, asset_packs: &AssetPacks, settings: &Res<Settings>) {
+fn spawn_tile(mut commands: EntityCommands, tile: &Tile, chunk: Entity, asset_packs: &AssetPacks, settings: &Res<Settings>) {
   commands.with_children(|parent| {
     if settings.general.draw_terrain_sprites {
-      parent.spawn(terrain_sprite(tile, asset_packs));
+      parent.spawn(terrain_sprite(tile, chunk, asset_packs));
     } else {
-      parent.spawn(default_sprite(tile, asset_packs));
+      parent.spawn(default_sprite(tile, chunk, asset_packs));
     }
   });
 }
 
-fn default_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
+fn default_sprite(
+  tile: &Tile,
+  chunk: Entity,
+  asset_packs: &AssetPacks,
+) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
-    Name::new("Default Sprite"),
+    Name::new(format!("Default {:?} Sprite", tile.terrain)),
     SpriteBundle {
       texture: asset_packs.default.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
@@ -192,13 +196,20 @@ fn default_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle,
       layout: asset_packs.default.texture_atlas_layout.clone(),
       index: tile.default_sprite_index,
     },
-    TileComponent { tile: tile.clone() },
+    TileComponent {
+      tile: tile.clone(),
+      parent_entity: chunk,
+    },
   )
 }
 
-fn terrain_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
+fn terrain_sprite(
+  tile: &Tile,
+  chunk: Entity,
+  asset_packs: &AssetPacks,
+) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
-    Name::new("Terrain Sprite"),
+    Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
     SpriteBundle {
       texture: match tile.terrain {
         TerrainType::Water => asset_packs.water.texture.clone(),
@@ -222,7 +233,10 @@ fn terrain_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle,
       },
       index: get_sprite_index(&tile),
     },
-    TileComponent { tile: tile.clone() },
+    TileComponent {
+      tile: tile.clone(),
+      parent_entity: chunk,
+    },
     // AnimationTimer {
     //   timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
     // },

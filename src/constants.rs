@@ -15,7 +15,7 @@ pub const LAYER_POST_PROCESSING: bool = false;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
 
 // Chunks
-pub const CHUNK_SIZE: i32 = 8;
+pub const CHUNK_SIZE: i32 = 32;
 
 // Sprites
 pub const TILE_SIZE: u32 = 32;

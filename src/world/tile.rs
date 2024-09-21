@@ -1,3 +1,4 @@
+use crate::constants::TILE_SIZE;
 use crate::coords::{Coords, Point};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_type::TileType;
@@ -10,9 +11,9 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(chunk_grid: Point, tile_grid: Point, terrain: TerrainType) -> Self {
+  pub fn new(chunk_grid: Point, world_grid: Point, terrain: TerrainType) -> Self {
     Self {
-      coords: Coords::new(chunk_grid, tile_grid),
+      coords: Coords::new(chunk_grid, world_grid),
       terrain,
       layer: terrain as i32,
     }
@@ -27,7 +28,7 @@ impl DraftTile {
   }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Tile {
   pub coords: Coords,
   pub terrain: TerrainType,
@@ -44,6 +45,13 @@ impl Tile {
       default_sprite_index: draft_tile.layer as usize,
       layer: draft_tile.layer,
       tile_type,
+    }
+  }
+
+  pub fn get_parent_chunk_world_point(&self) -> Point {
+    Point {
+      x: (self.coords.world_grid.x - self.coords.chunk_grid.x) * TILE_SIZE as i32,
+      y: (self.coords.world_grid.y - self.coords.chunk_grid.y) * TILE_SIZE as i32,
     }
   }
 }

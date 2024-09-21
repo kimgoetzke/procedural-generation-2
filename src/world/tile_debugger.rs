@@ -1,7 +1,7 @@
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::Settings;
-use crate::world::components::TileComponent;
+use crate::world::components::{ChunkComponent, TileComponent};
 use crate::world::resources::AssetPacks;
 use crate::world::tile::Tile;
 use crate::world::tile_type::get_sprite_index;
@@ -20,11 +20,14 @@ pub struct TileDebuggerPlugin;
 impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
+      .observe(on_add_chunk_component_trigger)
+      .observe(on_remove_chunk_component_trigger)
       .observe(on_add_tile_component_trigger)
       .observe(on_left_mouse_click_trigger)
       .observe(on_remove_tile_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, refresh_world_event))
-      .init_resource::<SpatialTileEntityIndex>();
+      .init_resource::<TileEntityIndex>()
+      .init_resource::<ChunkEntityIndex>();
   }
 }
 
@@ -32,78 +35,110 @@ impl Plugin for TileDebuggerPlugin {
 struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
-struct SpatialTileEntityIndex {
-  pub grid: HashMap<(i32, i32), HashSet<Entity>>,
+struct TileEntityIndex {
+  pub grid: HashMap<Point, HashSet<Entity>>,
 }
 
-impl SpatialTileEntityIndex {
-  pub fn get_entities_for_location(&self, point: Point) -> Vec<Entity> {
+impl TileEntityIndex {
+  pub fn get_entities(&self, point: Point) -> Vec<Entity> {
     let mut entities = Vec::new();
-    if let Some(tiles) = self.grid.get(&(point.x, point.y)) {
+    if let Some(tiles) = self.grid.get(&point) {
       entities.extend(tiles.iter());
     }
     entities
   }
+}
 
-  pub fn get_nearby_entities(&self, point: Point) -> Vec<Entity> {
-    let mut nearby = Vec::new();
-    if let Some(tiles) = self.grid.get(&(point.x, point.y)) {
-      nearby.extend(tiles.iter());
+#[derive(Resource, Default)]
+struct ChunkEntityIndex {
+  pub grid: HashMap<Point, ChunkComponent>,
+}
+
+impl ChunkEntityIndex {
+  pub fn get_entity(&self, point: Point) -> Option<ChunkComponent> {
+    if let Some(entity) = self.grid.get(&point) {
+      Some(entity.clone())
+    } else {
+      None
     }
-    // for x in -1..2 {
-    //   for y in -1..2 {
-    //     if let Some(tiles) = self.grid.get(&(point.x + x, point.y + y)) {
-    //       nearby.extend(tiles.iter());
-    //     }
-    //   }
-    // }
-    nearby
   }
+}
+
+fn on_add_chunk_component_trigger(
+  trigger: Trigger<OnAdd, ChunkComponent>,
+  query: Query<&ChunkComponent>,
+  mut index: ResMut<ChunkEntityIndex>,
+) {
+  let cc = query.get(trigger.entity()).unwrap();
+  index.grid.insert(cc.coords.world_grid, cc.clone());
+}
+
+fn on_remove_chunk_component_trigger(
+  trigger: Trigger<OnRemove, ChunkComponent>,
+  query: Query<&ChunkComponent>,
+  mut index: ResMut<ChunkEntityIndex>,
+) {
+  let cc = query.get(trigger.entity()).unwrap();
+  index.grid.remove(&cc.coords.world_grid);
 }
 
 fn on_add_tile_component_trigger(
   trigger: Trigger<OnAdd, TileComponent>,
   query: Query<&TileComponent>,
-  mut index: ResMut<SpatialTileEntityIndex>,
+  mut index: ResMut<TileEntityIndex>,
 ) {
   let tc = query.get(trigger.entity()).unwrap();
-  let key = (tc.tile.coords.tile.x, tc.tile.coords.tile.y);
-  index.grid.entry(key).or_default().insert(trigger.entity());
+  index
+    .grid
+    .entry(tc.tile.coords.world_grid)
+    .or_default()
+    .insert(trigger.entity());
 }
 
 fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
   tile_components: Query<&TileComponent>,
-  index: Res<SpatialTileEntityIndex>,
+  chunk_component: Query<&ChunkComponent>,
+  tile_index: Res<TileEntityIndex>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
   let event = trigger.event();
-  let relevant_entities = index.get_entities_for_location(event.coords.tile);
+  let tile_component = tile_index
+    .get_entities(event.coords.world_grid)
+    .iter()
+    .max_by_key(|e| tile_components.get(**e).unwrap().tile.layer)
+    .map(|entity| {
+      let tile_component = tile_components.get(*entity).unwrap();
+      commands.spawn(tile_info(&asset_packs, &tile_component.tile, event.coords.world, &settings));
+      tile_component
+    });
 
-  if let Some(entity) = relevant_entities.iter().max_by_key(|e| {
-    let tc = tile_components.get(**e).unwrap();
-    tc.tile.layer
-  }) {
-    let tile_component = tile_components.get(*entity).unwrap();
-    commands.spawn(tile_info(&asset_packs, &tile_component.tile, event.coords.world, &settings));
-  }
-
-  for entity in relevant_entities {
-    let tile_component = tile_components.get(entity).unwrap();
-    debug!("Found: {:?}", tile_component);
+  if let Some(tile_component) = tile_component {
+    let parent_wg = tile_component.tile.get_parent_chunk_world_point();
+    // TODO: Replace chunk_component with ChunkEntityIndex
+    if let Some(parent_chunk) = chunk_component.iter().find(|cc| cc.coords.world == parent_wg) {
+      debug!("Parent chunk at w{:?} contains the tiles listed below", parent_wg);
+      for plane in &parent_chunk.layered_plane.planes {
+        if let Some(tile) = plane.get_tile(tile_component.tile.coords.chunk_grid) {
+          let neighbours = plane.get_neighbours(tile);
+          neighbours.print(tile, neighbours.count_same());
+        }
+      }
+    } else {
+      warn!("Did not find parent chunk for tile at {:?}", tile_component.tile.coords);
+    }
   }
 }
 
 fn on_remove_tile_component_trigger(
   trigger: Trigger<OnRemove, TileComponent>,
   query: Query<&TileComponent>,
-  mut index: ResMut<SpatialTileEntityIndex>,
+  mut index: ResMut<TileEntityIndex>,
 ) {
   let tc = query.get(trigger.entity()).unwrap();
-  let key = (tc.tile.coords.tile.x, tc.tile.coords.tile.y);
-  index.grid.entry(key).and_modify(|set| {
+  index.grid.entry(tc.tile.coords.world_grid).and_modify(|set| {
     set.remove(&trigger.entity());
   });
 }
@@ -120,13 +155,13 @@ fn tile_info(
     Visibility::Hidden
   };
   (
-    Name::new(format!("Tile t{:?} Debug Info", tile.coords.tile)),
+    Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {
       text: Text::from_section(
         format!(
-          "t{:?} c{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
-          tile.coords.tile,
-          tile.coords.chunk,
+          "wg{:?} cg{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
+          tile.coords.world_grid,
+          tile.coords.chunk_grid,
           tile.terrain,
           tile.tile_type,
           get_sprite_index(&tile),

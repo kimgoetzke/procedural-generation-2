@@ -213,15 +213,15 @@ impl NeighbourTiles {
   }
 
   pub fn print(&self, tile: &Tile, neighbour_count: usize) {
-    trace!("{:?}", tile);
-    trace!("|-------|-------|-------|");
-    trace!(
+    debug!("{:?}", tile);
+    debug!("|-------|-------|-------|");
+    debug!(
       "| {:<5} | {:<5} | {:<5} |",
       format!("{:?}", self.top_left.terrain).chars().take(5).collect::<String>(),
       format!("{:?}", self.top.terrain).chars().take(5).collect::<String>(),
       format!("{:?}", self.top_right.terrain).chars().take(5).collect::<String>()
     );
-    trace!(
+    debug!(
       "| {:<5} | {:<5} | {:<5} | => '{:?}' with {} neighbours",
       format!("{:?}", self.left.terrain).chars().take(5).collect::<String>(),
       format!("{:?}", tile.terrain).chars().take(5).collect::<String>(),
@@ -229,13 +229,13 @@ impl NeighbourTiles {
       tile.tile_type,
       neighbour_count
     );
-    trace!(
+    debug!(
       "| {:<5} | {:<5} | {:<5} |",
       format!("{:?}", self.bottom_left.terrain).chars().take(5).collect::<String>(),
       format!("{:?}", self.bottom.terrain).chars().take(5).collect::<String>(),
       format!("{:?}", self.bottom_right.terrain).chars().take(5).collect::<String>()
     );
-    trace!("|-------|-------|-------|");
-    trace!("");
+    debug!("|-------|-------|-------|");
+    debug!("");
   }
 }
