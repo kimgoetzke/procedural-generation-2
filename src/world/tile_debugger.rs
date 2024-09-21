@@ -100,6 +100,9 @@ fn on_left_mouse_click_trigger(
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
+  if !settings.general.enable_tile_debugging {
+    return;
+  }
   let event = trigger.event();
   if let Some(tc) = tile_index
     .get_entities(event.coords.world_grid)
