@@ -60,13 +60,11 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
         if draft_tile.terrain == TerrainType::Water {
           let tile = Tile::from(draft_tile.clone(), TileType::Fill);
           final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(tile);
-          continue;
         } else {
           let neighbour_tiles = get_neighbours(draft_tile, &draft_tiles);
           let same_neighbours_count = neighbour_tiles.count_same();
           let tile_type = determine_tile_type(neighbour_tiles, same_neighbours_count);
           let final_tile = Tile::from(draft_tile.clone(), tile_type);
-          neighbour_tiles.print(&final_tile, same_neighbours_count);
           final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
         }
       }

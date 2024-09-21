@@ -27,7 +27,7 @@ impl Plugin for TileDebuggerPlugin {
       .observe(on_remove_tile_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, refresh_world_event))
       .init_resource::<TileEntityIndex>()
-      .init_resource::<ChunkEntityIndex>();
+      .init_resource::<ChunkComponentIndex>();
   }
 }
 
@@ -50,12 +50,12 @@ impl TileEntityIndex {
 }
 
 #[derive(Resource, Default)]
-struct ChunkEntityIndex {
+struct ChunkComponentIndex {
   pub grid: HashMap<Point, ChunkComponent>,
 }
 
-impl ChunkEntityIndex {
-  pub fn get_entity(&self, point: Point) -> Option<ChunkComponent> {
+impl ChunkComponentIndex {
+  pub fn get(&self, point: Point) -> Option<ChunkComponent> {
     if let Some(entity) = self.grid.get(&point) {
       Some(entity.clone())
     } else {
@@ -67,16 +67,17 @@ impl ChunkEntityIndex {
 fn on_add_chunk_component_trigger(
   trigger: Trigger<OnAdd, ChunkComponent>,
   query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkEntityIndex>,
+  mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity()).unwrap();
-  index.grid.insert(cc.coords.world_grid, cc.clone());
+  debug!("Adding chunk with key w{:?}", cc.coords.world);
+  index.grid.insert(cc.coords.world, cc.clone());
 }
 
 fn on_remove_chunk_component_trigger(
   trigger: Trigger<OnRemove, ChunkComponent>,
   query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkEntityIndex>,
+  mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity()).unwrap();
   index.grid.remove(&cc.coords.world_grid);
@@ -98,8 +99,8 @@ fn on_add_tile_component_trigger(
 fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
   tile_components: Query<&TileComponent>,
-  chunk_component: Query<&ChunkComponent>,
   tile_index: Res<TileEntityIndex>,
+  chunk_index: Res<ChunkComponentIndex>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
   mut commands: Commands,
@@ -117,8 +118,7 @@ fn on_left_mouse_click_trigger(
 
   if let Some(tile_component) = tile_component {
     let parent_wg = tile_component.tile.get_parent_chunk_world_point();
-    // TODO: Replace chunk_component with ChunkEntityIndex
-    if let Some(parent_chunk) = chunk_component.iter().find(|cc| cc.coords.world == parent_wg) {
+    if let Some(parent_chunk) = chunk_index.get(parent_wg) {
       debug!("Parent chunk at w{:?} contains the tiles listed below", parent_wg);
       for plane in &parent_chunk.layered_plane.planes {
         if let Some(tile) = plane.get_tile(tile_component.tile.coords.chunk_grid) {
@@ -127,7 +127,10 @@ fn on_left_mouse_click_trigger(
         }
       }
     } else {
-      warn!("Did not find parent chunk for tile at {:?}", tile_component.tile.coords);
+      warn!(
+        "Failed to find parent chunk at w{} for tile at {:?}",
+        parent_wg, tile_component.tile.coords
+      );
     }
   }
 }
