@@ -1,4 +1,4 @@
-use crate::world::coords::Point;
+use crate::coords::Point;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::Tile;
 use bevy::log::*;

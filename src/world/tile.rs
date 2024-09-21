@@ -1,4 +1,4 @@
-use crate::world::coords::{Coords, Point};
+use crate::coords::{Coords, Point};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_type::TileType;
 
@@ -10,9 +10,9 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(chunk_location: Point, grid_location: Point, terrain: TerrainType) -> Self {
+  pub fn new(chunk_grid: Point, tile_grid: Point, terrain: TerrainType) -> Self {
     Self {
-      coords: Coords::new_grid_for_tile(chunk_location, grid_location),
+      coords: Coords::new(chunk_grid, tile_grid),
       terrain,
       layer: terrain as i32,
     }

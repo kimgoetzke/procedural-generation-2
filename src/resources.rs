@@ -1,5 +1,5 @@
 use crate::constants::{
-  DRAW_TERRAIN_SPRITES, GENERATE_NEIGHBOUR_CHUNKS, LAYER_POST_PROCESSING, SPAWN_TILE_DEBUG_INFO, SPAWN_UP_TO_LAYER,
+  DRAW_TERRAIN_SPRITES, ENABLE_TILE_DEBUGGING, GENERATE_NEIGHBOUR_CHUNKS, LAYER_POST_PROCESSING, SPAWN_UP_TO_LAYER,
 };
 use bevy::app::{App, Plugin};
 use bevy::prelude::{Reflect, ReflectResource, Resource};
@@ -12,8 +12,6 @@ pub struct SharedResourcesPlugin;
 impl Plugin for SharedResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
-      .register_type::<ShowDebugInfo>()
-      .insert_resource(ShowDebugInfo::off())
       .init_resource::<Settings>()
       .register_type::<Settings>()
       .insert_resource(Settings::default())
@@ -23,17 +21,6 @@ impl Plugin for SharedResourcesPlugin {
       .init_resource::<WorldGenerationSettings>()
       .register_type::<WorldGenerationSettings>()
       .insert_resource(WorldGenerationSettings::default());
-  }
-}
-
-#[derive(Resource, Default, Reflect)]
-pub(crate) struct ShowDebugInfo {
-  pub is_on: bool,
-}
-
-impl ShowDebugInfo {
-  fn off() -> Self {
-    Self { is_on: false }
   }
 }
 
@@ -56,7 +43,7 @@ impl Default for Settings {
 #[reflect(Resource, InspectorOptions)]
 pub struct GeneralGenerationSettings {
   pub generate_neighbour_chunks: bool,
-  pub spawn_tile_debug_info: bool, // Disabling massively speeds up the generation process
+  pub enable_tile_debugging: bool, // Disabling massively speeds up the generation process
   pub draw_terrain_sprites: bool,
   pub layer_post_processing: bool,
   #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
@@ -67,7 +54,7 @@ impl Default for GeneralGenerationSettings {
   fn default() -> Self {
     Self {
       generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
-      spawn_tile_debug_info: SPAWN_TILE_DEBUG_INFO,
+      enable_tile_debugging: ENABLE_TILE_DEBUGGING,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       layer_post_processing: LAYER_POST_PROCESSING,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,

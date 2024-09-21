@@ -20,9 +20,22 @@ impl Plugin for UiPlugin {
 }
 
 #[derive(Default, Resource)]
-pub struct UiEventsResource {
-  pub regenerate: bool,
-  pub generate_next: bool,
+struct UiEventsResource {
+  has_changed: bool,
+  regenerate: bool,
+  generate_next: bool,
+}
+
+impl UiEventsResource {
+  pub fn trigger_regeneration(&mut self) {
+    self.regenerate = true;
+    self.has_changed = true;
+  }
+
+  pub fn trigger_next_generation(&mut self) {
+    self.generate_next = true;
+    self.has_changed = true;
+  }
 }
 
 fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
@@ -56,12 +69,12 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
         ui.horizontal(|ui| {
           if ui.button("Regenerate").clicked() {
             let mut event_writer = world.resource_mut::<UiEventsResource>();
-            event_writer.regenerate = true;
+            event_writer.trigger_regeneration();
           }
           ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             if ui.button("Generate Next").clicked() {
               let mut event_writer = world.resource_mut::<UiEventsResource>();
-              event_writer.generate_next = true;
+              event_writer.trigger_next_generation();
             }
           });
         });
@@ -78,18 +91,21 @@ fn handle_ui_events_system(
   general: Res<GeneralGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
 ) {
-  settings.general = general.clone();
-  settings.world = world_gen.clone();
+  if state.has_changed {
+    state.has_changed = false;
+    settings.general = general.clone();
+    settings.world = world_gen.clone();
 
-  if state.regenerate {
-    events.send(RefreshWorldEvent {});
-    state.regenerate = false;
-  }
+    if state.regenerate {
+      events.send(RefreshWorldEvent {});
+      state.regenerate = false;
+    }
 
-  if state.generate_next {
-    settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
-    world_gen.noise_seed = settings.world.noise_seed;
-    events.send(RefreshWorldEvent {});
-    state.generate_next = false;
+    if state.generate_next {
+      settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
+      world_gen.noise_seed = settings.world.noise_seed;
+      events.send(RefreshWorldEvent {});
+      state.generate_next = false;
+    }
   }
 }

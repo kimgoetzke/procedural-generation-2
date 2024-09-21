@@ -43,6 +43,7 @@ impl LayeredPlane {
     }
   }
 
+  #[allow(dead_code)]
   pub fn get(&self, terrain: TerrainType) -> &Plane {
     let layer = terrain as usize;
     &self.planes[layer]

@@ -1,5 +1,6 @@
-use crate::events::{RefreshWorldEvent, ToggleDebugInfo};
-use crate::resources::{Settings, ShowDebugInfo};
+use crate::coords::{Coords, Point};
+use crate::events::{MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
+use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 
@@ -7,7 +8,10 @@ pub struct ControlPlugin;
 
 impl Plugin for ControlPlugin {
   fn build(&self, app: &mut App) {
-    app.add_systems(Update, (non_settings_controls_system, settings_controls_system));
+    app.add_systems(
+      Update,
+      (non_settings_controls_system, settings_controls_system, handle_click_system),
+    );
   }
 }
 
@@ -18,19 +22,7 @@ impl Plugin for ControlPlugin {
 fn non_settings_controls_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
   mut reset_world_event: EventWriter<RefreshWorldEvent>,
-  mut toggle_tile_info: EventWriter<ToggleDebugInfo>,
-  mut debug_info: ResMut<ShowDebugInfo>,
 ) {
-  // Toggle debug info
-  if keyboard_input.just_pressed(KeyCode::F3) {
-    debug_info.is_on = !debug_info.is_on;
-    info!(
-      "[F3] Toggling debug info [{}]...",
-      if debug_info.is_on { "on" } else { "off" }
-    );
-    toggle_tile_info.send(ToggleDebugInfo {});
-  }
-
   // Refresh world
   if keyboard_input.just_pressed(KeyCode::F5) {
     info!("[F5] Refreshing world...");
@@ -41,44 +33,11 @@ fn non_settings_controls_system(
 /**
  * A system that handles setting value changes.
  */
-fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut settings: ResMut<Settings>) {
-  // Seed
-  if keyboard_input.just_pressed(KeyCode::KeyR) {
-    settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
-    info!("[R] Increased noise seed to [{}]", settings.world.noise_seed);
-  } else if keyboard_input.just_pressed(KeyCode::KeyF) {
-    settings.world.noise_seed = settings.world.noise_seed.saturating_sub(1);
-    info!("[F] Decreased noise seed to [{}]", settings.world.noise_seed);
-  }
-
-  // Frequency
-  if keyboard_input.just_pressed(KeyCode::KeyT) {
-    settings.world.noise_frequency += 0.1;
-    info!("[T] Increased noise frequency to [{}]", settings.world.noise_frequency);
-  } else if keyboard_input.just_pressed(KeyCode::KeyG) {
-    settings.world.noise_frequency -= 0.1;
-    info!("[G] Decreased noise frequency to [{}]", settings.world.noise_frequency);
-  }
-
-  // Scale factor
-  if keyboard_input.just_pressed(KeyCode::KeyY) {
-    settings.world.elevation += 0.5;
-    info!("[Y] Increased noise scale factor to [{}]", settings.world.elevation);
-  } else if keyboard_input.just_pressed(KeyCode::KeyH) {
-    settings.world.elevation -= 0.5;
-    info!("[H] Decreased noise scale factor to [{}]", settings.world.elevation);
-  }
-
-  // Falloff strength
-  if keyboard_input.just_pressed(KeyCode::KeyU) {
-    settings.world.falloff_strength += 0.1;
-    info!("[U] Increased falloff strength to [{}]", settings.world.falloff_strength);
-  } else if keyboard_input.just_pressed(KeyCode::KeyJ) {
-    settings.world.falloff_strength -= 0.1;
-    info!("[J] Decreased falloff strength to [{}]", settings.world.falloff_strength);
-  }
-
-  // Draw terrain sprites
+fn settings_controls_system(
+  keyboard_input: Res<ButtonInput<KeyCode>>,
+  mut settings: ResMut<Settings>,
+  mut toggle_debug_info_event: EventWriter<ToggleDebugInfo>,
+) {
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
     settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
     info!(
@@ -87,18 +46,40 @@ fn settings_controls_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut setti
     );
   }
 
-  // Permit tile layer adjustments
   if keyboard_input.just_pressed(KeyCode::KeyX) {
     settings.general.layer_post_processing = !settings.general.layer_post_processing;
     info!(
-      "[X] Toggled tile layer adjustments to [{}]",
+      "[X] Toggled layer post processing to [{}]",
       settings.general.layer_post_processing
     );
   }
 
-  // Spawn tile debug info
   if keyboard_input.just_pressed(KeyCode::KeyC) {
-    settings.general.spawn_tile_debug_info = !settings.general.spawn_tile_debug_info;
-    info!("[C] Toggled tile debug info to [{}]", settings.general.spawn_tile_debug_info);
+    settings.general.enable_tile_debugging = !settings.general.enable_tile_debugging;
+    info!("[C] Toggled tile debugging to [{}]", settings.general.enable_tile_debugging);
+    toggle_debug_info_event.send(ToggleDebugInfo {});
+  }
+}
+
+fn handle_click_system(
+  mouse_button_input: Res<ButtonInput<MouseButton>>,
+  camera: Query<(&Camera, &GlobalTransform)>,
+  windows: Query<&Window>,
+  mut commands: Commands,
+) {
+  if mouse_button_input.just_pressed(MouseButton::Left) {
+    let (camera, camera_transform) = camera.single();
+    if let Some(vec2) = windows
+      .single()
+      .cursor_position()
+      .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+      .map(|ray| ray.origin.truncate())
+    {
+      let tile = Point::new_tile_from_world_vec2(vec2);
+      let chunk = Point::new_chunk_from_world_vec2(vec2);
+      let coords = Coords::new_from_tile_and_chunk(tile, chunk);
+      info!("[Left Mouse Button] Clicked at t{:?}...", coords.tile);
+      commands.trigger(MouseClickEvent { coords });
+    }
   }
 }

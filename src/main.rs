@@ -1,6 +1,7 @@
 mod camera;
 mod constants;
 mod controls;
+mod coords;
 mod events;
 mod resources;
 mod ui;

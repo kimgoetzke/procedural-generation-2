@@ -1,5 +1,5 @@
+use crate::coords::{Coords, Point};
 use crate::resources::Settings;
-use crate::world::coords::{Coords, Point};
 use crate::world::draft_chunk::DraftChunk;
 use crate::world::layered_plane::LayeredPlane;
 use bevy::prelude::Res;

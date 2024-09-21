@@ -9,13 +9,13 @@ pub const LAYER_DELAY: f32 = 2.;
 // Settings
 pub const SHOW_SETTINGS_UI: bool = true;
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
-pub const SPAWN_TILE_DEBUG_INFO: bool = true;
+pub const ENABLE_TILE_DEBUGGING: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const LAYER_POST_PROCESSING: bool = false;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
 
 // Chunks
-pub const CHUNK_SIZE: i32 = 64;
+pub const CHUNK_SIZE: i32 = 8;
 
 // Sprites
 pub const TILE_SIZE: u32 = 32;
