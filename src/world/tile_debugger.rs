@@ -70,7 +70,6 @@ fn on_add_chunk_component_trigger(
   mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity()).unwrap();
-  debug!("Adding chunk with key w{:?}", cc.coords.world);
   index.grid.insert(cc.coords.world, cc.clone());
 }
 
