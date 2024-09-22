@@ -35,17 +35,12 @@ impl Plugin for WorldPlugin {
     app
       .add_plugins((TileDebuggerPlugin, WorldResourcesPlugin))
       .add_systems(Startup, generate_world_system)
-      .add_systems(Update, (refresh_world_event, update_visibility_system));
+      .add_systems(Update, refresh_world_event);
   }
 }
 
 #[derive(Component)]
 struct WorldComponent;
-
-#[derive(Component, Deref, DerefMut)]
-struct AnimationTimer {
-  timer: Timer,
-}
 
 struct TileData {
   entity: Entity,
@@ -68,10 +63,16 @@ fn generate_world_system(mut commands: Commands, asset_packs: Res<AssetPacks>, s
 }
 
 fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: &Res<Settings>) {
-  let t1 = get_time();
+  let start_time = get_time();
+  let draft_chunks = generate_draft_chunks(settings);
+  let final_chunks = convert_draft_chunks_to_chunks(settings, draft_chunks);
+  let tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
+  spawn_tiles(commands, &asset_packs, &settings, final_chunks, tile_data);
+  info!("✅  World generation took {} ms", get_time() - start_time);
+}
 
-  // Generate draft chunks
-  let t2 = get_time();
+fn generate_draft_chunks(settings: &Res<Settings>) -> Vec<DraftChunk> {
+  let start_time = get_time();
   let mut draft_chunks: Vec<DraftChunk> = Vec::new();
   let spawn_point = Point::new(-(CHUNK_SIZE / 2), -(CHUNK_SIZE / 2));
   get_chunk_spawn_points(&spawn_point, CHUNK_SIZE).iter().for_each(|point| {
@@ -86,20 +87,26 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
       }
     }
   });
-  debug!("Generated draft chunk(s) in {} ms", get_time() - t2);
+  debug!("Generated draft chunk(s) in {} ms", get_time() - start_time);
 
-  // Convert draft chunks to chunks
-  let t2 = get_time();
+  draft_chunks
+}
+
+fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<DraftChunk>) -> Vec<Chunk> {
+  let start_time = get_time();
   let mut final_chunks: Vec<Chunk> = Vec::new();
   for draft_chunk in draft_chunks {
     let chunk = Chunk::new(draft_chunk, settings);
     // TODO: Add post-processing step that removes single tiles if layer below is not fill
     final_chunks.push(chunk);
   }
-  debug!("Converted draft chunk(s) to chunk(s) in {} ms", get_time() - t2);
+  debug!("Converted draft chunk(s) to chunk(s) in {} ms", get_time() - start_time);
 
-  // Spawn world entity and base chunks
-  let t2 = get_time();
+  final_chunks
+}
+
+fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<TileData> {
+  let start_time = get_time();
   let mut tile_data = Vec::new();
   commands
     .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
@@ -110,9 +117,19 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
         tile_data.extend(entry);
       }
     });
-  debug!("Spawned world and chunk entities in {} ms", get_time() - t2);
+  debug!("Spawned world and chunk entities in {} ms", get_time() - start_time);
 
-  // Spawn tiles, chunk by chunk and layer by layer
+  tile_data
+}
+
+fn spawn_tiles(
+  commands: &mut Commands,
+  asset_packs: &Res<AssetPacks>,
+  settings: &&Res<Settings>,
+  final_chunks: Vec<Chunk>,
+  tile_data: Vec<TileData>,
+) {
+  let t1 = get_time();
   for chunk in final_chunks.iter() {
     for plane in chunk.layered_plane.planes.iter() {
       let layer = plane.layer.unwrap_or(usize::MAX);
@@ -134,8 +151,7 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
       debug!("Spawned [{:?}] tiles within {} ms", TerrainType::from(layer), get_time() - t2);
     }
   }
-
-  info!("✅  World generation took {} ms", get_time() - t1);
+  debug!("Spawned all tiles within {} ms", get_time() - t1);
 }
 
 fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
@@ -237,23 +253,11 @@ fn terrain_sprite(
       tile: tile.clone(),
       parent_entity: chunk,
     },
-    // AnimationTimer {
-    //   timer: Timer::from_seconds(delay + LAYER_DELAY, TimerMode::Once),
-    // },
   )
 }
 
 fn get_time() -> u128 {
   SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()
-}
-
-fn update_visibility_system(time: Res<Time>, mut query: Query<(&mut Visibility, &mut AnimationTimer)>) {
-  for (mut visibility, mut animation) in query.iter_mut() {
-    animation.timer.tick(time.delta());
-    if animation.timer.finished() {
-      *visibility = Visibility::Visible;
-    }
-  }
 }
 
 fn refresh_world_event(
