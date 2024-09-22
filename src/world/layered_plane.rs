@@ -43,9 +43,11 @@ impl LayeredPlane {
     }
   }
 
-  #[allow(dead_code)]
-  pub fn get(&self, terrain: TerrainType) -> &Plane {
-    let layer = terrain as usize;
-    &self.planes[layer]
+  pub fn get(&self, layer: usize) -> Option<&Plane> {
+    if layer < self.planes.len() {
+      Some(&self.planes[layer])
+    } else {
+      None
+    }
   }
 }

@@ -112,7 +112,6 @@ fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk
     .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
     .with_children(|parent| {
       for chunk in final_chunks.iter() {
-        // TODO: Do I want to spawn each layer as a child of the chunk or of each tile?
         let entry = spawn_chunk(parent, &chunk);
         tile_data.extend(entry);
       }
@@ -130,26 +129,25 @@ fn spawn_tiles(
   tile_data: Vec<TileData>,
 ) {
   let t1 = get_time();
-  for chunk in final_chunks.iter() {
-    for plane in chunk.layered_plane.planes.iter() {
-      let layer = plane.layer.unwrap_or(usize::MAX);
-      if layer > settings.general.spawn_up_to_layer {
-        debug!(
-          "Skipped spawning [{:?}] tiles because it's disabled",
-          TerrainType::from(layer)
-        );
-        continue;
-      }
-      let t2 = get_time();
-      for tile in plane.data.iter().flatten() {
-        if let Some(tile) = tile {
-          let tile_data = tile_data.iter().find(|x| x.tile.coords == tile.coords).unwrap();
-          let tile_commands = commands.entity(tile_data.entity);
-          spawn_tile(tile_commands, tile, tile_data.parent_entity, &asset_packs, &settings);
+  for layer in 0..TerrainType::length() {
+    let layer_name = TerrainType::from(layer);
+    if layer > settings.general.spawn_up_to_layer {
+      debug!("Skipped spawning [{:?}] tiles because it's disabled", layer_name);
+      continue;
+    }
+    let t2 = get_time();
+    for chunk in final_chunks.iter() {
+      if let Some(plane) = chunk.layered_plane.get(layer) {
+        for tile in plane.data.iter().flatten() {
+          if let Some(tile) = tile {
+            let tile_data = tile_data.iter().find(|x| x.tile.coords == tile.coords).unwrap();
+            let tile_commands = commands.entity(tile_data.entity);
+            spawn_tile(tile_commands, tile, tile_data.parent_entity, &asset_packs, &settings);
+          }
         }
       }
-      debug!("Spawned [{:?}] tiles within {} ms", TerrainType::from(layer), get_time() - t2);
     }
+    debug!("Spawned [{:?}] tiles within {} ms", layer_name, get_time() - t2);
   }
   debug!("Spawned all tiles within {} ms", get_time() - t1);
 }
