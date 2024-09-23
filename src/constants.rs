@@ -1,18 +1,25 @@
 #![allow(dead_code)]
 
 use bevy::color::Color;
+use bevy::math::UVec2;
 
 // Animation
 pub const BASE_DELAY: f32 = 0.; // 0.0025
 pub const LAYER_DELAY: f32 = 2.;
 
-// Settings
-pub const SHOW_SETTINGS_UI: bool = true;
+// Settings: General
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
-pub const ENABLE_TILE_DEBUGGING: bool = true;
+pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
-pub const LAYER_POST_PROCESSING: bool = false;
+pub const LAYER_POST_PROCESSING: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
+
+// Settings: World
+pub const NOISE_SEED: u32 = 1;
+pub const NOISE_FREQUENCY: f64 = 0.15;
+pub const NOISE_AMPLITUDE: f64 = 2.;
+pub const NOISE_ELEVATION: f64 = 0.;
+pub const FALLOFF_STRENGTH: f64 = 0.9;
 
 // Chunks
 pub const CHUNK_SIZE: i32 = 32;
@@ -62,27 +69,33 @@ pub const LEFT_FILL: usize = 5;
 pub const SINGLE: usize = 18;
 pub const ERROR: usize = 26;
 
+// Objects
+pub const TREES_PATH: &str = "tilesets/trees.png";
+pub const TREES_COLUMNS: u32 = 9;
+pub const TREES_ROWS: u32 = 1;
+pub const TREE_SIZE: UVec2 = UVec2::new(32, 128);
+
 // Colours
-pub(crate) const RED: Color = Color::hsl(0.59, 0.32, 0.52);
-pub(crate) const PURPLE: Color = Color::srgb(0.706, 0.557, 0.678);
-pub(crate) const YELLOW: Color = Color::srgb(0.922, 0.796, 0.545);
-pub(crate) const ORANGE: Color = Color::srgb(0.816, 0.529, 0.439);
-pub(crate) const GREEN: Color = Color::srgb(0.639, 0.745, 0.549);
-pub(crate) const WATER_BLUE: Color = Color::srgb(0.305882, 0.611765, 0.74902);
-pub(crate) const LIGHT_1: Color = Color::srgb(0.925, 0.937, 0.957);
-pub(crate) const LIGHT_2: Color = Color::srgb(0.898, 0.914, 0.941);
-pub(crate) const LIGHT_3: Color = Color::srgb(0.847, 0.871, 0.914);
-pub(crate) const MEDIUM_1: Color = Color::srgb(0.60, 0.639, 0.714);
-pub(crate) const MEDIUM_2: Color = Color::srgb(0.427, 0.478, 0.588);
-pub(crate) const DARK_1: Color = Color::srgb(0.298, 0.337, 0.416);
-pub(crate) const DARK_4: Color = Color::srgb(0.18, 0.204, 0.251);
-pub(crate) const VERY_DARK_1: Color = Color::srgb(0.12, 0.14, 0.18);
-pub(crate) const VERY_DARK_2: Color = Color::srgb(0.06, 0.07, 0.09);
+pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);
+pub const PURPLE: Color = Color::srgb(0.706, 0.557, 0.678);
+pub const YELLOW: Color = Color::srgb(0.922, 0.796, 0.545);
+pub const ORANGE: Color = Color::srgb(0.816, 0.529, 0.439);
+pub const GREEN: Color = Color::srgb(0.639, 0.745, 0.549);
+pub const WATER_BLUE: Color = Color::srgb(0.305882, 0.611765, 0.74902);
+pub const LIGHT_1: Color = Color::srgb(0.925, 0.937, 0.957);
+pub const LIGHT_2: Color = Color::srgb(0.898, 0.914, 0.941);
+pub const LIGHT_3: Color = Color::srgb(0.847, 0.871, 0.914);
+pub const MEDIUM_1: Color = Color::srgb(0.60, 0.639, 0.714);
+pub const MEDIUM_2: Color = Color::srgb(0.427, 0.478, 0.588);
+pub const DARK_1: Color = Color::srgb(0.298, 0.337, 0.416);
+pub const DARK_4: Color = Color::srgb(0.18, 0.204, 0.251);
+pub const VERY_DARK_1: Color = Color::srgb(0.12, 0.14, 0.18);
+pub const VERY_DARK_2: Color = Color::srgb(0.06, 0.07, 0.09);
 
 // Fonts
-pub(crate) const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
-pub(crate) const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
-pub(crate) const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";
+pub const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
+pub const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
+pub const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";
 
 // Window
 pub const WINDOW_WIDTH: f32 = 1280.;

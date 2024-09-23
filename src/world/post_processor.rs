@@ -1,60 +1,86 @@
+use crate::constants::TILE_SIZE;
 use crate::resources::Settings;
 use crate::world::chunk::Chunk;
 use crate::world::get_time;
+use crate::world::resources::AssetPacks;
 use crate::world::terrain_type::TerrainType;
+use crate::world::tile::Tile;
 use crate::world::tile_type::TileType;
 use bevy::app::{App, Plugin};
-use bevy::log::{debug, warn};
-use bevy::prelude::Res;
+use bevy::core::Name;
+use bevy::log::*;
+use bevy::prelude::{Commands, Res, SpriteBundle, TextureAtlas, Transform};
 
-pub struct PreProcessorPlugin;
+pub struct PostProcessorPlugin;
 
-impl Plugin for PreProcessorPlugin {
+impl Plugin for PostProcessorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub fn post_process_chunks(mut final_chunks: Vec<Chunk>, settings: &Res<Settings>) -> Vec<Chunk> {
+pub fn process(
+  commands: &mut Commands,
+  mut final_chunks: Vec<Chunk>,
+  asset_packs: &Res<AssetPacks>,
+  settings: &Res<Settings>,
+) -> Vec<Chunk> {
+  if !settings.general.layer_post_processing {
+    debug!("Skipped post-processing because it's disabled");
+    return final_chunks;
+  }
   let start_time = get_time();
-  clear_single_tiles_with_no_fill_below(&mut final_chunks, settings);
-  debug!("Post processed chunk(s) in {} ms", get_time() - start_time);
+  place_trees(commands, &mut final_chunks, asset_packs, settings);
+  debug!("Post-processed chunk(s) in {} ms", get_time() - start_time);
 
   final_chunks
 }
 
-fn clear_single_tiles_with_no_fill_below(final_chunks: &mut Vec<Chunk>, settings: &Res<Settings>) {
-  for layer in 1..TerrainType::length() {
-    let layer_name = TerrainType::from(layer);
-    if layer > settings.general.spawn_up_to_layer {
-      debug!("Skipped processing [{:?}] layer because it's disabled", layer_name);
-      continue;
-    }
-    for chunk in final_chunks.iter_mut() {
-      if let (Some(this_plane), Some(plane_below)) = chunk.layered_plane.get_and_below_mut(layer) {
-        let tiles_to_clear: Vec<_> = this_plane
-          .data
-          .iter_mut()
-          .flatten()
-          .filter_map(|tile| {
-            if let Some(tile) = tile {
-              if tile.tile_type == TileType::Single {
-                if let Some(tile_below) = plane_below.get_tile(tile.coords.chunk_grid) {
-                  if tile_below.tile_type != TileType::Fill {
-                    return Some(tile.coords.chunk_grid);
-                  }
-                } else {
-                  warn!("Tile below wg{:?} was missing", tile.coords.world_grid);
-                  return Some(tile.coords.chunk_grid);
-                }
-              }
+fn place_trees(
+  commands: &mut Commands,
+  final_chunks: &mut Vec<Chunk>,
+  asset_packs: &Res<AssetPacks>,
+  _settings: &Res<Settings>,
+) {
+  for chunk in final_chunks.iter_mut() {
+    if let Some(grass_plane) = chunk.layered_plane.get_by_terrain(TerrainType::Forest) {
+      let candidate_tiles: Vec<_> = grass_plane
+        .data
+        .iter()
+        .flatten()
+        .filter_map(|tile| {
+          if let Some(tile) = tile {
+            if tile.tile_type == TileType::Fill {
+              return Some(tile);
             }
-            None
-          })
-          .collect();
+          }
+          None
+        })
+        .collect();
 
-        for coords in tiles_to_clear {
-          this_plane.clear_tile(coords);
-        }
+      for tile in candidate_tiles {
+        // TODO: Spawn trees by chance based on a seed
+        // TODO: Add random offset to tree placement for variety
+        debug!("Placing tree at {:?} for {:?}", tile.coords.chunk_grid, tile);
+        commands.spawn(tree_sprite(tile, asset_packs));
       }
     }
   }
+}
+
+fn tree_sprite(tile: &Tile, asset_packs: &AssetPacks) -> (Name, SpriteBundle, TextureAtlas) {
+  (
+    Name::new("Tree Sprite"),
+    SpriteBundle {
+      texture: asset_packs.tree.texture.clone(),
+      transform: Transform::from_xyz(
+        tile.coords.world.x as f32,
+        tile.coords.world.y as f32 + TILE_SIZE as f32,
+        200. - tile.coords.chunk_grid.y as f32,
+      ),
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: asset_packs.tree.texture_atlas_layout.clone(),
+      index: 0,
+    },
+  )
 }

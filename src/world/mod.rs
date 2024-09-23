@@ -5,7 +5,8 @@ use crate::resources::Settings;
 use crate::world::chunk::{get_chunk_spawn_points, Chunk};
 use crate::world::components::{ChunkComponent, TileComponent};
 use crate::world::draft_chunk::DraftChunk;
-use crate::world::post_processor::PreProcessorPlugin;
+use crate::world::post_processor::PostProcessorPlugin;
+use crate::world::pre_processor::PreProcessorPlugin;
 use crate::world::resources::WorldResourcesPlugin;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_debugger::TileDebuggerPlugin;
@@ -24,6 +25,7 @@ mod layered_plane;
 mod neighbours;
 mod plane;
 mod post_processor;
+mod pre_processor;
 mod resources;
 mod terrain_type;
 mod tile;
@@ -35,7 +37,12 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins((WorldResourcesPlugin, PreProcessorPlugin, TileDebuggerPlugin))
+      .add_plugins((
+        WorldResourcesPlugin,
+        PreProcessorPlugin,
+        PostProcessorPlugin,
+        TileDebuggerPlugin,
+      ))
       .add_systems(Startup, generate_world_system)
       .add_systems(Update, refresh_world_event);
   }
@@ -68,8 +75,9 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
   let start_time = get_time();
   let draft_chunks = generate_draft_chunks(settings);
   let mut final_chunks = convert_draft_chunks_to_chunks(settings, draft_chunks);
-  final_chunks = post_processor::post_process_chunks(final_chunks, settings);
+  final_chunks = pre_processor::process(final_chunks, settings);
   let tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
+  final_chunks = post_processor::process(commands, final_chunks, &asset_packs, settings);
   spawn_tiles(commands, &asset_packs, &settings, final_chunks, tile_data);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }

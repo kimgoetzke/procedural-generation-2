@@ -78,6 +78,9 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
   final_tiles
 }
 
+// TODO: Consider refactoring this
+// Consider generating terrain types for center and each corner of a tile using noise function
+// and then use corner values to determine the tile type - may be slower though?
 fn determine_tile_type(n: NeighbourTiles, same_neighbours: usize) -> TileType {
   match same_neighbours {
     8 => TileType::Fill,

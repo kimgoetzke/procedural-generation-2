@@ -53,6 +53,10 @@ impl LayeredPlane {
     }
   }
 
+  pub fn get_by_terrain(&self, layer: TerrainType) -> Option<&Plane> {
+    self.get(layer as usize - 1)
+  }
+
   /// Returns a tuple of mutable references with the `Plane` at the specified layer and the `Plane` below it.
   pub fn get_and_below_mut(&mut self, layer: usize) -> (Option<&mut Plane>, Option<&mut Plane>) {
     if layer == 0 {
