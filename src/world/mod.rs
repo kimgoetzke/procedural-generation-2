@@ -5,6 +5,7 @@ use crate::resources::Settings;
 use crate::world::chunk::{get_chunk_spawn_points, Chunk};
 use crate::world::components::{ChunkComponent, TileComponent};
 use crate::world::draft_chunk::DraftChunk;
+use crate::world::post_processor::PreProcessorPlugin;
 use crate::world::resources::WorldResourcesPlugin;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_debugger::TileDebuggerPlugin;
@@ -22,6 +23,7 @@ mod draft_chunk;
 mod layered_plane;
 mod neighbours;
 mod plane;
+mod post_processor;
 mod resources;
 mod terrain_type;
 mod tile;
@@ -33,7 +35,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins((TileDebuggerPlugin, WorldResourcesPlugin))
+      .add_plugins((WorldResourcesPlugin, PreProcessorPlugin, TileDebuggerPlugin))
       .add_systems(Startup, generate_world_system)
       .add_systems(Update, refresh_world_event);
   }
@@ -65,7 +67,8 @@ fn generate_world_system(mut commands: Commands, asset_packs: Res<AssetPacks>, s
 fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: &Res<Settings>) {
   let start_time = get_time();
   let draft_chunks = generate_draft_chunks(settings);
-  let final_chunks = convert_draft_chunks_to_chunks(settings, draft_chunks);
+  let mut final_chunks = convert_draft_chunks_to_chunks(settings, draft_chunks);
+  final_chunks = post_processor::post_process_chunks(final_chunks, settings);
   let tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
   spawn_tiles(commands, &asset_packs, &settings, final_chunks, tile_data);
   info!("✅  World generation took {} ms", get_time() - start_time);
@@ -97,7 +100,6 @@ fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<Dr
   let mut final_chunks: Vec<Chunk> = Vec::new();
   for draft_chunk in draft_chunks {
     let chunk = Chunk::new(draft_chunk, settings);
-    // TODO: Add post-processing step that removes single tiles if layer below is not fill
     final_chunks.push(chunk);
   }
   debug!("Converted draft chunk(s) to chunk(s) in {} ms", get_time() - start_time);

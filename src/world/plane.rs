@@ -28,6 +28,10 @@ impl Plane {
     }
   }
 
+  pub fn clear_tile(&mut self, point: Point) {
+    self.data[point.x as usize][point.y as usize] = None;
+  }
+
   pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles {
     let x = of.coords.chunk_grid.x;
     let y = of.coords.chunk_grid.y;

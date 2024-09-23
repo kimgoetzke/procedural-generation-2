@@ -12,6 +12,8 @@ pub struct LayeredPlane {
 }
 
 impl LayeredPlane {
+  /// Creates a new `LayeredPlane` from the flat terrain data of a `DraftChunk` by converting the terrain data into a
+  /// `Plane` for each layer and converting the `DraftTile`s to `Tile`s which contain their `TileType`s.
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Res<Settings>) -> Self {
     let mut final_layers = Vec::new();
 
@@ -49,5 +51,17 @@ impl LayeredPlane {
     } else {
       None
     }
+  }
+
+  /// Returns a tuple of mutable references with the `Plane` at the specified layer and the `Plane` below it.
+  pub fn get_and_below_mut(&mut self, layer: usize) -> (Option<&mut Plane>, Option<&mut Plane>) {
+    if layer == 0 {
+      return (self.planes.get_mut(layer), None);
+    }
+    if layer >= self.planes.len() {
+      return (None, None);
+    }
+    let (below, this_and_above) = self.planes.split_at_mut(layer);
+    (this_and_above.get_mut(0), below.get_mut(layer - 1))
   }
 }
