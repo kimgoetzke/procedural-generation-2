@@ -173,7 +173,7 @@ fn tile_info(
       visibility,
       transform: Transform {
         scale: Vec3::splat(0.1),
-        translation: Vec3::new(spawn_point.x as f32, spawn_point.y as f32, tile.layer as f32 + 20.),
+        translation: Vec3::new(spawn_point.x as f32, spawn_point.y as f32, tile.layer as f32 + 1000.),
         ..Default::default()
       },
       ..default()
