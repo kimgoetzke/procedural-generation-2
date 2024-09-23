@@ -12,21 +12,22 @@ use noise::{NoiseFn, Perlin};
 pub struct DraftChunk {
   pub coords: Coords,
   pub center: Point,
-  pub plane: Vec<Vec<Option<DraftTile>>>,
+  pub data: Vec<Vec<Option<DraftTile>>>,
 }
 
 impl DraftChunk {
+  /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
   pub fn new(world: Point, settings: &Res<Settings>) -> Self {
-    let plane = generate_plane(&world, settings);
+    let data = generate_terrain_data(&world, settings);
     Self {
       center: Point::new(world.x + (CHUNK_SIZE / 2), world.y + (CHUNK_SIZE / 2)),
       coords: Coords::new_for_chunk(world),
-      plane,
+      data,
     }
   }
 }
 
-fn generate_plane(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
+fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin = Perlin::new(settings.world.noise_seed);
