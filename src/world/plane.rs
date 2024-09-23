@@ -124,7 +124,7 @@ fn determine_tile_type(n: NeighbourTiles, same_neighbours: usize) -> TileType {
     5 if n.all_direction_top_right_same() => TileType::InnerCornerTopRight,
     5 if n.all_direction_bottom_left_same() => TileType::InnerCornerBottomLeft,
     5 if n.all_direction_bottom_right_same() => TileType::InnerCornerBottomRight,
-    5 if (!n.top.same && !n.bottom.same) | (!n.left.same && !n.right.same) => TileType::Single,
+    5 => TileType::Single,
     4 if n.all_left_different() && !n.top.same => TileType::InnerCornerBottomRight,
     4 if n.all_left_different() && !n.bottom.same => TileType::InnerCornerTopRight,
     4 if n.all_right_different() && !n.top.same => TileType::InnerCornerBottomLeft,
