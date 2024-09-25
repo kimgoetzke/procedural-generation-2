@@ -1,3 +1,4 @@
+use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::Point;
 use crate::resources::Settings;
 use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
@@ -15,6 +16,7 @@ pub struct Plane {
 impl Plane {
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Res<Settings>) -> Self {
     let plane_data = determine_tile_types(&draft_tiles);
+    let plane_data = resize_grid(plane_data);
     Self { data: plane_data, layer }
   }
 
@@ -62,8 +64,8 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
     for cell in row {
       if let Some(draft_tile) = cell {
         if draft_tile.terrain == TerrainType::Water {
-          let tile = Tile::from(draft_tile.clone(), TileType::Fill);
-          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(tile);
+          let final_tile = Tile::from(draft_tile.clone(), TileType::Fill);
+          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
         } else {
           let neighbour_tiles = get_neighbours(draft_tile, &draft_tiles);
           let same_neighbours_count = neighbour_tiles.count_same();
@@ -188,4 +190,20 @@ fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<
   } else {
     None
   }
+}
+
+/// Resizes the grid by cutting off the buffer size from each side of the grid. This is because the input data for
+/// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges.
+/// For this to work, the `chunk_grid` `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
+fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
+  let cut_off = BUFFER_SIZE as usize;
+  let mut cut_off_tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+
+  for x in cut_off..final_tiles.len() - cut_off {
+    for y in cut_off..final_tiles[0].len() - cut_off {
+      cut_off_tiles[x - cut_off][y - cut_off] = final_tiles[x][y];
+    }
+  }
+
+  cut_off_tiles
 }

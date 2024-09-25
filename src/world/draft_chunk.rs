@@ -1,4 +1,4 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::coords::{Coords, Point};
 use crate::resources::Settings;
 use crate::world::get_time;
@@ -20,7 +20,7 @@ impl DraftChunk {
   pub fn new(world: Point, settings: &Res<Settings>) -> Self {
     let data = generate_terrain_data(&world, settings);
     Self {
-      center: Point::new(world.x + (CHUNK_SIZE / 2), world.y + (CHUNK_SIZE / 2)),
+      center: Point::new(world.x + (CHUNK_SIZE_PLUS_BUFFER / 2), world.y + (CHUNK_SIZE_PLUS_BUFFER / 2)),
       coords: Coords::new_for_chunk(world),
       data,
     }
@@ -31,14 +31,14 @@ fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Opt
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin = Perlin::new(settings.world.noise_seed);
-  let end = Point::new(start.x + CHUNK_SIZE - 1, start.y + CHUNK_SIZE - 1);
+  let end = Point::new(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y + CHUNK_SIZE_PLUS_BUFFER - 1);
   let center = Point::new((start.x + end.x) / 2, (start.y + end.y) / 2);
-  let max_distance = (CHUNK_SIZE as f64) / 2.;
+  let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
   let frequency = settings.world.noise_frequency;
   let amplitude = settings.world.noise_amplitude;
   let elevation = settings.world.elevation;
   let falloff_strength = settings.world.falloff_strength;
-  let mut tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+  let mut tiles = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
   let mut cx = 0;
   let mut cy = 0;
 

@@ -43,8 +43,8 @@ fn clear_single_tiles_with_no_fill_below(final_chunks: &mut Vec<Chunk>, settings
                   }
                 } else {
                   warn!(
-                    "{:?} tile wg{:?} removed because the layer below it was missing",
-                    tile.terrain, tile.coords.world_grid
+                    "{:?} tile wg{:?} cg{:?} removed because the layer below it was missing",
+                    tile.terrain, tile.coords.world_grid, tile.coords.chunk_grid
                   );
                   return Some(tile.coords.chunk_grid);
                 }

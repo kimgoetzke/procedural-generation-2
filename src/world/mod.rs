@@ -243,7 +243,7 @@ fn terrain_sprite(
         TerrainType::Forest => asset_packs.forest.texture.clone(),
         _ => panic!("Invalid terrain type for drawing a terrain sprite"),
       },
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32 + 2.),
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
     },
     TextureAtlas {

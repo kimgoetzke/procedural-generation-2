@@ -1,4 +1,4 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::resources::Settings;
 use crate::world::plane::Plane;
 use crate::world::terrain_type::TerrainType;
@@ -19,9 +19,10 @@ impl LayeredPlane {
 
     // Create a plane for each layer, except water because water is not rendered
     for layer in 1..TerrainType::length() {
-      let mut current_layer = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+      let mut current_layer = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
 
-      // Populate the layer using the draft plane and adjust terrain if necessary
+      // Populate the layer using the draft plane and adjust terrain, if necessary - as a result,
+      // each tile on a layer above the first rendered layer has a tile below it too
       for x in 0..draft_tiles.len() {
         for y in 0..draft_tiles[0].len() {
           if let Some(tile) = &draft_tiles[x][y] {
@@ -51,10 +52,6 @@ impl LayeredPlane {
     } else {
       None
     }
-  }
-
-  pub fn get_by_terrain(&self, layer: TerrainType) -> Option<&Plane> {
-    self.get(layer as usize - 1)
   }
 
   /// Returns a tuple of mutable references with the `Plane` at the specified layer and the `Plane` below it.

@@ -3,47 +3,54 @@
 use bevy::color::Color;
 use bevy::math::UVec2;
 
+// ------------------------------------------------------------------------------------------------------
 // Animation
 pub const BASE_DELAY: f32 = 0.; // 0.0025
 pub const LAYER_DELAY: f32 = 2.;
-
+// ------------------------------------------------------------------------------------------------------
 // Settings: General
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const LAYER_POST_PROCESSING: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
-
+// ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
 pub const NOISE_FREQUENCY: f64 = 0.15;
 pub const NOISE_AMPLITUDE: f64 = 2.;
 pub const NOISE_ELEVATION: f64 = 0.;
 pub const FALLOFF_STRENGTH: f64 = 0.9;
-
+// ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const TREE_DENSITY: f64 = 0.5;
 
+// ------------------------------------------------------------------------------------------------------
 // Chunks
+/// The size of a buffer around a chunk that is not rendered. Must be 1, always.
+pub const BUFFER_SIZE: i32 = 1;
+/// The size of a chunk, including a border that will not be rendered. This is to ensure that the
+/// `TileType`s of outer tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
+pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
+/// The size of a chunk that is rendered on the screen. This is the size of a chunk minus the
+/// border.
 pub const CHUNK_SIZE: i32 = 32;
-
+// ------------------------------------------------------------------------------------------------------
 // Sprites
 pub const TILE_SIZE: u32 = 32;
-const TILE_WIDTH: usize = 32;
-const TILE_HEIGHT: usize = 32;
-
+// ------------------------------------------------------------------------------------------------------
 // Layers
 pub const WATER_LAYER: usize = 0;
 pub const SHORE_LAYER: usize = 1;
 pub const SAND_LAYER: usize = 2;
 pub const GRASS_LAYER: usize = 3;
 pub const FOREST_LAYER: usize = 4;
-
+// ------------------------------------------------------------------------------------------------------
 // Default tile set
 pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
 pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
-
+// ------------------------------------------------------------------------------------------------------
 // Detailed tile sets
 pub const TILE_SET_WATER_PATH: &str = "tilesets/water.png";
 pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
@@ -52,7 +59,7 @@ pub const TILE_SET_GRASS_PATH: &str = "tilesets/grass.png";
 pub const TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
 pub const TILE_SET_COLUMNS: u32 = 9;
 pub const TILE_SET_ROWS: u32 = 3;
-
+// ------------------------------------------------------------------------------------------------------
 // Tile set sprite indices
 pub const FILL: usize = 4;
 pub const INNER_CORNER_BOTTOM_LEFT: usize = 2;
@@ -71,13 +78,13 @@ pub const RIGHT_FILL: usize = 3;
 pub const LEFT_FILL: usize = 5;
 pub const SINGLE: usize = 18;
 pub const ERROR: usize = 26;
-
+// ------------------------------------------------------------------------------------------------------
 // Objects
 pub const TREES_PATH: &str = "tilesets/trees.png";
 pub const TREES_COLUMNS: u32 = 9;
 pub const TREES_ROWS: u32 = 1;
 pub const TREE_SIZE: UVec2 = UVec2::new(32, 128);
-
+// ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);
 pub const PURPLE: Color = Color::srgb(0.706, 0.557, 0.678);
@@ -94,12 +101,12 @@ pub const DARK_1: Color = Color::srgb(0.298, 0.337, 0.416);
 pub const DARK_4: Color = Color::srgb(0.18, 0.204, 0.251);
 pub const VERY_DARK_1: Color = Color::srgb(0.12, 0.14, 0.18);
 pub const VERY_DARK_2: Color = Color::srgb(0.06, 0.07, 0.09);
-
+// ------------------------------------------------------------------------------------------------------
 // Fonts
 pub const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
 pub const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
 pub const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";
-
+// ------------------------------------------------------------------------------------------------------
 // Window
 pub const WINDOW_WIDTH: f32 = 1280.;
 pub const WINDOW_HEIGHT: f32 = 720.;
