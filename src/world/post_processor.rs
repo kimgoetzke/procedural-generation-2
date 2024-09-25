@@ -54,6 +54,7 @@ fn place_trees(
     if rng.gen_bool(settings.object.tree_density) {
       let offset_x = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
       let offset_y = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
+      let index = rng.gen_range(0..=1);
       trace!(
         "Placing tree at {:?} with offset ({}, {})",
         forest_tile_data.tile.coords.chunk_grid,
@@ -61,13 +62,19 @@ fn place_trees(
         offset_y
       );
       commands.entity(forest_tile_data.entity).with_children(|parent| {
-        parent.spawn(tree_sprite(&forest_tile_data.tile, offset_x, offset_y, asset_packs));
+        parent.spawn(tree_sprite(&forest_tile_data.tile, offset_x, offset_y, index, asset_packs));
       });
     }
   }
 }
 
-fn tree_sprite(tile: &Tile, offset_x: f32, offset_y: f32, asset_packs: &AssetPacks) -> (Name, SpriteBundle, TextureAtlas) {
+fn tree_sprite(
+  tile: &Tile,
+  offset_x: f32,
+  offset_y: f32,
+  index: i32,
+  asset_packs: &AssetPacks,
+) -> (Name, SpriteBundle, TextureAtlas) {
   (
     Name::new("Tree Sprite"),
     SpriteBundle {
@@ -81,7 +88,7 @@ fn tree_sprite(tile: &Tile, offset_x: f32, offset_y: f32, asset_packs: &AssetPac
     },
     TextureAtlas {
       layout: asset_packs.tree.texture_atlas_layout.clone(),
-      index: 0,
+      index: index as usize,
     },
   )
 }
