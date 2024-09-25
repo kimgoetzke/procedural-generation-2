@@ -76,8 +76,8 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
   let draft_chunks = generate_draft_chunks(settings);
   let mut final_chunks = convert_draft_chunks_to_chunks(settings, draft_chunks);
   final_chunks = pre_processor::process(final_chunks, settings);
-  let tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
-  final_chunks = post_processor::process(commands, final_chunks, &asset_packs, settings);
+  let mut tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
+  post_processor::process(commands, &mut tile_data, &asset_packs, settings);
   spawn_tiles(commands, &asset_packs, &settings, final_chunks, tile_data);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }

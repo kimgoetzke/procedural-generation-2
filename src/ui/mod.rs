@@ -1,5 +1,5 @@
 use crate::events::RefreshWorldEvent;
-use crate::resources::{GeneralGenerationSettings, Settings, WorldGenerationSettings};
+use crate::resources::{GeneralGenerationSettings, ObjectGenerationSettings, Settings, WorldGenerationSettings};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
 use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
@@ -58,12 +58,19 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     .anchor(Align2::LEFT_BOTTOM, [10.0, -10.0])
     .show(egui_context.get_mut(), |ui| {
       ScrollArea::both().show(ui, |ui| {
-        ui.label(RichText::new("General Generation").font(HEADING));
-        bevy_inspector_egui::bevy_inspector::ui_for_resource::<GeneralGenerationSettings>(world, ui);
+        ui.push_id("general_generation", |ui| {
+          ui.label(RichText::new("General Generation").font(HEADING));
+          bevy_inspector_egui::bevy_inspector::ui_for_resource::<GeneralGenerationSettings>(world, ui);
+        });
         ui.add_space(20.0);
-        ui.label(RichText::new("World Generation").font(HEADING));
-        ui.vertical(|ui| {
+        ui.push_id("world_generation", |ui| {
+          ui.label(RichText::new("World Generation").font(HEADING));
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<WorldGenerationSettings>(world, ui);
+        });
+        ui.add_space(20.0);
+        ui.push_id("object_generation", |ui| {
+          ui.label(RichText::new("Object Generation").font(HEADING));
+          bevy_inspector_egui::bevy_inspector::ui_for_resource::<ObjectGenerationSettings>(world, ui);
         });
         ui.separator();
         ui.horizontal(|ui| {
@@ -89,12 +96,14 @@ fn handle_ui_events_system(
   mut state: ResMut<UiEventsResource>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
+  object: Res<ObjectGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
 ) {
   if state.has_changed {
     state.has_changed = false;
     settings.general = general.clone();
     settings.world = world_gen.clone();
+    settings.object = object.clone();
 
     if state.regenerate {
       events.send(RefreshWorldEvent {});

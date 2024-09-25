@@ -21,6 +21,9 @@ pub const NOISE_AMPLITUDE: f64 = 2.;
 pub const NOISE_ELEVATION: f64 = 0.;
 pub const FALLOFF_STRENGTH: f64 = 0.9;
 
+// Settings: Objects
+pub const TREE_DENSITY: f64 = 0.5;
+
 // Chunks
 pub const CHUNK_SIZE: i32 = 32;
 

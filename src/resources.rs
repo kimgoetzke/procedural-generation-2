@@ -16,6 +16,9 @@ impl Plugin for SharedResourcesPlugin {
       .init_resource::<GeneralGenerationSettings>()
       .register_type::<GeneralGenerationSettings>()
       .insert_resource(GeneralGenerationSettings::default())
+      .init_resource::<ObjectGenerationSettings>()
+      .register_type::<ObjectGenerationSettings>()
+      .insert_resource(ObjectGenerationSettings::default())
       .init_resource::<WorldGenerationSettings>()
       .register_type::<WorldGenerationSettings>()
       .insert_resource(WorldGenerationSettings::default());
@@ -26,6 +29,7 @@ impl Plugin for SharedResourcesPlugin {
 pub struct Settings {
   pub general: GeneralGenerationSettings,
   pub world: WorldGenerationSettings,
+  pub object: ObjectGenerationSettings,
 }
 
 impl Default for Settings {
@@ -33,6 +37,7 @@ impl Default for Settings {
     Self {
       general: GeneralGenerationSettings::default(),
       world: WorldGenerationSettings::default(),
+      object: ObjectGenerationSettings::default(),
     }
   }
 }
@@ -56,6 +61,21 @@ impl Default for GeneralGenerationSettings {
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
       layer_post_processing: LAYER_POST_PROCESSING,
+    }
+  }
+}
+
+#[derive(Clone, Resource, Reflect, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+pub struct ObjectGenerationSettings {
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub tree_density: f64,
+}
+
+impl Default for ObjectGenerationSettings {
+  fn default() -> Self {
+    Self {
+      tree_density: TREE_DENSITY,
     }
   }
 }
