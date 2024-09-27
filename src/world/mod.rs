@@ -83,9 +83,9 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
   let draft_chunks = generate_draft_chunks(&settings);
   let mut final_chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
   final_chunks = pre_processor::process(final_chunks, &settings);
-  let mut tile_data = spawn_world_and_base_chunks(commands, &final_chunks);
-  object_generation::process(commands, &mut tile_data, &asset_packs, &settings);
-  spawn_tiles(commands, &settings, final_chunks, tile_data);
+  let mut spawn_data = spawn_world_and_base_chunks(commands, &final_chunks);
+  object_generation::process(commands, &mut spawn_data, &asset_packs, &settings);
+  spawn_tiles(commands, &settings, spawn_data);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }
 
@@ -122,73 +122,20 @@ fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<Dr
   final_chunks
 }
 
-fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<TileData> {
+fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
   let start_time = get_time();
-  let mut tile_data = Vec::new();
+  let mut spawn_data: Vec<(Chunk, Vec<TileData>)> = Vec::new();
   commands
     .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
     .with_children(|parent| {
       for chunk in final_chunks.iter() {
         let entry = spawn_chunk(parent, &chunk);
-        tile_data.extend(entry);
+        spawn_data.push((chunk.clone(), entry));
       }
     });
   debug!("Spawned world and chunk entities in {} ms", get_time() - start_time);
 
-  tile_data
-}
-
-fn spawn_tiles(commands: &mut Commands, settings_ref: &Res<Settings>, final_chunks: Vec<Chunk>, tile_data: Vec<TileData>) {
-  let t1 = get_time();
-  let thread_pool = AsyncComputeTaskPool::get();
-  let mut offset = 0.0;
-  for layer in 0..TerrainType::length() {
-    let layer_name = TerrainType::from(layer);
-    if layer >= settings_ref.general.spawn_up_to_layer {
-      debug!("Skipped spawning [{:?}] tiles because it's disabled", layer_name);
-      continue;
-    }
-    let t2 = get_time();
-    for chunk in final_chunks.iter() {
-      if let Some(plane) = chunk.layered_plane.get(layer) {
-        for tile in plane.data.iter().flatten() {
-          if let Some(tile) = tile {
-            let tile_cloned = tile.clone();
-            let tile_data = tile_data.iter().find(|x| x.tile.coords == tile_cloned.coords);
-            if let Some(tile_data) = tile_data {
-              let tile_data_cloned = tile_data.clone();
-              let task = thread_pool.spawn(async move {
-                // let duration = Duration::from_secs_f32(offset);
-                // async_std::task::sleep(duration).await;
-                debug!("Spawning [{:?}] tile after {} seconds", tile_cloned.terrain, offset);
-                let mut command_queue = CommandQueue::default();
-                command_queue.push(move |world: &mut World| {
-                  let (asset_packs, settings) = {
-                    let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
-                    let (asset_packs_new, settings_new) = system_state.get_mut(world);
-                    (asset_packs_new.clone(), settings_new.clone())
-                  };
-                  world.entity_mut(tile_data_cloned.entity).with_children(|parent| {
-                    if settings.general.draw_terrain_sprites {
-                      parent.spawn(terrain_sprite(&tile_cloned, tile_data_cloned.parent_entity, &asset_packs));
-                    } else {
-                      parent.spawn(default_sprite(&tile_cloned, tile_data_cloned.parent_entity, &asset_packs));
-                    }
-                  });
-                });
-
-                command_queue
-              });
-              commands.entity(tile_data_cloned.entity).insert(TileSpawnTask(task));
-            }
-          }
-        }
-      }
-    }
-    offset += 1.;
-    debug!("Spawned [{:?}] tiles within {} ms", layer_name, get_time() - t2);
-  }
-  debug!("Spawned all tiles within {} ms", get_time() - t1);
+  spawn_data
 }
 
 fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
@@ -221,6 +168,58 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
     });
 
   tile_data
+}
+
+fn spawn_tiles(commands: &mut Commands, settings_ref: &Res<Settings>, spawn_data: Vec<(Chunk, Vec<TileData>)>) {
+  let t1 = get_time();
+  let thread_pool = AsyncComputeTaskPool::get();
+  for (chunk, tile_data_vec) in spawn_data.iter() {
+    let tile_data_vec = tile_data_vec.clone();
+    let chunk = chunk.clone();
+    for tile_data in tile_data_vec {
+      let tile_data = tile_data.clone();
+      for layer in 0..TerrainType::length() {
+        if layer >= settings_ref.general.spawn_up_to_layer {
+          debug!(
+            "Skipped spawning [{:?}] tiles because it's disabled",
+            TerrainType::from(layer)
+          );
+          continue;
+        }
+        if let Some(plane) = chunk.layered_plane.get(layer) {
+          let plane = plane.clone();
+          if let Some(tile) = plane.get_tile(tile_data.tile.coords.chunk_grid) {
+            let tile = tile.clone();
+            commands.entity(tile_data.entity).with_children(|parent| {
+              let mut entity = parent.spawn_empty();
+              let task = thread_pool.spawn(async move {
+                let mut command_queue = CommandQueue::default();
+                command_queue.push(move |world: &mut World| {
+                  let (asset_packs, settings) = {
+                    let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
+                    let (asset_packs, settings) = system_state.get_mut(world);
+                    (asset_packs.clone(), settings.clone())
+                  };
+                  world.entity_mut(tile_data.entity).with_children(|parent| {
+                    if settings.general.draw_terrain_sprites {
+                      parent.spawn(terrain_sprite(&tile, tile_data.parent_entity, &asset_packs));
+                    } else {
+                      parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_packs));
+                    }
+                  });
+                });
+                command_queue
+              });
+              entity.with_children(|parent| {
+                parent.spawn(TileSpawnTask(task));
+              });
+            });
+          }
+        }
+      }
+    }
+  }
+  debug!("Spawned all tiles within {} ms", get_time() - t1);
 }
 
 fn default_sprite(

@@ -1,5 +1,6 @@
 use crate::constants::TILE_SIZE;
 use crate::resources::Settings;
+use crate::world::chunk::Chunk;
 use crate::world::components::ObjectComponent;
 use crate::world::resources::AssetPacks;
 use crate::world::terrain_type::TerrainType;
@@ -21,7 +22,7 @@ impl Plugin for ObjectGenerationPlugin {
 
 pub fn process(
   commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
+  spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
   asset_packs: &Res<AssetPacks>,
   settings: &Res<Settings>,
 ) {
@@ -30,7 +31,9 @@ pub fn process(
     return;
   }
   let start_time = get_time();
-  place_trees(commands, tile_data, asset_packs, settings);
+  for (_, tile_data) in spawn_data.iter_mut() {
+    place_trees(commands, tile_data, asset_packs, settings);
+  }
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
 
