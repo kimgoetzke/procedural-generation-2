@@ -85,7 +85,7 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
   final_chunks = pre_processor::process(final_chunks, &settings);
   let mut spawn_data = spawn_world_and_base_chunks(commands, &final_chunks);
   object_generation::process(commands, &mut spawn_data, &asset_packs, &settings);
-  spawn_tiles(commands, &settings, spawn_data);
+  schedule_tile_spawning_tasks(commands, &settings, spawn_data);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }
 
@@ -170,12 +170,14 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   tile_data
 }
 
-fn spawn_tiles(commands: &mut Commands, settings_ref: &Res<Settings>, spawn_data: Vec<(Chunk, Vec<TileData>)>) {
+fn schedule_tile_spawning_tasks(
+  commands: &mut Commands,
+  settings_ref: &Res<Settings>,
+  spawn_data: Vec<(Chunk, Vec<TileData>)>,
+) {
   let t1 = get_time();
   let thread_pool = AsyncComputeTaskPool::get();
   for (chunk, tile_data_vec) in spawn_data.iter() {
-    let tile_data_vec = tile_data_vec.clone();
-    let chunk = chunk.clone();
     for tile_data in tile_data_vec {
       let tile_data = tile_data.clone();
       for layer in 0..TerrainType::length() {
@@ -187,39 +189,44 @@ fn spawn_tiles(commands: &mut Commands, settings_ref: &Res<Settings>, spawn_data
           continue;
         }
         if let Some(plane) = chunk.layered_plane.get(layer) {
-          let plane = plane.clone();
           if let Some(tile) = plane.get_tile(tile_data.tile.coords.chunk_grid) {
-            let tile = tile.clone();
             commands.entity(tile_data.entity).with_children(|parent| {
-              let mut entity = parent.spawn_empty();
-              let task = thread_pool.spawn(async move {
-                let mut command_queue = CommandQueue::default();
-                command_queue.push(move |world: &mut World| {
-                  let (asset_packs, settings) = {
-                    let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
-                    let (asset_packs, settings) = system_state.get_mut(world);
-                    (asset_packs.clone(), settings.clone())
-                  };
-                  world.entity_mut(tile_data.entity).with_children(|parent| {
-                    if settings.general.draw_terrain_sprites {
-                      parent.spawn(terrain_sprite(&tile, tile_data.parent_entity, &asset_packs));
-                    } else {
-                      parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_packs));
-                    }
-                  });
-                });
-                command_queue
-              });
-              entity.with_children(|parent| {
-                parent.spawn(TileSpawnTask(task));
-              });
+              attach_task_to_tile_entity(thread_pool, tile_data, tile.clone(), parent);
             });
           }
         }
       }
     }
   }
-  debug!("Spawned all tiles within {} ms", get_time() - t1);
+  debug!("Scheduled spawning all tiles within {} ms", get_time() - t1);
+}
+
+fn attach_task_to_tile_entity(
+  thread_pool: &AsyncComputeTaskPool,
+  tile_data: TileData,
+  tile: Tile,
+  parent: &mut ChildBuilder,
+) {
+  let mut entity = parent.spawn(Name::new("Tile Spawn Task"));
+  let task = thread_pool.spawn(async move {
+    let mut command_queue = CommandQueue::default();
+    command_queue.push(move |world: &mut World| {
+      let (asset_packs, settings) = {
+        let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
+        let (asset_packs, settings) = system_state.get_mut(world);
+        (asset_packs.clone(), settings.clone())
+      };
+      world.entity_mut(tile_data.entity).with_children(|parent| {
+        if settings.general.draw_terrain_sprites {
+          parent.spawn(terrain_sprite(&tile, tile_data.parent_entity, &asset_packs));
+        } else {
+          parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_packs));
+        }
+      });
+    });
+    command_queue
+  });
+  entity.insert(TileSpawnTask(task));
 }
 
 fn default_sprite(
@@ -291,7 +298,7 @@ fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query
   for (entity, mut task) in &mut transform_tasks {
     if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
       commands.append(&mut commands_queue);
-      commands.entity(entity).remove::<TileSpawnTask>();
+      commands.entity(entity).despawn_recursive();
     }
   }
 }
