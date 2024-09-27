@@ -47,7 +47,7 @@ fn initialise_asset_packs_system(
     None,
   );
   let default_texture_atlas_layout = texture_atlas_layouts.add(default_layout);
-  let trees_layout = TextureAtlasLayout::from_grid(UVec2::new(32, 128), TREES_COLUMNS, TREES_ROWS, None, None);
+  let trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
   let trees_atlas_layout = texture_atlas_layouts.add(trees_layout);
 
   asset_packs_resource.font = asset_server.load(DEFAULT_FONT);

@@ -9,7 +9,7 @@ pub const BASE_DELAY: f32 = 0.; // 0.0025
 pub const LAYER_DELAY: f32 = 2.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
 pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const LAYER_POST_PROCESSING: bool = true;
@@ -17,10 +17,12 @@ pub const SPAWN_UP_TO_LAYER: usize = 5;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
-pub const NOISE_FREQUENCY: f64 = 0.15;
-pub const NOISE_AMPLITUDE: f64 = 2.;
-pub const NOISE_ELEVATION: f64 = 0.;
-pub const FALLOFF_STRENGTH: f64 = 0.9;
+pub const NOISE_OCTAVES: usize = 4;
+pub const NOISE_FREQUENCY: f64 = 0.07;
+pub const NOISE_PERSISTENCE: f64 = 0.7;
+pub const NOISE_AMPLITUDE: f64 = 8.5;
+pub const NOISE_ELEVATION: f64 = -0.05;
+pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const TREE_DENSITY: f64 = 0.5;
@@ -80,10 +82,10 @@ pub const SINGLE: usize = 18;
 pub const ERROR: usize = 26;
 // ------------------------------------------------------------------------------------------------------
 // Objects
-pub const TREES_PATH: &str = "tilesets/trees.png";
-pub const TREES_COLUMNS: u32 = 9;
+pub const TREES_PATH: &str = "objects/trees-conifer.png";
+pub const TREES_COLUMNS: u32 = 5;
 pub const TREES_ROWS: u32 = 1;
-pub const TREE_SIZE: UVec2 = UVec2::new(32, 128);
+pub const TREE_SIZE: UVec2 = UVec2::new(64, 128);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);

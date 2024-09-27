@@ -54,7 +54,7 @@ fn place_trees(
     if rng.gen_bool(settings.object.tree_density) {
       let offset_x = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
       let offset_y = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
-      let index = rng.gen_range(0..=1);
+      let index = rng.gen_range(0..=4);
       trace!(
         "Placing tree at {:?} with offset ({}, {})",
         forest_tile_data.tile.coords.chunk_grid,
