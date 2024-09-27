@@ -194,6 +194,7 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   tile_data
 }
 
+// TODO: Add support for animated tile sprites
 fn spawn_tile(mut commands: EntityCommands, tile: &Tile, chunk: Entity, asset_packs: &AssetPacks, settings: &Res<Settings>) {
   commands.with_children(|parent| {
     if settings.general.draw_terrain_sprites {

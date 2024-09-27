@@ -83,18 +83,31 @@ impl Default for ObjectGenerationSettings {
 #[derive(Clone, Resource, Reflect, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub struct WorldGenerationSettings {
+  /// The seed for the noise function. A parameter of `BasicMulti`. Allows for the same terrain to be generated i.e.
+  /// the same seed will always generate the exact same terrain.
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
   pub noise_seed: u32,
+  /// The amount of detail: The higher the octaves, the more detailed the terrain. A parameter of `BasicMulti`.
   #[inspector(min = 0, max = 12, display = NumberDisplay::Slider)]
   pub noise_octaves: usize,
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
+  /// The scale: the higher the frequency, the smaller the terrain features. A parameter of `BasicMulti`.
   pub noise_frequency: f64,
+  /// The abruptness of changes in terrain: The higher the persistence, the rougher the terrain. A parameter of
+  /// `BasicMulti`.
   #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
   pub noise_persistence: f64,
   #[inspector(min = 0., max = 10., display = NumberDisplay::Slider)]
+  /// The higher the amplitude, the more extreme the terrain. Similar to `noise_persistence` but applies to the entire
+  /// output of the noise function equally. A custom parameter that is not part of `BasicMulti`.
   pub noise_amplitude: f64,
   #[inspector(min = -1., max = 1., display = NumberDisplay::Slider)]
+  /// Shifts the entire terrain up or down.
   pub elevation: f64,
+  /// Force the outside of the `Chunk` to become the lowest `TerrainType`. The higher the falloff strength, the closer
+  /// to the center of the `Chunk` the falloff begins. Basically turns `Chunk`s into an islands. Can generate unpleasant
+  /// visual artifacts if set to a very low non-zero value. Don't use it if you want `Chunk`s to be connected at a
+  /// higher `TerrainType`.
   #[inspector(min = 0.0, max = 2.5, display = NumberDisplay::Slider)]
   pub falloff_strength: f64,
 }
@@ -103,12 +116,12 @@ impl Default for WorldGenerationSettings {
   fn default() -> Self {
     Self {
       noise_seed: NOISE_SEED,
-      noise_octaves: NOISE_OCTAVES, // The higher the octaves, the more detailed the terrain
-      noise_frequency: NOISE_FREQUENCY, // The lower the frequency, the larger the features
-      noise_persistence: NOISE_PERSISTENCE, // The higher the persistence, the rougher the terrain
-      noise_amplitude: NOISE_AMPLITUDE, // The higher the amplitude, the more extreme the terrain
-      elevation: NOISE_ELEVATION,       // Shifts the entire terrain up or down
-      falloff_strength: FALLOFF_STRENGTH, // The higher the falloff strength, the closer to the center the falloff begins
+      noise_octaves: NOISE_OCTAVES,
+      noise_frequency: NOISE_FREQUENCY,
+      noise_persistence: NOISE_PERSISTENCE,
+      noise_amplitude: NOISE_AMPLITUDE,
+      elevation: NOISE_ELEVATION,
+      falloff_strength: FALLOFF_STRENGTH,
     }
   }
 }

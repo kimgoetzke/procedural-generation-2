@@ -1,8 +1,32 @@
 # Procedural Generation Project 2
 
+This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust, 
+using Bevy engine. The purpose of this project was to learn a bit more about Rust and procedural generation. It's a 
+follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids), and my first 
+procedural generation project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedural-generation-1).
+You will neither find a lot of advanced concepts of Rust being applied (correctly) nor advanced procedural generation
+techniques.
+
+## Demo
+
+TODO: Add GIF and/or screenshots here
+
+## Features
+
+- Infinite world generation of a 2D pixel art world
+- Terrain generation using multi-fractal perlin noise
+- Supports a single biome with 5 terrain types: water, shore, sand, grass, forest
+- Each terrain type supports 16 different tile types, many with transparency allowing for smooth transitions/layering
+- Post-generation step places objects such as trees
+- Sprites are created 32x32px (or for a grid of that size) and were created by me
+- `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
+- `bevy-pancam` plugin to allow free camera movement
+
 ## Attribution
 
 - Minimal 5x5 & 5x7 Pixel Fonts by [kheftel](https://opengameart.org/content/minimalist-pixel-fonts) under CC0.
+- Art work is heavily inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style.
+- All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## How to develop
 
