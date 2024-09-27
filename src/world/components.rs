@@ -14,3 +14,6 @@ pub struct ChunkComponent {
   pub coords: Coords,
   pub layered_plane: LayeredPlane,
 }
+
+#[derive(Component)]
+pub struct ObjectComponent {}

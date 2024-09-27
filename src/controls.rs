@@ -47,11 +47,8 @@ fn settings_controls_system(
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
-    settings.general.layer_post_processing = !settings.general.layer_post_processing;
-    info!(
-      "[X] Toggled layer post processing to [{}]",
-      settings.general.layer_post_processing
-    );
+    settings.object.object_generation = !settings.object.object_generation;
+    info!("[X] Toggled object generation to [{}]", settings.object.object_generation);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyC) {

@@ -25,7 +25,7 @@ impl Plugin for SharedResourcesPlugin {
   }
 }
 
-#[derive(Resource, Reflect)]
+#[derive(Resource, Reflect, Clone, Copy)]
 pub struct Settings {
   pub general: GeneralGenerationSettings,
   pub world: WorldGenerationSettings,
@@ -42,7 +42,7 @@ impl Default for Settings {
   }
 }
 
-#[derive(Clone, Resource, Reflect, InspectorOptions)]
+#[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GeneralGenerationSettings {
   pub generate_neighbour_chunks: bool,
@@ -50,7 +50,6 @@ pub struct GeneralGenerationSettings {
   pub draw_terrain_sprites: bool,
   #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
-  pub layer_post_processing: bool,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -60,27 +59,11 @@ impl Default for GeneralGenerationSettings {
       enable_tile_debugging: ENABLE_TILE_DEBUGGING,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
-      layer_post_processing: LAYER_POST_PROCESSING,
     }
   }
 }
 
-#[derive(Clone, Resource, Reflect, InspectorOptions)]
-#[reflect(Resource, InspectorOptions)]
-pub struct ObjectGenerationSettings {
-  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
-  pub tree_density: f64,
-}
-
-impl Default for ObjectGenerationSettings {
-  fn default() -> Self {
-    Self {
-      tree_density: TREE_DENSITY,
-    }
-  }
-}
-
-#[derive(Clone, Resource, Reflect, InspectorOptions)]
+#[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct WorldGenerationSettings {
   /// The seed for the noise function. A parameter of `BasicMulti`. Allows for the same terrain to be generated i.e.
@@ -122,6 +105,23 @@ impl Default for WorldGenerationSettings {
       noise_amplitude: NOISE_AMPLITUDE,
       elevation: NOISE_ELEVATION,
       falloff_strength: FALLOFF_STRENGTH,
+    }
+  }
+}
+
+#[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
+#[reflect(Resource, InspectorOptions)]
+pub struct ObjectGenerationSettings {
+  pub object_generation: bool,
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub tree_density: f64,
+}
+
+impl Default for ObjectGenerationSettings {
+  fn default() -> Self {
+    Self {
+      object_generation: OBJECT_GENERATION,
+      tree_density: TREE_DENSITY,
     }
   }
 }

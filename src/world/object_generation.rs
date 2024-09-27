@@ -1,5 +1,6 @@
 use crate::constants::TILE_SIZE;
 use crate::resources::Settings;
+use crate::world::components::ObjectComponent;
 use crate::world::resources::AssetPacks;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::Tile;
@@ -12,9 +13,9 @@ use bevy::prelude::{BuildChildren, Commands, Res, SpriteBundle, TextureAtlas, Tr
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
-pub struct PostProcessorPlugin;
+pub struct ObjectGenerationPlugin;
 
-impl Plugin for PostProcessorPlugin {
+impl Plugin for ObjectGenerationPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
@@ -24,12 +25,13 @@ pub fn process(
   asset_packs: &Res<AssetPacks>,
   settings: &Res<Settings>,
 ) {
-  if !settings.general.layer_post_processing {
-    debug!("Skipped post-processing because it's disabled");
+  if !settings.object.object_generation {
+    debug!("Skipped object generation because it's disabled");
+    return;
   }
   let start_time = get_time();
   place_trees(commands, tile_data, asset_packs, settings);
-  debug!("Post-processed chunk(s) in {} ms", get_time() - start_time);
+  debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
 
 fn place_trees(
@@ -74,7 +76,7 @@ fn tree_sprite(
   offset_y: f32,
   index: i32,
   asset_packs: &AssetPacks,
-) -> (Name, SpriteBundle, TextureAtlas) {
+) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
     Name::new("Tree Sprite"),
     SpriteBundle {
@@ -90,5 +92,6 @@ fn tree_sprite(
       layout: asset_packs.tree.texture_atlas_layout.clone(),
       index: index as usize,
     },
+    ObjectComponent {},
   )
 }

@@ -9,11 +9,11 @@ pub const BASE_DELAY: f32 = 0.; // 0.0025
 pub const LAYER_DELAY: f32 = 2.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
-pub const LAYER_POST_PROCESSING: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
+pub const OBJECT_GENERATION: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
