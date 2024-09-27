@@ -85,9 +85,13 @@ impl Default for ObjectGenerationSettings {
 pub struct WorldGenerationSettings {
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
   pub noise_seed: u32,
+  #[inspector(min = 0, max = 12, display = NumberDisplay::Slider)]
+  pub noise_octaves: usize,
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   pub noise_frequency: f64,
-  #[inspector(min = 0., max = 3.0, display = NumberDisplay::Slider)]
+  #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
+  pub noise_persistence: f64,
+  #[inspector(min = 0., max = 10., display = NumberDisplay::Slider)]
   pub noise_amplitude: f64,
   #[inspector(min = -1., max = 1., display = NumberDisplay::Slider)]
   pub elevation: f64,
@@ -99,8 +103,10 @@ impl Default for WorldGenerationSettings {
   fn default() -> Self {
     Self {
       noise_seed: NOISE_SEED,
-      noise_frequency: NOISE_FREQUENCY, // The higher the frequency, the more detailed the terrain
-      noise_amplitude: NOISE_AMPLITUDE, // The higher the amplitude, the higher the peaks and lower the valleys
+      noise_octaves: NOISE_OCTAVES, // The higher the octaves, the more detailed the terrain
+      noise_frequency: NOISE_FREQUENCY, // The lower the frequency, the larger the features
+      noise_persistence: NOISE_PERSISTENCE, // The higher the persistence, the rougher the terrain
+      noise_amplitude: NOISE_AMPLITUDE, // The higher the amplitude, the more extreme the terrain
       elevation: NOISE_ELEVATION,       // Shifts the entire terrain up or down
       falloff_strength: FALLOFF_STRENGTH, // The higher the falloff strength, the closer to the center the falloff begins
     }

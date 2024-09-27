@@ -6,7 +6,7 @@ use crate::world::terrain_type::TerrainType;
 use crate::world::tile::DraftTile;
 use bevy::log::trace;
 use bevy::prelude::Res;
-use noise::{NoiseFn, Perlin};
+use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftChunk {
@@ -30,12 +30,14 @@ impl DraftChunk {
 fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
-  let perlin = Perlin::new(settings.world.noise_seed);
+  let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+    .set_octaves(settings.world.noise_octaves)
+    .set_frequency(settings.world.noise_frequency)
+    .set_persistence(settings.world.noise_persistence);
+  let amplitude = settings.world.noise_amplitude;
   let end = Point::new(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y + CHUNK_SIZE_PLUS_BUFFER - 1);
   let center = Point::new((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
-  let frequency = settings.world.noise_frequency;
-  let amplitude = settings.world.noise_amplitude;
   let elevation = settings.world.elevation;
   let falloff_strength = settings.world.falloff_strength;
   let mut tiles = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
@@ -48,7 +50,7 @@ fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Opt
       let chunk_grid = Point::new(cx, cy);
 
       // Calculate noise value
-      let noise = perlin.get([gx as f64 * frequency, gy as f64 * frequency]);
+      let noise = perlin.get([gx as f64, gy as f64]);
       let clamped_noise = (noise * amplitude).clamp(-1., 1.);
       let normalised_noise = (clamped_noise + 1.) / 2.;
       let normalised_noise = (normalised_noise + elevation).clamp(0., 1.);
