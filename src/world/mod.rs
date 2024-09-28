@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::coords::Point;
-use crate::events::{ChunkGenerationEvent, RefreshWorldEvent};
+use crate::events::{ChunkGenerationEvent, DespawnDistantChunkEvent, RefreshWorldEvent};
 use crate::resources::{CurrentChunk, Settings};
 use crate::world::chunk::Chunk;
 use crate::world::components::{ChunkComponent, TileComponent};
@@ -51,7 +51,12 @@ impl Plugin for WorldPlugin {
       .add_systems(Startup, generate_world_system)
       .add_systems(
         Update,
-        (process_async_tasks_system, refresh_world_event, chunk_generation_event),
+        (
+          process_async_tasks_system,
+          refresh_world_event,
+          chunk_generation_event,
+          despawn_distant_chunks_event,
+        ),
       );
   }
 }
@@ -328,48 +333,67 @@ fn chunk_generation_event(
   mut events: EventReader<ChunkGenerationEvent>,
   existing_world: Query<Entity, With<WorldComponent>>,
   existing_chunks: Res<ChunkComponentIndex>,
-  current_chunk: Res<CurrentChunk>,
+  mut current_chunk: ResMut<CurrentChunk>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
+  mut despawn_distant_chunk_event: EventWriter<DespawnDistantChunkEvent>,
 ) {
   for event in events.read() {
+    let t1 = get_time();
     let event_world_grid = event.world_grid;
     let event_world = event.world;
-    // if current_chunk.is_world_grid_in_chunk(event_world_grid) {
-    //   debug!(
-    //     "Received chunk generation event at w{} wg{} but chunk up-to-date, ignoring event...",
-    //     event_world, event_world_grid
-    //   );
-    //   return;
-    // }
+    if current_chunk.contains(event_world_grid) {
+      return;
+    }
 
-    let parent_chunk_world = current_chunk.get_world();
-    let direction = direction::Direction::from_chunk(&parent_chunk_world, &event_world);
-    let new_parent_chunk_world = calculate_new_current_chunk_world(&parent_chunk_world, &direction);
+    let current_chunk_world = current_chunk.get_world();
+    let direction = direction::Direction::from_chunk(&current_chunk_world, &event_world);
+    let new_parent_chunk_world = calculate_new_current_chunk_world(&current_chunk_world, &direction);
     debug!(
       "Received chunk generation event at w{} wg{}; current_parent={}, direction={:?}, new_parent={}",
-      event_world, event_world_grid, parent_chunk_world, direction, new_parent_chunk_world
+      event_world, event_world_grid, current_chunk_world, direction, new_parent_chunk_world
     );
-    // get_direction_points(&new_parent_chunk, CHUNK_SIZE)
-    //   .iter()
-    //   .for_each(|(direction, point)| {
-    //     if let Some(_) = existing_chunks.get(*point) {
-    //       debug!("{:?} chunk already exists at w{:?}", direction, point);
-    //     } else {
-    //       debug!("{:?} chunk does not exist at w{:?}", direction, point);
-    //     }
-    //   });
+    let mut chunks_to_spawn = Vec::new();
+    get_direction_points(&new_parent_chunk_world)
+      .iter()
+      .for_each(|(direction, chunk_world)| {
+        if let Some(_) = existing_chunks.get(*chunk_world) {
+          debug!("✅  {:?} chunk at w{:?} already exists", direction, chunk_world);
+        } else {
+          if !settings.general.generate_neighbour_chunks && chunk_world != &new_parent_chunk_world {
+            debug!(
+              "🚫 {:?} chunk at w{:?} does not exist but skipping because generating neighbours is disabled",
+              direction, chunk_world
+            );
+            return;
+          }
+          debug!("🚫 {:?} chunk at w{:?} does not exist", direction, chunk_world);
+          chunks_to_spawn.push(chunk_world.clone());
+        }
+      });
 
-    // let world = existing_world.get_single().unwrap();
-    // let event_world_grid = event.world_grid;
-    // let chunk = existing_chunks.get(event_world_grid);
+    // TODO: Detect current chunk changes when moving to the top or right earlier - its triggered after having left the current chunk
+    // TODO: Calculate which chunks need to be despawned and despawn them
+    // TODO: Clean up and refactor
 
-    // Get the chunk that triggered the event
+    let world = existing_world.get_single().unwrap();
+    let mut spawn_data = Vec::new();
+    commands.entity(world).with_children(|parent| {
+      for chunk_world in chunks_to_spawn.iter() {
+        let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
+        let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
+        let final_chunk = convert_draft_chunks_to_chunks(&settings, vec![draft_chunk]);
+        let chunk = final_chunk.first().unwrap();
+        let tile_data = spawn_chunk(parent, chunk);
+        spawn_data.push((chunk.clone(), tile_data));
+      }
+    });
+    object_generation::process(&mut commands, &mut spawn_data, &asset_packs, &settings);
+    schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data);
 
-    // Calculate which chunks need to be despawned and despawn them
-    // Calculate which chunks need to be spawned
-    // Spawn the new chunks
-    // Schedule tasks for spawning tiles
+    current_chunk.update(new_parent_chunk_world);
+    despawn_distant_chunk_event.send(DespawnDistantChunkEvent {});
+    info!("Chunk generation event took {} ms", get_time() - t1);
   }
 }
 
@@ -380,4 +404,32 @@ pub fn calculate_new_current_chunk_world(current_chunk_world: &Point, direction:
     current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction.x),
     current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction.y),
   )
+}
+
+pub fn despawn_distant_chunks_event(
+  mut commands: Commands,
+  mut events: EventReader<DespawnDistantChunkEvent>,
+  existing_chunks: Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
+  current_chunk: Res<CurrentChunk>,
+) {
+  for _ in events.read() {
+    let t1 = get_time();
+    let mut chunks_to_despawn = Vec::new();
+    for (entity, chunk_component) in existing_chunks.iter() {
+      let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
+      if distance > CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0 {
+        debug!(
+          "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
+          chunk_component.coords.world,
+          distance as i32,
+          current_chunk.get_world()
+        );
+        chunks_to_despawn.push(entity);
+      }
+    }
+    for entity in chunks_to_despawn.iter() {
+      commands.entity(*entity).despawn_recursive();
+    }
+    info!("Despawning distant chunks took {} ms", get_time() - t1);
+  }
 }

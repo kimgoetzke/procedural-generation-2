@@ -20,6 +20,9 @@ impl Coords {
   }
 
   pub fn new_for_chunk(world_grid: Point) -> Self {
+    if world_grid.coord_type != CoordType::WorldGrid {
+      panic!("The provided coordinates must be of type 'WorldGrid'");
+    }
     Self {
       world: Point {
         x: world_grid.x * TILE_SIZE as i32,
@@ -131,6 +134,14 @@ impl Point {
     }
   }
 
+  pub fn new_world_grid_from_world(world: Point) -> Self {
+    Self {
+      x: (world.x as f32 / TILE_SIZE as f32).round() as i32,
+      y: (world.y as f32 / TILE_SIZE as f32).round() as i32,
+      coord_type: CoordType::WorldGrid,
+    }
+  }
+
   pub fn from_direction(direction: &Direction, coord_type: CoordType) -> Self {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),
@@ -144,6 +155,14 @@ impl Point {
       Direction::BottomRight => (1, -1),
     };
     Self { x: i, y: j, coord_type }
+  }
+
+  pub fn distance_to(&self, other: &Point) -> f32 {
+    assert_eq!(
+      self.coord_type, other.coord_type,
+      "Cannot calculate distance between points of different types"
+    );
+    ((self.x - other.x).pow(2) as f32 + (self.y - other.y).pow(2) as f32).sqrt()
   }
 }
 

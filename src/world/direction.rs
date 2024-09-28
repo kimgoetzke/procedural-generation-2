@@ -3,6 +3,8 @@ use crate::coords::{CoordType, Point};
 use cmp::Ordering;
 use std::cmp;
 
+const ERROR_TYPE_NOT_WORLD: &'static str = "The provided coordinates must be of type 'World'";
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Direction {
   TopLeft,
@@ -33,9 +35,8 @@ impl Direction {
   }
 
   pub fn from_chunk(chunk_world: &Point, other_world: &Point) -> Self {
-    if chunk_world.coord_type != CoordType::World || other_world.coord_type != CoordType::World {
-      panic!("The provided coordinates must be of type 'World'");
-    }
+    assert_eq!(chunk_world.coord_type, CoordType::World, "{}", ERROR_TYPE_NOT_WORLD);
+    assert_eq!(other_world.coord_type, CoordType::World, "{}", ERROR_TYPE_NOT_WORLD);
 
     let chunk_len = CHUNK_SIZE * TILE_SIZE as i32;
     let chunk_left = chunk_world.x;
@@ -76,6 +77,7 @@ pub fn get_direction_points(point: &Point) -> [(Direction, Point); 9] {
   let ct = point.coord_type;
   let offset = match ct {
     CoordType::WorldGrid => CHUNK_SIZE,
+    CoordType::World => TILE_SIZE as i32 * CHUNK_SIZE,
     _ => panic!("Coord type {:?} not implemented for get_direction_points", ct),
   };
   let p = point;

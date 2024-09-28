@@ -1,3 +1,4 @@
+use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::events::{ChunkGenerationEvent, MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::{CurrentChunk, Settings};
@@ -70,7 +71,7 @@ fn left_mouse_click_system(
     {
       let world_grid = Point::new_world_grid_from_world_vec2(vec2);
       let world = Point::new_world_from_world_grid(world_grid);
-      info!(
+      debug!(
         "[Left Mouse Button] Clicked on {} => w{:?} wg{:?}",
         vec2.round(),
         world,
@@ -82,31 +83,28 @@ fn left_mouse_click_system(
 }
 
 fn camera_movement_system(
-  mouse_button_input: Res<ButtonInput<MouseButton>>,
   camera: Query<(&Camera, &GlobalTransform)>,
   current_chunk: Res<CurrentChunk>,
   mut event: EventWriter<ChunkGenerationEvent>,
 ) {
-  if mouse_button_input.just_pressed(MouseButton::Middle) {
-    let point = camera.single().1.translation();
-    let current_world = Point::new_world_from_world_vec2(point.truncate());
-    let current_world_grid = Point::new_world_grid_from_world_vec2(point.truncate());
-    // let chunk_world_grid = current_chunk.get_world_grid();
-    // let distance_x = (current_world_grid.x - chunk_world_grid.x).abs();
-    // let distance_y = (current_world_grid.y - chunk_world_grid.y).abs();
-    debug!(
-      "Camera moved to w{:?} wg{:?} while current chunk is at w{:?} wg{:?})",
-      current_world,
-      current_world_grid,
-      current_chunk.get_world(),
-      current_chunk.get_world_grid()
-    );
+  let point = camera.single().1.translation();
+  let current_world = Point::new_world_from_world_vec2(point.truncate());
+  let current_world_grid = Point::new_world_grid_from_world_vec2(point.truncate());
+  let chunk_world_grid = current_chunk.get_world_grid();
+  let distance_x = (current_world_grid.x - chunk_world_grid.x).abs();
+  let distance_y = (current_world_grid.y - chunk_world_grid.y).abs();
+  trace!(
+    "Camera moved to w{:?} wg{:?} with distance ({:?}, {:?})",
+    current_world,
+    current_world_grid,
+    distance_x,
+    distance_y
+  );
 
-    // if (distance_x >= CHUNK_SIZE) || (distance_y >= CHUNK_SIZE) {
+  if (distance_x >= CHUNK_SIZE) || (distance_y >= CHUNK_SIZE) {
     event.send(ChunkGenerationEvent {
       world: current_world,
       world_grid: current_world_grid,
     });
-    // };
-  }
+  };
 }

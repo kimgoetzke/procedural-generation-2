@@ -9,7 +9,8 @@ impl Plugin for SharedEventsPlugin {
       .add_event::<RefreshWorldEvent>()
       .add_event::<ToggleDebugInfo>()
       .add_event::<MouseClickEvent>()
-      .add_event::<ChunkGenerationEvent>();
+      .add_event::<ChunkGenerationEvent>()
+      .add_event::<DespawnDistantChunkEvent>();
   }
 }
 
@@ -30,3 +31,6 @@ pub struct ChunkGenerationEvent {
   pub world: Point,
   pub world_grid: Point,
 }
+
+#[derive(Event)]
+pub struct DespawnDistantChunkEvent {}

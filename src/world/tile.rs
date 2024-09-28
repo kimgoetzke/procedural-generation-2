@@ -1,8 +1,8 @@
-use bevy::log::*;
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::{Coords, Point};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_type::TileType;
+use bevy::log::*;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
 /// representation. While the `Coords` and `TerrainType` of a tile will remain the same after the conversion, the
@@ -57,7 +57,10 @@ impl Tile {
     if !is_marked_for_deletion(&adjusted_chunk_grid) {
       trace!(
         "Converting: DraftTile {:?} => {:?} {:?} tile {:?}",
-        draft_tile.coords, tile_type, draft_tile.terrain, adjusted_coords,
+        draft_tile.coords,
+        tile_type,
+        draft_tile.terrain,
+        adjusted_coords,
       );
     }
     Self {

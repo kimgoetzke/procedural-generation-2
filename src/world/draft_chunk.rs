@@ -1,4 +1,4 @@
-use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER, TILE_SIZE};
+use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::{Coords, Point};
 use crate::resources::Settings;
 use crate::world::get_time;
@@ -83,7 +83,7 @@ fn generate_terrain_data(world_grid: &Point, settings: &Res<Settings>) -> Vec<Ve
       noise_stats.1 = noise_stats.1.max(normalised_noise);
       noise_stats.2 = noise_stats.2.min(adjusted_noise);
       noise_stats.3 = noise_stats.3.max(adjusted_noise);
-      debug!("{:?} => Noise: {}", &tile, adjusted_noise);
+      trace!("{:?} => Noise: {}", &tile, adjusted_noise);
 
       tiles[cx as usize][cy as usize] = Some(tile);
       cx += 1;
@@ -107,7 +107,7 @@ fn print(world_grid: &Point, noise_stats: &mut (f64, f64, f64, f64), time: u128,
         str.push_str("None |");
       }
     }
-    debug!("{}", str);
+    trace!("{}", str);
     str = "|".to_string();
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);

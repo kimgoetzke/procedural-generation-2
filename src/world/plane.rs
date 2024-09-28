@@ -5,7 +5,7 @@ use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::{DraftTile, Tile};
 use crate::world::tile_type::TileType;
-use bevy::prelude::{debug, Res};
+use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
@@ -15,7 +15,6 @@ pub struct Plane {
 
 impl Plane {
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Res<Settings>) -> Self {
-    debug!("Creating a new [{:?}] layer plane", TerrainType::from(layer.unwrap_or(5)));
     let plane_data = determine_tile_types(&draft_tiles);
     let plane_data = resize_grid(plane_data);
     Self { data: plane_data, layer }
@@ -74,7 +73,6 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
           let same_neighbours_count = neighbour_tiles.count_same();
           let tile_type = determine_tile_type(neighbour_tiles, same_neighbours_count);
           let final_tile = Tile::from(draft_tile.clone(), tile_type);
-          neighbour_tiles.print(&final_tile, same_neighbours_count);
           final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
         }
       }

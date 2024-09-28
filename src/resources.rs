@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::coords::Point;
 use bevy::app::{App, Plugin};
+use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
@@ -130,6 +131,7 @@ impl Default for ObjectGenerationSettings {
 
 #[derive(Resource, Debug, Clone)]
 pub struct CurrentChunk {
+  center_world: Point,
   world: Point,
   world_grid: Point,
 }
@@ -138,6 +140,10 @@ pub struct CurrentChunk {
 impl CurrentChunk {
   pub fn get_world(&self) -> Point {
     self.world
+  }
+
+  pub fn get_center_world(&self) -> Point {
+    self.center_world
   }
 
   pub fn get_world_grid(&self) -> Point {
@@ -151,37 +157,29 @@ impl CurrentChunk {
       && world.y < (self.world.y + (CHUNK_SIZE * TILE_SIZE as i32))
   }
 
-  pub fn is_world_grid_in_chunk(&self, world_grid: Point) -> bool {
+  pub fn contains(&self, world_grid: Point) -> bool {
     world_grid.x >= self.world_grid.x
       && world_grid.x < (self.world_grid.x + CHUNK_SIZE)
       && world_grid.y >= self.world_grid.y
       && world_grid.y < (self.world_grid.y + CHUNK_SIZE)
   }
 
-  pub fn left_in_direction(&self, world: Point) -> Point {
-    let mut direction = Point::default();
-    if self.is_world_grid_in_chunk(world) {
-      return direction;
-    }
-
-    if world.x < self.world.x {
-      direction.x = -1;
-    } else if world.x > self.world.x + (CHUNK_SIZE * TILE_SIZE as i32) {
-      direction.x = 1;
-    }
-    if world.y < self.world.y {
-      direction.y = -1;
-    } else if world.y > self.world.y + (CHUNK_SIZE * TILE_SIZE as i32) {
-      direction.y = 1;
-    }
-    direction
+  pub fn update(&mut self, world: Point) {
+    self.world = world;
+    self.world_grid = Point::new_world_grid_from_world(world);
+    debug!("CurrentChunk updated to {:?}", self.world_grid);
   }
 }
 
 impl Default for CurrentChunk {
   fn default() -> Self {
+    let world = Point::new_world_from_world_grid(ORIGIN_WORLD_GRID_SPAWN_POINT);
     Self {
-      world: Point::new_world_from_world_grid(ORIGIN_WORLD_GRID_SPAWN_POINT),
+      center_world: Point::new_world(
+        world.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+        world.y + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+      ),
+      world,
       world_grid: ORIGIN_WORLD_GRID_SPAWN_POINT,
     }
   }
