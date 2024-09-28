@@ -1,8 +1,8 @@
+use bevy::log::*;
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::{Coords, Point};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_type::TileType;
-use bevy::prelude::debug;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
 /// representation. While the `Coords` and `TerrainType` of a tile will remain the same after the conversion, the
@@ -55,7 +55,7 @@ impl Tile {
     );
     let adjusted_coords = Coords::new(adjusted_chunk_grid, draft_tile.coords.world_grid);
     if !is_marked_for_deletion(&adjusted_chunk_grid) {
-      debug!(
+      trace!(
         "Converting: DraftTile {:?} => {:?} {:?} tile {:?}",
         draft_tile.coords, tile_type, draft_tile.terrain, adjusted_coords,
       );
@@ -70,8 +70,8 @@ impl Tile {
 
   pub fn get_parent_chunk_world(&self) -> Point {
     Point::new_world(
-      (self.coords.world_grid.x - self.coords.chunk_grid.x - 1) * TILE_SIZE as i32,
-      (self.coords.world_grid.y - self.coords.chunk_grid.y - 1) * TILE_SIZE as i32,
+      (self.coords.world_grid.x - self.coords.chunk_grid.x) * TILE_SIZE as i32,
+      (self.coords.world_grid.y + self.coords.chunk_grid.y) * TILE_SIZE as i32,
     )
   }
 }
