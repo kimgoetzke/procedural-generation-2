@@ -1,8 +1,12 @@
 use crate::constants::*;
+use crate::coords::Point;
+use crate::world::components::ChunkComponent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
+use bevy::log::debug;
 use bevy::math::UVec2;
-use bevy::prelude::{Font, Image, Res, ResMut, Resource, TextureAtlasLayout};
+use bevy::prelude::{Font, Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
+use bevy::utils::HashMap;
 
 pub struct WorldResourcesPlugin;
 
@@ -10,6 +14,9 @@ impl Plugin for WorldResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
       .init_resource::<AssetPacks>()
+      .init_resource::<ChunkComponentIndex>()
+      .observe(on_add_chunk_component_trigger)
+      .observe(on_remove_chunk_component_trigger)
       .add_systems(Startup, initialise_asset_packs_system);
   }
 }
@@ -79,4 +86,42 @@ fn initialise_asset_packs_system(
     texture: asset_server.load(TREES_PATH),
     texture_atlas_layout: trees_atlas_layout,
   };
+}
+
+#[derive(Resource, Default)]
+pub struct ChunkComponentIndex {
+  pub grid: HashMap<Point, ChunkComponent>,
+}
+
+impl ChunkComponentIndex {
+  pub fn get(&self, world: Point) -> Option<&ChunkComponent> {
+    if let Some(entity) = self.grid.get(&world) {
+      Some(entity)
+    } else {
+      None
+    }
+  }
+}
+
+fn on_add_chunk_component_trigger(
+  trigger: Trigger<OnAdd, ChunkComponent>,
+  query: Query<&ChunkComponent>,
+  mut index: ResMut<ChunkComponentIndex>,
+) {
+  let cc = query.get(trigger.entity()).unwrap();
+  index.grid.insert(cc.coords.world, cc.clone());
+  debug!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
+}
+
+fn on_remove_chunk_component_trigger(
+  trigger: Trigger<OnRemove, ChunkComponent>,
+  query: Query<&ChunkComponent>,
+  mut index: ResMut<ChunkComponentIndex>,
+) {
+  let cc = query.get(trigger.entity()).unwrap();
+  index.grid.remove(&cc.coords.world);
+  debug!(
+    "ChunkComponentIndex -> Removed ChunkComponent with key w{:?}",
+    cc.coords.world
+  );
 }

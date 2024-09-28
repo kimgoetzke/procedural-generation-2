@@ -1,12 +1,11 @@
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::Settings;
-use crate::world::components::{ChunkComponent, TileComponent};
-use crate::world::resources::AssetPacks;
+use crate::world::components::TileComponent;
+use crate::world::resources::{AssetPacks, ChunkComponentIndex};
 use crate::world::tile::Tile;
 use crate::world::tile_type::get_sprite_index;
 use bevy::app::{App, Plugin, Update};
-use bevy::color::Color;
 use bevy::core::Name;
 use bevy::log::*;
 use bevy::prelude::{
@@ -20,14 +19,11 @@ pub struct TileDebuggerPlugin;
 impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
-      .observe(on_add_chunk_component_trigger)
-      .observe(on_remove_chunk_component_trigger)
       .observe(on_add_tile_component_trigger)
       .observe(on_left_mouse_click_trigger)
       .observe(on_remove_tile_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, refresh_world_event))
-      .init_resource::<TileComponentIndex>()
-      .init_resource::<ChunkComponentIndex>();
+      .init_resource::<TileComponentIndex>();
   }
 }
 
@@ -47,39 +43,6 @@ impl TileComponentIndex {
     }
     tile_components
   }
-}
-
-#[derive(Resource, Default)]
-struct ChunkComponentIndex {
-  pub grid: HashMap<Point, ChunkComponent>,
-}
-
-impl ChunkComponentIndex {
-  pub fn get(&self, point: Point) -> Option<&ChunkComponent> {
-    if let Some(entity) = self.grid.get(&point) {
-      Some(entity)
-    } else {
-      None
-    }
-  }
-}
-
-fn on_add_chunk_component_trigger(
-  trigger: Trigger<OnAdd, ChunkComponent>,
-  query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkComponentIndex>,
-) {
-  let cc = query.get(trigger.entity()).unwrap();
-  index.grid.insert(cc.coords.world, cc.clone());
-}
-
-fn on_remove_chunk_component_trigger(
-  trigger: Trigger<OnRemove, ChunkComponent>,
-  query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkComponentIndex>,
-) {
-  let cc = query.get(trigger.entity()).unwrap();
-  index.grid.remove(&cc.coords.world_grid);
 }
 
 fn on_add_tile_component_trigger(
@@ -104,15 +67,15 @@ fn on_left_mouse_click_trigger(
   }
   let event = trigger.event();
   if let Some(tc) = tile_index
-    .get_entities(event.coords.world_grid)
+    .get_entities(event.world_grid)
     .iter()
     .max_by_key(|tc| tc.tile.layer)
   {
-    debug!("Debugging {:?}...", event.coords);
-    commands.spawn(tile_info(&asset_packs, &tc.tile, event.coords.world, &settings));
-    let parent_wg = tc.tile.get_parent_chunk_world_point();
-    if let Some(parent_chunk) = chunk_index.get(parent_wg) {
-      debug!("Parent is chunk w{:?}; any tiles are listed below", parent_wg);
+    debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
+    commands.spawn(tile_info(&asset_packs, &tc.tile, event.world, &settings));
+    let parent_w = tc.tile.get_parent_chunk_world();
+    if let Some(parent_chunk) = chunk_index.get(parent_w) {
+      debug!("Parent is chunk w{:?}; any tiles are listed below", parent_w);
       for plane in &parent_chunk.layered_plane.planes {
         if let Some(tile) = plane.get_tile(tc.tile.coords.chunk_grid) {
           let neighbours = plane.get_neighbours(tile);
@@ -120,9 +83,9 @@ fn on_left_mouse_click_trigger(
         }
       }
     } else {
-      warn!(
+      error!(
         "Failed to find parent chunk at w{} for tile at {:?}",
-        parent_wg, tc.tile.coords
+        parent_w, tc.tile.coords
       );
     }
   }
@@ -140,7 +103,7 @@ fn on_remove_tile_component_trigger(
 }
 
 fn tile_info(
-  asset_packs: &AssetPacks,
+  _asset_packs: &AssetPacks,
   tile: &Tile,
   spawn_point: Point,
   settings: &Res<Settings>,
@@ -164,9 +127,8 @@ fn tile_info(
           tile.layer
         ),
         TextStyle {
-          font: asset_packs.font.clone(),
-          font_size: 22.,
-          color: Color::WHITE,
+          font_size: 31.,
+          ..default()
         },
       )
       .with_justify(JustifyText::Center),

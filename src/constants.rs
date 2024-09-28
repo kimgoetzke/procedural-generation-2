@@ -1,19 +1,16 @@
 #![allow(dead_code)]
 
+use crate::coords::{CoordType, Point};
 use bevy::color::Color;
 use bevy::math::UVec2;
 
-// ------------------------------------------------------------------------------------------------------
-// Animation
-pub const BASE_DELAY: f32 = 0.; // 0.0025
-pub const LAYER_DELAY: f32 = 2.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
-pub const OBJECT_GENERATION: bool = false;
+pub const OBJECT_GENERATION: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
@@ -36,7 +33,12 @@ pub const BUFFER_SIZE: i32 = 1;
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The size of a chunk that is rendered on the screen. This is the size of a chunk minus the
 /// border.
-pub const CHUNK_SIZE: i32 = 32;
+pub const CHUNK_SIZE: i32 = 8;
+pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point = Point {
+  x: -(CHUNK_SIZE / 2),
+  y: CHUNK_SIZE / 2,
+  coord_type: CoordType::WorldGrid,
+};
 // ------------------------------------------------------------------------------------------------------
 // Sprites
 pub const TILE_SIZE: u32 = 32;

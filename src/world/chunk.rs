@@ -24,20 +24,3 @@ impl Chunk {
     }
   }
 }
-
-#[allow(dead_code)]
-pub fn get_chunk_spawn_points(spawn_point: &Point, adjustment: i32) -> [Point; 9] {
-  let p = spawn_point;
-  let adjustment = adjustment - 1;
-  [
-    Point::new(p.x - adjustment, p.y + adjustment),
-    Point::new(p.x, p.y + adjustment),
-    Point::new(p.x + adjustment, p.y + adjustment),
-    Point::new(p.x - adjustment, p.y),
-    Point::new(p.x, p.y),
-    Point::new(p.x + adjustment, p.y),
-    Point::new(p.x - adjustment, p.y - adjustment),
-    Point::new(p.x, p.y - adjustment),
-    Point::new(p.x + adjustment, p.y - adjustment),
-  ]
-}

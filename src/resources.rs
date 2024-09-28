@@ -1,4 +1,5 @@
 use crate::constants::*;
+use crate::coords::Point;
 use bevy::app::{App, Plugin};
 use bevy::prelude::{Reflect, ReflectResource, Resource};
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -21,7 +22,8 @@ impl Plugin for SharedResourcesPlugin {
       .insert_resource(ObjectGenerationSettings::default())
       .init_resource::<WorldGenerationSettings>()
       .register_type::<WorldGenerationSettings>()
-      .insert_resource(WorldGenerationSettings::default());
+      .insert_resource(WorldGenerationSettings::default())
+      .insert_resource(CurrentChunk::default());
   }
 }
 
@@ -122,6 +124,65 @@ impl Default for ObjectGenerationSettings {
     Self {
       object_generation: OBJECT_GENERATION,
       tree_density: TREE_DENSITY,
+    }
+  }
+}
+
+#[derive(Resource, Debug, Clone)]
+pub struct CurrentChunk {
+  world: Point,
+  world_grid: Point,
+}
+
+#[allow(dead_code)]
+impl CurrentChunk {
+  pub fn get_world(&self) -> Point {
+    self.world
+  }
+
+  pub fn get_world_grid(&self) -> Point {
+    self.world_grid
+  }
+
+  pub fn is_world_in_chunk(&self, world: Point) -> bool {
+    world.x >= self.world.x
+      && world.x < (self.world.x + (CHUNK_SIZE * TILE_SIZE as i32))
+      && world.y >= self.world.y
+      && world.y < (self.world.y + (CHUNK_SIZE * TILE_SIZE as i32))
+  }
+
+  pub fn is_world_grid_in_chunk(&self, world_grid: Point) -> bool {
+    world_grid.x >= self.world_grid.x
+      && world_grid.x < (self.world_grid.x + CHUNK_SIZE)
+      && world_grid.y >= self.world_grid.y
+      && world_grid.y < (self.world_grid.y + CHUNK_SIZE)
+  }
+
+  pub fn left_in_direction(&self, world: Point) -> Point {
+    let mut direction = Point::default();
+    if self.is_world_grid_in_chunk(world) {
+      return direction;
+    }
+
+    if world.x < self.world.x {
+      direction.x = -1;
+    } else if world.x > self.world.x + (CHUNK_SIZE * TILE_SIZE as i32) {
+      direction.x = 1;
+    }
+    if world.y < self.world.y {
+      direction.y = -1;
+    } else if world.y > self.world.y + (CHUNK_SIZE * TILE_SIZE as i32) {
+      direction.y = 1;
+    }
+    direction
+  }
+}
+
+impl Default for CurrentChunk {
+  fn default() -> Self {
+    Self {
+      world: Point::new_world_from_world_grid(ORIGIN_WORLD_GRID_SPAWN_POINT),
+      world_grid: ORIGIN_WORLD_GRID_SPAWN_POINT,
     }
   }
 }

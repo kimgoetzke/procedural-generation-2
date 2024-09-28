@@ -1,10 +1,10 @@
-use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
+use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER, TILE_SIZE};
 use crate::coords::{Coords, Point};
 use crate::resources::Settings;
 use crate::world::get_time;
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::DraftTile;
-use bevy::log::trace;
+use bevy::log::*;
 use bevy::prelude::Res;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
@@ -17,17 +17,24 @@ pub struct DraftChunk {
 
 impl DraftChunk {
   /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
-  pub fn new(world: Point, settings: &Res<Settings>) -> Self {
-    let data = generate_terrain_data(&world, settings);
+  pub fn new(world_grid: Point, settings: &Res<Settings>) -> Self {
+    let coords = Coords::new_for_chunk(world_grid);
+    let data = generate_terrain_data(&world_grid, settings);
+    debug!("Draft chunk has coords: {:?}", coords);
     Self {
-      center: Point::new(world.x + (CHUNK_SIZE_PLUS_BUFFER / 2), world.y + (CHUNK_SIZE_PLUS_BUFFER / 2)),
-      coords: Coords::new_for_chunk(world),
+      center: Point::new_world(
+        world_grid.x + (CHUNK_SIZE_PLUS_BUFFER / 2),
+        world_grid.y + (CHUNK_SIZE_PLUS_BUFFER / 2),
+      ),
+      coords,
       data,
     }
   }
 }
 
-fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
+/// Generates terrain data for a draft chunk based on Perlin noise. Expects `world_grid` to be a `Point` of type
+/// `WorldGrid` that describes the top-left corner of the grid.
+fn generate_terrain_data(world_grid: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
@@ -35,8 +42,9 @@ fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Opt
     .set_frequency(settings.world.noise_frequency)
     .set_persistence(settings.world.noise_persistence);
   let amplitude = settings.world.noise_amplitude;
-  let end = Point::new(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y + CHUNK_SIZE_PLUS_BUFFER - 1);
-  let center = Point::new((start.x + end.x) / 2, (start.y + end.y) / 2);
+  let start = Point::new_world_grid(world_grid.x - BUFFER_SIZE, world_grid.y + BUFFER_SIZE);
+  let end = Point::new_world_grid(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y - CHUNK_SIZE_PLUS_BUFFER + 1);
+  let center = Point::new_world_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
   let elevation = settings.world.elevation;
   let falloff_strength = settings.world.falloff_strength;
@@ -44,10 +52,10 @@ fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Opt
   let mut cx = 0;
   let mut cy = 0;
 
-  for gx in start.x..=end.x {
-    for gy in start.y..=end.y {
-      let world_grid = Point::new(gx, gy);
-      let chunk_grid = Point::new(cx, cy);
+  for gy in (end.y..=start.y).rev() {
+    for gx in start.x..=end.x {
+      let world_grid = Point::new_world_grid(gx, gy);
+      let chunk_grid = Point::new_chunk_grid(cx, cy);
 
       // Calculate noise value
       let noise = perlin.get([gx as f64, gy as f64]);
@@ -75,17 +83,34 @@ fn generate_terrain_data(start: &Point, settings: &Res<Settings>) -> Vec<Vec<Opt
       noise_stats.1 = noise_stats.1.max(normalised_noise);
       noise_stats.2 = noise_stats.2.min(adjusted_noise);
       noise_stats.3 = noise_stats.3.max(adjusted_noise);
-      trace!("{:?} => Noise: {}", &tile, adjusted_noise);
+      debug!("{:?} => Noise: {}", &tile, adjusted_noise);
 
       tiles[cx as usize][cy as usize] = Some(tile);
-      cy += 1;
+      cx += 1;
     }
-    cx += 1;
-    cy = 0;
+    cy += 1;
+    cx = 0;
+  }
+  print(world_grid, &mut noise_stats, time, &mut tiles);
+
+  tiles
+}
+
+fn print(world_grid: &Point, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
+  let mut str = "|".to_string();
+  for y in 0..tiles.len() {
+    for x in 0..tiles[y].len() {
+      if let Some(tile) = &tiles[x][y] {
+        str.push_str(&format!(" {:?}", tile.terrain).chars().take(5).collect::<String>());
+        str.push_str(" |");
+      } else {
+        str.push_str("None |");
+      }
+    }
+    debug!("{}", str);
+    str = "|".to_string();
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  trace!("Generated draft chunk at {:?} within {} ms", start, get_time() - time);
-
-  tiles
+  debug!("Generated draft chunk at {:?} within {} ms", world_grid, get_time() - time);
 }

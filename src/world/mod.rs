@@ -1,13 +1,14 @@
 use crate::constants::*;
 use crate::coords::Point;
-use crate::events::RefreshWorldEvent;
-use crate::resources::Settings;
-use crate::world::chunk::{get_chunk_spawn_points, Chunk};
+use crate::events::{ChunkGenerationEvent, RefreshWorldEvent};
+use crate::resources::{CurrentChunk, Settings};
+use crate::world::chunk::Chunk;
 use crate::world::components::{ChunkComponent, TileComponent};
+use crate::world::direction::get_direction_points;
 use crate::world::draft_chunk::DraftChunk;
 use crate::world::object_generation::ObjectGenerationPlugin;
 use crate::world::pre_processor::PreProcessorPlugin;
-use crate::world::resources::WorldResourcesPlugin;
+use crate::world::resources::{ChunkComponentIndex, WorldResourcesPlugin};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile_debugger::TileDebuggerPlugin;
 use crate::world::tile_type::*;
@@ -23,6 +24,7 @@ use tile::Tile;
 
 mod chunk;
 mod components;
+pub(crate) mod direction;
 mod draft_chunk;
 mod layered_plane;
 mod neighbours;
@@ -47,7 +49,10 @@ impl Plugin for WorldPlugin {
         TileDebuggerPlugin,
       ))
       .add_systems(Startup, generate_world_system)
-      .add_systems(Update, (refresh_world_event, process_async_tasks_system));
+      .add_systems(
+        Update,
+        (process_async_tasks_system, refresh_world_event, chunk_generation_event),
+      );
   }
 }
 
@@ -92,8 +97,8 @@ fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: 
 fn generate_draft_chunks(settings: &Res<Settings>) -> Vec<DraftChunk> {
   let start_time = get_time();
   let mut draft_chunks: Vec<DraftChunk> = Vec::new();
-  let spawn_point = Point::new(-(CHUNK_SIZE / 2), -(CHUNK_SIZE / 2));
-  get_chunk_spawn_points(&spawn_point, CHUNK_SIZE).iter().for_each(|point| {
+  let spawn_point = ORIGIN_WORLD_GRID_SPAWN_POINT;
+  get_direction_points(&spawn_point).iter().for_each(|(_, point)| {
     if settings.general.generate_neighbour_chunks {
       let draft_chunk = DraftChunk::new(point.clone(), settings);
       draft_chunks.push(draft_chunk);
@@ -129,8 +134,8 @@ fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk
     .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
     .with_children(|parent| {
       for chunk in final_chunks.iter() {
-        let entry = spawn_chunk(parent, &chunk);
-        spawn_data.push((chunk.clone(), entry));
+        let tile_data = spawn_chunk(parent, &chunk);
+        spawn_data.push((chunk.clone(), tile_data));
       }
     });
   debug!("Spawned world and chunk entities in {} ms", get_time() - start_time);
@@ -306,15 +311,73 @@ fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query
 fn refresh_world_event(
   mut commands: Commands,
   mut events: EventReader<RefreshWorldEvent>,
-  existing_worlds: Query<Entity, With<WorldComponent>>,
+  existing_world: Query<Entity, With<WorldComponent>>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
 ) {
   let event_count = events.read().count();
   if event_count > 0 {
-    for world in existing_worlds.iter() {
-      commands.entity(world).despawn_recursive();
-    }
+    let world = existing_world.get_single().unwrap();
+    commands.entity(world).despawn_recursive();
     spawn_world(&mut commands, asset_packs, settings);
   }
+}
+
+fn chunk_generation_event(
+  mut commands: Commands,
+  mut events: EventReader<ChunkGenerationEvent>,
+  existing_world: Query<Entity, With<WorldComponent>>,
+  existing_chunks: Res<ChunkComponentIndex>,
+  current_chunk: Res<CurrentChunk>,
+  asset_packs: Res<AssetPacks>,
+  settings: Res<Settings>,
+) {
+  for event in events.read() {
+    let event_world_grid = event.world_grid;
+    let event_world = event.world;
+    // if current_chunk.is_world_grid_in_chunk(event_world_grid) {
+    //   debug!(
+    //     "Received chunk generation event at w{} wg{} but chunk up-to-date, ignoring event...",
+    //     event_world, event_world_grid
+    //   );
+    //   return;
+    // }
+
+    let parent_chunk_world = current_chunk.get_world();
+    let direction = direction::Direction::from_chunk(&parent_chunk_world, &event_world);
+    let new_parent_chunk_world = calculate_new_current_chunk_world(&parent_chunk_world, &direction);
+    debug!(
+      "Received chunk generation event at w{} wg{}; current_parent={}, direction={:?}, new_parent={}",
+      event_world, event_world_grid, parent_chunk_world, direction, new_parent_chunk_world
+    );
+    // get_direction_points(&new_parent_chunk, CHUNK_SIZE)
+    //   .iter()
+    //   .for_each(|(direction, point)| {
+    //     if let Some(_) = existing_chunks.get(*point) {
+    //       debug!("{:?} chunk already exists at w{:?}", direction, point);
+    //     } else {
+    //       debug!("{:?} chunk does not exist at w{:?}", direction, point);
+    //     }
+    //   });
+
+    // let world = existing_world.get_single().unwrap();
+    // let event_world_grid = event.world_grid;
+    // let chunk = existing_chunks.get(event_world_grid);
+
+    // Get the chunk that triggered the event
+
+    // Calculate which chunks need to be despawned and despawn them
+    // Calculate which chunks need to be spawned
+    // Spawn the new chunks
+    // Schedule tasks for spawning tiles
+  }
+}
+
+pub fn calculate_new_current_chunk_world(current_chunk_world: &Point, direction: &direction::Direction) -> Point {
+  let direction = Point::from_direction(direction, current_chunk_world.coord_type);
+
+  Point::new_world(
+    current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction.x),
+    current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction.y),
+  )
 }

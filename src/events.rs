@@ -1,4 +1,4 @@
-use crate::coords::Coords;
+use crate::coords::Point;
 use bevy::prelude::{App, Event, Plugin};
 
 pub struct SharedEventsPlugin;
@@ -8,7 +8,8 @@ impl Plugin for SharedEventsPlugin {
     app
       .add_event::<RefreshWorldEvent>()
       .add_event::<ToggleDebugInfo>()
-      .add_event::<MouseClickEvent>();
+      .add_event::<MouseClickEvent>()
+      .add_event::<ChunkGenerationEvent>();
   }
 }
 
@@ -20,5 +21,12 @@ pub struct ToggleDebugInfo {}
 
 #[derive(Event)]
 pub struct MouseClickEvent {
-  pub coords: Coords,
+  pub world: Point,
+  pub world_grid: Point,
+}
+
+#[derive(Event)]
+pub struct ChunkGenerationEvent {
+  pub world: Point,
+  pub world_grid: Point,
 }

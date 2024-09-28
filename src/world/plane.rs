@@ -5,7 +5,7 @@ use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::world::terrain_type::TerrainType;
 use crate::world::tile::{DraftTile, Tile};
 use crate::world::tile_type::TileType;
-use bevy::prelude::Res;
+use bevy::prelude::{debug, Res};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
@@ -15,6 +15,7 @@ pub struct Plane {
 
 impl Plane {
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Res<Settings>) -> Self {
+    debug!("Creating a new [{:?}] layer plane", TerrainType::from(layer.unwrap_or(5)));
     let plane_data = determine_tile_types(&draft_tiles);
     let plane_data = resize_grid(plane_data);
     Self { data: plane_data, layer }
@@ -40,16 +41,16 @@ impl Plane {
     let mut neighbours = NeighbourTiles::empty();
 
     for p in neighbour_points().iter() {
-      let point = Point::new(x + p.0, y + p.1);
+      let point = Point::new_chunk_grid(x + p.0, y + p.1);
       if let Some(neighbour) = self.get_tile(point) {
         let neighbour_tile = NeighbourTile::new(
-          Point::new(p.0, p.1),
+          Point::new_chunk_grid(p.0, p.1),
           neighbour.terrain,
           neighbour.terrain == of.terrain || neighbour.layer > of.layer,
         );
         neighbours.put(neighbour_tile);
       } else {
-        let neighbour_tile = NeighbourTile::default(Point::new(p.0, p.1));
+        let neighbour_tile = NeighbourTile::default(Point::new_chunk_grid(p.0, p.1));
         neighbours.put(neighbour_tile);
       }
     }
@@ -59,10 +60,12 @@ impl Plane {
 }
 
 fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Option<Tile>>> {
-  let mut final_tiles = vec![vec![None; draft_tiles.len()]; draft_tiles[0].len()];
-  for row in draft_tiles {
-    for cell in row {
-      if let Some(draft_tile) = cell {
+  let y_len = draft_tiles.len();
+  let x_len = draft_tiles[0].len();
+  let mut final_tiles = vec![vec![None; y_len]; x_len];
+  for y in 0..y_len {
+    for x in 0..x_len {
+      if let Some(draft_tile) = draft_tiles[x][y].as_ref() {
         if draft_tile.terrain == TerrainType::Water {
           let final_tile = Tile::from(draft_tile.clone(), TileType::Fill);
           final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
@@ -71,6 +74,7 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
           let same_neighbours_count = neighbour_tiles.count_same();
           let tile_type = determine_tile_type(neighbour_tiles, same_neighbours_count);
           let final_tile = Tile::from(draft_tile.clone(), tile_type);
+          neighbour_tiles.print(&final_tile, same_neighbours_count);
           final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
         }
       }
@@ -162,15 +166,15 @@ fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> Neighbo
   let mut neighbours = NeighbourTiles::empty();
 
   for p in neighbour_points().iter() {
-    if let Some(neighbour) = get_draft_tile(x + p.0, y + p.1, from) {
+    if let Some(neighbour) = get_draft_tile(x + p.0, y + p.1 * -1, from) {
       let neighbour_tile = NeighbourTile::new(
-        Point::new(p.0, p.1),
+        Point::new_abstract(p.0, p.1),
         neighbour.terrain,
         neighbour.terrain == of.terrain || neighbour.layer > of.layer,
       );
       neighbours.put(neighbour_tile);
     } else {
-      let neighbour_tile = NeighbourTile::default(Point::new(p.0, p.1));
+      let neighbour_tile = NeighbourTile::default(Point::new_abstract(p.0, p.1));
       neighbours.put(neighbour_tile);
     }
   }
@@ -183,10 +187,8 @@ fn neighbour_points() -> Vec<(i32, i32)> {
 }
 
 fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<&DraftTile> {
-  let i = x as usize;
-  let j = y as usize;
-  if i < from.len() && j < from[0].len() {
-    from[i][j].as_ref()
+  if x >= 0 && x < from[0].len() as i32 && y >= 0 && y < from.len() as i32 {
+    from[x as usize][y as usize].as_ref()
   } else {
     None
   }
@@ -199,8 +201,8 @@ fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
   let cut_off = BUFFER_SIZE as usize;
   let mut cut_off_tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
 
-  for x in cut_off..final_tiles.len() - cut_off {
-    for y in cut_off..final_tiles[0].len() - cut_off {
+  for x in cut_off..final_tiles[0].len() - cut_off {
+    for y in cut_off..final_tiles.len() - cut_off {
       cut_off_tiles[x - cut_off][y - cut_off] = final_tiles[x][y];
     }
   }

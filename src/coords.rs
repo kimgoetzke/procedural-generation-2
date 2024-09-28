@@ -1,6 +1,5 @@
-#![allow(dead_code)]
-
 use crate::constants::TILE_SIZE;
+use crate::world::direction::Direction;
 use bevy::math::Vec2;
 use std::fmt;
 
@@ -22,9 +21,13 @@ impl Coords {
 
   pub fn new_for_chunk(world_grid: Point) -> Self {
     Self {
-      world: Point::new_world_from_world_grid(world_grid),
+      world: Point {
+        x: world_grid.x * TILE_SIZE as i32,
+        y: world_grid.y * TILE_SIZE as i32,
+        coord_type: CoordType::World,
+      },
       world_grid,
-      chunk_grid: Point::new(0, 0),
+      chunk_grid: Point::new_chunk_grid(0, 0),
     }
   }
 }
@@ -35,10 +38,11 @@ impl fmt::Debug for Coords {
   }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Point {
   pub x: i32,
   pub y: i32,
+  pub coord_type: CoordType,
 }
 
 impl fmt::Debug for Point {
@@ -53,16 +57,59 @@ impl fmt::Display for Point {
   }
 }
 
+impl Default for Point {
+  fn default() -> Self {
+    Self {
+      x: 0,
+      y: 0,
+      coord_type: CoordType::World,
+    }
+  }
+}
+
 impl Point {
-  pub fn new(x: i32, y: i32) -> Self {
-    Self { x, y }
+  pub fn new(x: i32, y: i32, coord_type: CoordType) -> Self {
+    Self { x, y, coord_type }
   }
 
-  /// Returns a `Point` in the world with the `x` and `y` values rounded to the nearest integer to achieve this.
+  pub fn new_abstract(x: i32, y: i32) -> Self {
+    Self {
+      x,
+      y,
+      coord_type: CoordType::Abstract,
+    }
+  }
+
+  pub fn new_world(x: i32, y: i32) -> Self {
+    Self {
+      x,
+      y,
+      coord_type: CoordType::World,
+    }
+  }
+
+  pub fn new_world_grid(x: i32, y: i32) -> Self {
+    Self {
+      x,
+      y,
+      coord_type: CoordType::WorldGrid,
+    }
+  }
+
+  pub fn new_chunk_grid(x: i32, y: i32) -> Self {
+    Self {
+      x,
+      y,
+      coord_type: CoordType::ChunkGrid,
+    }
+  }
+
+  /// Returns a `Point` of type `World` with the `x` and `y` values rounded to the nearest integer to achieve this.
   pub fn new_world_from_world_vec2(world: Vec2) -> Self {
     Self {
       x: world.x.round() as i32,
       y: world.y.round() as i32,
+      coord_type: CoordType::World,
     }
   }
 
@@ -70,6 +117,7 @@ impl Point {
     Self {
       x: world_grid.x * TILE_SIZE as i32,
       y: world_grid.y * TILE_SIZE as i32,
+      coord_type: CoordType::World,
     }
   }
 
@@ -79,20 +127,30 @@ impl Point {
     Self {
       x: (world.x / TILE_SIZE as f32).round() as i32,
       y: (world.y / TILE_SIZE as f32).round() as i32,
+      coord_type: CoordType::WorldGrid,
     }
   }
 
-  pub fn new_chunk_grid_from_world_vec2(world: Vec2) -> Self {
-    Self {
-      x: (world.x / TILE_SIZE as f32).round() as i32,
-      y: (world.y / TILE_SIZE as f32).round() as i32,
-    }
+  pub fn from_direction(direction: &Direction, coord_type: CoordType) -> Self {
+    let (i, j) = match direction {
+      Direction::TopLeft => (-1, 1),
+      Direction::Top => (0, 1),
+      Direction::TopRight => (1, 1),
+      Direction::Left => (-1, 0),
+      Direction::Center => (0, 0),
+      Direction::Right => (1, 0),
+      Direction::BottomLeft => (-1, -1),
+      Direction::Bottom => (0, -1),
+      Direction::BottomRight => (1, -1),
+    };
+    Self { x: i, y: j, coord_type }
   }
+}
 
-  pub fn new_chunk_grid_from_world_point(world: Point) -> Self {
-    Self {
-      x: world.x / TILE_SIZE as i32,
-      y: world.y / TILE_SIZE as i32,
-    }
-  }
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum CoordType {
+  World,
+  WorldGrid,
+  ChunkGrid,
+  Abstract,
 }

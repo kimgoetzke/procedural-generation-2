@@ -23,8 +23,8 @@ impl LayeredPlane {
 
       // Populate the layer using the draft plane and adjust terrain, if necessary - as a result,
       // each tile on a layer above the first rendered layer has a tile below it too
-      for x in 0..draft_tiles.len() {
-        for y in 0..draft_tiles[0].len() {
+      for x in 0..draft_tiles[0].len() {
+        for y in 0..draft_tiles.len() {
           if let Some(tile) = &draft_tiles[x][y] {
             if tile.layer == layer as i32 {
               current_layer[x][y] = Some(tile.clone());

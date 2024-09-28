@@ -47,35 +47,14 @@ pub struct NeighbourTiles {
 impl NeighbourTiles {
   pub(crate) fn empty() -> Self {
     Self {
-      top_left: NeighbourTile::default(Point::new(-1, 1)),
-      top: NeighbourTile::default(Point::new(0, 1)),
-      top_right: NeighbourTile::default(Point::new(1, 1)),
-      left: NeighbourTile::default(Point::new(-1, 0)),
-      right: NeighbourTile::default(Point::new(1, 0)),
-      bottom_left: NeighbourTile::default(Point::new(-1, -1)),
-      bottom: NeighbourTile::default(Point::new(0, -1)),
-      bottom_right: NeighbourTile::default(Point::new(1, -1)),
-    }
-  }
-
-  fn put_all(ordered_neighbours: Vec<NeighbourTile>) -> Self {
-    let find_tile = |x, y| {
-      ordered_neighbours
-        .iter()
-        .find(|n| n.direction.x == x && n.direction.y == y)
-        .cloned()
-        .unwrap()
-    };
-
-    Self {
-      top_left: find_tile(-1, 1),
-      top: find_tile(0, 1),
-      top_right: find_tile(1, 1),
-      left: find_tile(-1, 0),
-      right: find_tile(1, 0),
-      bottom_left: find_tile(-1, -1),
-      bottom: find_tile(0, -1),
-      bottom_right: find_tile(1, -1),
+      top_left: NeighbourTile::default(Point::new_abstract(-1, 1)),
+      top: NeighbourTile::default(Point::new_abstract(0, 1)),
+      top_right: NeighbourTile::default(Point::new_abstract(1, 1)),
+      left: NeighbourTile::default(Point::new_abstract(-1, 0)),
+      right: NeighbourTile::default(Point::new_abstract(1, 0)),
+      bottom_left: NeighbourTile::default(Point::new_abstract(-1, -1)),
+      bottom: NeighbourTile::default(Point::new_abstract(0, -1)),
+      bottom_right: NeighbourTile::default(Point::new_abstract(1, -1)),
     }
   }
 
