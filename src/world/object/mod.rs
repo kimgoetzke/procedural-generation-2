@@ -20,7 +20,7 @@ impl Plugin for ObjectGenerationPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub fn process(
+pub fn generate_objects(
   commands: &mut Commands,
   spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
   asset_packs: &Res<AssetPacks>,

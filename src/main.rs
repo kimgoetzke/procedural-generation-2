@@ -13,7 +13,7 @@ use crate::controls::ControlPlugin;
 use crate::events::SharedEventsPlugin;
 use crate::resources::SharedResourcesPlugin;
 use crate::ui::UiPlugin;
-use crate::world::WorldPlugin;
+use crate::world::GenerationPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};
 use bevy::input::common_conditions::input_toggle_active;
@@ -54,7 +54,7 @@ fn main() {
     .add_plugins(PanCamPlugin::default())
     .add_plugins((
       CameraPlugin,
-      WorldPlugin,
+      GenerationPlugin,
       SharedEventsPlugin,
       SharedResourcesPlugin,
       ControlPlugin,
