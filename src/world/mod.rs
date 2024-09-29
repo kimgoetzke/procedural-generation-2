@@ -4,13 +4,13 @@ use crate::events::{ChunkGenerationEvent, DespawnDistantChunkEvent, RefreshWorld
 use crate::resources::{CurrentChunk, Settings};
 use crate::world::chunk::Chunk;
 use crate::world::components::{ChunkComponent, TileComponent};
+use crate::world::debug::DebugPlugin;
 use crate::world::direction::get_direction_points;
 use crate::world::draft_chunk::DraftChunk;
 use crate::world::object_generation::ObjectGenerationPlugin;
 use crate::world::pre_processor::PreProcessorPlugin;
 use crate::world::resources::{ChunkComponentIndex, WorldResourcesPlugin};
 use crate::world::terrain_type::TerrainType;
-use crate::world::tile_debugger::TileDebuggerPlugin;
 use crate::world::tile_type::*;
 use bevy::app::{App, Plugin, Startup};
 use bevy::ecs::system::SystemState;
@@ -24,6 +24,7 @@ use tile::Tile;
 
 mod chunk;
 mod components;
+mod debug;
 pub(crate) mod direction;
 mod draft_chunk;
 mod layered_plane;
@@ -34,7 +35,6 @@ mod pre_processor;
 mod resources;
 mod terrain_type;
 mod tile;
-mod tile_debugger;
 mod tile_type;
 
 pub struct WorldPlugin;
@@ -42,12 +42,7 @@ pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins((
-        WorldResourcesPlugin,
-        PreProcessorPlugin,
-        ObjectGenerationPlugin,
-        TileDebuggerPlugin,
-      ))
+      .add_plugins((WorldResourcesPlugin, PreProcessorPlugin, ObjectGenerationPlugin, DebugPlugin))
       .add_systems(Startup, generate_world_system)
       .add_systems(
         Update,

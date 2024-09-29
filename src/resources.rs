@@ -48,6 +48,7 @@ impl Default for Settings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GeneralGenerationSettings {
+  pub draw_gizmos: bool,
   pub generate_neighbour_chunks: bool,
   pub enable_tile_debugging: bool, // Disabling massively speeds up the generation process
   pub draw_terrain_sprites: bool,
@@ -58,6 +59,7 @@ pub struct GeneralGenerationSettings {
 impl Default for GeneralGenerationSettings {
   fn default() -> Self {
     Self {
+      draw_gizmos: DRAW_GIZMOS,
       generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       enable_tile_debugging: ENABLE_TILE_DEBUGGING,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,

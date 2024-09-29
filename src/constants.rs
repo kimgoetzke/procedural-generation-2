@@ -6,6 +6,7 @@ use bevy::math::UVec2;
 
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
+pub const DRAW_GIZMOS: bool = false;
 pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const ENABLE_TILE_DEBUGGING: bool = false;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
