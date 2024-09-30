@@ -33,7 +33,12 @@ pub struct GenerationPlugin;
 impl Plugin for GenerationPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins((GenerationResourcesPlugin, WorldGenerationPlugin, ObjectGenerationPlugin, DebugPlugin))
+      .add_plugins((
+        GenerationResourcesPlugin,
+        WorldGenerationPlugin,
+        ObjectGenerationPlugin,
+        DebugPlugin,
+      ))
       .add_systems(Startup, generation_system)
       .add_systems(
         Update,
@@ -87,6 +92,7 @@ fn update_world_event(
     let event_world_grid = event.world_grid;
     let event_world = event.world;
     if current_chunk.contains(event_world_grid) {
+      debug!("wg{} is inside current chunk, ignoring UpdateWorldEvent...", event_world_grid);
       return;
     }
 
@@ -106,7 +112,7 @@ fn update_world_event(
         } else {
           if !settings.general.generate_neighbour_chunks && chunk_world != &new_parent_chunk_world {
             debug!(
-              "🚫 {:?} chunk at w{:?} does not exist but skipping because generating neighbours is disabled",
+              "❎  {:?} chunk at w{:?} does not exist but skipping because generating neighbours is disabled",
               direction, chunk_world
             );
             return;
