@@ -1,4 +1,4 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::coords::Point;
 use crate::events::{ChunkGenerationEvent, MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
 use crate::resources::{CurrentChunk, Settings};
@@ -38,19 +38,25 @@ fn settings_controls_system(
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
     settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
     info!(
-      "[Z] Toggled terrain sprite drawing to [{}]",
+      "[Z] Set drawing terrain sprites to [{}]",
       settings.general.draw_terrain_sprites
     );
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
     settings.object.object_generation = !settings.object.object_generation;
-    info!("[X] Toggled object generation to [{}]", settings.object.object_generation);
+    info!("[X] Set object generation to [{}]", settings.object.object_generation);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyC) {
     settings.general.enable_tile_debugging = !settings.general.enable_tile_debugging;
-    info!("[C] Toggled tile debugging to [{}]", settings.general.enable_tile_debugging);
+    info!("[C] Set tile debugging to [{}]", settings.general.enable_tile_debugging);
+    toggle_debug_info_event.send(ToggleDebugInfo {});
+  }
+
+  if keyboard_input.just_pressed(KeyCode::KeyV) {
+    settings.general.draw_gizmos = !settings.general.draw_gizmos;
+    info!("[V] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
     toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 }
@@ -89,22 +95,20 @@ fn camera_movement_system(
 ) {
   let point = camera.single().1.translation();
   let current_world = Point::new_world_from_world_vec2(point.truncate());
-  let current_world_grid = Point::new_world_grid_from_world_vec2(point.truncate());
-  let chunk_world_grid = current_chunk.get_world_grid();
-  let distance_x = (current_world_grid.x - chunk_world_grid.x).abs();
-  let distance_y = (current_world_grid.y - chunk_world_grid.y).abs();
+  let chunk_center_world = current_chunk.get_center_world();
+  let distance_x = (current_world.x - chunk_center_world.x).abs();
+  let distance_y = (current_world.y - chunk_center_world.y).abs();
   trace!(
-    "Camera moved to w{:?} wg{:?} with distance ({:?}, {:?})",
+    "Camera moved to w{:?} with distance ({:?}, {:?})",
     current_world,
-    current_world_grid,
     distance_x,
     distance_y
   );
 
-  if (distance_x >= CHUNK_SIZE) || (distance_y >= CHUNK_SIZE) {
+  if (distance_x >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) || (distance_y >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) {
     event.send(ChunkGenerationEvent {
       world: current_world,
-      world_grid: current_world_grid,
+      world_grid: Point::new_world_grid_from_world(current_world),
     });
   };
 }

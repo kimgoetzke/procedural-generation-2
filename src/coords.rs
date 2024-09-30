@@ -164,6 +164,13 @@ impl Point {
     );
     ((self.x - other.x).pow(2) as f32 + (self.y - other.y).pow(2) as f32).sqrt()
   }
+
+  pub fn to_vec2(&self) -> Vec2 {
+    if self.coord_type == CoordType::World {
+      return Vec2::new(self.x as f32, self.y as f32);
+    }
+    panic!("Cannot convert a Point of type {:?} to a Vec2", self.coord_type);
+  }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
