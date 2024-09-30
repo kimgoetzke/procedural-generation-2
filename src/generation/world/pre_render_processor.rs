@@ -1,15 +1,15 @@
+use crate::generation::chunk::Chunk;
+use crate::generation::get_time;
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile_type::TileType;
 use crate::resources::Settings;
-use crate::world::chunk::Chunk;
-use crate::world::get_time;
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile_type::TileType;
 use bevy::app::{App, Plugin};
 use bevy::log::{debug, warn};
 use bevy::prelude::Res;
 
-pub struct PreProcessorPlugin;
+pub struct PreRenderProcessorPlugin;
 
-impl Plugin for PreProcessorPlugin {
+impl Plugin for PreRenderProcessorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 

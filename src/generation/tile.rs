@@ -1,7 +1,7 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::{Coords, Point};
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile_type::TileType;
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile_type::TileType;
 use bevy::log::*;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate

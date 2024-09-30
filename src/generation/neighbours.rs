@@ -1,6 +1,6 @@
 use crate::coords::Point;
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile::Tile;
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile::Tile;
 use bevy::log::*;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]

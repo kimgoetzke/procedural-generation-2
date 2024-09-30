@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::coords::Point;
-use crate::world::components::ChunkComponent;
+use crate::generation::components::ChunkComponent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::log::debug;
@@ -8,9 +8,9 @@ use bevy::math::UVec2;
 use bevy::prelude::{Font, Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
 use bevy::utils::HashMap;
 
-pub struct WorldResourcesPlugin;
+pub struct GenerationResourcesPlugin;
 
-impl Plugin for WorldResourcesPlugin {
+impl Plugin for GenerationResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
       .init_resource::<AssetPacks>()

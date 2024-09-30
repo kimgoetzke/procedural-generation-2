@@ -1,10 +1,10 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::Point;
+use crate::generation::neighbours::{NeighbourTile, NeighbourTiles};
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile::{DraftTile, Tile};
+use crate::generation::tile_type::TileType;
 use crate::resources::Settings;
-use crate::world::neighbours::{NeighbourTile, NeighbourTiles};
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile::{DraftTile, Tile};
-use crate::world::tile_type::TileType;
 use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

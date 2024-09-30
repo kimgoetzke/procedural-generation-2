@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::coords::Point;
-use crate::events::{ChunkGenerationEvent, MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
+use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -21,11 +21,14 @@ impl Plugin for ControlPlugin {
   }
 }
 
-fn event_control_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut reset_world_event: EventWriter<RefreshWorldEvent>) {
+fn event_control_system(
+  keyboard_input: Res<ButtonInput<KeyCode>>,
+  mut reset_world_event: EventWriter<RegenerateWorldEvent>,
+) {
   // Refresh world
   if keyboard_input.just_pressed(KeyCode::F5) {
     info!("[F5] Refreshing world...");
-    reset_world_event.send(RefreshWorldEvent {});
+    reset_world_event.send(RegenerateWorldEvent {});
   }
 }
 
@@ -91,7 +94,7 @@ fn left_mouse_click_system(
 fn camera_movement_system(
   camera: Query<(&Camera, &GlobalTransform)>,
   current_chunk: Res<CurrentChunk>,
-  mut event: EventWriter<ChunkGenerationEvent>,
+  mut event: EventWriter<UpdateWorldEvent>,
 ) {
   let point = camera.single().1.translation();
   let current_world = Point::new_world_from_world_vec2(point.truncate());
@@ -106,7 +109,7 @@ fn camera_movement_system(
   );
 
   if (distance_x >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) || (distance_y >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) {
-    event.send(ChunkGenerationEvent {
+    event.send(UpdateWorldEvent {
       world: current_world,
       world_grid: Point::new_world_grid_from_world(current_world),
     });

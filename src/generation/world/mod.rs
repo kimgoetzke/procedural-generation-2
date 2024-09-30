@@ -1,65 +1,53 @@
-use crate::constants::{CHUNK_SIZE, ORIGIN_WORLD_GRID_SPAWN_POINT, TILE_SIZE};
+use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{ChunkGenerationEvent, DespawnDistantChunkEvent, RefreshWorldEvent};
-use crate::resources::{CurrentChunk, Settings};
-use crate::world::chunk::Chunk;
-use crate::world::components::{ChunkComponent, TileComponent};
-use crate::world::direction::get_direction_points;
-use crate::world::draft_chunk::DraftChunk;
-use crate::world::resources::{AssetPacks, ChunkComponentIndex};
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile::Tile;
-use crate::world::tile_type::get_sprite_index;
-use crate::world::{direction, get_time, object, pre_processor, TileData};
-use bevy::app::{App, Plugin, Startup, Update};
+use crate::generation::chunk::Chunk;
+use crate::generation::components::{ChunkComponent, TileComponent, WorldComponent};
+use crate::generation::direction::get_direction_points;
+use crate::generation::draft_chunk::DraftChunk;
+use crate::generation::get_time;
+use crate::generation::resources::AssetPacks;
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile::Tile;
+use crate::generation::tile_data::TileData;
+use crate::generation::tile_type::get_sprite_index;
+use crate::generation::world::pre_render_processor::PreRenderProcessorPlugin;
+use crate::resources::Settings;
+use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::ChildBuilder;
-use bevy::log::{debug, info};
+use bevy::log::*;
 use bevy::prelude::{
-  BuildChildren, BuildWorldChildren, Commands, Component, DespawnRecursiveExt, Entity, EventReader, EventWriter, Query, Res,
-  ResMut, SpatialBundle, SpriteBundle, TextureAtlas, Transform, With, World,
+  BuildChildren, BuildWorldChildren, Commands, Component, DespawnRecursiveExt, Entity, Query, Res, SpatialBundle,
+  SpriteBundle, TextureAtlas, Transform, World,
 };
 use bevy::tasks::futures_lite::future;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
-use direction::Direction;
 
-pub struct WorldPlugin;
+pub mod pre_render_processor;
 
-impl Plugin for WorldPlugin {
+pub struct WorldGenerationPlugin;
+
+impl Plugin for WorldGenerationPlugin {
   fn build(&self, app: &mut App) {
-    app.add_systems(Startup, generate_world_system).add_systems(
-      Update,
-      (
-        process_async_tasks_system,
-        refresh_world_event,
-        chunk_generation_event,
-        despawn_distant_chunks_event,
-      ),
-    );
+    app
+      .add_plugins(PreRenderProcessorPlugin)
+      .add_systems(Update, (process_async_tasks_system,));
   }
 }
 
 #[derive(Component)]
 struct TileSpawnTask(Task<CommandQueue>);
 
-#[derive(Component)]
-struct WorldComponent;
-
-fn generate_world_system(mut commands: Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
-  spawn_world(&mut commands, asset_packs, settings);
-}
-
-fn spawn_world(commands: &mut Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
-  let start_time = get_time();
+pub fn spawn_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
   let draft_chunks = generate_draft_chunks(&settings);
   let mut final_chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
-  final_chunks = pre_processor::process(final_chunks, &settings);
-  let mut spawn_data = spawn_world_and_base_chunks(commands, &final_chunks);
-  object::generate_objects(commands, &mut spawn_data, &asset_packs, &settings);
-  schedule_tile_spawning_tasks(commands, &settings, spawn_data);
-  info!("✅  World generation took {} ms", get_time() - start_time);
+  final_chunks = pre_render_processor::process(final_chunks, &settings);
+  let spawn_data = spawn_world_and_chunk_entities(commands, &final_chunks);
+  schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
+
+  spawn_data
 }
 
 fn generate_draft_chunks(settings: &Res<Settings>) -> Vec<DraftChunk> {
@@ -95,7 +83,7 @@ fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<Dr
   final_chunks
 }
 
-fn spawn_world_and_base_chunks(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
+fn spawn_world_and_chunk_entities(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
   let start_time = get_time();
   let mut spawn_data: Vec<(Chunk, Vec<TileData>)> = Vec::new();
   commands
@@ -143,10 +131,10 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   tile_data
 }
 
-fn schedule_tile_spawning_tasks(
+pub fn schedule_tile_spawning_tasks(
   commands: &mut Commands,
   settings_ref: &Res<Settings>,
-  spawn_data: Vec<(Chunk, Vec<TileData>)>,
+  spawn_data: &[(Chunk, Vec<TileData>)],
 ) {
   let start_time = get_time();
   let thread_pool = AsyncComputeTaskPool::get();
@@ -272,123 +260,23 @@ fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query
   }
 }
 
-fn refresh_world_event(
-  mut commands: Commands,
-  mut events: EventReader<RefreshWorldEvent>,
-  existing_world: Query<Entity, With<WorldComponent>>,
-  asset_packs: Res<AssetPacks>,
-  settings: Res<Settings>,
-) {
-  let event_count = events.read().count();
-  if event_count > 0 {
-    let world = existing_world.get_single().unwrap();
-    commands.entity(world).despawn_recursive();
-    spawn_world(&mut commands, asset_packs, settings);
-  }
-}
-
-fn chunk_generation_event(
-  mut commands: Commands,
-  mut events: EventReader<ChunkGenerationEvent>,
-  existing_world: Query<Entity, With<WorldComponent>>,
-  existing_chunks: Res<ChunkComponentIndex>,
-  mut current_chunk: ResMut<CurrentChunk>,
-  asset_packs: Res<AssetPacks>,
-  settings: Res<Settings>,
-  mut despawn_distant_chunk_event: EventWriter<DespawnDistantChunkEvent>,
-) {
-  for event in events.read() {
-    let start_time = get_time();
-    let event_world_grid = event.world_grid;
-    let event_world = event.world;
-    if current_chunk.contains(event_world_grid) {
-      return;
+pub fn generate_chunks(
+  mut commands: &mut Commands,
+  world: Entity,
+  chunks_to_spawn: Vec<Point>,
+  settings: &Res<Settings>,
+) -> Vec<(Chunk, Vec<TileData>)> {
+  let mut spawn_data = Vec::new();
+  commands.entity(world).with_children(|parent| {
+    for chunk_world in chunks_to_spawn.iter() {
+      let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
+      let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
+      let chunk = Chunk::new(draft_chunk, settings);
+      let tile_data = spawn_chunk(parent, &chunk);
+      spawn_data.push((chunk, tile_data));
     }
+  });
+  schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
 
-    let current_chunk_world = current_chunk.get_world();
-    let direction = Direction::from_chunk(&current_chunk_world, &event_world);
-    let new_parent_chunk_world = calculate_new_current_chunk_world(&current_chunk_world, &direction);
-    debug!(
-      "Received chunk generation event at w{} wg{}; current_parent={}, direction={:?}, new_parent={}",
-      event_world, event_world_grid, current_chunk_world, direction, new_parent_chunk_world
-    );
-    let mut chunks_to_spawn = Vec::new();
-    get_direction_points(&new_parent_chunk_world)
-      .iter()
-      .for_each(|(direction, chunk_world)| {
-        if let Some(_) = existing_chunks.get(*chunk_world) {
-          debug!("✅  {:?} chunk at w{:?} already exists", direction, chunk_world);
-        } else {
-          if !settings.general.generate_neighbour_chunks && chunk_world != &new_parent_chunk_world {
-            debug!(
-              "🚫 {:?} chunk at w{:?} does not exist but skipping because generating neighbours is disabled",
-              direction, chunk_world
-            );
-            return;
-          }
-          debug!("🚫 {:?} chunk at w{:?} does not exist", direction, chunk_world);
-          chunks_to_spawn.push(chunk_world.clone());
-        }
-      });
-
-    // TODO: Detect current chunk changes when moving to the top or right earlier - its triggered after having left the current chunk
-    // TODO: Calculate which chunks need to be despawned and despawn them
-    // TODO: Clean up and refactor
-
-    let world = existing_world.get_single().unwrap();
-    let mut spawn_data = Vec::new();
-    commands.entity(world).with_children(|parent| {
-      for chunk_world in chunks_to_spawn.iter() {
-        let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
-        let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
-        let final_chunk = convert_draft_chunks_to_chunks(&settings, vec![draft_chunk]);
-        let chunk = final_chunk.first().unwrap();
-        let tile_data = spawn_chunk(parent, chunk);
-        spawn_data.push((chunk.clone(), tile_data));
-      }
-    });
-    object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
-    schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data);
-
-    current_chunk.update(new_parent_chunk_world);
-    despawn_distant_chunk_event.send(DespawnDistantChunkEvent {});
-    info!("Chunk generation event took {} ms", get_time() - start_time);
-  }
-}
-
-pub fn calculate_new_current_chunk_world(current_chunk_world: &Point, direction: &Direction) -> Point {
-  let direction = Point::from_direction(direction, current_chunk_world.coord_type);
-
-  Point::new_world(
-    current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction.x),
-    current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction.y),
-  )
-}
-
-pub fn despawn_distant_chunks_event(
-  mut commands: Commands,
-  mut events: EventReader<DespawnDistantChunkEvent>,
-  existing_chunks: Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
-  current_chunk: Res<CurrentChunk>,
-) {
-  for _ in events.read() {
-    let start_time = get_time();
-    let mut chunks_to_despawn = Vec::new();
-    for (entity, chunk_component) in existing_chunks.iter() {
-      let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
-      if distance > CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0 {
-        debug!(
-          "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
-          chunk_component.coords.world,
-          distance as i32,
-          current_chunk.get_world()
-        );
-        chunks_to_despawn.push(entity);
-      }
-    }
-    for entity in chunks_to_despawn.iter() {
-      commands.entity(*entity).despawn_recursive();
-    }
-    info!("Despawning distant chunks took {} ms", get_time() - start_time);
-  }
+  spawn_data
 }

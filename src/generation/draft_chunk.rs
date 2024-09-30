@@ -1,9 +1,9 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::{Coords, Point};
+use crate::generation::get_time;
+use crate::generation::terrain_type::TerrainType;
+use crate::generation::tile::DraftTile;
 use crate::resources::Settings;
-use crate::world::get_time;
-use crate::world::terrain_type::TerrainType;
-use crate::world::tile::DraftTile;
 use bevy::log::*;
 use bevy::prelude::Res;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};

@@ -1,4 +1,4 @@
-use crate::events::RefreshWorldEvent;
+use crate::events::RegenerateWorldEvent;
 use crate::resources::{GeneralGenerationSettings, ObjectGenerationSettings, Settings, WorldGenerationSettings};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
@@ -92,7 +92,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
 }
 
 fn handle_ui_events_system(
-  mut events: EventWriter<RefreshWorldEvent>,
+  mut events: EventWriter<RegenerateWorldEvent>,
   mut state: ResMut<UiEventsResource>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
@@ -106,14 +106,14 @@ fn handle_ui_events_system(
     settings.object = object.clone();
 
     if state.regenerate {
-      events.send(RefreshWorldEvent {});
+      events.send(RegenerateWorldEvent {});
       state.regenerate = false;
     }
 
     if state.generate_next {
       settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
       world_gen.noise_seed = settings.world.noise_seed;
-      events.send(RefreshWorldEvent {});
+      events.send(RegenerateWorldEvent {});
       state.generate_next = false;
     }
   }

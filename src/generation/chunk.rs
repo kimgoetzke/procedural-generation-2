@@ -1,7 +1,7 @@
 use crate::coords::{Coords, Point};
+use crate::generation::draft_chunk::DraftChunk;
+use crate::generation::layered_plane::LayeredPlane;
 use crate::resources::Settings;
-use crate::world::draft_chunk::DraftChunk;
-use crate::world::layered_plane::LayeredPlane;
 use bevy::prelude::Res;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -1,10 +1,10 @@
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, RefreshWorldEvent, ToggleDebugInfo};
+use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
+use crate::generation::components::TileComponent;
+use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
+use crate::generation::tile::Tile;
+use crate::generation::tile_type::get_sprite_index;
 use crate::resources::Settings;
-use crate::world::components::TileComponent;
-use crate::world::resources::{AssetPacks, ChunkComponentIndex};
-use crate::world::tile::Tile;
-use crate::world::tile_type::get_sprite_index;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::log::*;
@@ -163,7 +163,7 @@ fn toggle_tile_info_event(
 
 fn refresh_world_event(
   mut commands: Commands,
-  mut events: EventReader<RefreshWorldEvent>,
+  mut events: EventReader<RegenerateWorldEvent>,
   tile_debug_info: Query<Entity, With<TileDebugInfoComponent>>,
 ) {
   let event_count = events.read().count();

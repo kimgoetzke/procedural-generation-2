@@ -1,5 +1,5 @@
-use crate::world::debug::gizmos::GizmosPlugin;
-use crate::world::debug::tile_debugger::TileDebuggerPlugin;
+use crate::generation::debug::gizmos::GizmosPlugin;
+use crate::generation::debug::tile_debugger::TileDebuggerPlugin;
 use bevy::app::{App, Plugin};
 
 mod gizmos;

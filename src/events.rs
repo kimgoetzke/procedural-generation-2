@@ -6,16 +6,16 @@ pub struct SharedEventsPlugin;
 impl Plugin for SharedEventsPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_event::<RefreshWorldEvent>()
+      .add_event::<RegenerateWorldEvent>()
       .add_event::<ToggleDebugInfo>()
       .add_event::<MouseClickEvent>()
-      .add_event::<ChunkGenerationEvent>()
+      .add_event::<UpdateWorldEvent>()
       .add_event::<DespawnDistantChunkEvent>();
   }
 }
 
 #[derive(Event)]
-pub struct RefreshWorldEvent {}
+pub struct RegenerateWorldEvent {}
 
 #[derive(Event)]
 pub struct ToggleDebugInfo {}
@@ -27,7 +27,7 @@ pub struct MouseClickEvent {
 }
 
 #[derive(Event)]
-pub struct ChunkGenerationEvent {
+pub struct UpdateWorldEvent {
   pub world: Point,
   pub world_grid: Point,
 }

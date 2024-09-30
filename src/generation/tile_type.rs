@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::world::tile::Tile;
+use crate::generation::tile::Tile;
 
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
