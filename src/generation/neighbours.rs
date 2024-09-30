@@ -191,7 +191,7 @@ impl NeighbourTiles {
     .count()
   }
 
-  pub fn print(&self, tile: &Tile, neighbour_count: usize) {
+  pub fn log(&self, tile: &Tile, neighbour_count: usize) {
     debug!("{:?}", tile);
     debug!("|-------|-------|-------|");
     debug!(

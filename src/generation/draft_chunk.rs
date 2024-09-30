@@ -18,15 +18,13 @@ pub struct DraftChunk {
 impl DraftChunk {
   /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
   pub fn new(world_grid: Point, settings: &Res<Settings>) -> Self {
-    let coords = Coords::new_for_chunk(world_grid);
     let data = generate_terrain_data(&world_grid, settings);
-    debug!("Draft chunk has coords: {:?}", coords);
     Self {
       center: Point::new_world(
         world_grid.x + (CHUNK_SIZE_PLUS_BUFFER / 2),
         world_grid.y + (CHUNK_SIZE_PLUS_BUFFER / 2),
       ),
-      coords,
+      coords: Coords::new_for_chunk(world_grid),
       data,
     }
   }
@@ -91,12 +89,12 @@ fn generate_terrain_data(world_grid: &Point, settings: &Res<Settings>) -> Vec<Ve
     cy += 1;
     cx = 0;
   }
-  print(world_grid, &mut noise_stats, time, &mut tiles);
+  log(world_grid, &mut noise_stats, time, &mut tiles);
 
   tiles
 }
 
-fn print(world_grid: &Point, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
+fn log(world_grid: &Point, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
   let mut str = "|".to_string();
   for y in 0..tiles.len() {
     for x in 0..tiles[y].len() {

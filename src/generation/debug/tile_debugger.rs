@@ -79,7 +79,7 @@ fn on_left_mouse_click_trigger(
       for plane in &parent_chunk.layered_plane.planes {
         if let Some(tile) = plane.get_tile(tc.tile.coords.chunk_grid) {
           let neighbours = plane.get_neighbours(tile);
-          neighbours.print(tile, neighbours.count_same());
+          neighbours.log(tile, neighbours.count_same());
         }
       }
     } else {
