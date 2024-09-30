@@ -96,22 +96,24 @@ fn camera_movement_system(
   current_chunk: Res<CurrentChunk>,
   mut event: EventWriter<UpdateWorldEvent>,
 ) {
-  let point = camera.single().1.translation();
-  let current_world = Point::new_world_from_world_vec2(point.truncate());
+  let translation = camera.single().1.translation();
+  let current_world = Point::new_world_from_world_vec2(translation.truncate());
   let chunk_center_world = current_chunk.get_center_world();
   let distance_x = (current_world.x - chunk_center_world.x).abs();
   let distance_y = (current_world.y - chunk_center_world.y).abs();
+  let trigger_distance = (CHUNK_SIZE * TILE_SIZE as i32) / 2;
   trace!(
-    "Camera moved to w{:?} with distance ({:?}, {:?})",
+    "Camera moved to w{:?} with distance x={:?}, y={:?} (trigger distance {})",
     current_world,
     distance_x,
-    distance_y
+    distance_y,
+    trigger_distance
   );
 
-  if (distance_x >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) || (distance_y >= (CHUNK_SIZE * TILE_SIZE as i32) / 2) {
+  if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
     event.send(UpdateWorldEvent {
-      world: current_world,
       world_grid: Point::new_world_grid_from_world(current_world),
+      world: current_world,
     });
   };
 }

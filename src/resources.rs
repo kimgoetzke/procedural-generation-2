@@ -163,7 +163,7 @@ impl CurrentChunk {
     world_grid.x >= self.world_grid.x
       && world_grid.x < (self.world_grid.x + CHUNK_SIZE)
       && world_grid.y >= self.world_grid.y
-      && world_grid.y < (self.world_grid.y + CHUNK_SIZE)
+      && world_grid.y < (self.world_grid.y - CHUNK_SIZE)
   }
 
   pub fn update(&mut self, world: Point) {
