@@ -24,7 +24,6 @@ TODO: Add GIF and/or screenshots here
 
 ## Attribution
 
-- Minimal 5x5 & 5x7 Pixel Fonts by [kheftel](https://opengameart.org/content/minimalist-pixel-fonts) under CC0.
 - Art work is heavily inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style.
 - All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 

@@ -24,9 +24,8 @@ pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const TREE_DENSITY: f64 = 0.5;
-
 // ------------------------------------------------------------------------------------------------------
-// Chunks
+// Chunks and tiles
 /// The size of a buffer around a chunk that is not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
@@ -40,23 +39,22 @@ pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point = Point {
   y: CHUNK_SIZE / 2,
   coord_type: CoordType::WorldGrid,
 };
+pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0;
 // ------------------------------------------------------------------------------------------------------
-// Sprites
+// Tiles
 pub const TILE_SIZE: u32 = 32;
-// ------------------------------------------------------------------------------------------------------
-// Layers
 pub const WATER_LAYER: usize = 0;
 pub const SHORE_LAYER: usize = 1;
 pub const SAND_LAYER: usize = 2;
 pub const GRASS_LAYER: usize = 3;
 pub const FOREST_LAYER: usize = 4;
 // ------------------------------------------------------------------------------------------------------
-// Default tile set
+// Sprites: Default tile set
 pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
 pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
 // ------------------------------------------------------------------------------------------------------
-// Detailed tile sets
+// Sprites: Detailed tile sets
 pub const TILE_SET_WATER_PATH: &str = "tilesets/water.png";
 pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
 pub const TILE_SET_SAND_PATH: &str = "tilesets/sand.png";
@@ -65,7 +63,7 @@ pub const TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
 pub const TILE_SET_COLUMNS: u32 = 9;
 pub const TILE_SET_ROWS: u32 = 3;
 // ------------------------------------------------------------------------------------------------------
-// Tile set sprite indices
+// Sprites: Tile set sprite indices
 pub const FILL: usize = 4;
 pub const INNER_CORNER_BOTTOM_LEFT: usize = 2;
 pub const INNER_CORNER_BOTTOM_RIGHT: usize = 0;
@@ -106,11 +104,6 @@ pub const DARK_1: Color = Color::srgb(0.298, 0.337, 0.416);
 pub const DARK_4: Color = Color::srgb(0.18, 0.204, 0.251);
 pub const VERY_DARK_1: Color = Color::srgb(0.12, 0.14, 0.18);
 pub const VERY_DARK_2: Color = Color::srgb(0.06, 0.07, 0.09);
-// ------------------------------------------------------------------------------------------------------
-// Fonts
-pub const DEFAULT_FONT: &str = "fonts/Minimal5x7.ttf";
-pub const MINIMAL_5X5_MONO_FONT: &str = "fonts/Minimal5x5Monospaced.ttf";
-pub const BULKYPIX_FONT: &str = "fonts/bulkypix.ttf";
 // ------------------------------------------------------------------------------------------------------
 // Window
 pub const WINDOW_WIDTH: f32 = 1280.;

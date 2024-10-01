@@ -5,7 +5,7 @@ use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::log::debug;
 use bevy::math::UVec2;
-use bevy::prelude::{Font, Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
+use bevy::prelude::{Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
 use bevy::utils::HashMap;
 
 pub struct GenerationResourcesPlugin;
@@ -23,7 +23,6 @@ impl Plugin for GenerationResourcesPlugin {
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct AssetPacks {
-  pub font: Handle<Font>,
   pub default: AssetPack,
   pub water: AssetPack,
   pub shore: AssetPack,
@@ -57,7 +56,6 @@ fn initialise_asset_packs_system(
   let trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
   let trees_atlas_layout = texture_atlas_layouts.add(trees_layout);
 
-  asset_packs_resource.font = asset_server.load(DEFAULT_FONT);
   asset_packs_resource.default = AssetPack {
     texture: asset_server.load(TILE_SET_DEFAULT_PATH),
     texture_atlas_layout: default_texture_atlas_layout,
