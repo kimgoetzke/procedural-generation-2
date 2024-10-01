@@ -1,6 +1,6 @@
-use crate::constants::{CHUNK_SIZE, TILE_SIZE};
+use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::Point;
-use crate::events::{DespawnDistantChunkEvent, RegenerateWorldEvent, UpdateWorldEvent};
+use crate::events::{DespawnChunksEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::components::{ChunkComponent, WorldComponent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::direction::get_direction_points;
@@ -68,7 +68,7 @@ fn regenerate_world_event(
 
 fn generate(mut commands: Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
   let start_time = get_time();
-  let mut spawn_data = world::spawn_world(&mut commands, &settings);
+  let mut spawn_data = world::generate_world(&mut commands, &settings);
   object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }
@@ -85,25 +85,25 @@ fn update_world_event(
   mut current_chunk: ResMut<CurrentChunk>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
-  mut despawn_distant_chunk_event: EventWriter<DespawnDistantChunkEvent>,
+  mut despawn_distant_chunk_event: EventWriter<DespawnChunksEvent>,
 ) {
   for event in events.read() {
-    let start_time = get_time();
-    let event_world_grid = event.world_grid;
-    let event_world = event.world;
-    if current_chunk.contains(event_world_grid) {
-      debug!("wg{} is inside current chunk, ignoring UpdateWorldEvent...", event_world_grid);
+    if current_chunk.contains(event.world_grid) && !event.is_forced_update {
+      debug!("wg{} is inside current chunk, ignoring UpdateWorldEvent...", event.world_grid);
       return;
     }
 
+    let start_time = get_time();
     let current_chunk_world = current_chunk.get_world();
-    let direction = direction::Direction::from_chunk(&current_chunk_world, &event_world);
+    let direction = direction::Direction::from_chunk(&current_chunk_world, &event.world);
     let new_parent_chunk_world = calculate_new_current_chunk_world(&current_chunk_world, &direction);
+    let mut chunks_to_spawn = Vec::new();
+    debug!("Updating world with seed {}", settings.world.noise_seed);
     debug!(
       "Update world event at w{} wg{}: new current chunk will be at [{:?}] of w{} i.e. w{}",
-      event_world, event_world_grid, direction, current_chunk_world, new_parent_chunk_world
+      event.world, event.world_grid, direction, current_chunk_world, new_parent_chunk_world
     );
-    let mut chunks_to_spawn = Vec::new();
+
     get_direction_points(&new_parent_chunk_world)
       .iter()
       .for_each(|(direction, chunk_world)| {
@@ -126,10 +126,9 @@ fn update_world_event(
     let world = existing_world.get_single().unwrap();
     let mut spawn_data = world::generate_chunks(&mut commands, world, chunks_to_spawn, &settings);
     object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
-    world::schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
 
     current_chunk.update(new_parent_chunk_world);
-    despawn_distant_chunk_event.send(DespawnDistantChunkEvent {});
+    despawn_distant_chunk_event.send(DespawnChunksEvent { despawn_all: false });
     info!("World update took {} ms", get_time() - start_time);
   }
 }
@@ -145,16 +144,21 @@ pub fn calculate_new_current_chunk_world(current_chunk_world: &Point, direction:
 
 pub fn despawn_distant_chunks_event(
   mut commands: Commands,
-  mut events: EventReader<DespawnDistantChunkEvent>,
+  mut events: EventReader<DespawnChunksEvent>,
   existing_chunks: Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
   current_chunk: Res<CurrentChunk>,
 ) {
-  for _ in events.read() {
+  for event in events.read() {
     let start_time = get_time();
     let mut chunks_to_despawn = Vec::new();
     for (entity, chunk_component) in existing_chunks.iter() {
+      if event.despawn_all {
+        chunks_to_despawn.push(entity);
+        continue;
+      }
+
       let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
-      if distance > CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0 {
+      if distance > DESPAWN_DISTANCE {
         trace!(
           "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
           chunk_component.coords.world,

@@ -10,7 +10,7 @@ impl Plugin for SharedEventsPlugin {
       .add_event::<ToggleDebugInfo>()
       .add_event::<MouseClickEvent>()
       .add_event::<UpdateWorldEvent>()
-      .add_event::<DespawnDistantChunkEvent>();
+      .add_event::<DespawnChunksEvent>();
   }
 }
 
@@ -28,9 +28,12 @@ pub struct MouseClickEvent {
 
 #[derive(Event)]
 pub struct UpdateWorldEvent {
+  pub is_forced_update: bool,
   pub world: Point,
   pub world_grid: Point,
 }
 
 #[derive(Event)]
-pub struct DespawnDistantChunkEvent {}
+pub struct DespawnChunksEvent {
+  pub despawn_all: bool,
+}

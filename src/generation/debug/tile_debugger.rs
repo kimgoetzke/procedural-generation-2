@@ -24,7 +24,7 @@ impl Plugin for TileDebuggerPlugin {
       .observe(on_add_tile_component_trigger)
       .observe(on_left_mouse_click_trigger)
       .observe(on_remove_tile_component_trigger)
-      .add_systems(Update, (toggle_tile_info_event, refresh_world_event))
+      .add_systems(Update, (toggle_tile_info_event, regenerate_world_event))
       .init_resource::<TileComponentIndex>();
   }
 }
@@ -169,7 +169,7 @@ fn toggle_tile_info_event(
   }
 }
 
-fn refresh_world_event(
+fn regenerate_world_event(
   mut commands: Commands,
   mut events: EventReader<RegenerateWorldEvent>,
   tile_debug_info: Query<Entity, With<TileDebugInfoComponent>>,
