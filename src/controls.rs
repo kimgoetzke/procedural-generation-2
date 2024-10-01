@@ -1,7 +1,7 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
-use crate::resources::{CurrentChunk, Settings};
+use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 
@@ -26,8 +26,8 @@ fn event_control_system(
   mut reset_world_event: EventWriter<RegenerateWorldEvent>,
 ) {
   // Refresh world
-  if keyboard_input.just_pressed(KeyCode::F5) {
-    info!("[F5] Refreshing world...");
+  if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
+    info!("[F5|R] Triggered regeneration of the world");
     reset_world_event.send(RegenerateWorldEvent {});
   }
 }
@@ -36,31 +36,47 @@ fn event_control_system(
 fn settings_controls_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
   mut settings: ResMut<Settings>,
+  mut general_settings: ResMut<GeneralGenerationSettings>,
+  mut object_settings: ResMut<ObjectGenerationSettings>,
   mut toggle_debug_info_event: EventWriter<ToggleDebugInfo>,
 ) {
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
-    settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
-    info!(
-      "[Z] Set drawing terrain sprites to [{}]",
-      settings.general.draw_terrain_sprites
-    );
+    settings.general.draw_gizmos = !settings.general.draw_gizmos;
+    general_settings.draw_gizmos = settings.general.draw_gizmos;
+    info!("[Z] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
+    toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
-    settings.object.object_generation = !settings.object.object_generation;
-    info!("[X] Set object generation to [{}]", settings.object.object_generation);
+    settings.general.generate_neighbour_chunks = !settings.general.generate_neighbour_chunks;
+    general_settings.generate_neighbour_chunks = settings.general.generate_neighbour_chunks;
+    info!(
+      "[X] Set generating neighbour chunks to [{}]",
+      settings.general.generate_neighbour_chunks
+    );
+    toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyC) {
     settings.general.enable_tile_debugging = !settings.general.enable_tile_debugging;
+    general_settings.enable_tile_debugging = settings.general.enable_tile_debugging;
     info!("[C] Set tile debugging to [{}]", settings.general.enable_tile_debugging);
     toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyV) {
-    settings.general.draw_gizmos = !settings.general.draw_gizmos;
-    info!("[V] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
-    toggle_debug_info_event.send(ToggleDebugInfo {});
+    settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
+    general_settings.draw_terrain_sprites = settings.general.draw_terrain_sprites;
+    info!(
+      "[V] Set drawing terrain sprites to [{}]",
+      settings.general.draw_terrain_sprites
+    );
+  }
+
+  if keyboard_input.just_pressed(KeyCode::KeyF) {
+    settings.object.object_generation = !settings.object.object_generation;
+    object_settings.object_generation = settings.object.object_generation;
+    info!("[F] Set object generation to [{}]", settings.object.object_generation);
   }
 }
 
@@ -112,6 +128,7 @@ fn camera_movement_system(
 
   if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
     event.send(UpdateWorldEvent {
+      is_forced_update: false,
       world_grid: Point::new_world_grid_from_world(current_world),
       world: current_world,
     });
