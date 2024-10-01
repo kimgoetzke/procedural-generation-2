@@ -1,6 +1,6 @@
-use crate::constants::{CHUNK_SIZE, TILE_SIZE};
+use crate::constants::{CHUNK_SIZE, ORIGIN_WORLD_GRID_SPAWN_POINT, TILE_SIZE};
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
+use crate::events::{MouseClickEvent, PruneWorldEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -23,16 +23,23 @@ impl Plugin for ControlPlugin {
 
 fn event_control_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
-  mut reset_world_event: EventWriter<RegenerateWorldEvent>,
+  mut regenerate_event: EventWriter<RegenerateWorldEvent>,
+  mut prune_event: EventWriter<PruneWorldEvent>,
+  current_chunk: Res<CurrentChunk>,
 ) {
-  // Refresh world
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
     info!("[F5|R] Triggered regeneration of the world");
-    reset_world_event.send(RegenerateWorldEvent {});
+    if current_chunk.get_world_grid() == ORIGIN_WORLD_GRID_SPAWN_POINT {
+      regenerate_event.send(RegenerateWorldEvent {});
+    } else {
+      prune_event.send(PruneWorldEvent {
+        despawn_all_chunks: true,
+        update_world_after: true,
+      });
+    }
   }
 }
 
-/// A system that handles setting value changes via keyboard inputs.
 fn settings_controls_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
   mut settings: ResMut<Settings>,

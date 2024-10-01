@@ -1,14 +1,11 @@
 use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
-use crate::coords::Point;
-use crate::events::{DespawnChunksEvent, RegenerateWorldEvent, UpdateWorldEvent};
+use crate::events::{PruneWorldEvent, RegenerateWorldEvent};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings, WorldGenerationSettings,
 };
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
-use bevy::log::*;
-use bevy::math::Vec3;
-use bevy::prelude::{Camera, EventWriter, GlobalTransform, KeyCode, Local, Query, Res, ResMut, Resource, With, World};
+use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
 use bevy::window::PrimaryWindow;
 use bevy_inspector_egui::bevy_egui::EguiContext;
 use bevy_inspector_egui::egui::{Align, Align2, FontId, Layout, RichText, ScrollArea, Window};
@@ -99,66 +96,45 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
 
 fn handle_ui_events_system(
   mut regenerate_event: EventWriter<RegenerateWorldEvent>,
-  mut update_event: EventWriter<UpdateWorldEvent>,
-  mut despawn_chunks_event: EventWriter<DespawnChunksEvent>,
+  mut update_event: EventWriter<PruneWorldEvent>,
   mut state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
   object: Res<ObjectGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
   current_chunk: Res<CurrentChunk>,
-  camera: Query<(&Camera, &GlobalTransform)>,
 ) {
   if state.has_changed {
     state.has_changed = false;
     settings.general = general.clone();
     settings.world = world_gen.clone();
     settings.object = object.clone();
-    let camera_translation = camera.single().1.translation();
 
     if state.regenerate {
-      send_regenerate_or_update_event(
-        &mut regenerate_event,
-        &mut update_event,
-        &mut despawn_chunks_event,
-        &current_chunk,
-        camera_translation,
-      );
+      send_regenerate_or_prune_event(&mut regenerate_event, &mut update_event, &current_chunk);
       state.regenerate = false;
     }
 
     if state.generate_next {
       settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
       world_gen.noise_seed = settings.world.noise_seed;
-      send_regenerate_or_update_event(
-        &mut regenerate_event,
-        &mut update_event,
-        &mut despawn_chunks_event,
-        &current_chunk,
-        camera_translation,
-      );
-      debug!("Generating next world with seed {}", settings.world.noise_seed);
+      send_regenerate_or_prune_event(&mut regenerate_event, &mut update_event, &current_chunk);
       state.generate_next = false;
     }
   }
 }
 
-fn send_regenerate_or_update_event(
+fn send_regenerate_or_prune_event(
   regenerate_event: &mut EventWriter<RegenerateWorldEvent>,
-  update_event: &mut EventWriter<UpdateWorldEvent>,
-  despawn_chunks_event: &mut EventWriter<DespawnChunksEvent>,
+  prune_event: &mut EventWriter<PruneWorldEvent>,
   current_chunk: &Res<CurrentChunk>,
-  camera_translation: Vec3,
 ) {
   if current_chunk.get_world_grid() == ORIGIN_WORLD_GRID_SPAWN_POINT {
     regenerate_event.send(RegenerateWorldEvent {});
   } else {
-    let current_world = Point::new_world_from_world_vec2(camera_translation.truncate());
-    despawn_chunks_event.send(DespawnChunksEvent { despawn_all: true });
-    update_event.send(UpdateWorldEvent {
-      is_forced_update: true,
-      world_grid: Point::new_world_grid_from_world(current_world),
-      world: current_world,
+    prune_event.send(PruneWorldEvent {
+      despawn_all_chunks: true,
+      update_world_after: true,
     });
   }
 }

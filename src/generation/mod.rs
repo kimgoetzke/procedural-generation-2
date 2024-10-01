@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::Point;
-use crate::events::{DespawnChunksEvent, RegenerateWorldEvent, UpdateWorldEvent};
+use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::components::{ChunkComponent, WorldComponent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::direction::get_direction_points;
@@ -40,10 +40,7 @@ impl Plugin for GenerationPlugin {
         DebugPlugin,
       ))
       .add_systems(Startup, generation_system)
-      .add_systems(
-        Update,
-        (regenerate_world_event, update_world_event, despawn_distant_chunks_event),
-      );
+      .add_systems(Update, (regenerate_world_event, update_world_event, prune_world_event));
   }
 }
 
@@ -85,7 +82,7 @@ fn update_world_event(
   mut current_chunk: ResMut<CurrentChunk>,
   asset_packs: Res<AssetPacks>,
   settings: Res<Settings>,
-  mut despawn_distant_chunk_event: EventWriter<DespawnChunksEvent>,
+  mut clean_up_event: EventWriter<PruneWorldEvent>,
 ) {
   for event in events.read() {
     if current_chunk.contains(event.world_grid) && !event.is_forced_update {
@@ -98,7 +95,6 @@ fn update_world_event(
     let direction = direction::Direction::from_chunk(&current_chunk_world, &event.world);
     let new_parent_chunk_world = calculate_new_current_chunk_world(&current_chunk_world, &direction);
     let mut chunks_to_spawn = Vec::new();
-    debug!("Updating world with seed {}", settings.world.noise_seed);
     debug!(
       "Update world event at w{} wg{}: new current chunk will be at [{:?}] of w{} i.e. w{}",
       event.world, event.world_grid, direction, current_chunk_world, new_parent_chunk_world
@@ -128,7 +124,12 @@ fn update_world_event(
     object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
 
     current_chunk.update(new_parent_chunk_world);
-    despawn_distant_chunk_event.send(DespawnChunksEvent { despawn_all: false });
+    if !event.is_forced_update {
+      clean_up_event.send(PruneWorldEvent {
+        despawn_all_chunks: false,
+        update_world_after: false,
+      });
+    }
     info!("World update took {} ms", get_time() - start_time);
   }
 }
@@ -142,35 +143,56 @@ pub fn calculate_new_current_chunk_world(current_chunk_world: &Point, direction:
   )
 }
 
-pub fn despawn_distant_chunks_event(
+pub fn prune_world_event(
   mut commands: Commands,
-  mut events: EventReader<DespawnChunksEvent>,
+  mut prune_world_event: EventReader<PruneWorldEvent>,
+  mut update_world_event: EventWriter<UpdateWorldEvent>,
   existing_chunks: Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
   current_chunk: Res<CurrentChunk>,
 ) {
-  for event in events.read() {
-    let start_time = get_time();
-    let mut chunks_to_despawn = Vec::new();
-    for (entity, chunk_component) in existing_chunks.iter() {
-      if event.despawn_all {
-        chunks_to_despawn.push(entity);
-        continue;
-      }
-
-      let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
-      if distance > DESPAWN_DISTANCE {
-        trace!(
-          "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
-          chunk_component.coords.world,
-          distance as i32,
-          current_chunk.get_world()
-        );
-        chunks_to_despawn.push(entity);
-      }
+  for event in prune_world_event.read() {
+    prune_world(&mut commands, &existing_chunks, &current_chunk, &event);
+    warn!(
+      "PruneWorldEvent: despawn_all_chunks={}, update_world_after={}",
+      event.despawn_all_chunks, event.update_world_after
+    );
+    if event.update_world_after {
+      update_world_event.send(UpdateWorldEvent {
+        is_forced_update: true,
+        world_grid: current_chunk.get_world_grid(),
+        world: current_chunk.get_world(),
+      });
     }
-    for entity in chunks_to_despawn.iter() {
-      commands.entity(*entity).despawn_recursive();
-    }
-    info!("Distant chunks clean up took {} ms", get_time() - start_time);
   }
+}
+
+fn prune_world(
+  commands: &mut Commands,
+  existing_chunks: &Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
+  current_chunk: &Res<CurrentChunk>,
+  event: &PruneWorldEvent,
+) {
+  let start_time = get_time();
+  let mut chunks_to_despawn = Vec::new();
+  for (entity, chunk_component) in existing_chunks.iter() {
+    if event.despawn_all_chunks {
+      chunks_to_despawn.push(entity);
+      continue;
+    }
+
+    let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
+    if distance > DESPAWN_DISTANCE {
+      trace!(
+        "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
+        chunk_component.coords.world,
+        distance as i32,
+        current_chunk.get_world()
+      );
+      chunks_to_despawn.push(entity);
+    }
+  }
+  for entity in chunks_to_despawn.iter() {
+    commands.entity(*entity).despawn_recursive();
+  }
+  info!("World pruning took {} ms", get_time() - start_time);
 }
