@@ -1,3 +1,4 @@
+use crate::constants::TILE_SIZE;
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::components::TileComponent;
@@ -12,6 +13,7 @@ use bevy::prelude::{
   default, Commands, Component, Entity, EventReader, JustifyText, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text,
   Text2dBundle, TextStyle, Transform, Trigger, Vec3, Visibility, With,
 };
+use bevy::sprite::Anchor;
 use bevy::utils::{HashMap, HashSet};
 
 pub struct TileDebuggerPlugin;
@@ -71,6 +73,7 @@ fn on_left_mouse_click_trigger(
     .iter()
     .max_by_key(|tc| tc.tile.layer)
   {
+    // TODO: Fix this again - it's not detecting the debuggable tile coords correctly
     debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
     commands.spawn(tile_info(&asset_packs, &tc.tile, event.world, &settings));
     let parent_w = tc.tile.get_parent_chunk_world();
@@ -116,6 +119,7 @@ fn tile_info(
   (
     Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {
+      text_anchor: Anchor::Center,
       text: Text::from_section(
         format!(
           "wg{:?} cg{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
@@ -127,7 +131,7 @@ fn tile_info(
           tile.layer
         ),
         TextStyle {
-          font_size: 31.,
+          font_size: 30.,
           ..default()
         },
       )
@@ -135,7 +139,11 @@ fn tile_info(
       visibility,
       transform: Transform {
         scale: Vec3::splat(0.1),
-        translation: Vec3::new(spawn_point.x as f32, spawn_point.y as f32, tile.layer as f32 + 1000.),
+        translation: Vec3::new(
+          spawn_point.x as f32 + TILE_SIZE as f32 / 2.,
+          spawn_point.y as f32 - TILE_SIZE as f32 / 2.,
+          tile.layer as f32 + 1000.,
+        ),
         ..Default::default()
       },
       ..default()

@@ -19,9 +19,10 @@ use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::ChildBuilder;
 use bevy::log::*;
 use bevy::prelude::{
-  BuildChildren, BuildWorldChildren, Commands, Component, DespawnRecursiveExt, Entity, Query, Res, SpatialBundle,
+  BuildChildren, BuildWorldChildren, Commands, Component, DespawnRecursiveExt, Entity, Query, Res, SpatialBundle, Sprite,
   SpriteBundle, TextureAtlas, Transform, World,
 };
+use bevy::sprite::Anchor;
 use bevy::tasks::futures_lite::future;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 
@@ -42,9 +43,9 @@ struct TileSpawnTask(Task<CommandQueue>);
 
 pub fn spawn_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
   let draft_chunks = generate_draft_chunks(&settings);
-  let mut final_chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
-  final_chunks = pre_render_processor::process(final_chunks, &settings);
-  let spawn_data = spawn_world_and_chunk_entities(commands, &final_chunks);
+  let mut chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
+  chunks = pre_render_processor::process_all(chunks, &settings);
+  let spawn_data = spawn_world_and_chunk_entities(commands, &chunks);
   schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
 
   spawn_data
@@ -83,13 +84,13 @@ fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<Dr
   final_chunks
 }
 
-fn spawn_world_and_chunk_entities(commands: &mut Commands, final_chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
+fn spawn_world_and_chunk_entities(commands: &mut Commands, chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
   let start_time = get_time();
   let mut spawn_data: Vec<(Chunk, Vec<TileData>)> = Vec::new();
   commands
     .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
     .with_children(|parent| {
-      for chunk in final_chunks.iter() {
+      for chunk in chunks.iter() {
         let tile_data = spawn_chunk(parent, &chunk);
         spawn_data.push((chunk.clone(), tile_data));
       }
@@ -198,6 +199,10 @@ fn default_sprite(
   (
     Name::new(format!("Default {:?} Sprite", tile.terrain)),
     SpriteBundle {
+      sprite: Sprite {
+        anchor: Anchor::TopLeft,
+        ..Default::default()
+      },
       texture: asset_packs.default.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
@@ -222,6 +227,10 @@ fn terrain_sprite(
   (
     Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
     SpriteBundle {
+      sprite: Sprite {
+        anchor: Anchor::TopLeft,
+        ..Default::default()
+      },
       texture: match tile.terrain {
         TerrainType::Water => asset_packs.water.texture.clone(),
         TerrainType::Shore => asset_packs.shore.texture.clone(),
@@ -271,7 +280,8 @@ pub fn generate_chunks(
     for chunk_world in chunks_to_spawn.iter() {
       let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
       let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
-      let chunk = Chunk::new(draft_chunk, settings);
+      let mut chunk = Chunk::new(draft_chunk, settings);
+      chunk = pre_render_processor::process_single(chunk, &settings);
       let tile_data = spawn_chunk(parent, &chunk);
       spawn_data.push((chunk, tile_data));
     }

@@ -100,7 +100,7 @@ fn update_world_event(
     let direction = direction::Direction::from_chunk(&current_chunk_world, &event_world);
     let new_parent_chunk_world = calculate_new_current_chunk_world(&current_chunk_world, &direction);
     debug!(
-      "Update world event at w{} wg{}: new current chunk will be [{:?}] of w{} at w{}",
+      "Update world event at w{} wg{}: new current chunk will be at [{:?}] of w{} i.e. w{}",
       event_world, event_world_grid, direction, current_chunk_world, new_parent_chunk_world
     );
     let mut chunks_to_spawn = Vec::new();

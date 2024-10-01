@@ -167,13 +167,14 @@ impl CurrentChunk {
   }
 
   pub fn update(&mut self, world: Point) {
+    let old_value = self.world;
     self.world = world;
     self.world_grid = Point::new_world_grid_from_world(world);
     self.center_world = Point::new_world(
       world.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       world.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
     );
-    debug!("CurrentChunk updated to {:?}", self.world_grid);
+    debug!("CurrentChunk updated from w{} to w{}", old_value, self.world);
   }
 }
 
