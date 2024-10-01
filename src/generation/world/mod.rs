@@ -102,7 +102,6 @@ fn spawn_world_and_chunk_entities(commands: &mut Commands, chunks: &Vec<Chunk>) 
 
 fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
   let mut tile_data = Vec::new();
-  debug!("Spawning chunk at {:?}", chunk.coords);
   world_child_builder
     .spawn((
       Name::new(format!("Chunk w{}", chunk.coords.world)),

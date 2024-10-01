@@ -3,7 +3,7 @@ use crate::coords::Point;
 use crate::generation::components::ChunkComponent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
-use bevy::log::debug;
+use bevy::log::*;
 use bevy::math::UVec2;
 use bevy::prelude::{Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
 use bevy::utils::HashMap;
@@ -108,7 +108,7 @@ fn on_add_chunk_component_trigger(
 ) {
   let cc = query.get(trigger.entity()).unwrap();
   index.grid.insert(cc.coords.world, cc.clone());
-  debug!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
+  trace!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
 }
 
 fn on_remove_chunk_component_trigger(
@@ -118,7 +118,7 @@ fn on_remove_chunk_component_trigger(
 ) {
   let cc = query.get(trigger.entity()).unwrap();
   index.grid.remove(&cc.coords.world);
-  debug!(
+  trace!(
     "ChunkComponentIndex -> Removed ChunkComponent with key w{:?}",
     cc.coords.world
   );
