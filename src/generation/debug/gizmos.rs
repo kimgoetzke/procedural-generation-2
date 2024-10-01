@@ -33,46 +33,33 @@ fn draw_gizmos_system(
   let cam_position = camera.single().1.translation();
   let camera_world = Point::new_world_from_world_vec2(cam_position.truncate());
 
-  // Tile grid for the origin chunk
+  // Tile grid
   gizmos
     .grid_2d(
-      Vec2 {
-        x: -(TILE_SIZE as f32 / 2.),
-        y: TILE_SIZE as f32 / 2.,
-      },
+      current_chunk_center_world.to_vec2(),
       0.0,
       UVec2::new(CHUNK_SIZE as u32, CHUNK_SIZE as u32),
-      Vec2::new(32., 32.),
+      Vec2::new(TILE_SIZE as f32, TILE_SIZE as f32),
       DARK_1,
     )
     .outer_edges();
 
-  // Center tile in the current chunk
-  gizmos.rect_2d(
-    Vec2::new(current_chunk_center_world.x as f32, current_chunk_center_world.y as f32),
-    0.,
-    Vec2::new(TILE_SIZE as f32, TILE_SIZE as f32),
-    GREEN,
-  );
+  // Chunk grid
+  gizmos
+    .grid_2d(
+      current_chunk_center_world.to_vec2(),
+      0.0,
+      UVec2::new(3, 3),
+      Vec2::new(chunk_size, chunk_size),
+      DARK_1,
+    )
+    .outer_edges();
 
-  // Current chunk
-  gizmos.rect_2d(
-    Vec2::new(current_chunk_center_world.x as f32, current_chunk_center_world.y as f32),
-    0.,
-    Vec2::new(chunk_size, chunk_size),
-    ORANGE,
-  );
-
-  // Current chunk x 2
-  gizmos.rect_2d(
-    Vec2::new(current_chunk_center_world.x as f32, current_chunk_center_world.y as f32),
-    0.,
-    Vec2::new(chunk_size * 2., chunk_size * 2.),
-    RED,
-  );
+  // Center of the current chunk and view port
+  gizmos.circle_2d(current_chunk_center_world.to_vec2(), TILE_SIZE as f32, RED);
 
   // Line from the current world position to the center of the current chunk
-  gizmos.line_2d(camera_world.to_vec2(), current_chunk_world.to_vec2(), GREEN);
+  gizmos.line_2d(camera_world.to_vec2(), current_chunk_world.to_vec2(), DARK_1);
 
   // Arrow from the center of the current chunk to the current world position
   gizmos.arrow_2d(current_chunk_center_world.to_vec2(), camera_world.to_vec2(), YELLOW);
