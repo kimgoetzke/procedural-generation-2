@@ -101,7 +101,7 @@ fn camera_movement_system(
   let chunk_center_world = current_chunk.get_center_world();
   let distance_x = (current_world.x - chunk_center_world.x).abs();
   let distance_y = (current_world.y - chunk_center_world.y).abs();
-  let trigger_distance = (CHUNK_SIZE * TILE_SIZE as i32) / 2;
+  let trigger_distance = ((CHUNK_SIZE * TILE_SIZE as i32) / 2) + 1;
   trace!(
     "Camera moved to w{:?} with distance x={:?}, y={:?} (trigger distance {})",
     current_world,
