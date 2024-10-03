@@ -1,44 +1,16 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::{Coords, Point};
+use crate::generation::draft_tile::DraftTile;
 use crate::generation::terrain_type::TerrainType;
 use crate::generation::tile_type::TileType;
 use bevy::log::*;
 
-/// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
-/// representation. While the `Coords` and `TerrainType` of a tile will remain the same after the conversion, the
-/// `layer` will be modified when creating a `Tile` from a `DraftTile` by adding the y-coordinate of the world grid
-/// `Coords` to the layer.
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct DraftTile {
-  pub coords: Coords,
-  pub terrain: TerrainType,
-  pub layer: i32,
-}
-
-impl DraftTile {
-  pub fn new(chunk_grid: Point, world_grid: Point, terrain: TerrainType) -> Self {
-    Self {
-      coords: Coords::new(chunk_grid, world_grid),
-      terrain,
-      layer: terrain as i32,
-    }
-  }
-
-  pub fn clone_with_modified_terrain(&self, terrain: TerrainType) -> Self {
-    Self {
-      coords: self.coords.clone(),
-      terrain,
-      layer: terrain as i32,
-    }
-  }
-}
-
-/// A `Tile` represents a single tile in the world. It contains information about its `Coords`, `TerrainType`,
-/// `TileType`, and layer. If created from a `DraftTile`, the `layer` of a `Tile` adds the y-coordinate of the world
-/// grid `Coords` to the layer from the `DraftTile` from which it was created. It also adjusts the `ChunkGrid` `Coords`
-/// to account for the buffer of a `DraftChunk` i.e. it shifts the `ChunkGrid` `Coords` by the `BUFFER_SIZE` to towards
-/// the top-left, allowing for the outer tiles of a `DraftChunk` to be cut off in a way that the `Tile`s in the
-/// resulting `Chunk` have `ChunkGrid` `Coords` ranging from 0 to `CHUNK_SIZE`.
+/// A `Tile` represents a single tile of `TILE_SIZE` in the world. It contains information about its `Coords`,
+/// `TerrainType`, `TileType`, and layer. If created from a `DraftTile`, the `layer` of a `Tile` adds the y-coordinate
+/// of the world grid `Coords` to the layer from the `DraftTile` from which it was created. It also adjusts the
+/// `ChunkGrid` `Coords` to account for the buffer of a `DraftChunk` i.e. it shifts the `ChunkGrid` `Coords` by the
+/// `BUFFER_SIZE` to towards the top-left, allowing for the outer tiles of a `DraftChunk` to be cut off in a way that
+/// the `Tile`s in the resulting `Chunk` have `ChunkGrid` `Coords` ranging from 0 to `CHUNK_SIZE`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Tile {
   pub coords: Coords,

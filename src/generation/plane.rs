@@ -1,8 +1,9 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::Point;
+use crate::generation::draft_tile::DraftTile;
 use crate::generation::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::generation::terrain_type::TerrainType;
-use crate::generation::tile::{DraftTile, Tile};
+use crate::generation::tile::Tile;
 use crate::generation::tile_type::TileType;
 use crate::resources::Settings;
 use bevy::prelude::Res;
