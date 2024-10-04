@@ -150,7 +150,8 @@ fn calculate_new_chunks_to_spawn(
         if !settings.general.generate_neighbour_chunks && chunk_world != new_parent_chunk_world {
           trace!(
             "❎  [{:?}] chunk at w{:?} skipped because generating neighbours is disabled",
-            direction, chunk_world
+            direction,
+            chunk_world
           );
           return;
         }
