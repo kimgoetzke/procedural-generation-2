@@ -1,15 +1,21 @@
 # Procedural Generation Project 2
 
-This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust, 
-using Bevy engine. The purpose of this project was to learn a bit more about Rust and procedural generation. It's a 
-follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids), and my first 
+This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust,
+using Bevy engine. The purpose of this project was to learn a bit more about Rust and procedural generation. It's a
+follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids), and my first
 procedural generation project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedural-generation-1).
 You will neither find a lot of advanced concepts of Rust being applied (correctly) nor advanced procedural generation
 techniques.
 
+> [!NOTE]
+> This project is still under development. Parts of what I want to do is still missing and, at time, I may even leave
+> it in a broken state.
+
 ## Demo
 
-TODO: Add GIF and/or screenshots here
+![Demo GIF 1](assets/ignore/demo1.gif)
+![Demo GIF 2](assets/ignore/demo2.gif)
+![Demo GIF 3](assets/ignore/demo3.gif)
 
 ## Features
 
@@ -24,8 +30,8 @@ TODO: Add GIF and/or screenshots here
 
 ## Attribution
 
-- Art work is heavily inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style.
-- All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- Art work is heavily inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style
+- All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 ## How to develop
 
@@ -50,6 +56,4 @@ such as JetBrains RustRover, you'll have to set up the environment manually. You
 
 ### Reminders
 
-- Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs e.g. damage,
-  collisions, explosions
-- Create a run configuration with `--features dev` to enable `WorldInspectorPlugin`
+- Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
