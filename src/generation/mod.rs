@@ -127,9 +127,13 @@ fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, e
     current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.x),
     current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.y),
   );
-  debug!(
+  trace!(
     "Update world event at w{} wg{} will change the current chunk to be at [{:?}] of w{} i.e. w{}",
-    event.world, event.world_grid, direction, current_chunk_world, new_parent_chunk_world
+    event.world,
+    event.world_grid,
+    direction,
+    current_chunk_world,
+    new_parent_chunk_world
   );
 
   new_parent_chunk_world

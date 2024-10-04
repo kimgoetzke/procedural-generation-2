@@ -18,7 +18,7 @@ use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
-use bevy::window::WindowResolution;
+use bevy::window::{PresentMode, WindowResolution};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_pancam::PanCamPlugin;
@@ -38,6 +38,7 @@ fn main() {
           primary_window: Some(Window {
             title: "Procedural Generation 2".into(),
             resolution: WindowResolution::new(WINDOW_WIDTH, WINDOW_HEIGHT),
+            present_mode: PresentMode::AutoVsync,
             resizable: false,
             ..default()
           }),

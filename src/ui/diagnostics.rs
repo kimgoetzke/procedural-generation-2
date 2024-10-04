@@ -49,7 +49,6 @@ fn create_fps_counter_system(mut commands: Commands) {
           TextSection {
             value: "FPS: ".into(),
             style: TextStyle {
-              font_size: 16.0,
               color: LIGHT_1,
               ..default()
             },
@@ -57,7 +56,6 @@ fn create_fps_counter_system(mut commands: Commands) {
           TextSection {
             value: " N/A".into(),
             style: TextStyle {
-              font_size: 16.0,
               color: LIGHT_1,
               ..default()
             },
@@ -77,11 +75,11 @@ fn update_fps_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut T
       .and_then(|fps| fps.smoothed())
     {
       text.sections[1].value = format!("{value:>4.0}");
-      text.sections[1].style.color = if value >= 120.0 {
+      text.sections[1].style.color = if value >= 65.0 {
         GREEN
-      } else if value >= 60.0 {
+      } else if value >= 50.0 {
         YELLOW
-      } else if value >= 30.0 {
+      } else if value >= 40.0 {
         ORANGE
       } else {
         RED
