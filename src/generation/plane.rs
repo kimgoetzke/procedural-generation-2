@@ -1,5 +1,5 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
-use crate::coords::Point;
+use crate::coords::{ChunkGrid, CoordType, Point};
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::generation::terrain_type::TerrainType;
@@ -21,7 +21,7 @@ impl Plane {
     Self { data: plane_data, layer }
   }
 
-  pub fn get_tile(&self, point: Point) -> Option<&Tile> {
+  pub fn get_tile(&self, point: Point<ChunkGrid>) -> Option<&Tile> {
     let i = point.x as usize;
     let j = point.y as usize;
     if i < self.data.len() && j < self.data[0].len() {
@@ -31,11 +31,11 @@ impl Plane {
     }
   }
 
-  pub fn clear_tile(&mut self, point: Point) {
+  pub fn clear_tile(&mut self, point: Point<ChunkGrid>) {
     self.data[point.x as usize][point.y as usize] = None;
   }
 
-  pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles {
+  pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles<ChunkGrid> {
     let x = of.coords.chunk_grid.x;
     let y = of.coords.chunk_grid.y;
     let mut neighbours = NeighbourTiles::empty();
@@ -86,7 +86,7 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
 // TODO: Consider refactoring this
 // Consider generating terrain types for center and each corner of a tile using noise function
 // and then use corner values to determine the tile type - may be slower though?
-fn determine_tile_type(n: NeighbourTiles, same_neighbours: usize) -> TileType {
+fn determine_tile_type<T: CoordType>(n: NeighbourTiles<T>, same_neighbours: usize) -> TileType {
   match same_neighbours {
     8 => TileType::Fill,
     7 if !n.top_left.same => TileType::OuterCornerTopLeft,
@@ -159,7 +159,7 @@ fn determine_tile_type(n: NeighbourTiles, same_neighbours: usize) -> TileType {
   }
 }
 
-fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles {
+fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles<ChunkGrid> {
   let x = of.coords.chunk_grid.x;
   let y = of.coords.chunk_grid.y;
   let mut neighbours = NeighbourTiles::empty();
@@ -167,13 +167,13 @@ fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> Neighbo
   for p in neighbour_points().iter() {
     if let Some(neighbour) = get_draft_tile(x + p.0, y + p.1 * -1, from) {
       let neighbour_tile = NeighbourTile::new(
-        Point::new_abstract(p.0, p.1),
+        Point::new_chunk_grid(p.0, p.1),
         neighbour.terrain,
         neighbour.terrain == of.terrain || neighbour.layer > of.layer,
       );
       neighbours.put(neighbour_tile);
     } else {
-      let neighbour_tile = NeighbourTile::default(Point::new_abstract(p.0, p.1));
+      let neighbour_tile = NeighbourTile::default(Point::new_chunk_grid(p.0, p.1));
       neighbours.put(neighbour_tile);
     }
   }

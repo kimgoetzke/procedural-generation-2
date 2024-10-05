@@ -1,4 +1,4 @@
-use crate::coords::Point;
+use crate::coords::{Point, World};
 use crate::generation::chunk::Chunk;
 use crate::generation::tile_data::TileData;
 use crate::generation::world::pre_render_processor::PreRenderProcessorPlugin;
@@ -25,7 +25,7 @@ pub fn generate_world(mut commands: &mut Commands, settings: &Res<Settings>) -> 
 pub fn generate_chunks(
   mut commands: &mut Commands,
   world: Entity,
-  chunks_to_spawn: Vec<Point>,
+  chunks_to_spawn: Vec<Point<World>>,
   settings: &Res<Settings>,
 ) -> Vec<(Chunk, Vec<TileData>)> {
   world_generator::generate_chunks(&mut commands, world, chunks_to_spawn, settings)

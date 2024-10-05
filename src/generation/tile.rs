@@ -1,5 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
-use crate::coords::{Coords, Point};
+use crate::coords::World;
+use crate::coords::{ChunkGrid, Coords, Point};
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::terrain_type::TerrainType;
 use crate::generation::tile_type::TileType;
@@ -43,7 +44,7 @@ impl Tile {
     }
   }
 
-  pub fn get_parent_chunk_world(&self) -> Point {
+  pub fn get_parent_chunk_world(&self) -> Point<World> {
     Point::new_world(
       (self.coords.world_grid.x - self.coords.chunk_grid.x) * TILE_SIZE as i32,
       (self.coords.world_grid.y + self.coords.chunk_grid.y) * TILE_SIZE as i32,
@@ -51,6 +52,6 @@ impl Tile {
   }
 }
 
-pub fn is_marked_for_deletion(chunk_grid: &Point) -> bool {
+pub fn is_marked_for_deletion(chunk_grid: &Point<ChunkGrid>) -> bool {
   chunk_grid.x < 0 || chunk_grid.y < 0 || chunk_grid.x > CHUNK_SIZE || chunk_grid.y > CHUNK_SIZE
 }

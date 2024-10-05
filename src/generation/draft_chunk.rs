@@ -1,5 +1,5 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
-use crate::coords::{Coords, Point};
+use crate::coords::{Coords, Point, World, WorldGrid};
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::get_time;
 use crate::generation::terrain_type::TerrainType;
@@ -11,13 +11,13 @@ use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftChunk {
   pub coords: Coords,
-  pub center: Point,
+  pub center: Point<World>,
   pub data: Vec<Vec<Option<DraftTile>>>,
 }
 
 impl DraftChunk {
   /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
-  pub fn new(world_grid: Point, settings: &Res<Settings>) -> Self {
+  pub fn new(world_grid: Point<WorldGrid>, settings: &Res<Settings>) -> Self {
     let data = generate_terrain_data(&world_grid, settings);
     Self {
       center: Point::new_world(
@@ -32,7 +32,7 @@ impl DraftChunk {
 
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `world_grid` to be a `Point` of type
 /// `WorldGrid` that describes the top-left corner of the grid.
-fn generate_terrain_data(world_grid: &Point, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
+fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
@@ -94,7 +94,12 @@ fn generate_terrain_data(world_grid: &Point, settings: &Res<Settings>) -> Vec<Ve
   tiles
 }
 
-fn log(world_grid: &Point, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
+fn log(
+  world_grid: &Point<WorldGrid>,
+  noise_stats: &mut (f64, f64, f64, f64),
+  time: u128,
+  tiles: &mut Vec<Vec<Option<DraftTile>>>,
+) {
   let mut str = "|".to_string();
   for y in 0..tiles.len() {
     for x in 0..tiles[y].len() {

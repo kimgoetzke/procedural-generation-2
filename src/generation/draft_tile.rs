@@ -1,4 +1,4 @@
-use crate::coords::{Coords, Point};
+use crate::coords::{ChunkGrid, Coords, Point, WorldGrid};
 use crate::generation::terrain_type::TerrainType;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
@@ -13,7 +13,7 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(chunk_grid: Point, world_grid: Point, terrain: TerrainType) -> Self {
+  pub fn new(chunk_grid: Point<ChunkGrid>, world_grid: Point<WorldGrid>, terrain: TerrainType) -> Self {
     Self {
       coords: Coords::new(chunk_grid, world_grid),
       terrain,

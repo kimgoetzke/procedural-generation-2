@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::Point;
+use crate::coords::{Point, World};
 use crate::generation::components::ChunkComponent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
@@ -88,11 +88,11 @@ fn initialise_asset_packs_system(
 
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
-  pub grid: HashMap<Point, ChunkComponent>,
+  pub grid: HashMap<Point<World>, ChunkComponent>,
 }
 
 impl ChunkComponentIndex {
-  pub fn get(&self, world: Point) -> Option<&ChunkComponent> {
+  pub fn get(&self, world: Point<World>) -> Option<&ChunkComponent> {
     if let Some(entity) = self.grid.get(&world) {
       Some(entity)
     } else {

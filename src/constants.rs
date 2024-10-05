@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::coords::{CoordType, Point};
+use crate::coords::{Point, WorldGrid};
 use bevy::color::Color;
 use bevy::math::UVec2;
 
@@ -33,12 +33,8 @@ pub const BUFFER_SIZE: i32 = 1;
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The size of a chunk that is rendered on the screen. This is the size of a chunk minus the
 /// border.
-pub const CHUNK_SIZE: i32 = 8;
-pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point = Point {
-  x: -(CHUNK_SIZE / 2),
-  y: CHUNK_SIZE / 2,
-  coord_type: CoordType::WorldGrid,
-};
+pub const CHUNK_SIZE: i32 = 16;
+pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point<WorldGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0;
 // ------------------------------------------------------------------------------------------------------
 // Tiles

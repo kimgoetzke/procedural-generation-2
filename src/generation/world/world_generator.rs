@@ -1,5 +1,5 @@
 use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
-use crate::coords::Point;
+use crate::coords::{Point, World};
 use crate::generation::chunk::Chunk;
 use crate::generation::components::{ChunkComponent, TileComponent, WorldComponent};
 use crate::generation::direction::get_direction_points;
@@ -18,9 +18,7 @@ use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, DespawnRecursiveExt};
 use bevy::log::debug;
-use bevy::prelude::{
-  Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Transform, World,
-};
+use bevy::prelude::{Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::Anchor;
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -166,7 +164,7 @@ fn attach_task_to_tile_entity(
   let mut entity = parent.spawn(Name::new("Tile Spawn Task"));
   let task = thread_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
-    command_queue.push(move |world: &mut World| {
+    command_queue.push(move |world: &mut bevy::prelude::World| {
       let (asset_packs, settings) = {
         let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
         let (asset_packs, settings) = system_state.get_mut(world);
@@ -266,7 +264,7 @@ fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query
 pub fn generate_chunks(
   mut commands: &mut Commands,
   world: Entity,
-  chunks_to_spawn: Vec<Point>,
+  chunks_to_spawn: Vec<Point<World>>,
   settings: &Res<Settings>,
 ) -> Vec<(Chunk, Vec<TileData>)> {
   let mut spawn_data = Vec::new();

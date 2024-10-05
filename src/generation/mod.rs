@@ -1,5 +1,5 @@
 use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
-use crate::coords::Point;
+use crate::coords::{Point, World};
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::components::{ChunkComponent, WorldComponent};
 use crate::generation::debug::DebugPlugin;
@@ -119,10 +119,10 @@ fn update_world_event(
   }
 }
 
-fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, event: &UpdateWorldEvent) -> Point {
+fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, event: &UpdateWorldEvent) -> Point<World> {
   let current_chunk_world = current_chunk.get_world();
   let direction = direction::Direction::from_chunk(&current_chunk_world, &event.world);
-  let direction_point = Point::from_direction(&direction, current_chunk_world.coord_type);
+  let direction_point = Point::<World>::from_direction(&direction);
   let new_parent_chunk_world = Point::new_world(
     current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.x),
     current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.y),
@@ -142,8 +142,8 @@ fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, e
 fn calculate_new_chunks_to_spawn(
   existing_chunks: &Res<ChunkComponentIndex>,
   settings: &Res<Settings>,
-  new_parent_chunk_world: &Point,
-) -> Vec<Point> {
+  new_parent_chunk_world: &Point<World>,
+) -> Vec<Point<World>> {
   let mut chunks_to_spawn = Vec::new();
   get_direction_points(&new_parent_chunk_world)
     .iter()

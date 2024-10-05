@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::Point;
+use crate::coords::{Point, World, WorldGrid};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
@@ -133,40 +133,40 @@ impl Default for ObjectGenerationSettings {
 
 #[derive(Resource, Debug, Clone)]
 pub struct CurrentChunk {
-  center_world: Point,
-  world: Point,
-  world_grid: Point,
+  center_world: Point<World>,
+  world: Point<World>,
+  world_grid: Point<WorldGrid>,
 }
 
 #[allow(dead_code)]
 impl CurrentChunk {
-  pub fn get_world(&self) -> Point {
+  pub fn get_world(&self) -> Point<World> {
     self.world
   }
 
-  pub fn get_center_world(&self) -> Point {
+  pub fn get_center_world(&self) -> Point<World> {
     self.center_world
   }
 
-  pub fn get_world_grid(&self) -> Point {
+  pub fn get_world_grid(&self) -> Point<WorldGrid> {
     self.world_grid
   }
 
-  pub fn is_world_in_chunk(&self, world: Point) -> bool {
+  pub fn is_world_in_chunk(&self, world: Point<World>) -> bool {
     world.x >= self.world.x
       && world.x < (self.world.x + (CHUNK_SIZE * TILE_SIZE as i32))
       && world.y >= self.world.y
       && world.y < (self.world.y + (CHUNK_SIZE * TILE_SIZE as i32))
   }
 
-  pub fn contains(&self, world_grid: Point) -> bool {
+  pub fn contains(&self, world_grid: Point<WorldGrid>) -> bool {
     world_grid.x >= self.world_grid.x
       && world_grid.x < (self.world_grid.x + CHUNK_SIZE)
       && world_grid.y >= self.world_grid.y
       && world_grid.y < (self.world_grid.y - CHUNK_SIZE)
   }
 
-  pub fn update(&mut self, world: Point) {
+  pub fn update(&mut self, world: Point<World>) {
     let old_value = self.world;
     self.world = world;
     self.world_grid = Point::new_world_grid_from_world(world);

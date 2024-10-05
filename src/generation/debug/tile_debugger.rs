@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::Point;
+use crate::coords::{Point, World, WorldGrid};
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::components::TileComponent;
 use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
@@ -34,11 +34,11 @@ struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
 struct TileComponentIndex {
-  pub grid: HashMap<Point, HashSet<TileComponent>>,
+  pub grid: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
 }
 
 impl TileComponentIndex {
-  pub fn get_entities(&self, point: Point) -> Vec<&TileComponent> {
+  pub fn get_entities(&self, point: Point<WorldGrid>) -> Vec<&TileComponent> {
     let mut tile_components = Vec::new();
     if let Some(t) = self.grid.get(&point) {
       tile_components.extend(t.iter());
@@ -108,7 +108,7 @@ fn on_remove_tile_component_trigger(
 fn tile_info(
   _asset_packs: &AssetPacks,
   tile: &Tile,
-  spawn_point: Point,
+  spawn_point: Point<World>,
   settings: &Res<Settings>,
 ) -> (Name, Text2dBundle, TileDebugInfoComponent) {
   let visibility = if settings.general.enable_tile_debugging {

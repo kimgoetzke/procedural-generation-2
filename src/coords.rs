@@ -5,31 +5,24 @@ use std::fmt;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Coords {
-  pub world: Point,
-  pub world_grid: Point,
-  pub chunk_grid: Point,
+  pub world: Point<World>,
+  pub world_grid: Point<WorldGrid>,
+  pub chunk_grid: Point<ChunkGrid>,
 }
 
 impl Coords {
-  pub fn new(chunk_grid: Point, world_grid: Point) -> Self {
+  pub fn new(cg: Point<ChunkGrid>, wg: Point<WorldGrid>) -> Self {
     Self {
-      world: Point::new_world_from_world_grid(world_grid),
-      world_grid,
-      chunk_grid,
+      world: Point::new_world_from_world_grid(wg.clone()),
+      world_grid: wg,
+      chunk_grid: cg,
     }
   }
 
-  pub fn new_for_chunk(world_grid: Point) -> Self {
-    if world_grid.coord_type != CoordType::WorldGrid {
-      panic!("The provided coordinates must be of type 'WorldGrid'");
-    }
+  pub fn new_for_chunk(wg: Point<WorldGrid>) -> Self {
     Self {
-      world: Point {
-        x: world_grid.x * TILE_SIZE as i32,
-        y: world_grid.y * TILE_SIZE as i32,
-        coord_type: CoordType::World,
-      },
-      world_grid,
+      world: Point::new_world(wg.x * TILE_SIZE as i32, wg.y * TILE_SIZE as i32),
+      world_grid: wg,
       chunk_grid: Point::new_chunk_grid(0, 0),
     }
   }
@@ -41,108 +34,68 @@ impl fmt::Debug for Coords {
   }
 }
 
+pub trait CoordType {}
+
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Point {
+pub struct World;
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct WorldGrid;
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct ChunkGrid;
+
+impl CoordType for World {}
+impl CoordType for WorldGrid {}
+impl CoordType for ChunkGrid {}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Point<T: CoordType> {
   pub x: i32,
   pub y: i32,
-  pub coord_type: CoordType,
+  _marker: std::marker::PhantomData<T>,
 }
 
-impl fmt::Debug for Point {
+impl<T: CoordType> fmt::Debug for Point<T> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "({}, {})", self.x, self.y)
   }
 }
 
-impl fmt::Display for Point {
+impl<T: CoordType> fmt::Display for Point<T> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "({}, {})", self.x, self.y)
   }
 }
 
-impl Default for Point {
+impl<T: CoordType> Default for Point<T> {
   fn default() -> Self {
     Self {
       x: 0,
       y: 0,
-      coord_type: CoordType::World,
+      _marker: std::marker::PhantomData,
     }
   }
 }
 
-impl Point {
-  pub fn new(x: i32, y: i32, coord_type: CoordType) -> Self {
-    Self { x, y, coord_type }
-  }
-
-  pub fn new_abstract(x: i32, y: i32) -> Self {
+impl<T: CoordType> Point<T> {
+  pub fn new(x: i32, y: i32) -> Self {
     Self {
       x,
       y,
-      coord_type: CoordType::Abstract,
+      _marker: std::marker::PhantomData,
     }
   }
 
-  pub fn new_world(x: i32, y: i32) -> Self {
+  pub const fn new_const(x: i32, y: i32) -> Self {
     Self {
       x,
       y,
-      coord_type: CoordType::World,
+      _marker: std::marker::PhantomData,
     }
   }
 
-  pub fn new_world_grid(x: i32, y: i32) -> Self {
-    Self {
-      x,
-      y,
-      coord_type: CoordType::WorldGrid,
-    }
-  }
-
-  pub fn new_chunk_grid(x: i32, y: i32) -> Self {
-    Self {
-      x,
-      y,
-      coord_type: CoordType::ChunkGrid,
-    }
-  }
-
-  /// Returns a `Point` of type `World` with the `x` and `y` values rounded to the nearest integer to achieve this.
-  pub fn new_world_from_world_vec2(world: Vec2) -> Self {
-    Self {
-      x: world.x.round() as i32,
-      y: world.y.round() as i32,
-      coord_type: CoordType::World,
-    }
-  }
-
-  pub fn new_world_from_world_grid(world_grid: Point) -> Self {
-    Self {
-      x: world_grid.x * TILE_SIZE as i32,
-      y: world_grid.y * TILE_SIZE as i32,
-      coord_type: CoordType::World,
-    }
-  }
-
-  /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
-  /// to convert world coordinates to grid coordinates.
-  pub fn new_world_grid_from_world_vec2(world: Vec2) -> Self {
-    Self {
-      x: ((world.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
-      y: ((world.y + (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
-      coord_type: CoordType::WorldGrid,
-    }
-  }
-
-  pub fn new_world_grid_from_world(world: Point) -> Self {
-    Self {
-      x: (world.x as f32 / TILE_SIZE as f32).round() as i32,
-      y: (world.y as f32 / TILE_SIZE as f32).round() as i32,
-      coord_type: CoordType::WorldGrid,
-    }
-  }
-
-  pub fn from_direction(direction: &Direction, coord_type: CoordType) -> Self {
+  pub fn from_direction(direction: &Direction) -> Self {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),
       Direction::Top => (0, 1),
@@ -154,29 +107,57 @@ impl Point {
       Direction::Bottom => (0, -1),
       Direction::BottomRight => (1, -1),
     };
-    Self { x: i, y: j, coord_type }
+    Self::new(i, j)
   }
 
-  pub fn distance_to(&self, other: &Point) -> f32 {
-    assert_eq!(
-      self.coord_type, other.coord_type,
-      "Cannot calculate distance between points of different types"
-    );
+  pub fn distance_to(&self, other: &Point<T>) -> f32 {
     ((self.x - other.x).pow(2) as f32 + (self.y - other.y).pow(2) as f32).sqrt()
   }
 
   pub fn to_vec2(&self) -> Vec2 {
-    if self.coord_type == CoordType::World {
-      return Vec2::new(self.x as f32, self.y as f32);
-    }
-    panic!("Cannot convert a Point of type {:?} to a Vec2", self.coord_type);
+    Vec2::new(self.x as f32, self.y as f32)
   }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum CoordType {
-  World,
-  WorldGrid,
-  ChunkGrid,
-  Abstract,
+impl Point<World> {
+  pub fn new_world(x: i32, y: i32) -> Self {
+    Self::new(x, y)
+  }
+
+  /// Returns a `Point` of type `World` with the `x` and `y` values rounded to the nearest integer to achieve this.
+  pub fn new_world_from_world_vec2(w: Vec2) -> Self {
+    Self::new(w.x.round() as i32, w.y.round() as i32)
+  }
+
+  pub fn new_world_from_world_grid(wg: Point<WorldGrid>) -> Self {
+    Self::new(wg.x * TILE_SIZE as i32, wg.y * TILE_SIZE as i32)
+  }
+}
+
+impl Point<ChunkGrid> {
+  pub fn new_chunk_grid(x: i32, y: i32) -> Self {
+    Self::new(x, y)
+  }
+}
+
+impl Point<WorldGrid> {
+  pub fn new_world_grid(x: i32, y: i32) -> Self {
+    Self::new(x, y)
+  }
+
+  /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
+  /// to convert world coordinates to grid coordinates.
+  pub fn new_world_grid_from_world_vec2(w: Vec2) -> Self {
+    Self::new(
+      ((w.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
+      ((w.y + (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
+    )
+  }
+
+  pub fn new_world_grid_from_world(w: Point<World>) -> Self {
+    Self::new(
+      (w.x as f32 / TILE_SIZE as f32).round() as i32,
+      (w.y as f32 / TILE_SIZE as f32).round() as i32,
+    )
+  }
 }

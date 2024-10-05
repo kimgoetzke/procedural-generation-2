@@ -1,18 +1,18 @@
-use crate::coords::Point;
+use crate::coords::{CoordType, Point};
 use crate::generation::terrain_type::TerrainType;
 use crate::generation::tile::Tile;
 use bevy::log::*;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct NeighbourTile {
-  pub direction: Point,
+pub struct NeighbourTile<T: CoordType> {
+  pub direction: Point<T>,
   pub terrain: TerrainType,
   pub same: bool,
   pub is_any: bool,
 }
 
-impl NeighbourTile {
-  pub fn default(direction: Point) -> Self {
+impl<T: CoordType> NeighbourTile<T> {
+  pub fn default(direction: Point<T>) -> Self {
     Self {
       direction,
       terrain: TerrainType::Any,
@@ -21,7 +21,7 @@ impl NeighbourTile {
     }
   }
 
-  pub(crate) fn new(direction: Point, terrain_type: TerrainType, is_same: bool) -> NeighbourTile {
+  pub(crate) fn new(direction: Point<T>, terrain_type: TerrainType, is_same: bool) -> NeighbourTile<T> {
     NeighbourTile {
       direction,
       terrain: terrain_type,
@@ -32,29 +32,29 @@ impl NeighbourTile {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct NeighbourTiles {
-  pub top_left: NeighbourTile,
-  pub top: NeighbourTile,
-  pub top_right: NeighbourTile,
-  pub left: NeighbourTile,
-  pub right: NeighbourTile,
-  pub bottom_left: NeighbourTile,
-  pub bottom: NeighbourTile,
-  pub bottom_right: NeighbourTile,
+pub struct NeighbourTiles<T: CoordType> {
+  pub top_left: NeighbourTile<T>,
+  pub top: NeighbourTile<T>,
+  pub top_right: NeighbourTile<T>,
+  pub left: NeighbourTile<T>,
+  pub right: NeighbourTile<T>,
+  pub bottom_left: NeighbourTile<T>,
+  pub bottom: NeighbourTile<T>,
+  pub bottom_right: NeighbourTile<T>,
 }
 
 #[allow(dead_code)]
-impl NeighbourTiles {
+impl<T: CoordType> NeighbourTiles<T> {
   pub(crate) fn empty() -> Self {
     Self {
-      top_left: NeighbourTile::default(Point::new_abstract(-1, 1)),
-      top: NeighbourTile::default(Point::new_abstract(0, 1)),
-      top_right: NeighbourTile::default(Point::new_abstract(1, 1)),
-      left: NeighbourTile::default(Point::new_abstract(-1, 0)),
-      right: NeighbourTile::default(Point::new_abstract(1, 0)),
-      bottom_left: NeighbourTile::default(Point::new_abstract(-1, -1)),
-      bottom: NeighbourTile::default(Point::new_abstract(0, -1)),
-      bottom_right: NeighbourTile::default(Point::new_abstract(1, -1)),
+      top_left: NeighbourTile::default(Point::new(-1, 1)),
+      top: NeighbourTile::default(Point::new(0, 1)),
+      top_right: NeighbourTile::default(Point::new(1, 1)),
+      left: NeighbourTile::default(Point::new(-1, 0)),
+      right: NeighbourTile::default(Point::new(1, 0)),
+      bottom_left: NeighbourTile::default(Point::new(-1, -1)),
+      bottom: NeighbourTile::default(Point::new(0, -1)),
+      bottom_right: NeighbourTile::default(Point::new(1, -1)),
     }
   }
 
@@ -99,7 +99,7 @@ impl NeighbourTiles {
   }
 
   pub fn top_same(&self, expected: usize) -> bool {
-    [self.top_left, self.top, self.top_right]
+    [&self.top_left, &self.top, &self.top_right]
       .iter()
       .filter(|&&tile| tile.same)
       .count()
@@ -115,9 +115,9 @@ impl NeighbourTiles {
   }
 
   pub fn bottom_same(&self, expected: usize) -> bool {
-    [self.bottom_left, self.bottom, self.bottom_right]
+    [&self.bottom_left, &self.bottom, &self.bottom_right]
       .iter()
-      .filter(|&&tile| tile.same)
+      .filter(|tile| tile.same)
       .count()
       == expected
   }
@@ -131,7 +131,7 @@ impl NeighbourTiles {
   }
 
   pub fn left_same(&self, expected: usize) -> bool {
-    [self.top_left, self.left, self.bottom_left]
+    [&self.top_left, &self.left, &self.bottom_left]
       .iter()
       .filter(|&&tile| tile.same)
       .count()
@@ -147,7 +147,7 @@ impl NeighbourTiles {
   }
 
   pub fn right_same(&self, expected: usize) -> bool {
-    [self.top_right, self.right, self.bottom_right]
+    [&self.top_right, &self.right, &self.bottom_right]
       .iter()
       .filter(|&&tile| tile.same)
       .count()
@@ -158,7 +158,7 @@ impl NeighbourTiles {
     self.top.same && self.right.same && self.bottom.same && self.left.same
   }
 
-  pub fn put(&mut self, tile: NeighbourTile) {
+  pub fn put(&mut self, tile: NeighbourTile<T>) {
     match (tile.direction.x, tile.direction.y) {
       (-1, 1) => self.top_left = tile,
       (0, 1) => self.top = tile,
@@ -177,14 +177,14 @@ impl NeighbourTiles {
 
   pub fn count_same(&self) -> usize {
     [
-      self.top_left,
-      self.top,
-      self.top_right,
-      self.left,
-      self.right,
-      self.bottom_left,
-      self.bottom,
-      self.bottom_right,
+      &self.top_left,
+      &self.top,
+      &self.top_right,
+      &self.left,
+      &self.right,
+      &self.bottom_left,
+      &self.bottom,
+      &self.bottom_right,
     ]
     .iter()
     .filter(|&&tile| tile.same)

@@ -1,9 +1,7 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::{CoordType, Point};
+use crate::coords::{CoordType, Point, World, WorldGrid};
 use cmp::Ordering;
 use std::cmp;
-
-const ERROR_TYPE_NOT_WORLD: &'static str = "The provided coordinates must be of type 'World'";
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Direction {
@@ -20,7 +18,7 @@ pub enum Direction {
 
 #[allow(dead_code)]
 impl Direction {
-  pub fn from_points(a: &Point, b: &Point) -> Self {
+  pub fn from_points<T: CoordType>(a: &Point<T>, b: &Point<T>) -> Self {
     match (a.x.cmp(&b.x), a.y.cmp(&b.y)) {
       (Ordering::Less, Ordering::Less) => Direction::TopRight,
       (Ordering::Less, Ordering::Equal) => Direction::Right,
@@ -34,10 +32,7 @@ impl Direction {
     }
   }
 
-  pub fn from_chunk(chunk_world: &Point, other_world: &Point) -> Self {
-    assert_eq!(chunk_world.coord_type, CoordType::World, "{}", ERROR_TYPE_NOT_WORLD);
-    assert_eq!(other_world.coord_type, CoordType::World, "{}", ERROR_TYPE_NOT_WORLD);
-
+  pub fn from_chunk(chunk_world: &Point<World>, other_world: &Point<World>) -> Self {
     let chunk_len = CHUNK_SIZE * TILE_SIZE as i32;
     let chunk_left = chunk_world.x;
     let chunk_right = chunk_world.x + chunk_len - 1;
@@ -73,23 +68,22 @@ impl Direction {
   }
 }
 
-pub fn get_direction_points(point: &Point) -> [(Direction, Point); 9] {
-  let ct = point.coord_type;
-  let offset = match ct {
-    CoordType::WorldGrid => CHUNK_SIZE,
-    CoordType::World => TILE_SIZE as i32 * CHUNK_SIZE,
-    _ => panic!("Coord type {:?} not implemented for get_direction_points", ct),
+pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 9] {
+  let offset = match std::any::TypeId::of::<T>() {
+    id if id == std::any::TypeId::of::<WorldGrid>() => CHUNK_SIZE,
+    id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
+    _ => panic!("Coord type not implemented for get_direction_points"),
   };
   let p = point;
   [
-    (Direction::TopLeft, Point::new(p.x - offset, p.y + offset, ct)),
-    (Direction::Top, Point::new(p.x, p.y + offset, ct)),
-    (Direction::TopRight, Point::new(p.x + offset, p.y + offset, ct)),
-    (Direction::Left, Point::new(p.x - offset, p.y, ct)),
-    (Direction::Center, Point::new(p.x, p.y, ct)),
-    (Direction::Right, Point::new(p.x + offset, p.y, ct)),
-    (Direction::BottomLeft, Point::new(p.x - offset, p.y - offset, ct)),
-    (Direction::Bottom, Point::new(p.x, p.y - offset, ct)),
-    (Direction::BottomRight, Point::new(p.x + offset, p.y - offset, ct)),
+    (Direction::TopLeft, Point::new(p.x - offset, p.y + offset)),
+    (Direction::Top, Point::new(p.x, p.y + offset)),
+    (Direction::TopRight, Point::new(p.x + offset, p.y + offset)),
+    (Direction::Left, Point::new(p.x - offset, p.y)),
+    (Direction::Center, Point::new(p.x, p.y)),
+    (Direction::Right, Point::new(p.x + offset, p.y)),
+    (Direction::BottomLeft, Point::new(p.x - offset, p.y - offset)),
+    (Direction::Bottom, Point::new(p.x, p.y - offset)),
+    (Direction::BottomRight, Point::new(p.x + offset, p.y - offset)),
   ]
 }

@@ -1,4 +1,4 @@
-use crate::coords::Point;
+use crate::coords::{Point, World, WorldGrid};
 use bevy::prelude::{App, Event, Plugin};
 
 pub struct SharedEventsPlugin;
@@ -24,8 +24,8 @@ pub struct RegenerateWorldEvent {}
 /// distant chunks (by triggering `CleanUpWorldEvent`), if necessary.
 pub struct UpdateWorldEvent {
   pub is_forced_update: bool,
-  pub world: Point,
-  pub world_grid: Point,
+  pub world: Point<World>,
+  pub world_grid: Point<WorldGrid>,
 }
 
 #[derive(Event)]
@@ -42,6 +42,6 @@ pub struct ToggleDebugInfo {}
 
 #[derive(Event)]
 pub struct MouseClickEvent {
-  pub world: Point,
-  pub world_grid: Point,
+  pub world: Point<World>,
+  pub world_grid: Point<WorldGrid>,
 }

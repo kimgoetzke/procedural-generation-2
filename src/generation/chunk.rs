@@ -1,4 +1,4 @@
-use crate::coords::{Coords, Point};
+use crate::coords::{Coords, Point, World};
 use crate::generation::draft_chunk::DraftChunk;
 use crate::generation::layered_plane::LayeredPlane;
 use crate::resources::Settings;
@@ -7,7 +7,7 @@ use bevy::prelude::Res;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
   pub coords: Coords,
-  pub center: Point,
+  pub center: Point<World>,
   pub layered_plane: LayeredPlane,
 }
 
