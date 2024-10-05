@@ -13,7 +13,7 @@ impl Plugin for PreRenderProcessorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> Vec<Chunk> {
+pub(crate) fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> Vec<Chunk> {
   let start_time = get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);
@@ -30,7 +30,7 @@ pub fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> Vec<Chun
   chunks
 }
 
-pub fn process_single(mut chunk: Chunk, settings: &Res<Settings>) -> Chunk {
+pub(crate) fn process_single(mut chunk: Chunk, settings: &Res<Settings>) -> Chunk {
   let start_time = get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);
