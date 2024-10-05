@@ -40,7 +40,7 @@ fn draw_gizmos_system(
       0.0,
       UVec2::new(CHUNK_SIZE as u32, CHUNK_SIZE as u32),
       Vec2::new(TILE_SIZE as f32, TILE_SIZE as f32),
-      DARK_1,
+      DARK,
     )
     .outer_edges();
 
@@ -51,7 +51,7 @@ fn draw_gizmos_system(
       0.0,
       UVec2::new(3, 3),
       Vec2::new(chunk_size, chunk_size),
-      DARK_1,
+      DARK,
     )
     .outer_edges();
 
@@ -59,7 +59,7 @@ fn draw_gizmos_system(
   gizmos.circle_2d(current_chunk_center_world.to_vec2(), TILE_SIZE as f32, RED);
 
   // Line from the current world position to the center of the current chunk
-  gizmos.line_2d(camera_world.to_vec2(), current_chunk_world.to_vec2(), DARK_1);
+  gizmos.line_2d(camera_world.to_vec2(), current_chunk_world.to_vec2(), DARK);
 
   // Arrow from the center of the current chunk to the current world position
   gizmos.arrow_2d(current_chunk_center_world.to_vec2(), camera_world.to_vec2(), YELLOW);

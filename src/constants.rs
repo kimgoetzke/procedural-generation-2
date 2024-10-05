@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
-use crate::coords::{Point, WorldGrid};
+use crate::coords::point::WorldGrid;
+use crate::coords::Point;
 use bevy::color::Color;
 use bevy::math::UVec2;
 
@@ -91,15 +92,10 @@ pub const YELLOW: Color = Color::srgb(0.922, 0.796, 0.545);
 pub const ORANGE: Color = Color::srgb(0.816, 0.529, 0.439);
 pub const GREEN: Color = Color::srgb(0.639, 0.745, 0.549);
 pub const WATER_BLUE: Color = Color::srgb(0.305882, 0.611765, 0.74902);
-pub const LIGHT_1: Color = Color::srgb(0.925, 0.937, 0.957);
-pub const LIGHT_2: Color = Color::srgb(0.898, 0.914, 0.941);
-pub const LIGHT_3: Color = Color::srgb(0.847, 0.871, 0.914);
-pub const MEDIUM_1: Color = Color::srgb(0.60, 0.639, 0.714);
-pub const MEDIUM_2: Color = Color::srgb(0.427, 0.478, 0.588);
-pub const DARK_1: Color = Color::srgb(0.298, 0.337, 0.416);
-pub const DARK_4: Color = Color::srgb(0.18, 0.204, 0.251);
-pub const VERY_DARK_1: Color = Color::srgb(0.12, 0.14, 0.18);
-pub const VERY_DARK_2: Color = Color::srgb(0.06, 0.07, 0.09);
+pub const LIGHT: Color = Color::srgb(0.925, 0.937, 0.957);
+pub const MEDIUM: Color = Color::srgb(0.60, 0.639, 0.714);
+pub const DARK: Color = Color::srgb(0.298, 0.337, 0.416);
+pub const VERY_DARK: Color = Color::srgb(0.12, 0.14, 0.18);
 // ------------------------------------------------------------------------------------------------------
 // Window
 pub const WINDOW_WIDTH: f32 = 1280.;

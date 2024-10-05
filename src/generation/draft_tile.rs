@@ -1,4 +1,5 @@
-use crate::coords::{ChunkGrid, Coords, Point, WorldGrid};
+use crate::coords::point::{ChunkGrid, WorldGrid};
+use crate::coords::{Coords, Point};
 use crate::generation::terrain_type::TerrainType;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate

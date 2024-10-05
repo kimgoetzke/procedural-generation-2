@@ -1,6 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
-use crate::coords::World;
-use crate::coords::{ChunkGrid, Coords, Point};
+use crate::coords::point::{ChunkGrid, World};
+use crate::coords::{Coords, Point};
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::terrain_type::TerrainType;
 use crate::generation::tile_type::TileType;

@@ -1,5 +1,6 @@
 use crate::constants::*;
-use crate::coords::{Point, World, WorldGrid};
+use crate::coords::point::{World, WorldGrid};
+use crate::coords::Point;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
@@ -50,7 +51,7 @@ impl Default for Settings {
 pub struct GeneralGenerationSettings {
   pub draw_gizmos: bool,
   pub generate_neighbour_chunks: bool,
-  pub enable_tile_debugging: bool, // Disabling massively speeds up the generation process
+  pub enable_tile_debugging: bool,
   pub draw_terrain_sprites: bool,
   #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,

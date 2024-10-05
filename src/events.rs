@@ -1,4 +1,5 @@
-use crate::coords::{Point, World, WorldGrid};
+use crate::coords::point::{World, WorldGrid};
+use crate::coords::Point;
 use bevy::prelude::{App, Event, Plugin};
 
 pub struct SharedEventsPlugin;
@@ -21,8 +22,11 @@ pub struct RegenerateWorldEvent {}
 
 #[derive(Event)]
 /// An event that triggers the evaluation of the world, causing the generation of new chunks and/or the despawning of
-/// distant chunks (by triggering `CleanUpWorldEvent`), if necessary.
+/// distant chunks (by triggering `PruneWorldEvent` at the end), if necessary. Will never remove the world entity.
 pub struct UpdateWorldEvent {
+  /// Will force the update to happen, even if the `CurrentChunk` has not changed. Will also suppress triggering
+  /// `PruneWorldEvent` after the update which would happen by default. Used when updating the world via the UI when
+  /// the `CurrentChunk` has not changed.
   pub is_forced_update: bool,
   pub world: Point<World>,
   pub world_grid: Point<WorldGrid>,

@@ -1,5 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
-use crate::coords::{ChunkGrid, CoordType, Point};
+use crate::coords::point::{ChunkGrid, CoordType};
+use crate::coords::Point;
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::generation::terrain_type::TerrainType;
@@ -193,9 +194,10 @@ fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<
   }
 }
 
-/// Resizes the grid by cutting off the buffer size from each side of the grid. This is because the input data for
-/// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges.
-/// For this to work, the `chunk_grid` `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
+/// Resizes the grid by cutting off `BUFFER_SIZE` from each side of the grid. This is because the input data for
+/// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges
+/// (which requires knowledge about the tiles neighbours).
+/// For this to work, the `Point<ChunkGrid>` in `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
 fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
   let cut_off = BUFFER_SIZE as usize;
   let mut cut_off_tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];

@@ -1,5 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
-use crate::coords::{Coords, Point, World, WorldGrid};
+use crate::coords::point::{World, WorldGrid};
+use crate::coords::{Coords, Point};
 use crate::generation::draft_tile::DraftTile;
 use crate::generation::get_time;
 use crate::generation::terrain_type::TerrainType;

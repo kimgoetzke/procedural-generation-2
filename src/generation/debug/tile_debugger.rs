@@ -1,5 +1,6 @@
 use crate::constants::*;
-use crate::coords::{Point, World, WorldGrid};
+use crate::coords::point::{World, WorldGrid};
+use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::components::TileComponent;
 use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
@@ -132,7 +133,7 @@ fn tile_info(
         ),
         TextStyle {
           font_size: 30.,
-          color: LIGHT_1,
+          color: LIGHT,
           ..default()
         },
       )

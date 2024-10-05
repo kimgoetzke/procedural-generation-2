@@ -1,38 +1,7 @@
 use crate::constants::TILE_SIZE;
 use crate::generation::direction::Direction;
-use bevy::math::Vec2;
+use bevy::prelude::Vec2;
 use std::fmt;
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Coords {
-  pub world: Point<World>,
-  pub world_grid: Point<WorldGrid>,
-  pub chunk_grid: Point<ChunkGrid>,
-}
-
-impl Coords {
-  pub fn new(cg: Point<ChunkGrid>, wg: Point<WorldGrid>) -> Self {
-    Self {
-      world: Point::new_world_from_world_grid(wg.clone()),
-      world_grid: wg,
-      chunk_grid: cg,
-    }
-  }
-
-  pub fn new_for_chunk(wg: Point<WorldGrid>) -> Self {
-    Self {
-      world: Point::new_world(wg.x * TILE_SIZE as i32, wg.y * TILE_SIZE as i32),
-      world_grid: wg,
-      chunk_grid: Point::new_chunk_grid(0, 0),
-    }
-  }
-}
-
-impl fmt::Debug for Coords {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "[w{}, wg{}, cg{}]", self.world, self.world_grid, self.chunk_grid)
-  }
-}
 
 pub trait CoordType {}
 
@@ -46,7 +15,9 @@ pub struct WorldGrid;
 pub struct ChunkGrid;
 
 impl CoordType for World {}
+
 impl CoordType for WorldGrid {}
+
 impl CoordType for ChunkGrid {}
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

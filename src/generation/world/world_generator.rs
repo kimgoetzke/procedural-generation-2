@@ -1,5 +1,6 @@
 use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
-use crate::coords::{Point, World};
+use crate::coords::point::World;
+use crate::coords::Point;
 use crate::generation::chunk::Chunk;
 use crate::generation::components::{ChunkComponent, TileComponent, WorldComponent};
 use crate::generation::direction::get_direction_points;
@@ -23,9 +24,9 @@ use bevy::sprite::Anchor;
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 
-pub struct GeneratorPlugin;
+pub struct WorldGeneratorPlugin;
 
-impl Plugin for GeneratorPlugin {
+impl Plugin for WorldGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(Update, process_async_tasks_system);
   }

@@ -1,5 +1,6 @@
 use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
-use crate::coords::{Point, World};
+use crate::coords::point::World;
+use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::components::{ChunkComponent, WorldComponent};
 use crate::generation::debug::DebugPlugin;

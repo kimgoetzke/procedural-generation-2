@@ -26,7 +26,7 @@ fn create_fps_counter_system(mut commands: Commands) {
     .spawn((
       FpsUiRoot,
       NodeBundle {
-        background_color: BackgroundColor(VERY_DARK_1.with_alpha(0.5)),
+        background_color: BackgroundColor(VERY_DARK.with_alpha(0.5)),
         z_index: ZIndex::Global(i32::MAX),
         style: Style {
           position_type: PositionType::Absolute,
@@ -49,14 +49,14 @@ fn create_fps_counter_system(mut commands: Commands) {
           TextSection {
             value: "FPS: ".into(),
             style: TextStyle {
-              color: LIGHT_1,
+              color: LIGHT,
               ..default()
             },
           },
           TextSection {
             value: " N/A".into(),
             style: TextStyle {
-              color: LIGHT_1,
+              color: LIGHT,
               ..default()
             },
           },
@@ -86,7 +86,7 @@ fn update_fps_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut T
       }
     } else {
       text.sections[1].value = " N/A".into();
-      text.sections[1].style.color = LIGHT_1;
+      text.sections[1].style.color = LIGHT;
     }
   }
 }

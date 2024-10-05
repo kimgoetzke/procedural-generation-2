@@ -24,8 +24,7 @@ use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_pancam::PanCamPlugin;
 
 fn main() {
-  let mut app = App::new();
-  app
+  App::new()
     .add_plugins(
       DefaultPlugins
         .set(AssetPlugin {
@@ -58,11 +57,8 @@ fn main() {
       SharedResourcesPlugin,
       ControlPlugin,
       UiPlugin,
-    ));
-
-  app
+    ))
     .add_plugins(DefaultInspectorConfigPlugin)
-    .add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)));
-
-  app.run();
+    .add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)))
+    .run();
 }

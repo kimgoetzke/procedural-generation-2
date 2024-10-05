@@ -1,8 +1,9 @@
-use crate::coords::{Point, World};
+use crate::coords::point::World;
+use crate::coords::Point;
 use crate::generation::chunk::Chunk;
 use crate::generation::tile_data::TileData;
 use crate::generation::world::pre_render_processor::PreRenderProcessorPlugin;
-use crate::generation::world::world_generator::GeneratorPlugin;
+use crate::generation::world::world_generator::WorldGeneratorPlugin;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::prelude::{Commands, Entity, Res};
@@ -14,7 +15,7 @@ pub struct WorldGenerationPlugin;
 
 impl Plugin for WorldGenerationPlugin {
   fn build(&self, app: &mut App) {
-    app.add_plugins((GeneratorPlugin, PreRenderProcessorPlugin));
+    app.add_plugins((WorldGeneratorPlugin, PreRenderProcessorPlugin));
   }
 }
 
