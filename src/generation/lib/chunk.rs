@@ -1,7 +1,6 @@
 use crate::coords::point::World;
 use crate::coords::{Coords, Point};
-use crate::generation::draft_chunk::DraftChunk;
-use crate::generation::layered_plane::LayeredPlane;
+use crate::generation::lib::{DraftChunk, LayeredPlane};
 use crate::resources::Settings;
 use bevy::prelude::Res;
 

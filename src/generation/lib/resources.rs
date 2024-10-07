@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::components::ChunkComponent;
+use crate::generation::lib::ChunkComponent;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::log::*;

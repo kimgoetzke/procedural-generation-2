@@ -1,4 +1,4 @@
-use crate::generation::tile::Tile;
+use crate::generation::lib::Tile;
 use bevy::prelude::Entity;
 
 #[derive(Clone, Copy)]

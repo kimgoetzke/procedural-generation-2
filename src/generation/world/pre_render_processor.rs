@@ -1,7 +1,5 @@
-use crate::generation::chunk::Chunk;
 use crate::generation::get_time;
-use crate::generation::terrain_type::TerrainType;
-use crate::generation::tile_type::TileType;
+use crate::generation::lib::{Chunk, TerrainType, TileType};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::{debug, warn};

@@ -1,7 +1,5 @@
 use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
-use crate::generation::draft_tile::DraftTile;
-use crate::generation::plane::Plane;
-use crate::generation::terrain_type::TerrainType;
+use crate::generation::lib::{DraftTile, Plane, TerrainType};
 use crate::resources::Settings;
 use bevy::prelude::Res;
 

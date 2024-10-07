@@ -2,32 +2,23 @@ use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
-use crate::generation::components::{ChunkComponent, WorldComponent};
 use crate::generation::debug::DebugPlugin;
-use crate::generation::direction::get_direction_points;
+use crate::generation::lib::direction::get_direction_points;
+use crate::generation::lib::resources::GenerationResourcesPlugin;
+use crate::generation::lib::{AssetPacks, ChunkComponent, ChunkComponentIndex, Direction, WorldComponent};
 use crate::generation::object::ObjectGenerationPlugin;
-use crate::generation::resources::{AssetPacks, ChunkComponentIndex, GenerationResourcesPlugin};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
-use bevy::prelude::*;
+use bevy::log::*;
+use bevy::prelude::{
+  Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, Query, Res, ResMut, Startup, Update, With,
+};
 use std::time::SystemTime;
 
-mod chunk;
-mod components;
 mod debug;
-pub(crate) mod direction;
-mod draft_chunk;
-mod draft_tile;
-mod layered_plane;
-mod neighbours;
+pub(crate) mod lib;
 mod object;
-mod plane;
-mod resources;
-mod terrain_type;
-mod tile;
-mod tile_data;
-mod tile_type;
 mod world;
 
 pub struct GenerationPlugin;
@@ -122,7 +113,7 @@ fn update_world_event(
 
 fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, event: &UpdateWorldEvent) -> Point<World> {
   let current_chunk_world = current_chunk.get_world();
-  let direction = direction::Direction::from_chunk(&current_chunk_world, &event.world);
+  let direction = Direction::from_chunk(&current_chunk_world, &event.world);
   let direction_point = Point::<World>::from_direction(&direction);
   let new_parent_chunk_world = Point::new_world(
     current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.x),

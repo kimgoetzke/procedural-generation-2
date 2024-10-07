@@ -1,16 +1,12 @@
 use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::chunk::Chunk;
-use crate::generation::components::{ChunkComponent, TileComponent, WorldComponent};
-use crate::generation::direction::get_direction_points;
-use crate::generation::draft_chunk::DraftChunk;
 use crate::generation::get_time;
-use crate::generation::resources::AssetPacks;
-use crate::generation::terrain_type::TerrainType;
-use crate::generation::tile::Tile;
-use crate::generation::tile_data::TileData;
-use crate::generation::tile_type::get_sprite_index;
+use crate::generation::lib::direction::get_direction_points;
+use crate::generation::lib::tile_type::get_sprite_index;
+use crate::generation::lib::{
+  AssetPacks, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
+};
 use crate::generation::world::pre_render_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};

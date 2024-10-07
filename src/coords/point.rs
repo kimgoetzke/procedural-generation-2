@@ -1,5 +1,5 @@
 use crate::constants::TILE_SIZE;
-use crate::generation::direction::Direction;
+use crate::generation::lib::direction::Direction;
 use bevy::prelude::Vec2;
 use std::fmt;
 

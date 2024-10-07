@@ -1,6 +1,5 @@
 use crate::coords::Coords;
-use crate::generation::layered_plane::LayeredPlane;
-use crate::generation::tile::Tile;
+use crate::generation::lib::{LayeredPlane, Tile};
 use bevy::prelude::{Component, Entity};
 
 #[derive(Component)]

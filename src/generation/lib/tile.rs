@@ -1,9 +1,7 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::point::{ChunkGrid, World};
 use crate::coords::{Coords, Point};
-use crate::generation::draft_tile::DraftTile;
-use crate::generation::terrain_type::TerrainType;
-use crate::generation::tile_type::TileType;
+use crate::generation::lib::{DraftTile, TerrainType, TileType};
 use bevy::log::*;
 
 /// A `Tile` represents a single tile of `TILE_SIZE` in the world. It contains information about its `Coords`,

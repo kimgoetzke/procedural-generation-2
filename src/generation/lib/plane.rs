@@ -1,12 +1,7 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::point::{ChunkGrid, CoordType};
 use crate::coords::Point;
-use crate::generation::draft_tile::DraftTile;
-use crate::generation::neighbours::{NeighbourTile, NeighbourTiles};
-use crate::generation::terrain_type::TerrainType;
-use crate::generation::tile::Tile;
-use crate::generation::tile_type::TileType;
-use crate::resources::Settings;
+use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
 use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
