@@ -72,7 +72,7 @@ fn regenerate_world_event(
 fn generate(mut commands: Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
   let start_time = get_time();
   let mut spawn_data = world::generate_world(&mut commands, &settings);
-  object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
+  object::generate(&mut commands, &mut spawn_data, &asset_packs, &settings);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }
 
@@ -106,7 +106,7 @@ fn update_world_event(
     let chunks_to_spawn = calculate_new_chunks_to_spawn(&existing_chunks, &settings, &new_parent_chunk_world);
     let world = existing_world.get_single().unwrap();
     let mut spawn_data = world::generate_chunks(&mut commands, world, chunks_to_spawn, &settings);
-    object::generate_objects(&mut commands, &mut spawn_data, &asset_packs, &settings);
+    object::generate(&mut commands, &mut spawn_data, &asset_packs, &settings);
 
     // Update the current chunk and clean up the world, if necessary
     current_chunk.update(new_parent_chunk_world);

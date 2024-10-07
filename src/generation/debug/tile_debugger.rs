@@ -35,7 +35,7 @@ struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
 struct TileComponentIndex {
-  pub grid: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
+  grid: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
 }
 
 impl TileComponentIndex {
@@ -74,7 +74,6 @@ fn on_left_mouse_click_trigger(
     .iter()
     .max_by_key(|tc| tc.tile.layer)
   {
-    // TODO: Fix this again - it's not detecting the debuggable tile coords correctly
     debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
     commands.spawn(tile_info(&asset_packs, &tc.tile, event.world, &settings));
     let parent_w = tc.tile.get_parent_chunk_world();

@@ -35,7 +35,7 @@ impl Plugin for WorldGeneratorPlugin {
 #[derive(Component)]
 struct TileSpawnTask(Task<CommandQueue>);
 
-pub(crate) fn generate_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
+pub fn generate_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
   let draft_chunks = generate_draft_chunks(&settings);
   let mut chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
   chunks = pre_render_processor::process_all(chunks, &settings);
@@ -262,7 +262,7 @@ fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query
   }
 }
 
-pub(crate) fn generate_chunks(
+pub fn generate_chunks(
   mut commands: &mut Commands,
   world: Entity,
   chunks_to_spawn: Vec<Point<World>>,

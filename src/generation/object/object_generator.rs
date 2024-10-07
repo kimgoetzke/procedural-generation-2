@@ -22,7 +22,7 @@ impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub(crate) fn generate(
+pub fn generate(
   commands: &mut Commands,
   spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
   asset_packs: &Res<AssetPacks>,
