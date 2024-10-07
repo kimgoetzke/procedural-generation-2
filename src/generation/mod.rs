@@ -4,9 +4,9 @@ use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::direction::get_direction_points;
-use crate::generation::lib::resources::GenerationResourcesPlugin;
-use crate::generation::lib::{AssetPacks, ChunkComponent, ChunkComponentIndex, Direction, WorldComponent};
+use crate::generation::lib::{ChunkComponent, Direction, WorldComponent};
 use crate::generation::object::ObjectGenerationPlugin;
+use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
@@ -14,11 +14,13 @@ use bevy::log::*;
 use bevy::prelude::{
   Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, Query, Res, ResMut, Startup, Update, With,
 };
+use resources::GenerationResourcesPlugin;
 use std::time::SystemTime;
 
 mod debug;
 pub(crate) mod lib;
 mod object;
+pub mod resources;
 mod world;
 
 pub struct GenerationPlugin;

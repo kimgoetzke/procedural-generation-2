@@ -1,6 +1,7 @@
 use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
-use crate::generation::lib::{AssetPacks, Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
+use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
+use crate::generation::resources::AssetPacks;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::core::Name;
