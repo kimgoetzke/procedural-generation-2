@@ -3,7 +3,7 @@ use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::get_time;
 use crate::generation::lib::direction::get_direction_points;
-use crate::generation::lib::tile_type::get_sprite_index;
+use crate::generation::lib::tile_type::get_static_sprite_index;
 use crate::generation::lib::{
   Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
@@ -241,7 +241,7 @@ fn terrain_sprite(
         TerrainType::Forest => asset_packs.forest.texture_atlas_layout.clone(),
         _ => panic!("Invalid terrain type for drawing a terrain sprite"),
       },
-      index: get_sprite_index(&tile),
+      index: get_static_sprite_index(&tile),
     },
     TileComponent {
       tile: tile.clone(),

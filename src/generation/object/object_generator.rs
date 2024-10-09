@@ -23,7 +23,7 @@ pub fn generate(
   asset_packs: &Res<AssetPacks>,
   settings: &Res<Settings>,
 ) {
-  if !settings.object.object_generation {
+  if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
     return;
   }

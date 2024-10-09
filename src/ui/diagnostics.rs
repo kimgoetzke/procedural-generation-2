@@ -1,4 +1,6 @@
 use crate::constants::*;
+use crate::events::ToggleDebugInfo;
+use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
@@ -11,7 +13,7 @@ impl Plugin for DiagnosticsUiPlugin {
     app
       .add_plugins(FrameTimeDiagnosticsPlugin::default())
       .add_systems(Startup, create_fps_counter_system)
-      .add_systems(Update, (update_fps_system, toggle_fps_counter_system));
+      .add_systems(Update, (update_fps_system, toggle_fps_counter_event));
   }
 }
 
@@ -26,7 +28,7 @@ fn create_fps_counter_system(mut commands: Commands) {
     .spawn((
       FpsUiRoot,
       NodeBundle {
-        background_color: BackgroundColor(VERY_DARK.with_alpha(0.5)),
+        // background_color: BackgroundColor(VERY_DARK.with_alpha(0.5)),
         z_index: ZIndex::Global(i32::MAX),
         style: Style {
           position_type: PositionType::Absolute,
@@ -91,15 +93,18 @@ fn update_fps_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut T
   }
 }
 
-fn toggle_fps_counter_system(
+fn toggle_fps_counter_event(
+  mut events: EventReader<ToggleDebugInfo>,
   mut fps_ui_root: Query<&mut Visibility, With<FpsUiRoot>>,
-  keyboard_input: Res<ButtonInput<KeyCode>>,
+  settings: Res<Settings>,
 ) {
-  if keyboard_input.just_pressed(KeyCode::F12) {
-    let mut vis = fps_ui_root.single_mut();
-    *vis = match *vis {
-      Visibility::Hidden => Visibility::Visible,
-      _ => Visibility::Hidden,
-    };
+  let event_count = events.read().count();
+  if event_count > 0 {
+    for mut visibility in fps_ui_root.iter_mut() {
+      *visibility = match settings.general.enable_tile_debugging {
+        true => Visibility::Visible,
+        false => Visibility::Hidden,
+      };
+    }
   }
 }

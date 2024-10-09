@@ -8,11 +8,11 @@ use bevy::math::UVec2;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
 pub const DRAW_GIZMOS: bool = false;
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
-pub const ENABLE_TILE_DEBUGGING: bool = false;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
+pub const ENABLE_TILE_DEBUGGING: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 5;
-pub const OBJECT_GENERATION: bool = true;
+pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
@@ -36,7 +36,7 @@ pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// border.
 pub const CHUNK_SIZE: i32 = 16;
 pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point<WorldGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
-pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 2.0;
+pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
 // Tiles
 pub const TILE_SIZE: u32 = 32;
@@ -51,33 +51,57 @@ pub const TILE_SET_DEFAULT_PATH: &str = "tilesets/default.png";
 pub const TILE_SET_DEFAULT_COLUMNS: u32 = 5;
 pub const TILE_SET_DEFAULT_ROWS: u32 = 1;
 // ------------------------------------------------------------------------------------------------------
-// Sprites: Detailed tile sets
-pub const TILE_SET_WATER_PATH: &str = "tilesets/water.png";
-pub const TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
-pub const TILE_SET_SAND_PATH: &str = "tilesets/sand.png";
-pub const TILE_SET_GRASS_PATH: &str = "tilesets/grass.png";
-pub const TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
-pub const TILE_SET_COLUMNS: u32 = 9;
-pub const TILE_SET_ROWS: u32 = 3;
+// Sprites: Detailed static tile sets
+pub const STATIC_TILE_SET_WATER_PATH: &str = "tilesets/water.png";
+pub const STATIC_TILE_SET_SHORE_PATH: &str = "tilesets/shore.png";
+pub const STATIC_TILE_SET_SAND_PATH: &str = "tilesets/sand.png";
+pub const STATIC_TILE_SET_GRASS_PATH: &str = "tilesets/grass.png";
+pub const STATIC_TILE_SET_FOREST_PATH: &str = "tilesets/forest.png";
+pub const STATIC_TILE_SET_COLUMNS: u32 = 9;
+pub const STATIC_TILE_SET_ROWS: u32 = 3;
 // ------------------------------------------------------------------------------------------------------
-// Sprites: Tile set sprite indices
-pub const FILL: usize = 4;
-pub const INNER_CORNER_BOTTOM_LEFT: usize = 2;
-pub const INNER_CORNER_BOTTOM_RIGHT: usize = 0;
-pub const INNER_CORNER_TOP_LEFT: usize = 11;
-pub const INNER_CORNER_TOP_RIGHT: usize = 9;
-pub const OUTER_CORNER_BOTTOM_LEFT: usize = 13;
-pub const OUTER_CORNER_BOTTOM_RIGHT: usize = 12;
-pub const OUTER_CORNER_TOP_LEFT: usize = 15;
-pub const OUTER_CORNER_TOP_RIGHT: usize = 14;
-pub const TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE: usize = 16;
-pub const TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE: usize = 17;
-pub const TOP_FILL: usize = 10;
-pub const BOTTOM_FILL: usize = 1;
-pub const RIGHT_FILL: usize = 3;
-pub const LEFT_FILL: usize = 5;
-pub const SINGLE: usize = 18;
-pub const ERROR: usize = 26;
+// Sprites: Static tile set sprite indices
+pub const STATIC_FILL: usize = 4;
+pub const STATIC_INNER_CORNER_BOTTOM_LEFT: usize = 2;
+pub const STATIC_INNER_CORNER_BOTTOM_RIGHT: usize = 0;
+pub const STATIC_INNER_CORNER_TOP_LEFT: usize = 11;
+pub const STATIC_INNER_CORNER_TOP_RIGHT: usize = 9;
+pub const STATIC_OUTER_CORNER_BOTTOM_LEFT: usize = 13;
+pub const STATIC_OUTER_CORNER_BOTTOM_RIGHT: usize = 12;
+pub const STATIC_OUTER_CORNER_TOP_LEFT: usize = 15;
+pub const STATIC_OUTER_CORNER_TOP_RIGHT: usize = 14;
+pub const STATIC_TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE: usize = 16;
+pub const STATIC_TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE: usize = 17;
+pub const STATIC_TOP_FILL: usize = 10;
+pub const STATIC_BOTTOM_FILL: usize = 1;
+pub const STATIC_RIGHT_FILL: usize = 3;
+pub const STATIC_LEFT_FILL: usize = 5;
+pub const STATIC_SINGLE: usize = 18;
+pub const STATIC_ERROR: usize = 26;
+// ------------------------------------------------------------------------------------------------------
+// Sprites: Detailed animated tile sets
+pub const ANIMATED_TILE_SET_SHORE_PATH: &str = "tilesets/shore-animated.png";
+pub const ANIMATED_TILE_SET_COLUMNS: u32 = 4;
+pub const ANIMATED_TILE_SET_ROWS: u32 = 17;
+// ------------------------------------------------------------------------------------------------------
+// Sprites: Animated tile set sprite indices
+pub const ANIMATED_FILL: usize = 4;
+pub const ANIMATED_INNER_CORNER_BOTTOM_LEFT: usize = 2;
+pub const ANIMATED_INNER_CORNER_BOTTOM_RIGHT: usize = 0;
+pub const ANIMATED_INNER_CORNER_TOP_LEFT: usize = 6;
+pub const ANIMATED_INNER_CORNER_TOP_RIGHT: usize = 8;
+pub const ANIMATED_OUTER_CORNER_BOTTOM_LEFT: usize = 9;
+pub const ANIMATED_OUTER_CORNER_BOTTOM_RIGHT: usize = 10;
+pub const ANIMATED_OUTER_CORNER_TOP_LEFT: usize = 12;
+pub const ANIMATED_OUTER_CORNER_TOP_RIGHT: usize = 11;
+pub const ANIMATED_TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE: usize = 13;
+pub const ANIMATED_TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE: usize = 14;
+pub const ANIMATED_TOP_FILL: usize = 7;
+pub const ANIMATED_BOTTOM_FILL: usize = 1;
+pub const ANIMATED_RIGHT_FILL: usize = 3;
+pub const ANIMATED_LEFT_FILL: usize = 5;
+pub const ANIMATED_SINGLE: usize = 15;
+pub const ANIMATED_ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
 pub const TREES_PATH: &str = "objects/trees-conifer.png";

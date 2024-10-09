@@ -44,7 +44,13 @@ fn initialise_asset_packs_system(
   mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
   mut asset_packs_resource: ResMut<AssetPacks>,
 ) {
-  let tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), TILE_SET_COLUMNS, TILE_SET_ROWS, None, None);
+  let tile_set_layout = TextureAtlasLayout::from_grid(
+    UVec2::splat(TILE_SIZE),
+    STATIC_TILE_SET_COLUMNS,
+    STATIC_TILE_SET_ROWS,
+    None,
+    None,
+  );
   let tile_set_atlas_layout = texture_atlas_layouts.add(tile_set_layout);
   let default_layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
@@ -62,23 +68,23 @@ fn initialise_asset_packs_system(
     texture_atlas_layout: default_texture_atlas_layout,
   };
   asset_packs_resource.water = AssetPack {
-    texture: asset_server.load(TILE_SET_WATER_PATH),
+    texture: asset_server.load(STATIC_TILE_SET_WATER_PATH),
     texture_atlas_layout: tile_set_atlas_layout.clone(),
   };
   asset_packs_resource.shore = AssetPack {
-    texture: asset_server.load(TILE_SET_SHORE_PATH),
+    texture: asset_server.load(STATIC_TILE_SET_SHORE_PATH),
     texture_atlas_layout: tile_set_atlas_layout.clone(),
   };
   asset_packs_resource.sand = AssetPack {
-    texture: asset_server.load(TILE_SET_SAND_PATH),
+    texture: asset_server.load(STATIC_TILE_SET_SAND_PATH),
     texture_atlas_layout: tile_set_atlas_layout.clone(),
   };
   asset_packs_resource.grass = AssetPack {
-    texture: asset_server.load(TILE_SET_GRASS_PATH),
+    texture: asset_server.load(STATIC_TILE_SET_GRASS_PATH),
     texture_atlas_layout: tile_set_atlas_layout.clone(),
   };
   asset_packs_resource.forest = AssetPack {
-    texture: asset_server.load(TILE_SET_FOREST_PATH),
+    texture: asset_server.load(STATIC_TILE_SET_FOREST_PATH),
     texture_atlas_layout: tile_set_atlas_layout,
   };
   asset_packs_resource.tree = AssetPack {

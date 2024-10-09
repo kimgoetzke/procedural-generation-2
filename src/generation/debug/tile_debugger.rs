@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::tile_type::get_sprite_index;
+use crate::generation::lib::tile_type::get_static_sprite_index;
 use crate::generation::lib::{Tile, TileComponent};
 use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
 use crate::resources::Settings;
@@ -126,7 +126,7 @@ fn tile_info(
           tile.coords.chunk_grid,
           tile.terrain,
           tile.tile_type,
-          get_sprite_index(&tile),
+          get_static_sprite_index(&tile),
           tile.layer
         ),
         TextStyle {

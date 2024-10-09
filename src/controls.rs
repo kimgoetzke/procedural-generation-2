@@ -28,7 +28,7 @@ fn event_control_system(
   current_chunk: Res<CurrentChunk>,
 ) {
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
-    info!("[F5|R] Triggered regeneration of the world");
+    info!("[F5]/[R] Triggered regeneration of the world");
     if current_chunk.get_world_grid() == ORIGIN_WORLD_GRID_SPAWN_POINT {
       regenerate_event.send(RegenerateWorldEvent {});
     } else {
@@ -51,7 +51,6 @@ fn settings_controls_system(
     settings.general.draw_gizmos = !settings.general.draw_gizmos;
     general_settings.draw_gizmos = settings.general.draw_gizmos;
     info!("[Z] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
-    toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
@@ -61,7 +60,6 @@ fn settings_controls_system(
       "[X] Set generating neighbour chunks to [{}]",
       settings.general.generate_neighbour_chunks
     );
-    toggle_debug_info_event.send(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyC) {
@@ -81,9 +79,9 @@ fn settings_controls_system(
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyF) {
-    settings.object.object_generation = !settings.object.object_generation;
-    object_settings.object_generation = settings.object.object_generation;
-    info!("[F] Set object generation to [{}]", settings.object.object_generation);
+    settings.object.generate_objects = !settings.object.generate_objects;
+    object_settings.generate_objects = settings.object.generate_objects;
+    info!("[F] Set object generation to [{}]", settings.object.generate_objects);
   }
 }
 

@@ -118,7 +118,7 @@ impl Default for WorldGenerationSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ObjectGenerationSettings {
-  pub object_generation: bool,
+  pub generate_objects: bool,
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
   pub tree_density: f64,
 }
@@ -126,7 +126,7 @@ pub struct ObjectGenerationSettings {
 impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
-      object_generation: OBJECT_GENERATION,
+      generate_objects: GENERATE_OBJECTS,
       tree_density: TREE_DENSITY,
     }
   }
