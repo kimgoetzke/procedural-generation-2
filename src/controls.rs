@@ -78,6 +78,15 @@ fn settings_controls_system(
     );
   }
 
+  if keyboard_input.just_pressed(KeyCode::KeyB) {
+    settings.general.animate_terrain_sprites = !settings.general.animate_terrain_sprites;
+    general_settings.animate_terrain_sprites = settings.general.animate_terrain_sprites;
+    info!(
+      "[V] Set animating terrain sprites to [{}]",
+      settings.general.animate_terrain_sprites
+    );
+  }
+
   if keyboard_input.just_pressed(KeyCode::KeyF) {
     settings.object.generate_objects = !settings.object.generate_objects;
     object_settings.generate_objects = settings.object.generate_objects;
