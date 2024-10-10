@@ -53,6 +53,7 @@ pub struct GeneralGenerationSettings {
   pub generate_neighbour_chunks: bool,
   pub enable_tile_debugging: bool,
   pub draw_terrain_sprites: bool,
+  pub animate_terrain_sprites: bool,
   #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
 }
@@ -64,6 +65,7 @@ impl Default for GeneralGenerationSettings {
       generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       enable_tile_debugging: ENABLE_TILE_DEBUGGING,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
+      animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
     }
   }

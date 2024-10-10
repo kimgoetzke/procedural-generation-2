@@ -6,7 +6,7 @@ use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::direction::get_direction_points;
 use crate::generation::lib::{ChunkComponent, Direction, WorldComponent};
 use crate::generation::object::ObjectGenerationPlugin;
-use crate::generation::resources::{AssetPacks, ChunkComponentIndex};
+use crate::generation::resources::{AssetPacksCollection, ChunkComponentIndex};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
@@ -40,8 +40,8 @@ impl Plugin for GenerationPlugin {
 }
 
 /// Generates the world and all its objects. Called once at startup.
-fn generation_system(commands: Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
-  generate(commands, asset_packs, settings);
+fn generation_system(commands: Commands, asset_collection: Res<AssetPacksCollection>, settings: Res<Settings>) {
+  generate(commands, asset_collection, settings);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
@@ -50,22 +50,22 @@ fn regenerate_world_event(
   mut commands: Commands,
   mut events: EventReader<RegenerateWorldEvent>,
   existing_world: Query<Entity, With<WorldComponent>>,
-  asset_packs: Res<AssetPacks>,
+  asset_collection: Res<AssetPacksCollection>,
   settings: Res<Settings>,
 ) {
   let event_count = events.read().count();
   if event_count > 0 {
     let world = existing_world.get_single().unwrap();
     commands.entity(world).despawn_recursive();
-    generate(commands, asset_packs, settings);
+    generate(commands, asset_collection, settings);
   }
 }
 
 /// Generates the world and all its objects. Used by `generation_system` and `regenerate_world_event`.
-fn generate(mut commands: Commands, asset_packs: Res<AssetPacks>, settings: Res<Settings>) {
+fn generate(mut commands: Commands, asset_collection: Res<AssetPacksCollection>, settings: Res<Settings>) {
   let start_time = get_time();
   let mut spawn_data = world::generate_world(&mut commands, &settings);
-  object::generate(&mut commands, &mut spawn_data, &asset_packs, &settings);
+  object::generate(&mut commands, &mut spawn_data, &asset_collection, &settings);
   info!("✅  World generation took {} ms", get_time() - start_time);
 }
 
@@ -82,7 +82,7 @@ fn update_world_event(
   existing_world: Query<Entity, With<WorldComponent>>,
   existing_chunks: Res<ChunkComponentIndex>,
   mut current_chunk: ResMut<CurrentChunk>,
-  asset_packs: Res<AssetPacks>,
+  asset_collection: Res<AssetPacksCollection>,
   settings: Res<Settings>,
   mut clean_up_event: EventWriter<PruneWorldEvent>,
 ) {
@@ -99,7 +99,7 @@ fn update_world_event(
     let chunks_to_spawn = calculate_new_chunks_to_spawn(&existing_chunks, &settings, &new_parent_chunk_world);
     let world = existing_world.get_single().unwrap();
     let mut spawn_data = world::generate_chunks(&mut commands, world, chunks_to_spawn, &settings);
-    object::generate(&mut commands, &mut spawn_data, &asset_packs, &settings);
+    object::generate(&mut commands, &mut spawn_data, &asset_collection, &settings);
 
     // Update the current chunk and clean up the world, if necessary
     current_chunk.update(new_parent_chunk_world);

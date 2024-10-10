@@ -1,13 +1,14 @@
-use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
+use crate::components::{AnimationComponent, AnimationTimer};
+use crate::constants::{ANIMATION_LENGTH, ORIGIN_WORLD_GRID_SPAWN_POINT};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::get_time;
 use crate::generation::lib::direction::get_direction_points;
-use crate::generation::lib::tile_type::get_static_sprite_index;
+use crate::generation::lib::tile_type::{get_animated_sprite_index, get_static_sprite_index};
 use crate::generation::lib::{
   Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
-use crate::generation::resources::AssetPacks;
+use crate::generation::resources::{AssetPack, AssetPacksCollection};
 use crate::generation::world::pre_render_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -16,7 +17,9 @@ use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, DespawnRecursiveExt};
 use bevy::log::debug;
-use bevy::prelude::{Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Transform};
+use bevy::prelude::{
+  Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
+};
 use bevy::sprite::Anchor;
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -163,16 +166,25 @@ fn attach_task_to_tile_entity(
   let task = thread_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (asset_packs, settings) = {
-        let mut system_state = SystemState::<(Res<AssetPacks>, Res<Settings>)>::new(world);
-        let (asset_packs, settings) = system_state.get_mut(world);
-        (asset_packs.clone(), settings.clone())
+      let (asset_collection, settings) = {
+        let mut system_state = SystemState::<(Res<AssetPacksCollection>, Res<Settings>)>::new(world);
+        let (asset_collection, settings) = system_state.get_mut(world);
+        (asset_collection.clone(), settings.clone())
       };
       world.entity_mut(tile_data.entity).with_children(|parent| {
         if settings.general.draw_terrain_sprites {
-          parent.spawn(terrain_sprite(&tile, tile_data.parent_entity, &asset_packs));
+          if settings.general.animate_terrain_sprites {
+            let (is_animated, anim_asset_pack) = resolve_asset_pack(&tile, &asset_collection);
+            if is_animated {
+              parent.spawn(animated_terrain_sprite(&tile, tile_data.parent_entity, &anim_asset_pack));
+            } else {
+              parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
+            }
+          } else {
+            parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
+          }
         } else {
-          parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_packs));
+          parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_collection));
         }
       });
     });
@@ -181,10 +193,19 @@ fn attach_task_to_tile_entity(
   entity.insert(TileSpawnTask(task));
 }
 
+fn resolve_asset_pack<'a>(tile: &Tile, asset_collection: &'a AssetPacksCollection) -> (bool, &'a AssetPack) {
+  let asset_packs = asset_collection.unpack_for_terrain(tile.terrain);
+  if asset_packs.animated_tile_types.contains(&tile.tile_type) {
+    (true, &asset_packs.anim.as_ref().unwrap())
+  } else {
+    (false, &asset_packs.stat)
+  }
+}
+
 fn default_sprite(
   tile: &Tile,
   chunk: Entity,
-  asset_packs: &AssetPacks,
+  asset_collection: &AssetPacksCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
     Name::new(format!("Default {:?} Sprite", tile.terrain)),
@@ -193,12 +214,12 @@ fn default_sprite(
         anchor: Anchor::TopLeft,
         ..Default::default()
       },
-      texture: asset_packs.default.texture.clone(),
+      texture: asset_collection.default.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_packs.default.texture_atlas_layout.clone(),
+      layout: asset_collection.default.texture_atlas_layout.clone(),
       index: tile.terrain as usize,
     },
     TileComponent {
@@ -208,11 +229,43 @@ fn default_sprite(
   )
 }
 
-// TODO: Add support for animated tile sprites
-fn terrain_sprite(
+fn animated_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
-  asset_packs: &AssetPacks,
+  asset_pack: &AssetPack,
+) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
+  let index = get_animated_sprite_index(&tile);
+  (
+    Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
+    SpriteBundle {
+      sprite: Sprite {
+        anchor: Anchor::TopLeft,
+        ..Default::default()
+      },
+      texture: asset_pack.texture.clone(),
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: asset_pack.texture_atlas_layout.clone(),
+      index,
+    },
+    TileComponent {
+      tile: tile.clone(),
+      parent_entity: chunk,
+    },
+    AnimationComponent {
+      index_first: index,
+      index_last: index + ANIMATION_LENGTH - 1,
+      timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+    },
+  )
+}
+
+fn static_terrain_sprite(
+  tile: &Tile,
+  chunk: Entity,
+  asset_collection: &AssetPacksCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
     Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
@@ -222,11 +275,11 @@ fn terrain_sprite(
         ..Default::default()
       },
       texture: match tile.terrain {
-        TerrainType::Water => asset_packs.water.texture.clone(),
-        TerrainType::Shore => asset_packs.shore.texture.clone(),
-        TerrainType::Sand => asset_packs.sand.texture.clone(),
-        TerrainType::Grass => asset_packs.grass.texture.clone(),
-        TerrainType::Forest => asset_packs.forest.texture.clone(),
+        TerrainType::Water => asset_collection.water.stat.texture.clone(),
+        TerrainType::Shore => asset_collection.shore.stat.texture.clone(),
+        TerrainType::Sand => asset_collection.sand.stat.texture.clone(),
+        TerrainType::Grass => asset_collection.grass.stat.texture.clone(),
+        TerrainType::Forest => asset_collection.forest.stat.texture.clone(),
         _ => panic!("Invalid terrain type for drawing a terrain sprite"),
       },
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
@@ -234,11 +287,11 @@ fn terrain_sprite(
     },
     TextureAtlas {
       layout: match tile.terrain {
-        TerrainType::Water => asset_packs.water.texture_atlas_layout.clone(),
-        TerrainType::Shore => asset_packs.shore.texture_atlas_layout.clone(),
-        TerrainType::Sand => asset_packs.sand.texture_atlas_layout.clone(),
-        TerrainType::Grass => asset_packs.grass.texture_atlas_layout.clone(),
-        TerrainType::Forest => asset_packs.forest.texture_atlas_layout.clone(),
+        TerrainType::Water => asset_collection.water.stat.texture_atlas_layout.clone(),
+        TerrainType::Shore => asset_collection.shore.stat.texture_atlas_layout.clone(),
+        TerrainType::Sand => asset_collection.sand.stat.texture_atlas_layout.clone(),
+        TerrainType::Grass => asset_collection.grass.stat.texture_atlas_layout.clone(),
+        TerrainType::Forest => asset_collection.forest.stat.texture_atlas_layout.clone(),
         _ => panic!("Invalid terrain type for drawing a terrain sprite"),
       },
       index: get_static_sprite_index(&tile),

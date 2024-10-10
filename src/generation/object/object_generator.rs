@@ -1,7 +1,7 @@
 use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
-use crate::generation::resources::AssetPacks;
+use crate::generation::resources::AssetPacksCollection;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::core::Name;
@@ -20,7 +20,7 @@ impl Plugin for ObjectGeneratorPlugin {
 pub fn generate(
   commands: &mut Commands,
   spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
-  asset_packs: &Res<AssetPacks>,
+  asset_collection: &Res<AssetPacksCollection>,
   settings: &Res<Settings>,
 ) {
   if !settings.object.generate_objects {
@@ -29,7 +29,7 @@ pub fn generate(
   }
   let start_time = get_time();
   for (_, tile_data) in spawn_data.iter_mut() {
-    place_trees(commands, tile_data, asset_packs, settings);
+    place_trees(commands, tile_data, asset_collection, settings);
   }
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
@@ -37,7 +37,7 @@ pub fn generate(
 fn place_trees(
   commands: &mut Commands,
   tile_data: &mut Vec<TileData>,
-  asset_packs: &Res<AssetPacks>,
+  asset_collection: &Res<AssetPacksCollection>,
   settings: &Res<Settings>,
 ) {
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
@@ -64,7 +64,13 @@ fn place_trees(
         offset_y
       );
       commands.entity(forest_tile_data.entity).with_children(|parent| {
-        parent.spawn(tree_sprite(&forest_tile_data.tile, offset_x, offset_y, index, asset_packs));
+        parent.spawn(tree_sprite(
+          &forest_tile_data.tile,
+          offset_x,
+          offset_y,
+          index,
+          asset_collection,
+        ));
       });
     }
   }
@@ -75,12 +81,12 @@ fn tree_sprite(
   offset_x: f32,
   offset_y: f32,
   index: i32,
-  asset_packs: &AssetPacks,
+  asset_collection: &AssetPacksCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
     Name::new("Tree Sprite"),
     SpriteBundle {
-      texture: asset_packs.tree.texture.clone(),
+      texture: asset_collection.tree.stat.texture.clone(),
       transform: Transform::from_xyz(
         offset_x,
         offset_y + 1.5 * TILE_SIZE as f32,
@@ -89,7 +95,7 @@ fn tree_sprite(
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_packs.tree.texture_atlas_layout.clone(),
+      layout: asset_collection.tree.stat.texture_atlas_layout.clone(),
       index: index as usize,
     },
     ObjectComponent {},

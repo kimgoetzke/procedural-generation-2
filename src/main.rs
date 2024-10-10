@@ -1,4 +1,6 @@
+mod animations;
 mod camera;
+mod components;
 mod constants;
 mod controls;
 mod coords;
@@ -7,6 +9,7 @@ mod generation;
 mod resources;
 mod ui;
 
+use crate::animations::AnimationsPlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
@@ -53,6 +56,7 @@ fn main() {
     .add_plugins((
       CameraPlugin,
       GenerationPlugin,
+      AnimationsPlugin,
       SharedEventsPlugin,
       SharedResourcesPlugin,
       ControlPlugin,
