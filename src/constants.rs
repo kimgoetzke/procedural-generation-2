@@ -12,7 +12,8 @@ pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
 pub const ENABLE_TILE_DEBUGGING: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
-pub const SPAWN_UP_TO_LAYER: usize = 5;
+pub const SPAWN_UP_TO_LAYER: usize = 4;
+pub const SPAWN_FROM_LAYER: usize = 0;
 pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
@@ -82,9 +83,11 @@ pub const STATIC_ERROR: usize = 26;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed animated tile sets
 pub const ANIMATED_TILE_SET_SHORE_PATH: &str = "tilesets/shore-animated.png";
-pub const ANIMATED_TILE_SET_COLUMNS: u32 = 2;
+pub const ANIMATED_TILE_SET_SAND_PATH: &str = "tilesets/sand-animated.png";
+pub const ANIMATED_TILE_SET_COLUMNS: u32 = 4;
 pub const ANIMATED_TILE_SET_ROWS: u32 = 17;
-pub const ANIMATION_LENGTH: usize = 2;
+pub const ANIMATION_LENGTH: usize = 4;
+pub const DEFAULT_ANIMATION_FRAME_DURATION: f32 = 0.5;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Animated tile set sprite indices
 pub const ANIMATED_FILL: usize = 4;

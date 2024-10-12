@@ -15,9 +15,15 @@ impl LayeredPlane {
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Res<Settings>) -> Self {
     let mut final_layers = Vec::new();
 
-    // Create a plane for each layer, except water because water is not rendered
-    for layer in 1..TerrainType::length() {
+    // Create a plane for each layer
+    for layer in 0..TerrainType::length() {
       let mut current_layer = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
+
+      // Skip water layer because water is not rendered
+      if layer == 0 {
+        final_layers.push(Plane::new(current_layer, Some(layer), settings));
+        continue;
+      }
 
       // Populate the layer using the draft plane and adjust terrain, if necessary - as a result,
       // each tile on a layer above the first rendered layer has a tile below it too

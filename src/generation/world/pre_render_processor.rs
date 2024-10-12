@@ -2,7 +2,7 @@ use crate::generation::get_time;
 use crate::generation::lib::{Chunk, TerrainType, TileType};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
-use bevy::log::{debug, warn};
+use bevy::log::*;
 use bevy::prelude::Res;
 
 pub struct PreRenderProcessorPlugin;
@@ -15,8 +15,8 @@ pub(crate) fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> V
   let start_time = get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);
-    if layer > settings.general.spawn_up_to_layer {
-      debug!("Skipped processing [{:?}] layer because it's disabled", layer_name);
+    if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+      trace!("Skipped processing [{:?}] layer because it's disabled", layer_name);
       continue;
     }
     for chunk in chunks.iter_mut() {
@@ -32,8 +32,8 @@ pub(crate) fn process_single(mut chunk: Chunk, settings: &Res<Settings>) -> Chun
   let start_time = get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);
-    if layer > settings.general.spawn_up_to_layer {
-      debug!("Skipped processing [{:?}] layer because it's disabled", layer_name);
+    if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+      trace!("Skipped processing [{:?}] layer because it's disabled", layer_name);
       continue;
     }
     clear_single_tiles_from_chunk_with_no_fill_below(layer, &mut chunk);

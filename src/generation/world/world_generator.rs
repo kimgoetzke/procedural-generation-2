@@ -1,5 +1,5 @@
 use crate::components::{AnimationComponent, AnimationTimer};
-use crate::constants::{ANIMATION_LENGTH, ORIGIN_WORLD_GRID_SPAWN_POINT};
+use crate::constants::{DEFAULT_ANIMATION_FRAME_DURATION, ANIMATION_LENGTH, ORIGIN_WORLD_GRID_SPAWN_POINT};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::get_time;
@@ -15,8 +15,8 @@ use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, DespawnRecursiveExt};
-use bevy::log::debug;
+use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, DespawnRecursiveExt, WorldChildBuilder};
+use bevy::log::*;
 use bevy::prelude::{
   Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
 };
@@ -136,8 +136,8 @@ fn schedule_tile_spawning_tasks(
     for tile_data in tile_data_vec {
       let tile_data = tile_data.clone();
       for layer in 0..TerrainType::length() {
-        if layer >= settings_ref.general.spawn_up_to_layer {
-          debug!(
+        if layer < settings_ref.general.spawn_from_layer || layer > settings_ref.general.spawn_up_to_layer {
+          trace!(
             "Skipped spawning [{:?}] tiles because it's disabled",
             TerrainType::from(layer)
           );
@@ -162,7 +162,6 @@ fn attach_task_to_tile_entity(
   tile: Tile,
   parent: &mut ChildBuilder,
 ) {
-  let mut entity = parent.spawn(Name::new("Tile Spawn Task"));
   let task = thread_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -172,25 +171,12 @@ fn attach_task_to_tile_entity(
         (asset_collection.clone(), settings.clone())
       };
       world.entity_mut(tile_data.entity).with_children(|parent| {
-        if settings.general.draw_terrain_sprites {
-          if settings.general.animate_terrain_sprites {
-            let (is_animated, anim_asset_pack) = resolve_asset_pack(&tile, &asset_collection);
-            if is_animated {
-              parent.spawn(animated_terrain_sprite(&tile, tile_data.parent_entity, &anim_asset_pack));
-            } else {
-              parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
-            }
-          } else {
-            parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
-          }
-        } else {
-          parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_collection));
-        }
+        spawn_tile(tile_data, &tile, &asset_collection, settings, parent);
       });
     });
     command_queue
   });
-  entity.insert(TileSpawnTask(task));
+  parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));
 }
 
 fn resolve_asset_pack<'a>(tile: &Tile, asset_collection: &'a AssetPacksCollection) -> (bool, &'a AssetPack) {
@@ -199,6 +185,29 @@ fn resolve_asset_pack<'a>(tile: &Tile, asset_collection: &'a AssetPacksCollectio
     (true, &asset_packs.anim.as_ref().unwrap())
   } else {
     (false, &asset_packs.stat)
+  }
+}
+
+fn spawn_tile(
+  tile_data: TileData,
+  tile: &Tile,
+  asset_collection: &AssetPacksCollection,
+  settings: Settings,
+  parent: &mut WorldChildBuilder,
+) {
+  if !settings.general.draw_terrain_sprites {
+    parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_collection));
+    return;
+  }
+  if settings.general.animate_terrain_sprites {
+    let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &asset_collection);
+    if is_animated_tile {
+      parent.spawn(animated_terrain_sprite(&tile, tile_data.parent_entity, &anim_asset_pack));
+    } else {
+      parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
+    }
+  } else {
+    parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
   }
 }
 
@@ -225,39 +234,6 @@ fn default_sprite(
     TileComponent {
       tile: tile.clone(),
       parent_entity: chunk,
-    },
-  )
-}
-
-fn animated_terrain_sprite(
-  tile: &Tile,
-  chunk: Entity,
-  asset_pack: &AssetPack,
-) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
-  let index = get_animated_sprite_index(&tile);
-  (
-    Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
-    SpriteBundle {
-      sprite: Sprite {
-        anchor: Anchor::TopLeft,
-        ..Default::default()
-      },
-      texture: asset_pack.texture.clone(),
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-      ..Default::default()
-    },
-    TextureAtlas {
-      layout: asset_pack.texture_atlas_layout.clone(),
-      index,
-    },
-    TileComponent {
-      tile: tile.clone(),
-      parent_entity: chunk,
-    },
-    AnimationComponent {
-      index_first: index,
-      index_last: index + ANIMATION_LENGTH - 1,
-      timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     },
   )
 }
@@ -299,6 +275,43 @@ fn static_terrain_sprite(
     TileComponent {
       tile: tile.clone(),
       parent_entity: chunk,
+    },
+  )
+}
+
+fn animated_terrain_sprite(
+  tile: &Tile,
+  chunk: Entity,
+  asset_pack: &AssetPack,
+) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
+  let index = get_animated_sprite_index(&tile);
+  let frame_duration = match tile.terrain {
+    TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
+    _ => DEFAULT_ANIMATION_FRAME_DURATION,
+  };
+  (
+    Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
+    SpriteBundle {
+      sprite: Sprite {
+        anchor: Anchor::TopLeft,
+        ..Default::default()
+      },
+      texture: asset_pack.texture.clone(),
+      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+      ..Default::default()
+    },
+    TextureAtlas {
+      layout: asset_pack.texture_atlas_layout.clone(),
+      index,
+    },
+    TileComponent {
+      tile: tile.clone(),
+      parent_entity: chunk,
+    },
+    AnimationComponent {
+      index_first: index,
+      index_last: index + ANIMATION_LENGTH - 1,
+      timer: AnimationTimer(Timer::from_seconds(frame_duration, TimerMode::Repeating)),
     },
   )
 }

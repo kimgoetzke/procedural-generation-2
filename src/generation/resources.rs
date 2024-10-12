@@ -100,14 +100,49 @@ fn initialise_asset_packs_system(
     texture: asset_server.load(STATIC_TILE_SET_WATER_PATH),
     texture_atlas_layout: static_tile_set_atlas_layout.clone(),
   };
-  asset_collection.shore = AssetPacks {
+  asset_collection.shore = asset_packs_with_default_anim(
+    &asset_server,
+    &static_tile_set_atlas_layout,
+    animated_tile_set_atlas_layout.clone(),
+    STATIC_TILE_SET_SHORE_PATH,
+    ANIMATED_TILE_SET_SHORE_PATH,
+  );
+  asset_collection.sand = asset_packs_with_default_anim(
+    &asset_server,
+    &static_tile_set_atlas_layout,
+    animated_tile_set_atlas_layout,
+    STATIC_TILE_SET_SAND_PATH,
+    ANIMATED_TILE_SET_SAND_PATH,
+  );
+  asset_collection.grass.stat = AssetPack {
+    texture: asset_server.load(STATIC_TILE_SET_GRASS_PATH),
+    texture_atlas_layout: static_tile_set_atlas_layout.clone(),
+  };
+  asset_collection.forest.stat = AssetPack {
+    texture: asset_server.load(STATIC_TILE_SET_FOREST_PATH),
+    texture_atlas_layout: static_tile_set_atlas_layout,
+  };
+  asset_collection.tree.stat = AssetPack {
+    texture: asset_server.load(TREES_PATH),
+    texture_atlas_layout: static_trees_atlas_layout,
+  };
+}
+
+fn asset_packs_with_default_anim(
+  asset_server: &Res<AssetServer>,
+  static_layout: &Handle<TextureAtlasLayout>,
+  animated_layout: Handle<TextureAtlasLayout>,
+  static_path: &str,
+  animated_path: &str,
+) -> AssetPacks {
+  AssetPacks {
     stat: AssetPack {
-      texture: asset_server.load(STATIC_TILE_SET_SHORE_PATH),
-      texture_atlas_layout: static_tile_set_atlas_layout.clone(),
+      texture: asset_server.load(static_path.to_string()),
+      texture_atlas_layout: static_layout.clone(),
     },
     anim: Some(AssetPack {
-      texture: asset_server.load(ANIMATED_TILE_SET_SHORE_PATH),
-      texture_atlas_layout: animated_tile_set_atlas_layout,
+      texture: asset_server.load(animated_path.to_string()),
+      texture_atlas_layout: animated_layout,
     }),
     animated_tile_types: {
       let tile_types = [
@@ -129,23 +164,7 @@ fn initialise_asset_packs_system(
       ];
       insert(&tile_types)
     },
-  };
-  asset_collection.sand.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_SAND_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout.clone(),
-  };
-  asset_collection.grass.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_GRASS_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout.clone(),
-  };
-  asset_collection.forest.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_FOREST_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout,
-  };
-  asset_collection.tree.stat = AssetPack {
-    texture: asset_server.load(TREES_PATH),
-    texture_atlas_layout: static_trees_atlas_layout,
-  };
+  }
 }
 
 fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
@@ -153,6 +172,7 @@ fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
   for tile_type in tile_types {
     set.insert(*tile_type);
   }
+  
   set
 }
 

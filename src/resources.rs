@@ -54,7 +54,9 @@ pub struct GeneralGenerationSettings {
   pub enable_tile_debugging: bool,
   pub draw_terrain_sprites: bool,
   pub animate_terrain_sprites: bool,
-  #[inspector(min = 0, max = 5, display = NumberDisplay::Slider)]
+  #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
+  pub spawn_from_layer: usize,
+  #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
 }
 
@@ -66,6 +68,7 @@ impl Default for GeneralGenerationSettings {
       enable_tile_debugging: ENABLE_TILE_DEBUGGING,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
+      spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
     }
   }
