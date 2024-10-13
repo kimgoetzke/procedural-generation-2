@@ -52,13 +52,39 @@ pub struct AssetPacks {
   pub stat: AssetPack,
   pub anim: Option<AssetPack>,
   pub animated_tile_types: HashSet<TileType>,
-  pub tile_set_index_offset: usize,
 }
 
-#[derive(Default, Debug, Clone)]
+impl AssetPacks {
+  pub fn index_offset(&self) -> usize {
+    self.stat.index_offset
+  }
+}
+
+#[derive(Debug, Clone)]
 pub struct AssetPack {
   pub texture: Handle<Image>,
   pub texture_atlas_layout: Handle<TextureAtlasLayout>,
+  pub index_offset: usize,
+}
+
+impl Default for AssetPack {
+  fn default() -> Self {
+    Self {
+      texture: Handle::default(),
+      texture_atlas_layout: Handle::default(),
+      index_offset: 1,
+    }
+  }
+}
+
+impl AssetPack {
+  pub fn new(texture: Handle<Image>, texture_atlas_layout: Handle<TextureAtlasLayout>) -> Self {
+    Self {
+      texture,
+      texture_atlas_layout,
+      index_offset: 1,
+    }
+  }
 }
 
 fn initialise_asset_packs_system(
@@ -75,10 +101,7 @@ fn initialise_asset_packs_system(
     None,
   );
   let default_texture_atlas_layout = layouts.add(default_layout);
-  asset_collection.placeholder = AssetPack {
-    texture: asset_server.load(TILE_SET_PLACEHOLDER_PATH),
-    texture_atlas_layout: default_texture_atlas_layout,
-  };
+  asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
   asset_collection.water = tile_set_asset_packs_static(
@@ -115,10 +138,7 @@ fn initialise_asset_packs_system(
   // Objects
   let static_trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  asset_collection.tree.stat = AssetPack {
-    texture: asset_server.load(TREES_PATH),
-    texture_atlas_layout: static_trees_atlas_layout,
-  };
+  asset_collection.tree.stat = AssetPack::new(asset_server.load(TREES_PATH), static_trees_atlas_layout);
 }
 
 fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
@@ -140,13 +160,9 @@ fn tile_set_asset_packs_static(
   let texture_atlas_layout = layout.add(tile_set_layout);
 
   AssetPacks {
-    stat: AssetPack {
-      texture: asset_server.load(tile_set_path.to_string()),
-      texture_atlas_layout: texture_atlas_layout.clone(),
-    },
+    stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), texture_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
-    tile_set_index_offset: 1,
   }
 }
 
@@ -163,10 +179,12 @@ fn tile_set_asset_packs_with_default_animations(
     stat: AssetPack {
       texture: asset_server.load(tile_set_path.to_string()),
       texture_atlas_layout: atlas_layout.clone(),
+      index_offset: columns as usize,
     },
     anim: Some(AssetPack {
       texture: asset_server.load(tile_set_path.to_string()),
       texture_atlas_layout: atlas_layout,
+      index_offset: columns as usize,
     }),
     animated_tile_types: {
       let tile_types = [
@@ -188,7 +206,6 @@ fn tile_set_asset_packs_with_default_animations(
       ];
       insert(&tile_types)
     },
-    tile_set_index_offset: columns as usize,
   }
 }
 

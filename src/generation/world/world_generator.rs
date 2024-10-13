@@ -6,7 +6,7 @@ use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::get_time;
 use crate::generation::lib::direction::get_direction_points;
-use crate::generation::lib::tile_type::{get_animated_sprite_index, get_sprite_index_from};
+use crate::generation::lib::tile_type::{get_sprite_index, get_sprite_index_from};
 use crate::generation::lib::{
   Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
@@ -286,7 +286,7 @@ fn animated_terrain_sprite(
   chunk: Entity,
   asset_pack: &AssetPack,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
-  let index = get_animated_sprite_index(&tile);
+  let index = get_sprite_index(&tile.tile_type, asset_pack.index_offset);
   let frame_duration = match tile.terrain {
     TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
     _ => DEFAULT_ANIMATION_FRAME_DURATION,
