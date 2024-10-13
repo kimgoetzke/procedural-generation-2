@@ -1,10 +1,12 @@
 use crate::components::{AnimationComponent, AnimationTimer};
-use crate::constants::{DEFAULT_ANIMATION_FRAME_DURATION, ANIMATION_LENGTH, ORIGIN_WORLD_GRID_SPAWN_POINT};
+use crate::constants::{
+  ANIMATION_LENGTH, DEFAULT_ANIMATION_FRAME_DURATION, ORIGIN_WORLD_GRID_SPAWN_POINT, TERRAIN_TYPE_ERROR,
+};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::get_time;
 use crate::generation::lib::direction::get_direction_points;
-use crate::generation::lib::tile_type::{get_animated_sprite_index, get_static_sprite_index};
+use crate::generation::lib::tile_type::{get_animated_sprite_index, get_sprite_index_from};
 use crate::generation::lib::{
   Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
@@ -196,7 +198,7 @@ fn spawn_tile(
   parent: &mut WorldChildBuilder,
 ) {
   if !settings.general.draw_terrain_sprites {
-    parent.spawn(default_sprite(&tile, tile_data.parent_entity, &asset_collection));
+    parent.spawn(placeholder_sprite(&tile, tile_data.parent_entity, &asset_collection));
     return;
   }
   if settings.general.animate_terrain_sprites {
@@ -211,24 +213,24 @@ fn spawn_tile(
   }
 }
 
-fn default_sprite(
+fn placeholder_sprite(
   tile: &Tile,
   chunk: Entity,
   asset_collection: &AssetPacksCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
-    Name::new(format!("Default {:?} Sprite", tile.terrain)),
+    Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
     SpriteBundle {
       sprite: Sprite {
         anchor: Anchor::TopLeft,
         ..Default::default()
       },
-      texture: asset_collection.default.texture.clone(),
+      texture: asset_collection.placeholder.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_collection.default.texture_atlas_layout.clone(),
+      layout: asset_collection.placeholder.texture_atlas_layout.clone(),
       index: tile.terrain as usize,
     },
     TileComponent {
@@ -256,7 +258,7 @@ fn static_terrain_sprite(
         TerrainType::Sand => asset_collection.sand.stat.texture.clone(),
         TerrainType::Grass => asset_collection.grass.stat.texture.clone(),
         TerrainType::Forest => asset_collection.forest.stat.texture.clone(),
-        _ => panic!("Invalid terrain type for drawing a terrain sprite"),
+        TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
@@ -268,9 +270,9 @@ fn static_terrain_sprite(
         TerrainType::Sand => asset_collection.sand.stat.texture_atlas_layout.clone(),
         TerrainType::Grass => asset_collection.grass.stat.texture_atlas_layout.clone(),
         TerrainType::Forest => asset_collection.forest.stat.texture_atlas_layout.clone(),
-        _ => panic!("Invalid terrain type for drawing a terrain sprite"),
+        TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
-      index: get_static_sprite_index(&tile),
+      index: get_sprite_index_from(&tile.terrain, &tile.tile_type, asset_collection),
     },
     TileComponent {
       tile: tile.clone(),

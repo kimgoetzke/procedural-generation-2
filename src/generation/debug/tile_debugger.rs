@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::tile_type::get_static_sprite_index;
+use crate::generation::lib::tile_type::get_sprite_index_from;
 use crate::generation::lib::{Tile, TileComponent};
 use crate::generation::resources::{AssetPacksCollection, ChunkComponentIndex};
 use crate::resources::Settings;
@@ -105,7 +105,7 @@ fn on_remove_tile_component_trigger(
 }
 
 fn tile_info(
-  _asset_collection: &AssetPacksCollection,
+  asset_collection: &AssetPacksCollection,
   tile: &Tile,
   spawn_point: Point<World>,
   settings: &Res<Settings>,
@@ -115,6 +115,7 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
+  let sprite_index = get_sprite_index_from(&tile.terrain, &tile.tile_type, asset_collection);
   (
     Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {
@@ -122,12 +123,7 @@ fn tile_info(
       text: Text::from_section(
         format!(
           "wg{:?} cg{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
-          tile.coords.world_grid,
-          tile.coords.chunk_grid,
-          tile.terrain,
-          tile.tile_type,
-          get_static_sprite_index(&tile),
-          tile.layer
+          tile.coords.world_grid, tile.coords.chunk_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer
         ),
         TextStyle {
           font_size: 30.,

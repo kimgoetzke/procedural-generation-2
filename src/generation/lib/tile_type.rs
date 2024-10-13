@@ -1,5 +1,6 @@
 use crate::constants::*;
-use crate::generation::lib::Tile;
+use crate::generation::lib::{TerrainType, Tile};
+use crate::generation::resources::AssetPacksCollection;
 
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -23,46 +24,57 @@ pub enum TileType {
   Unknown,
 }
 
-pub fn get_static_sprite_index(tile: &Tile) -> usize {
-  match tile.tile_type {
-    TileType::Fill => STATIC_FILL,
-    TileType::InnerCornerBottomLeft => STATIC_INNER_CORNER_BOTTOM_LEFT,
-    TileType::InnerCornerBottomRight => STATIC_INNER_CORNER_BOTTOM_RIGHT,
-    TileType::InnerCornerTopLeft => STATIC_INNER_CORNER_TOP_LEFT,
-    TileType::InnerCornerTopRight => STATIC_INNER_CORNER_TOP_RIGHT,
-    TileType::OuterCornerBottomLeft => STATIC_OUTER_CORNER_BOTTOM_LEFT,
-    TileType::OuterCornerBottomRight => STATIC_OUTER_CORNER_BOTTOM_RIGHT,
-    TileType::OuterCornerTopLeft => STATIC_OUTER_CORNER_TOP_LEFT,
-    TileType::OuterCornerTopRight => STATIC_OUTER_CORNER_TOP_RIGHT,
-    TileType::TopLeftToBottomRightBridge => STATIC_TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE,
-    TileType::TopRightToBottomLeftBridge => STATIC_TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE,
-    TileType::TopFill => STATIC_TOP_FILL,
-    TileType::BottomFill => STATIC_BOTTOM_FILL,
-    TileType::RightFill => STATIC_RIGHT_FILL,
-    TileType::LeftFill => STATIC_LEFT_FILL,
-    TileType::Single => STATIC_SINGLE,
-    TileType::Unknown => STATIC_ERROR,
+pub fn get_sprite_index_from(terrain: &TerrainType, tile_type: &TileType, asset_collection: &AssetPacksCollection) -> usize {
+  match terrain {
+    TerrainType::Water => get_sprite_index(&tile_type, asset_collection.water.tile_set_index_offset),
+    TerrainType::Shore => get_sprite_index(&tile_type, asset_collection.shore.tile_set_index_offset),
+    TerrainType::Sand => get_sprite_index(&tile_type, asset_collection.sand.tile_set_index_offset),
+    TerrainType::Grass => get_sprite_index(&tile_type, asset_collection.grass.tile_set_index_offset),
+    TerrainType::Forest => get_sprite_index(&tile_type, asset_collection.forest.tile_set_index_offset),
+    TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
+  }
+}
+
+pub fn get_sprite_index(tile_type: &TileType, offset: usize) -> usize {
+  match tile_type {
+    TileType::Fill => FILL * offset,
+    TileType::InnerCornerBottomLeft => INNER_CORNER_BOTTOM_LEFT * offset,
+    TileType::InnerCornerBottomRight => INNER_CORNER_BOTTOM_RIGHT * offset,
+    TileType::InnerCornerTopLeft => INNER_CORNER_TOP_LEFT * offset,
+    TileType::InnerCornerTopRight => INNER_CORNER_TOP_RIGHT * offset,
+    TileType::OuterCornerBottomLeft => OUTER_CORNER_BOTTOM_LEFT * offset,
+    TileType::OuterCornerBottomRight => OUTER_CORNER_BOTTOM_RIGHT * offset,
+    TileType::OuterCornerTopLeft => OUTER_CORNER_TOP_LEFT * offset,
+    TileType::OuterCornerTopRight => OUTER_CORNER_TOP_RIGHT * offset,
+    TileType::TopLeftToBottomRightBridge => TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE * offset,
+    TileType::TopRightToBottomLeftBridge => TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE * offset,
+    TileType::TopFill => TOP_FILL * offset,
+    TileType::BottomFill => BOTTOM_FILL * offset,
+    TileType::RightFill => RIGHT_FILL * offset,
+    TileType::LeftFill => LEFT_FILL * offset,
+    TileType::Single => SINGLE * offset,
+    TileType::Unknown => ERROR * offset,
   }
 }
 
 pub fn get_animated_sprite_index(tile: &Tile) -> usize {
   match tile.tile_type {
-    TileType::Fill => ANIMATED_FILL * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::InnerCornerBottomLeft => ANIMATED_INNER_CORNER_BOTTOM_LEFT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::InnerCornerBottomRight => ANIMATED_INNER_CORNER_BOTTOM_RIGHT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::InnerCornerTopLeft => ANIMATED_INNER_CORNER_TOP_LEFT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::InnerCornerTopRight => ANIMATED_INNER_CORNER_TOP_RIGHT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::OuterCornerBottomLeft => ANIMATED_OUTER_CORNER_BOTTOM_LEFT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::OuterCornerBottomRight => ANIMATED_OUTER_CORNER_BOTTOM_RIGHT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::OuterCornerTopLeft => ANIMATED_OUTER_CORNER_TOP_LEFT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::OuterCornerTopRight => ANIMATED_OUTER_CORNER_TOP_RIGHT * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::TopLeftToBottomRightBridge => ANIMATED_TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::TopRightToBottomLeftBridge => ANIMATED_TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::TopFill => ANIMATED_TOP_FILL * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::BottomFill => ANIMATED_BOTTOM_FILL * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::RightFill => ANIMATED_RIGHT_FILL * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::LeftFill => ANIMATED_LEFT_FILL * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::Single => ANIMATED_SINGLE * ANIMATED_TILE_SET_COLUMNS as usize,
-    TileType::Unknown => ANIMATED_ERROR * ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::Fill => FILL * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::InnerCornerBottomLeft => INNER_CORNER_BOTTOM_LEFT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::InnerCornerBottomRight => INNER_CORNER_BOTTOM_RIGHT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::InnerCornerTopLeft => INNER_CORNER_TOP_LEFT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::InnerCornerTopRight => INNER_CORNER_TOP_RIGHT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::OuterCornerBottomLeft => OUTER_CORNER_BOTTOM_LEFT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::OuterCornerBottomRight => OUTER_CORNER_BOTTOM_RIGHT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::OuterCornerTopLeft => OUTER_CORNER_TOP_LEFT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::OuterCornerTopRight => OUTER_CORNER_TOP_RIGHT * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::TopLeftToBottomRightBridge => TOP_LEFT_TO_BOTTOM_RIGHT_BRIDGE * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::TopRightToBottomLeftBridge => TOP_RIGHT_TO_BOTTOM_LEFT_BRIDGE * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::TopFill => TOP_FILL * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::BottomFill => BOTTOM_FILL * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::RightFill => RIGHT_FILL * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::LeftFill => LEFT_FILL * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::Single => SINGLE * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+    TileType::Unknown => ERROR * DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
   }
 }

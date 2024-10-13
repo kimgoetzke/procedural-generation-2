@@ -25,7 +25,7 @@ impl Plugin for GenerationResourcesPlugin {
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct AssetPacksCollection {
-  pub default: AssetPack,
+  pub placeholder: AssetPack,
   pub water: AssetPacks,
   pub shore: AssetPacks,
   pub sand: AssetPacks,
@@ -52,6 +52,7 @@ pub struct AssetPacks {
   pub stat: AssetPack,
   pub anim: Option<AssetPack>,
   pub animated_tile_types: HashSet<TileType>,
+  pub tile_set_index_offset: usize,
 }
 
 #[derive(Default, Debug, Clone)]
@@ -62,87 +63,110 @@ pub struct AssetPack {
 
 fn initialise_asset_packs_system(
   asset_server: Res<AssetServer>,
-  mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+  mut layouts: ResMut<Assets<TextureAtlasLayout>>,
   mut asset_collection: ResMut<AssetPacksCollection>,
 ) {
-  let static_tile_set_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    STATIC_TILE_SET_COLUMNS,
-    STATIC_TILE_SET_ROWS,
-    None,
-    None,
-  );
-  let static_tile_set_atlas_layout = texture_atlas_layouts.add(static_tile_set_layout);
-  let animated_tile_set_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    ANIMATED_TILE_SET_COLUMNS,
-    ANIMATED_TILE_SET_ROWS,
-    None,
-    None,
-  );
-  let animated_tile_set_atlas_layout = texture_atlas_layouts.add(animated_tile_set_layout);
+  // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
-    TILE_SET_DEFAULT_COLUMNS,
-    TILE_SET_DEFAULT_ROWS,
+    TILE_SET_PLACEHOLDER_COLUMNS,
+    TILE_SET_PLACEHOLDER_ROWS,
     None,
     None,
   );
-  let default_texture_atlas_layout = texture_atlas_layouts.add(default_layout);
-  let static_trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
-  let static_trees_atlas_layout = texture_atlas_layouts.add(static_trees_layout);
-
-  asset_collection.default = AssetPack {
-    texture: asset_server.load(TILE_SET_DEFAULT_PATH),
+  let default_texture_atlas_layout = layouts.add(default_layout);
+  asset_collection.placeholder = AssetPack {
+    texture: asset_server.load(TILE_SET_PLACEHOLDER_PATH),
     texture_atlas_layout: default_texture_atlas_layout,
   };
-  asset_collection.water.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_WATER_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout.clone(),
-  };
-  asset_collection.shore = asset_packs_with_default_anim(
+
+  // Detailed tile sets
+  asset_collection.water = tile_set_asset_packs_static(
     &asset_server,
-    &static_tile_set_atlas_layout,
-    animated_tile_set_atlas_layout.clone(),
-    STATIC_TILE_SET_SHORE_PATH,
-    ANIMATED_TILE_SET_SHORE_PATH,
+    &mut layouts,
+    TILE_SET_WATER_PATH,
+    DEFAULT_STATIC_TILE_SET_COLUMNS,
   );
-  asset_collection.sand = asset_packs_with_default_anim(
+  asset_collection.shore = tile_set_asset_packs_with_default_animations(
     &asset_server,
-    &static_tile_set_atlas_layout,
-    animated_tile_set_atlas_layout,
-    STATIC_TILE_SET_SAND_PATH,
-    ANIMATED_TILE_SET_SAND_PATH,
+    &mut layouts,
+    TILE_SET_SHORE_PATH,
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
   );
-  asset_collection.grass.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_GRASS_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout.clone(),
-  };
-  asset_collection.forest.stat = AssetPack {
-    texture: asset_server.load(STATIC_TILE_SET_FOREST_PATH),
-    texture_atlas_layout: static_tile_set_atlas_layout,
-  };
+  asset_collection.sand = tile_set_asset_packs_with_default_animations(
+    &asset_server,
+    &mut layouts,
+    TILE_SET_SAND_PATH,
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+  );
+  asset_collection.grass = tile_set_asset_packs_static(
+    &asset_server,
+    &mut layouts,
+    TILE_SET_GRASS_PATH,
+    DEFAULT_STATIC_TILE_SET_COLUMNS,
+  );
+  asset_collection.forest = tile_set_asset_packs_static(
+    &asset_server,
+    &mut layouts,
+    TILE_SET_FOREST_PATH,
+    DEFAULT_STATIC_TILE_SET_COLUMNS,
+  );
+
+  // Objects
+  let static_trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
+  let static_trees_atlas_layout = layouts.add(static_trees_layout);
   asset_collection.tree.stat = AssetPack {
     texture: asset_server.load(TREES_PATH),
     texture_atlas_layout: static_trees_atlas_layout,
   };
 }
 
-fn asset_packs_with_default_anim(
+fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
+  let mut set = HashSet::new();
+  for tile_type in tile_types {
+    set.insert(*tile_type);
+  }
+
+  set
+}
+
+fn tile_set_asset_packs_static(
   asset_server: &Res<AssetServer>,
-  static_layout: &Handle<TextureAtlasLayout>,
-  animated_layout: Handle<TextureAtlasLayout>,
-  static_path: &str,
-  animated_path: &str,
+  layout: &mut Assets<TextureAtlasLayout>,
+  tile_set_path: &str,
+  columns: u32,
 ) -> AssetPacks {
+  let tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
+  let texture_atlas_layout = layout.add(tile_set_layout);
+
   AssetPacks {
     stat: AssetPack {
-      texture: asset_server.load(static_path.to_string()),
-      texture_atlas_layout: static_layout.clone(),
+      texture: asset_server.load(tile_set_path.to_string()),
+      texture_atlas_layout: texture_atlas_layout.clone(),
+    },
+    anim: None,
+    animated_tile_types: HashSet::new(),
+    tile_set_index_offset: 1,
+  }
+}
+
+fn tile_set_asset_packs_with_default_animations(
+  asset_server: &Res<AssetServer>,
+  layout: &mut Assets<TextureAtlasLayout>,
+  tile_set_path: &str,
+  columns: u32,
+) -> AssetPacks {
+  let animated_tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
+  let atlas_layout = layout.add(animated_tile_set_layout);
+
+  AssetPacks {
+    stat: AssetPack {
+      texture: asset_server.load(tile_set_path.to_string()),
+      texture_atlas_layout: atlas_layout.clone(),
     },
     anim: Some(AssetPack {
-      texture: asset_server.load(animated_path.to_string()),
-      texture_atlas_layout: animated_layout,
+      texture: asset_server.load(tile_set_path.to_string()),
+      texture_atlas_layout: atlas_layout,
     }),
     animated_tile_types: {
       let tile_types = [
@@ -164,16 +188,8 @@ fn asset_packs_with_default_anim(
       ];
       insert(&tile_types)
     },
+    tile_set_index_offset: columns as usize,
   }
-}
-
-fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
-  let mut set = HashSet::new();
-  for tile_type in tile_types {
-    set.insert(*tile_type);
-  }
-  
-  set
 }
 
 #[derive(Resource, Default)]
