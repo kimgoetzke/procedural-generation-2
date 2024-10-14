@@ -126,6 +126,8 @@ pub struct ObjectGenerationSettings {
   pub generate_objects: bool,
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
   pub tree_density: f64,
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub stones_density: f64,
 }
 
 impl Default for ObjectGenerationSettings {
@@ -133,6 +135,7 @@ impl Default for ObjectGenerationSettings {
     Self {
       generate_objects: GENERATE_OBJECTS,
       tree_density: TREE_DENSITY,
+      stones_density: STONES_DENSITY,
     }
   }
 }

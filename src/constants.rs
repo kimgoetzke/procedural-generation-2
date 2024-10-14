@@ -27,6 +27,7 @@ pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const TREE_DENSITY: f64 = 0.5;
+pub const STONES_DENSITY: f64 = 0.20;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is not rendered. Must be 1, always.
@@ -89,6 +90,10 @@ pub const TREES_PATH: &str = "objects/trees-conifer.png";
 pub const TREES_COLUMNS: u32 = 5;
 pub const TREES_ROWS: u32 = 1;
 pub const TREE_SIZE: UVec2 = UVec2::new(64, 128);
+pub const STONES_PATH: &str = "objects/stones.png";
+pub const STONES_COLUMNS: u32 = 6;
+pub const STONES_ROWS: u32 = 1;
+pub const STONES_SIZE: UVec2 = UVec2::new(32, 32);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);
@@ -97,6 +102,7 @@ pub const YELLOW: Color = Color::srgb(0.922, 0.796, 0.545);
 pub const ORANGE: Color = Color::srgb(0.816, 0.529, 0.439);
 pub const GREEN: Color = Color::srgb(0.639, 0.745, 0.549);
 pub const WATER_BLUE: Color = Color::srgb(0.305882, 0.611765, 0.74902);
+pub const DEEP_WATER_BLUE: Color = Color::srgb(0.259, 0.471, 0.565);
 pub const LIGHT: Color = Color::srgb(0.925, 0.937, 0.957);
 pub const MEDIUM: Color = Color::srgb(0.60, 0.639, 0.714);
 pub const DARK: Color = Color::srgb(0.298, 0.337, 0.416);

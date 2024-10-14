@@ -100,7 +100,7 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   let mut tile_data = Vec::new();
   world_child_builder
     .spawn((
-      Name::new(format!("Chunk w{}", chunk.coords.world)),
+      Name::new(format!("Chunk w{} wg{}", chunk.coords.world, chunk.coords.world_grid)),
       SpatialBundle::default(),
       ChunkComponent {
         layered_plane: chunk.layered_plane.clone(),

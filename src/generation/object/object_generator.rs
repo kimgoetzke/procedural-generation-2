@@ -1,7 +1,7 @@
-use crate::constants::TILE_SIZE;
+use crate::constants::{STONES_COLUMNS, TILE_SIZE, TREES_COLUMNS};
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
-use crate::generation::resources::AssetPacksCollection;
+use crate::generation::resources::{AssetPacks, AssetPacksCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::core::Name;
@@ -17,6 +17,7 @@ impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
+// TODO: Generate objects asynchronously
 pub fn generate(
   commands: &mut Commands,
   spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
@@ -30,6 +31,7 @@ pub fn generate(
   let start_time = get_time();
   for (_, tile_data) in spawn_data.iter_mut() {
     place_trees(commands, tile_data, asset_collection, settings);
+    place_stones(commands, tile_data, asset_collection, settings);
   }
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
@@ -41,61 +43,111 @@ fn place_trees(
   settings: &Res<Settings>,
 ) {
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-  let forest_tiles: Vec<_> = tile_data
+  generate_objects(
+    commands,
+    tile_data,
+    &asset_collection.trees,
+    TerrainType::Forest,
+    settings.object.tree_density,
+    "Tree Sprite",
+    TREES_COLUMNS as usize,
+    &mut rng,
+  );
+}
+
+fn place_stones(
+  commands: &mut Commands,
+  tile_data: &mut Vec<TileData>,
+  asset_collection: &Res<AssetPacksCollection>,
+  settings: &Res<Settings>,
+) {
+  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+  generate_objects(
+    commands,
+    tile_data,
+    &asset_collection.stones,
+    TerrainType::Sand,
+    settings.object.stones_density,
+    "Stone Sprite",
+    STONES_COLUMNS as usize,
+    &mut rng,
+  );
+}
+
+fn generate_objects(
+  commands: &mut Commands,
+  tile_data: &mut Vec<TileData>,
+  asset_packs: &AssetPacks,
+  terrain_type: TerrainType,
+  density: f64,
+  sprite_name: &str,
+  columns: usize,
+  rng: &mut StdRng,
+) {
+  let relevant_tiles: Vec<_> = tile_data
     .iter_mut()
     .filter_map(|t| {
-      if t.tile.terrain == TerrainType::Forest && t.tile.tile_type == TileType::Fill {
-        return Some(t);
+      if t.tile.terrain == terrain_type && t.tile.tile_type == TileType::Fill {
+        Some(t)
       } else {
         None
       }
     })
     .collect();
 
-  for forest_tile_data in forest_tiles {
-    if rng.gen_bool(settings.object.tree_density) {
-      let offset_x = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
-      let offset_y = rng.gen_range(-(TILE_SIZE as f32) / 2.0..=(TILE_SIZE as f32) / 2.0);
-      let index = rng.gen_range(0..=4);
+  for tile_data in relevant_tiles {
+    if rng.gen_bool(density) {
+      let offset_x = rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0);
+      let offset_y = rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0)
+        + if terrain_type == TerrainType::Forest {
+          TILE_SIZE as f32
+        } else {
+          0.0
+        };
+      let index = rng.gen_range(0..columns as i32);
       trace!(
-        "Placing tree at {:?} with offset ({}, {})",
-        forest_tile_data.tile.coords.chunk_grid,
+        "Placing [{}] at {:?} with offset ({}, {})",
+        sprite_name,
+        tile_data.tile.coords.chunk_grid,
         offset_x,
         offset_y
       );
-      commands.entity(forest_tile_data.entity).with_children(|parent| {
-        parent.spawn(tree_sprite(
-          &forest_tile_data.tile,
+      commands.entity(tile_data.entity).with_children(|parent| {
+        parent.spawn(sprite(
+          &tile_data.tile,
           offset_x,
           offset_y,
           index,
-          asset_collection,
+          asset_packs,
+          Name::new(sprite_name.to_string()),
         ));
       });
     }
   }
 }
 
-fn tree_sprite(
+fn sprite(
   tile: &Tile,
   offset_x: f32,
   offset_y: f32,
   index: i32,
-  asset_collection: &AssetPacksCollection,
+  asset_packs: &AssetPacks,
+  name: Name,
 ) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
-    Name::new("Tree Sprite"),
+    name,
     SpriteBundle {
-      texture: asset_collection.tree.stat.texture.clone(),
+      texture: asset_packs.stat.texture.clone(),
       transform: Transform::from_xyz(
-        offset_x,
-        offset_y + 1.5 * TILE_SIZE as f32,
-        200. - tile.coords.chunk_grid.y as f32,
+        offset_x + TILE_SIZE as f32 / 2.0,
+        offset_y,
+        // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
+        200. + tile.coords.chunk_grid.y as f32,
       ),
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_collection.tree.stat.texture_atlas_layout.clone(),
+      layout: asset_packs.stat.texture_atlas_layout.clone(),
       index: index as usize,
     },
     ObjectComponent {},
