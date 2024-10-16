@@ -4,7 +4,7 @@ use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::lib::tile_type::get_sprite_index_from;
 use crate::generation::lib::{Tile, TileComponent};
-use crate::generation::resources::{AssetPacksCollection, ChunkComponentIndex};
+use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
@@ -60,7 +60,7 @@ fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
   tile_index: Res<TileComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
-  asset_collection: Res<AssetPacksCollection>,
+  resources: Res<GenerationResourcesCollection>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
@@ -74,7 +74,7 @@ fn on_left_mouse_click_trigger(
     .max_by_key(|tc| tc.tile.layer)
   {
     debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
-    commands.spawn(tile_info(&asset_collection, &tc.tile, event.world, &settings));
+    commands.spawn(tile_info(&resources, &tc.tile, event.world, &settings));
     let parent_w = tc.tile.get_parent_chunk_world();
     if let Some(parent_chunk) = chunk_index.get(parent_w) {
       debug!("Parent is chunk w{:?}; any tiles are listed below", parent_w);
@@ -105,7 +105,7 @@ fn on_remove_tile_component_trigger(
 }
 
 fn tile_info(
-  asset_collection: &AssetPacksCollection,
+  resources: &GenerationResourcesCollection,
   tile: &Tile,
   spawn_point: Point<World>,
   settings: &Res<Settings>,
@@ -115,7 +115,7 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
-  let sprite_index = get_sprite_index_from(&tile.terrain, &tile.tile_type, asset_collection);
+  let sprite_index = get_sprite_index_from(&tile.terrain, &tile.tile_type, resources);
   (
     Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {

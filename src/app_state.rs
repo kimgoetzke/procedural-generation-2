@@ -13,6 +13,7 @@ impl Plugin for AppStatePlugin {
 pub enum AppState {
   #[default]
   Loading,
+  Initialising,
   Generating,
   Running,
 }

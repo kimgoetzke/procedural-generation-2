@@ -90,7 +90,7 @@ pub const FOREST_OBJ_COLUMNS: u32 = 5;
 pub const FOREST_OBJ_ROWS: u32 = 1;
 pub const FOREST_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
 pub const SAND_OBJ_PATH: &str = "objects/sand_objects.png";
-pub const SAND_OBJ_COLUMNS: u32 = 12;
+pub const SAND_OBJ_COLUMNS: u32 = 13;
 pub const SAND_OBJ_ROWS: u32 = 1;
 pub const SAND_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 // ------------------------------------------------------------------------------------------------------

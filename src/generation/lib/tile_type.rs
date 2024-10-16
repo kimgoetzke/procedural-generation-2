@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::generation::lib::TerrainType;
-use crate::generation::resources::AssetPacksCollection;
+use crate::generation::resources::GenerationResourcesCollection;
 
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -24,13 +24,17 @@ pub enum TileType {
   Unknown,
 }
 
-pub fn get_sprite_index_from(terrain: &TerrainType, tile_type: &TileType, asset_collection: &AssetPacksCollection) -> usize {
+pub fn get_sprite_index_from(
+  terrain: &TerrainType,
+  tile_type: &TileType,
+  resources: &GenerationResourcesCollection,
+) -> usize {
   match terrain {
-    TerrainType::Water => get_sprite_index(&tile_type, asset_collection.water.index_offset()),
-    TerrainType::Shore => get_sprite_index(&tile_type, asset_collection.shore.index_offset()),
-    TerrainType::Sand => get_sprite_index(&tile_type, asset_collection.sand.index_offset()),
-    TerrainType::Grass => get_sprite_index(&tile_type, asset_collection.grass.index_offset()),
-    TerrainType::Forest => get_sprite_index(&tile_type, asset_collection.forest.index_offset()),
+    TerrainType::Water => get_sprite_index(&tile_type, resources.water.index_offset()),
+    TerrainType::Shore => get_sprite_index(&tile_type, resources.shore.index_offset()),
+    TerrainType::Sand => get_sprite_index(&tile_type, resources.sand.index_offset()),
+    TerrainType::Grass => get_sprite_index(&tile_type, resources.grass.index_offset()),
+    TerrainType::Forest => get_sprite_index(&tile_type, resources.forest.index_offset()),
     TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
   }
 }

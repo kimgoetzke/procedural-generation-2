@@ -4,40 +4,93 @@ use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::{ChunkComponent, TerrainType, TileType};
 use bevy::app::{App, Plugin, Startup};
-use bevy::asset::{AssetServer, Assets, Handle};
+use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::log::*;
 use bevy::math::UVec2;
-use bevy::prelude::{Image, NextState, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
+use bevy::prelude::{
+  in_state, Commands, Image, IntoSystemConfigs, NextState, OnAdd, OnEnter, OnRemove, Query, Res, ResMut, Resource,
+  TextureAtlasLayout, Trigger, TypePath, Update,
+};
 use bevy::utils::{HashMap, HashSet};
+use bevy_common_assets::ron::RonAssetPlugin;
 
 pub struct GenerationResourcesPlugin;
 
-// TODO: Add game states and load assets prior to executing regular 'Startup' systems - see Bevy examples for this
 impl Plugin for GenerationResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
-      .init_resource::<AssetPacksCollection>()
+      .add_plugins(RonAssetPlugin::<RuleSet>::new(&["ruleset.ron"]))
+      .init_resource::<GenerationResourcesCollection>()
       .init_resource::<ChunkComponentIndex>()
       .observe(on_add_chunk_component_trigger)
       .observe(on_remove_chunk_component_trigger)
-      .add_systems(Startup, initialise_asset_packs_system);
+      .add_systems(Startup, pre_load_rule_sets_system)
+      .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
+      .add_systems(OnEnter(AppState::Initialising), initialise_resources_system);
   }
 }
 
 #[derive(Resource, Default, Debug, Clone)]
-pub struct AssetPacksCollection {
-  pub placeholder: AssetPack,
-  pub water: AssetPacks,
-  pub shore: AssetPacks,
-  pub sand: AssetPacks,
-  pub sand_obj: AssetPacks,
-  pub grass: AssetPacks,
-  pub forest: AssetPacks,
-  pub forest_obj: AssetPacks,
+struct RuleSetHandle(Vec<Handle<RuleSet>>);
+
+#[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
+pub struct RuleSet {
+  pub terrain: TerrainType,
+  pub rules: Vec<Rule>,
 }
 
-impl AssetPacksCollection {
-  pub fn unpack_for_terrain(&self, terrain: TerrainType) -> &AssetPacks {
+impl Default for RuleSet {
+  fn default() -> Self {
+    Self {
+      terrain: TerrainType::Any,
+      rules: vec![],
+    }
+  }
+}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct Rule {
+  pub index: i32,
+  pub permitted_neighbours: Vec<(i32, f32)>,
+}
+
+fn pre_load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+  let handle = asset_server.load("objects/sand.ruleset.ron");
+  commands.insert_resource(RuleSetHandle(vec![handle]));
+}
+
+fn check_loading_state(asset_server: Res<AssetServer>, handles: Res<RuleSetHandle>, mut state: ResMut<NextState<AppState>>) {
+  for handle in &handles.0 {
+    if asset_server.get_load_state(handle) != Some(bevy::asset::LoadState::Loaded) {
+      debug!("Waiting for assets to load...");
+      return;
+    }
+  }
+
+  debug!("Transitioning to [{:?}] state", AppState::Initialising);
+  state.set(AppState::Initialising);
+}
+
+#[derive(Resource, Default, Debug, Clone)]
+pub struct GenerationResourcesCollection {
+  pub placeholder: AssetPack,
+  pub water: AssetCollection,
+  pub shore: AssetCollection,
+  pub sand: AssetCollection,
+  pub grass: AssetCollection,
+  pub forest: AssetCollection,
+  pub objects: ObjectResources,
+}
+
+#[derive(Resource, Default, Debug, Clone)]
+pub struct ObjectResources {
+  pub forest: AssetCollection,
+  pub rule_sets: Vec<RuleSet>,
+  pub sand: AssetCollection,
+}
+
+impl GenerationResourcesCollection {
+  pub fn get_terrain_collection(&self, terrain: TerrainType) -> &AssetCollection {
     match terrain {
       TerrainType::Water => &self.water,
       TerrainType::Shore => &self.shore,
@@ -50,13 +103,13 @@ impl AssetPacksCollection {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct AssetPacks {
+pub struct AssetCollection {
   pub stat: AssetPack,
   pub anim: Option<AssetPack>,
   pub animated_tile_types: HashSet<TileType>,
 }
 
-impl AssetPacks {
+impl AssetCollection {
   pub fn index_offset(&self) -> usize {
     self.stat.index_offset
   }
@@ -89,10 +142,12 @@ impl AssetPack {
   }
 }
 
-fn initialise_asset_packs_system(
+fn initialise_resources_system(
   asset_server: Res<AssetServer>,
   mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-  mut asset_collection: ResMut<AssetPacksCollection>,
+  mut asset_collection: ResMut<GenerationResourcesCollection>,
+  rule_set_handle: Res<RuleSetHandle>,
+  mut rule_set_assets: ResMut<Assets<RuleSet>>,
   mut next_state: ResMut<NextState<AppState>>,
 ) {
   // Placeholder tile set
@@ -141,13 +196,24 @@ fn initialise_asset_packs_system(
   // Objects: Trees
   let static_trees_layout = TextureAtlasLayout::from_grid(FOREST_OBJ_SIZE, FOREST_OBJ_COLUMNS, FOREST_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  asset_collection.forest_obj.stat = AssetPack::new(asset_server.load(FOREST_OBJ_PATH), static_trees_atlas_layout);
+  asset_collection.objects.forest.stat = AssetPack::new(asset_server.load(FOREST_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Stones
   let static_stones_layout = TextureAtlasLayout::from_grid(SAND_OBJ_SIZE, SAND_OBJ_COLUMNS, SAND_OBJ_ROWS, None, None);
   let static_stones_atlas_layout = layouts.add(static_stones_layout);
-  asset_collection.sand_obj.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
+  asset_collection.objects.sand.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
 
+  // Rule sets for wave function collapse
+  let mut rule_sets = vec![];
+  for handle in rule_set_handle.0.iter() {
+    if let Some(rule_set) = rule_set_assets.remove(handle) {
+      debug!("Loaded: {:?}", rule_set);
+      rule_sets.push(rule_set);
+    }
+  }
+  asset_collection.objects.rule_sets = rule_sets;
+
+  debug!("Resources initialised, transitioning to [{:?}] state", AppState::Generating);
   next_state.set(AppState::Generating);
 }
 
@@ -165,11 +231,11 @@ fn tile_set_asset_packs_static(
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
   columns: u32,
-) -> AssetPacks {
+) -> AssetCollection {
   let tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
   let texture_atlas_layout = layout.add(tile_set_layout);
 
-  AssetPacks {
+  AssetCollection {
     stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), texture_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
@@ -181,11 +247,11 @@ fn tile_set_asset_packs_with_default_animations(
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
   columns: u32,
-) -> AssetPacks {
+) -> AssetCollection {
   let animated_tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
   let atlas_layout = layout.add(animated_tile_set_layout);
 
-  AssetPacks {
+  AssetCollection {
     stat: AssetPack {
       texture: asset_server.load(tile_set_path.to_string()),
       texture_atlas_layout: atlas_layout.clone(),

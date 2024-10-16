@@ -10,7 +10,7 @@ use crate::generation::lib::tile_type::{get_sprite_index, get_sprite_index_from}
 use crate::generation::lib::{
   Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
-use crate::generation::resources::{AssetPack, AssetPacksCollection};
+use crate::generation::resources::{AssetPack, GenerationResourcesCollection};
 use crate::generation::world::pre_render_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -171,13 +171,13 @@ fn attach_task_to_tile_entity(
   let task = thread_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (asset_collection, settings) = {
-        let mut system_state = SystemState::<(Res<AssetPacksCollection>, Res<Settings>)>::new(world);
-        let (asset_collection, settings) = system_state.get_mut(world);
-        (asset_collection.clone(), settings.clone())
+      let (resources, settings) = {
+        let mut system_state = SystemState::<(Res<GenerationResourcesCollection>, Res<Settings>)>::new(world);
+        let (resources, settings) = system_state.get_mut(world);
+        (resources.clone(), settings.clone())
       };
       world.entity_mut(tile_data.entity).with_children(|parent| {
-        spawn_tile(tile_data, &tile, &asset_collection, settings, parent);
+        spawn_tile(tile_data, &tile, &resources, settings, parent);
       });
     });
     command_queue
@@ -185,42 +185,42 @@ fn attach_task_to_tile_entity(
   parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));
 }
 
-fn resolve_asset_pack<'a>(tile: &Tile, asset_collection: &'a AssetPacksCollection) -> (bool, &'a AssetPack) {
-  let asset_packs = asset_collection.unpack_for_terrain(tile.terrain);
-  if asset_packs.animated_tile_types.contains(&tile.tile_type) {
-    (true, &asset_packs.anim.as_ref().unwrap())
+fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
+  let asset_collection = resources.get_terrain_collection(tile.terrain);
+  if asset_collection.animated_tile_types.contains(&tile.tile_type) {
+    (true, &asset_collection.anim.as_ref().unwrap())
   } else {
-    (false, &asset_packs.stat)
+    (false, &asset_collection.stat)
   }
 }
 
 fn spawn_tile(
   tile_data: TileData,
   tile: &Tile,
-  asset_collection: &AssetPacksCollection,
+  resources: &GenerationResourcesCollection,
   settings: Settings,
   parent: &mut WorldChildBuilder,
 ) {
   if !settings.general.draw_terrain_sprites {
-    parent.spawn(placeholder_sprite(&tile, tile_data.chunk_entity, &asset_collection));
+    parent.spawn(placeholder_sprite(&tile, tile_data.chunk_entity, &resources));
     return;
   }
   if settings.general.animate_terrain_sprites {
-    let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &asset_collection);
+    let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &resources);
     if is_animated_tile {
       parent.spawn(animated_terrain_sprite(&tile, tile_data.chunk_entity, &anim_asset_pack));
     } else {
-      parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &asset_collection));
+      parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
     }
   } else {
-    parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &asset_collection));
+    parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
   }
 }
 
 fn placeholder_sprite(
   tile: &Tile,
   chunk: Entity,
-  asset_collection: &AssetPacksCollection,
+  resources: &GenerationResourcesCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
     Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
@@ -229,12 +229,12 @@ fn placeholder_sprite(
         anchor: Anchor::TopLeft,
         ..Default::default()
       },
-      texture: asset_collection.placeholder.texture.clone(),
+      texture: resources.placeholder.texture.clone(),
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_collection.placeholder.texture_atlas_layout.clone(),
+      layout: resources.placeholder.texture_atlas_layout.clone(),
       index: tile.terrain as usize,
     },
     TileComponent {
@@ -247,7 +247,7 @@ fn placeholder_sprite(
 fn static_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
-  asset_collection: &AssetPacksCollection,
+  resources: &GenerationResourcesCollection,
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
   (
     Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
@@ -257,11 +257,11 @@ fn static_terrain_sprite(
         ..Default::default()
       },
       texture: match tile.terrain {
-        TerrainType::Water => asset_collection.water.stat.texture.clone(),
-        TerrainType::Shore => asset_collection.shore.stat.texture.clone(),
-        TerrainType::Sand => asset_collection.sand.stat.texture.clone(),
-        TerrainType::Grass => asset_collection.grass.stat.texture.clone(),
-        TerrainType::Forest => asset_collection.forest.stat.texture.clone(),
+        TerrainType::Water => resources.water.stat.texture.clone(),
+        TerrainType::Shore => resources.shore.stat.texture.clone(),
+        TerrainType::Sand => resources.sand.stat.texture.clone(),
+        TerrainType::Grass => resources.grass.stat.texture.clone(),
+        TerrainType::Forest => resources.forest.stat.texture.clone(),
         TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
@@ -269,14 +269,14 @@ fn static_terrain_sprite(
     },
     TextureAtlas {
       layout: match tile.terrain {
-        TerrainType::Water => asset_collection.water.stat.texture_atlas_layout.clone(),
-        TerrainType::Shore => asset_collection.shore.stat.texture_atlas_layout.clone(),
-        TerrainType::Sand => asset_collection.sand.stat.texture_atlas_layout.clone(),
-        TerrainType::Grass => asset_collection.grass.stat.texture_atlas_layout.clone(),
-        TerrainType::Forest => asset_collection.forest.stat.texture_atlas_layout.clone(),
+        TerrainType::Water => resources.water.stat.texture_atlas_layout.clone(),
+        TerrainType::Shore => resources.shore.stat.texture_atlas_layout.clone(),
+        TerrainType::Sand => resources.sand.stat.texture_atlas_layout.clone(),
+        TerrainType::Grass => resources.grass.stat.texture_atlas_layout.clone(),
+        TerrainType::Forest => resources.forest.stat.texture_atlas_layout.clone(),
         TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
-      index: get_sprite_index_from(&tile.terrain, &tile.tile_type, asset_collection),
+      index: get_sprite_index_from(&tile.terrain, &tile.tile_type, resources),
     },
     TileComponent {
       tile: tile.clone(),

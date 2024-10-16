@@ -2,7 +2,7 @@ use crate::generation::lib::Tile;
 use bevy::prelude::Entity;
 
 /// Contains the tile entity, parent chunk entity, and tile of the highest, non-empty layer of a tile.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TileData {
   pub entity: Entity,
   pub chunk_entity: Entity,

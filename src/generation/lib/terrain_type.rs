@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash)]
+#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash)]
 pub enum TerrainType {
   Water,
   Shore,
