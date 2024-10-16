@@ -4,6 +4,7 @@ use crate::events::{MouseClickEvent, PruneWorldEvent, RegenerateWorldEvent, Togg
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
+use bevy_inspector_egui::bevy_egui::EguiContexts;
 
 pub struct ControlPlugin;
 
@@ -99,8 +100,9 @@ fn left_mouse_click_system(
   camera: Query<(&Camera, &GlobalTransform)>,
   windows: Query<&Window>,
   mut commands: Commands,
+  mut egui_contexts: EguiContexts,
 ) {
-  if mouse_button_input.just_pressed(MouseButton::Left) {
+  if mouse_button_input.just_pressed(MouseButton::Left) && !egui_contexts.ctx_mut().wants_pointer_input() {
     let (camera, camera_transform) = camera.single();
     if let Some(vec2) = windows
       .single()
