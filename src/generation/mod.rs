@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
@@ -12,7 +13,8 @@ use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{
-  Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, Query, Res, ResMut, Startup, Update, With,
+  Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, NextState, OnEnter, Query, Res, ResMut, Update,
+  With,
 };
 use resources::GenerationResourcesPlugin;
 use std::time::SystemTime;
@@ -34,14 +36,20 @@ impl Plugin for GenerationPlugin {
         ObjectGenerationPlugin,
         DebugPlugin,
       ))
-      .add_systems(Startup, generation_system)
+      .add_systems(OnEnter(AppState::Generating), generation_system)
       .add_systems(Update, (regenerate_world_event, update_world_event, prune_world_event));
   }
 }
 
-/// Generates the world and all its objects. Called once at startup.
-fn generation_system(commands: Commands, asset_collection: Res<AssetPacksCollection>, settings: Res<Settings>) {
+/// Generates the world and all its objects. Called once after resources have been loaded.
+fn generation_system(
+  commands: Commands,
+  asset_collection: Res<AssetPacksCollection>,
+  settings: Res<Settings>,
+  mut next_state: ResMut<NextState<AppState>>,
+) {
   generate(commands, asset_collection, settings);
+  next_state.set(AppState::Running);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is

@@ -1,4 +1,5 @@
 mod animations;
+mod app_state;
 mod camera;
 mod components;
 mod constants;
@@ -10,6 +11,7 @@ mod resources;
 mod ui;
 
 use crate::animations::AnimationsPlugin;
+use crate::app_state::AppStatePlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
@@ -55,6 +57,7 @@ fn main() {
     .add_plugins(PanCamPlugin::default())
     .add_plugins((
       CameraPlugin,
+      AppStatePlugin,
       GenerationPlugin,
       AnimationsPlugin,
       SharedEventsPlugin,

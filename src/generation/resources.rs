@@ -1,3 +1,4 @@
+use crate::app_state::AppState;
 use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
@@ -6,7 +7,7 @@ use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::log::*;
 use bevy::math::UVec2;
-use bevy::prelude::{Image, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
+use bevy::prelude::{Image, NextState, OnAdd, OnRemove, Query, Res, ResMut, Resource, TextureAtlasLayout, Trigger};
 use bevy::utils::{HashMap, HashSet};
 
 pub struct GenerationResourcesPlugin;
@@ -92,6 +93,7 @@ fn initialise_asset_packs_system(
   asset_server: Res<AssetServer>,
   mut layouts: ResMut<Assets<TextureAtlasLayout>>,
   mut asset_collection: ResMut<AssetPacksCollection>,
+  mut next_state: ResMut<NextState<AppState>>,
 ) {
   // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
@@ -145,6 +147,8 @@ fn initialise_asset_packs_system(
   let static_stones_layout = TextureAtlasLayout::from_grid(SAND_OBJ_SIZE, SAND_OBJ_COLUMNS, SAND_OBJ_ROWS, None, None);
   let static_stones_atlas_layout = layouts.add(static_stones_layout);
   asset_collection.sand_obj.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
+
+  next_state.set(AppState::Generating);
 }
 
 fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {

@@ -30,13 +30,12 @@ pub const FOREST_OBJ_DENSITY: f64 = 0.5;
 pub const SAND_OBJ_DENSITY: f64 = 0.20;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
-/// The size of a buffer around a chunk that is not rendered. Must be 1, always.
+/// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
-/// `TileType`s of outer tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
+/// `TileType`s of outermost tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
-/// The size of a chunk that is rendered on the screen. This is the size of a chunk minus the
-/// border.
+/// The size of a chunk that is rendered on the screen.
 pub const CHUNK_SIZE: i32 = 16;
 pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point<WorldGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
