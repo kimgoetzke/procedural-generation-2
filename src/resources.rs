@@ -125,17 +125,17 @@ impl Default for WorldGenerationSettings {
 pub struct ObjectGenerationSettings {
   pub generate_objects: bool,
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
-  pub tree_density: f64,
+  pub forest_obj_density: f64,
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
-  pub stones_density: f64,
+  pub sand_obj_density: f64,
 }
 
 impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
       generate_objects: GENERATE_OBJECTS,
-      tree_density: TREE_DENSITY,
-      stones_density: STONES_DENSITY,
+      forest_obj_density: FOREST_OBJ_DENSITY,
+      sand_obj_density: SAND_OBJ_DENSITY,
     }
   }
 }

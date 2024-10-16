@@ -29,10 +29,10 @@ pub struct AssetPacksCollection {
   pub water: AssetPacks,
   pub shore: AssetPacks,
   pub sand: AssetPacks,
+  pub sand_obj: AssetPacks,
   pub grass: AssetPacks,
   pub forest: AssetPacks,
-  pub trees: AssetPacks,
-  pub stones: AssetPacks,
+  pub forest_obj: AssetPacks,
 }
 
 impl AssetPacksCollection {
@@ -137,14 +137,14 @@ fn initialise_asset_packs_system(
   );
 
   // Objects: Trees
-  let static_trees_layout = TextureAtlasLayout::from_grid(TREE_SIZE, TREES_COLUMNS, TREES_ROWS, None, None);
+  let static_trees_layout = TextureAtlasLayout::from_grid(FOREST_OBJ_SIZE, FOREST_OBJ_COLUMNS, FOREST_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  asset_collection.trees.stat = AssetPack::new(asset_server.load(TREES_PATH), static_trees_atlas_layout);
+  asset_collection.forest_obj.stat = AssetPack::new(asset_server.load(FOREST_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Stones
-  let static_stones_layout = TextureAtlasLayout::from_grid(STONES_SIZE, STONES_COLUMNS, STONES_ROWS, None, None);
+  let static_stones_layout = TextureAtlasLayout::from_grid(SAND_OBJ_SIZE, SAND_OBJ_COLUMNS, SAND_OBJ_ROWS, None, None);
   let static_stones_atlas_layout = layouts.add(static_stones_layout);
-  asset_collection.stones.stat = AssetPack::new(asset_server.load(STONES_PATH), static_stones_atlas_layout);
+  asset_collection.sand_obj.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
 }
 
 fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {

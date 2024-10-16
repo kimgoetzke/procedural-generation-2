@@ -26,8 +26,8 @@ pub const NOISE_ELEVATION: f64 = -0.05;
 pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
-pub const TREE_DENSITY: f64 = 0.5;
-pub const STONES_DENSITY: f64 = 0.20;
+pub const FOREST_OBJ_DENSITY: f64 = 0.5;
+pub const SAND_OBJ_DENSITY: f64 = 0.20;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is not rendered. Must be 1, always.
@@ -86,14 +86,14 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
-pub const TREES_PATH: &str = "objects/trees-conifer.png";
-pub const TREES_COLUMNS: u32 = 5;
-pub const TREES_ROWS: u32 = 1;
-pub const TREE_SIZE: UVec2 = UVec2::new(64, 128);
-pub const STONES_PATH: &str = "objects/stones.png";
-pub const STONES_COLUMNS: u32 = 6;
-pub const STONES_ROWS: u32 = 1;
-pub const STONES_SIZE: UVec2 = UVec2::new(32, 32);
+pub const FOREST_OBJ_PATH: &str = "objects/trees-conifer.png";
+pub const FOREST_OBJ_COLUMNS: u32 = 5;
+pub const FOREST_OBJ_ROWS: u32 = 1;
+pub const FOREST_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
+pub const SAND_OBJ_PATH: &str = "objects/sand_objects.png";
+pub const SAND_OBJ_COLUMNS: u32 = 12;
+pub const SAND_OBJ_ROWS: u32 = 1;
+pub const SAND_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);

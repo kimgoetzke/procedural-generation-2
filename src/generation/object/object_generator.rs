@@ -1,4 +1,4 @@
-use crate::constants::{STONES_COLUMNS, TILE_SIZE, TREES_COLUMNS};
+use crate::constants::{FOREST_OBJ_COLUMNS, SAND_OBJ_COLUMNS, TILE_SIZE};
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
 use crate::generation::resources::{AssetPacks, AssetPacksCollection};
@@ -16,6 +16,8 @@ pub struct ObjectGeneratorPlugin;
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
 }
+
+type OffsetFn = fn(&mut StdRng) -> f32;
 
 // TODO: Generate objects asynchronously
 pub fn generate(
@@ -46,12 +48,14 @@ fn place_trees(
   generate_objects(
     commands,
     tile_data,
-    &asset_collection.trees,
+    &asset_collection.forest_obj,
     TerrainType::Forest,
-    settings.object.tree_density,
-    "Tree Sprite",
-    TREES_COLUMNS as usize,
+    settings.object.forest_obj_density,
+    "Forest Object Sprite",
+    FOREST_OBJ_COLUMNS as usize,
     &mut rng,
+    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0) + TILE_SIZE as f32,
   );
 }
 
@@ -65,12 +69,14 @@ fn place_stones(
   generate_objects(
     commands,
     tile_data,
-    &asset_collection.stones,
+    &asset_collection.sand_obj,
     TerrainType::Sand,
-    settings.object.stones_density,
-    "Stone Sprite",
-    STONES_COLUMNS as usize,
+    settings.object.sand_obj_density,
+    "Sand Object Sprite",
+    SAND_OBJ_COLUMNS as usize,
     &mut rng,
+    |_| 0.,
+    |_| -(TILE_SIZE as f32) / 2.,
   );
 }
 
@@ -83,6 +89,8 @@ fn generate_objects(
   sprite_name: &str,
   columns: usize,
   rng: &mut StdRng,
+  offset_x: OffsetFn,
+  offset_y: OffsetFn,
 ) {
   let relevant_tiles: Vec<_> = tile_data
     .iter_mut()
@@ -97,13 +105,8 @@ fn generate_objects(
 
   for tile_data in relevant_tiles {
     if rng.gen_bool(density) {
-      let offset_x = rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0);
-      let offset_y = rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0)
-        + if terrain_type == TerrainType::Forest {
-          TILE_SIZE as f32
-        } else {
-          0.0
-        };
+      let offset_x = offset_x(rng);
+      let offset_y = offset_y(rng);
       let index = rng.gen_range(0..columns as i32);
       trace!(
         "Placing [{}] at {:?} with offset ({}, {})",
