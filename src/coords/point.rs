@@ -2,6 +2,7 @@ use crate::constants::TILE_SIZE;
 use crate::generation::lib::direction::Direction;
 use bevy::prelude::Vec2;
 use std::fmt;
+use std::ops::Add;
 
 pub trait CoordType {}
 
@@ -44,6 +45,18 @@ impl<T: CoordType> Default for Point<T> {
     Self {
       x: 0,
       y: 0,
+      _marker: std::marker::PhantomData,
+    }
+  }
+}
+
+impl<T: CoordType> Add for Point<T> {
+  type Output = Self;
+
+  fn add(self, other: Self) -> Self {
+    Self {
+      x: self.x + other.x,
+      y: self.y + other.y,
       _marker: std::marker::PhantomData,
     }
   }

@@ -95,7 +95,7 @@ fn generate_objects(
   let relevant_tiles: Vec<_> = tile_data
     .iter_mut()
     .filter_map(|t| {
-      if t.tile.terrain == terrain_type && t.tile.tile_type == TileType::Fill {
+      if t.flat_tile.terrain == terrain_type && t.flat_tile.tile_type == TileType::Fill {
         Some(t)
       } else {
         None
@@ -111,13 +111,13 @@ fn generate_objects(
       trace!(
         "Placing [{}] at {:?} with offset ({}, {})",
         sprite_name,
-        tile_data.tile.coords.chunk_grid,
+        tile_data.flat_tile.coords.chunk_grid,
         offset_x,
         offset_y
       );
       commands.entity(tile_data.entity).with_children(|parent| {
         parent.spawn(sprite(
-          &tile_data.tile,
+          &tile_data.flat_tile,
           offset_x,
           offset_y,
           index,

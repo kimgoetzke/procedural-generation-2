@@ -1,19 +1,20 @@
 use crate::generation::lib::Tile;
 use bevy::prelude::Entity;
 
+/// Contains the tile entity, parent chunk entity, and tile of the highest, non-empty layer of a tile.
 #[derive(Clone, Copy)]
 pub struct TileData {
   pub entity: Entity,
-  pub parent_entity: Entity,
-  pub tile: Tile,
+  pub chunk_entity: Entity,
+  pub flat_tile: Tile,
 }
 
 impl TileData {
   pub fn new(entity: Entity, parent_entity: Entity, tile: Tile) -> Self {
     Self {
       entity,
-      parent_entity,
-      tile,
+      chunk_entity: parent_entity,
+      flat_tile: tile,
     }
   }
 }

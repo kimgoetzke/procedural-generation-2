@@ -1,6 +1,6 @@
 use crate::components::{AnimationComponent, AnimationTimer};
 use crate::constants::{
-  ANIMATION_LENGTH, DEFAULT_ANIMATION_FRAME_DURATION, ORIGIN_WORLD_GRID_SPAWN_POINT, TERRAIN_TYPE_ERROR,
+  ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, ORIGIN_WORLD_GRID_SPAWN_POINT, TERRAIN_TYPE_ERROR,
 };
 use crate::coords::point::World;
 use crate::coords::Point;
@@ -98,9 +98,13 @@ fn spawn_world_and_chunk_entities(commands: &mut Commands, chunks: &Vec<Chunk>) 
 
 fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
   let mut tile_data = Vec::new();
+  let chunk_end_wg = chunk.coords.world_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
     .spawn((
-      Name::new(format!("Chunk w{} wg{}", chunk.coords.world, chunk.coords.world_grid)),
+      Name::new(format!(
+        "Chunk w{} wg{} to wg{}",
+        chunk.coords.world, chunk.coords.world_grid, chunk_end_wg
+      )),
       SpatialBundle::default(),
       ChunkComponent {
         layered_plane: chunk.layered_plane.clone(),
@@ -146,7 +150,7 @@ fn schedule_tile_spawning_tasks(
           continue;
         }
         if let Some(plane) = chunk.layered_plane.get(layer) {
-          if let Some(tile) = plane.get_tile(tile_data.tile.coords.chunk_grid) {
+          if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.chunk_grid) {
             commands.entity(tile_data.entity).with_children(|parent| {
               attach_task_to_tile_entity(thread_pool, tile_data, tile.clone(), parent);
             });
@@ -198,18 +202,18 @@ fn spawn_tile(
   parent: &mut WorldChildBuilder,
 ) {
   if !settings.general.draw_terrain_sprites {
-    parent.spawn(placeholder_sprite(&tile, tile_data.parent_entity, &asset_collection));
+    parent.spawn(placeholder_sprite(&tile, tile_data.chunk_entity, &asset_collection));
     return;
   }
   if settings.general.animate_terrain_sprites {
     let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &asset_collection);
     if is_animated_tile {
-      parent.spawn(animated_terrain_sprite(&tile, tile_data.parent_entity, &anim_asset_pack));
+      parent.spawn(animated_terrain_sprite(&tile, tile_data.chunk_entity, &anim_asset_pack));
     } else {
-      parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
+      parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &asset_collection));
     }
   } else {
-    parent.spawn(static_terrain_sprite(&tile, tile_data.parent_entity, &asset_collection));
+    parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &asset_collection));
   }
 }
 
