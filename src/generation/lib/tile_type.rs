@@ -24,11 +24,17 @@ pub enum TileType {
   Unknown,
 }
 
-pub fn get_sprite_index_from(
-  terrain: &TerrainType,
-  tile_type: &TileType,
-  resources: &GenerationResourcesCollection,
-) -> usize {
+impl TileType {
+  pub fn get_sprite_index(&self, index_offset: usize) -> usize {
+    get_sprite_index(self, index_offset)
+  }
+
+  pub fn calculate_sprite_index(&self, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
+    get_sprite_index_from(&self, terrain, resources)
+  }
+}
+
+fn get_sprite_index_from(tile_type: &TileType, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
   match terrain {
     TerrainType::Water => get_sprite_index(&tile_type, resources.water.index_offset()),
     TerrainType::Shore => get_sprite_index(&tile_type, resources.shore.index_offset()),
@@ -39,7 +45,7 @@ pub fn get_sprite_index_from(
   }
 }
 
-pub fn get_sprite_index(tile_type: &TileType, index_offset: usize) -> usize {
+fn get_sprite_index(tile_type: &TileType, index_offset: usize) -> usize {
   match tile_type {
     TileType::Fill => FILL * index_offset,
     TileType::InnerCornerBottomLeft => INNER_CORNER_BOTTOM_LEFT * index_offset,

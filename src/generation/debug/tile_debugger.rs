@@ -2,7 +2,6 @@ use crate::constants::*;
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::tile_type::get_sprite_index_from;
 use crate::generation::lib::{Tile, TileComponent};
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::resources::Settings;
@@ -115,7 +114,7 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
-  let sprite_index = get_sprite_index_from(&tile.terrain, &tile.tile_type, resources);
+  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
   (
     Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {
