@@ -8,7 +8,7 @@ use bevy::math::UVec2;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
 pub const DRAW_GIZMOS: bool = false;
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
 pub const ENABLE_TILE_DEBUGGING: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
@@ -85,6 +85,13 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
+pub const PATHS_OBJ_PATH: &str = "objects/paths.png";
+pub const PATHS_OBJ_COLUMNS: u32 = 8;
+pub const PATHS_OBJ_ROWS: u32 = 3;
+pub const PATHS_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const PATHS_SAND_ROW: u32 = 0;
+pub const PATHS_GRASS_ROW: u32 = 1;
+pub const PATHS_FOREST_ROW: u32 = 2;
 pub const FOREST_OBJ_PATH: &str = "objects/trees-conifer.png";
 pub const FOREST_OBJ_COLUMNS: u32 = 5;
 pub const FOREST_OBJ_ROWS: u32 = 1;

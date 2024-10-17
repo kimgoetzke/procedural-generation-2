@@ -1,0 +1,278 @@
+(
+  terrain: Sand,
+  states: [
+    (
+      index: 0,
+      name: SandEmpty,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandEmpty, 10),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathLeft, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandEmpty, 10),
+            (SandPathVertical, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandEmpty, 10),
+            (SandPathVertical, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandEmpty, 10),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathLeft, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 1,
+      name: SandPathRight,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 2,
+      name: SandPathHorizontal,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 3,
+      name: SandPathCross,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathBottom, 1),
+            (SandPathVertical, 4),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathHorizontal, 4),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathTop, 1),
+            (SandPathVertical, 4),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 4,
+      name: SandPathVertical,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 5,
+      name: SandPathBottom,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathCross, 2),
+            (SandPathVertical, 4),
+            (SandPathTop, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 6,
+      name: SandPathTop,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathCross, 2),
+            (SandPathVertical, 4),
+            (SandPathBottom, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 7,
+      name: SandPathLeft,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 2),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 2),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+  ]
+)

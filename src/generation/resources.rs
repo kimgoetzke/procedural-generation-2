@@ -3,6 +3,7 @@ use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::{ChunkComponent, TerrainType, TileType};
+use crate::generation::object::lib::{Connection, ObjectName};
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::log::*;
@@ -13,6 +14,8 @@ use bevy::prelude::{
 };
 use bevy::utils::{HashMap, HashSet};
 use bevy_common_assets::ron::RonAssetPlugin;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 pub struct GenerationResourcesPlugin;
 
@@ -36,27 +39,35 @@ struct RuleSetHandle(Vec<Handle<RuleSet>>);
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
 pub struct RuleSet {
   pub terrain: TerrainType,
-  pub rules: Vec<Rule>,
+  pub states: Vec<TileState>,
 }
 
 impl Default for RuleSet {
   fn default() -> Self {
     Self {
       terrain: TerrainType::Any,
-      rules: vec![],
+      states: vec![],
     }
   }
 }
 
+impl Display for RuleSet {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "[{:?}] terrain rule set with {} states", self.terrain, self.states.len())
+  }
+}
+
 #[derive(serde::Deserialize, Debug, Clone)]
-pub struct Rule {
+pub struct TileState {
+  pub name: ObjectName,
   pub index: i32,
-  pub permitted_neighbours: Vec<(i32, f32)>,
+  pub permitted_neighbours: Vec<(Connection, Vec<(ObjectName, i32)>)>,
 }
 
 fn pre_load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-  let handle = asset_server.load("objects/sand.ruleset.ron");
-  commands.insert_resource(RuleSetHandle(vec![handle]));
+  // let sand = asset_server.load("objects/sand.ruleset.ron");
+  let sand_path = asset_server.load("objects/sand-path.ruleset.ron");
+  commands.insert_resource(RuleSetHandle(vec![sand_path]));
 }
 
 fn check_loading_state(asset_server: Res<AssetServer>, handles: Res<RuleSetHandle>, mut state: ResMut<NextState<AppState>>) {
@@ -87,6 +98,7 @@ pub struct ObjectResources {
   pub forest: AssetCollection,
   pub rule_sets: Vec<RuleSet>,
   pub sand: AssetCollection,
+  pub path: AssetCollection,
 }
 
 impl GenerationResourcesCollection {
@@ -203,11 +215,16 @@ fn initialise_resources_system(
   let static_stones_atlas_layout = layouts.add(static_stones_layout);
   asset_collection.objects.sand.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
 
+  // Objects: Paths
+  let static_paths_layout = TextureAtlasLayout::from_grid(PATHS_OBJ_SIZE, PATHS_OBJ_COLUMNS, PATHS_OBJ_ROWS, None, None);
+  let static_paths_atlas_layout = layouts.add(static_paths_layout);
+  asset_collection.objects.path.stat = AssetPack::new(asset_server.load(PATHS_OBJ_PATH), static_paths_atlas_layout);
+
   // Rule sets for wave function collapse
   let mut rule_sets = vec![];
   for handle in rule_set_handle.0.iter() {
     if let Some(rule_set) = rule_set_assets.remove(handle) {
-      debug!("Loaded: {:?}", rule_set);
+      debug!("Loaded: {}", rule_set);
       rule_sets.push(rule_set);
     }
   }

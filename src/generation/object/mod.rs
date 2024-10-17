@@ -1,4 +1,4 @@
-mod lib;
+pub(crate) mod lib;
 mod object_generator;
 
 use bevy::app::{App, Plugin};

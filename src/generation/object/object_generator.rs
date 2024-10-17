@@ -1,10 +1,9 @@
-use crate::app_state::AppState;
-use crate::constants::{CHUNK_SIZE, FOREST_OBJ_COLUMNS, SAND_OBJ_COLUMNS, TILE_SIZE};
-use crate::coords::point::ChunkGrid;
-use crate::coords::Point;
+use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
-use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
-use crate::generation::resources::{AssetCollection, GenerationResourcesCollection, Rule, RuleSet};
+use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::object::lib::Cell;
+use crate::generation::object::lib::ObjectGrid;
+use crate::generation::resources::{AssetCollection, GenerationResourcesCollection, RuleSet};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::core::Name;
@@ -22,54 +21,22 @@ impl Plugin for ObjectGeneratorPlugin {
 
 type OffsetFn = fn(&mut StdRng) -> f32;
 
-struct ObjectGrid(Vec<Vec<CellState>>);
-
-impl ObjectGrid {
-  fn new(rule_set: &RuleSet) -> Self {
-    let grid = (0..CHUNK_SIZE)
-      .map(|y| (0..CHUNK_SIZE).map(|x| CellState::new(x, y, rule_set)).collect())
-      .collect();
-    ObjectGrid(grid)
-  }
-
-  fn get_cell(&mut self, point: &Point<ChunkGrid>) -> Option<&mut CellState> {
-    self.0.iter_mut().flatten().filter(|cell| cell.cg == *point).next()
-  }
-}
-
 #[derive(Debug, Clone)]
-struct CellState {
-  cg: Point<ChunkGrid>,
-  is_collapsed: bool,
-  possible_states: Vec<Rule>,
-  index: i32,
-}
-
-#[derive(Debug, Clone)]
-struct CollapsedCell {
-  tile_data: TileData,
+struct CollapsedCell<'a> {
+  tile_data: &'a TileData,
   sprite_index: i32,
 }
 
-impl CellState {
-  fn new(x: i32, y: i32, rule_set: &RuleSet) -> Self {
-    CellState {
-      cg: Point::new_chunk_grid(x, y),
-      is_collapsed: false,
-      possible_states: rule_set.rules.clone(),
-      index: -1,
+impl<'a> CollapsedCell<'a> {
+  fn new(tile_data: &'a TileData, cell_state: &Cell) -> Self {
+    let sprite_index = cell_state.index;
+    if sprite_index == -1 {
+      error!(
+        "Creating collapsed cell from non-collapsed cell state at cg{:?}",
+        cell_state.cg
+      );
     }
-  }
-
-  fn set_empty(&mut self) {
-    let rule = self.possible_states.get(0).unwrap().clone();
-    self.index = rule.index;
-    self.possible_states = vec![rule];
-    self.is_collapsed = true;
-  }
-
-  fn remove_state(&mut self, index: usize) {
-    self.possible_states.remove(index);
+    CollapsedCell { tile_data, sprite_index }
   }
 }
 
@@ -83,7 +50,7 @@ fn initialise_wfc_object_grids(rule_sets: &Vec<RuleSet>) -> Vec<ObjectGrid> {
   grids
 }
 
-// TODO: Generate objects asynchronously
+// TODO: Generate objects asynchronously later
 pub fn generate(
   commands: &mut Commands,
   mut spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -95,166 +62,114 @@ pub fn generate(
     return;
   }
   let start_time = get_time();
-  for (_, tile_data) in spawn_data.iter_mut() {
+  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+
+  for (_, tile_data) in spawn_data.iter() {
     let mut grids = initialise_wfc_object_grids(&resources.objects.rule_sets);
     let mut collapsed_cells = vec![];
 
     for grid in grids.iter_mut() {
-      // Collapse non-fill cells
-      for tile_data in tile_data.iter_mut() {
-        if let Some(cell_state) = grid.get_cell(&tile_data.flat_tile.coords.chunk_grid) {
-          if tile_data.flat_tile.tile_type != TileType::Fill {
-            cell_state.set_empty();
-          }
-        }
-      }
+      // // Collapse non-fill cells
+      // for tile_data in tile_data.iter() {
+      //   if let Some(cell_state) = grid.get_cell_mut(&tile_data.flat_tile.coords.chunk_grid) {
+      //     if tile_data.flat_tile.tile_type != TileType::Fill {
+      //       collapsed_cells.push(CollapsedCell::new(tile_data, cell_state.collapse_to_empty()));
+      //     }
+      //   }
+      // }
+      //
+      // // Collapse random cell to start the process
+      // let point = Point::<ChunkGrid>::new_chunk_grid(rng.gen_range(0..CHUNK_SIZE), rng.gen_range(0..CHUNK_SIZE));
+      // if let Some(random_cell) = grid.get_cell_mut(&point) {
+      //   let cg = random_cell.cg;
+      //   let cell_state = random_cell.collapse_to_empty();
+      //   if let Some(tile_data) = tile_data.iter().find(|&t| t.flat_tile.coords.chunk_grid == cg) {
+      //     collapsed_cells.push(CollapsedCell::new(tile_data, cell_state));
+      //   } else {
+      //     panic!(
+      //       "Failed to find tile data for cell at {:?} in [{:?}] grid",
+      //       point, grid.terrain
+      //     );
+      //   }
+      // }
 
-      // Collapse random cell to start the process
-      let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-      let point = Point::<ChunkGrid>::new_chunk_grid(rng.gen_range(0..CHUNK_SIZE), rng.gen_range(0..CHUNK_SIZE));
-      if let Some(random_cell) = grid.get_cell(&point) {
-        random_cell.set_empty();
-        let tile_data = tile_data
-          .iter_mut()
-          .find(|t| t.flat_tile.coords.chunk_grid == random_cell.cg)
-          .expect(format!("Failed to find tile data for cell at {:?}", point).as_str());
-        collapsed_cells.push(CollapsedCell {
-          sprite_index: 0,
-          tile_data: tile_data.clone(),
+      let mut wave_count = 0;
+      while !process_wave(&mut rng, grid) {
+        wave_count += 1;
+        debug!("Processed wave {} in [{:?}] grid", wave_count, grid.terrain);
+        continue;
+      }
+      collapsed_cells.extend(
+        tile_data
+          .iter()
+          .filter_map(|tile_data| {
+            grid
+              .get_cell_mut(&tile_data.flat_tile.coords.chunk_grid)
+              .map(|cell_state| CollapsedCell::new(tile_data, cell_state))
+          })
+          .collect::<Vec<CollapsedCell>>(),
+      );
+
+      // Render tiles based on collapsed cells
+      for collapsed_cell in collapsed_cells.iter() {
+        let sprite_index = collapsed_cell.sprite_index;
+        let tile_data = &collapsed_cell.tile_data;
+        commands.entity(tile_data.entity).with_children(|parent| {
+          parent.spawn(sprite(
+            &tile_data.flat_tile,
+            0.,
+            0.,
+            sprite_index,
+            &resources.objects.path,
+            Name::new("WFC Sprite".to_string()),
+          ));
         });
       }
-
-      // Sort and get the lowest entropy cell
-      let mut lowest_entropy = f64::MAX;
-      let mut lowest_entropy_cell = None;
-      for cell in grid.0.iter_mut().flatten() {
-        if !cell.is_collapsed {
-          let entropy = cell.possible_states.len() as f64;
-          if entropy < lowest_entropy {
-            lowest_entropy = entropy;
-            lowest_entropy_cell = Some(cell);
-          }
-        }
-      }
-
-      // Collapse cells based on neighbours
     }
   }
 
-  for (_, tile_data) in spawn_data.iter_mut() {
-    place_trees(commands, tile_data, resources, settings);
-    place_stones(commands, tile_data, resources, settings);
-  }
+  // for (_, tile_data) in spawn_data.iter_mut() {
+  //   place_trees(commands, tile_data, resources, settings);
+  //   place_stones(commands, tile_data, resources, settings);
+  // }
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
 
-// pub fn generate(
-//   commands: &mut Commands,
-//   spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
-//   asset_collection: &Res<AssetPacksCollection>,
-//   settings: &Res<Settings>,
-// ) {
-//   if !settings.object.generate_objects {
-//     debug!("Skipped object generation because it's disabled");
-//     return;
-//   }
-//   let start_time = get_time();
-//   for (_, tile_data) in spawn_data.iter_mut() {
-//     place_trees(commands, tile_data, asset_collection, settings);
-//     place_stones(commands, tile_data, asset_collection, settings);
-//   }
-//   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
-// }
+fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
+  // Sort and get the lowest entropy cell
+  let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
+  if lowest_entropy_cells.is_empty() {
+    info!("No more cells to collapse in this [{:?}] grid", grid.terrain);
+    return true;
+  }
 
-fn place_trees(
-  commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  resources: &Res<GenerationResourcesCollection>,
-  settings: &Res<Settings>,
-) {
-  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-  generate_objects(
-    commands,
-    tile_data,
-    &resources.objects.forest,
-    TerrainType::Forest,
-    settings.object.forest_obj_density,
-    "Forest Object Sprite",
-    FOREST_OBJ_COLUMNS as usize,
-    &mut rng,
-    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
-    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0) + TILE_SIZE as f32,
-  );
-}
+  // Collapse random cell from the lowest entropy cells to start the process
+  let index = rng.gen_range(0..lowest_entropy_cells.len());
+  let random_cell: &Cell = lowest_entropy_cells.get(index).expect("Failed to get random cell");
+  let mut random_cell_clone = random_cell.clone();
+  random_cell_clone.collapse(&mut rng);
 
-fn place_stones(
-  commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  resources: &Res<GenerationResourcesCollection>,
-  settings: &Res<Settings>,
-) {
-  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-  generate_objects(
-    commands,
-    tile_data,
-    &resources.objects.sand,
-    TerrainType::Sand,
-    settings.object.sand_obj_density,
-    "Sand Object Sprite",
-    SAND_OBJ_COLUMNS as usize,
-    &mut rng,
-    |_| 0.,
-    |_| -(TILE_SIZE as f32) / 2.,
-  );
-}
-
-fn generate_objects(
-  commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  asset_collection: &AssetCollection,
-  terrain_type: TerrainType,
-  density: f64,
-  sprite_name: &str,
-  columns: usize,
-  rng: &mut StdRng,
-  offset_x: OffsetFn,
-  offset_y: OffsetFn,
-) {
-  let relevant_tiles: Vec<_> = tile_data
-    .iter_mut()
-    .filter_map(|t| {
-      if t.flat_tile.terrain == terrain_type && t.flat_tile.tile_type == TileType::Fill {
-        Some(t)
-      } else {
-        None
+  // Update all neighbours
+  let mut stack: Vec<Cell> = vec![random_cell_clone];
+  while let Some(cell) = stack.pop() {
+    grid.set_cell(cell.clone());
+    let mut neighbours = grid.get_neighbours(&cell.cg);
+    for (connection, neighbour) in neighbours.iter_mut() {
+      if !neighbour.is_collapsed {
+        let (has_changed, neighbour_cell_state) = neighbour.clone_and_update(&cell, &connection);
+        if has_changed {
+          trace!(
+            "Updated cell at cg{:?} in with {:?} new state(s)",
+            neighbour.cg,
+            neighbour_cell_state.possible_states.len()
+          );
+          stack.push(neighbour_cell_state);
+        }
       }
-    })
-    .collect();
-
-  for tile_data in relevant_tiles {
-    if rng.gen_bool(density) {
-      let offset_x = offset_x(rng);
-      let offset_y = offset_y(rng);
-      let index = rng.gen_range(0..columns as i32);
-      trace!(
-        "Placing [{}] at {:?} with offset ({}, {})",
-        sprite_name,
-        tile_data.flat_tile.coords.chunk_grid,
-        offset_x,
-        offset_y
-      );
-      commands.entity(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(
-          &tile_data.flat_tile,
-          offset_x,
-          offset_y,
-          index,
-          asset_collection,
-          Name::new(sprite_name.to_string()),
-        ));
-      });
     }
   }
+
+  false
 }
 
 fn sprite(

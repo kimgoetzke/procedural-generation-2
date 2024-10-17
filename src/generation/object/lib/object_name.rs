@@ -1,0 +1,23 @@
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy)]
+pub enum ObjectName {
+  SandEmpty,
+  SandStone1,
+  SandStone2,
+  SandStone3,
+  SandStone4,
+  SandStone5,
+  SandStone6,
+  SandGrassPatch1,
+  SandGrassPatch2,
+  SandPattern1,
+  SandPattern2,
+  SandPattern3,
+  SandPattern4,
+  SandPathLeft,
+  SandPathRight,
+  SandPathTop,
+  SandPathBottom,
+  SandPathCross,
+  SandPathHorizontal,
+  SandPathVertical,
+}
