@@ -84,6 +84,8 @@ pub fn generate(
         debug!("Processed [{:?}] grid wave {}", grid.terrain, wave_count);
         continue;
       }
+
+      // TODO: Determine asset pack based on terrain or use cell's name
       collapsed_cells.extend(
         tile_data
           .iter()
@@ -106,7 +108,7 @@ pub fn generate(
             0.,
             sprite_index,
             &resources.objects.path,
-            Name::new("WFC Sprite".to_string()),
+            Name::new("WFC Sprite".to_string()), // TODO: Add name to sprite
           ));
         });
       }
@@ -120,6 +122,7 @@ pub fn generate(
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
 
+// TODO: Add snapshots at each wave so progress can be reset if an impossible state is reached
 fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
   // Sort and get the lowest entropy cell
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
@@ -141,14 +144,9 @@ fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
     let mut neighbours = grid.get_neighbours(&cell.cg);
     for (connection, neighbour) in neighbours.iter_mut() {
       if !neighbour.is_collapsed {
-        let (has_changed, neighbour_cell_state) = neighbour.clone_and_update(&cell, &connection);
+        let (has_changed, neighbour_cell) = neighbour.clone_and_reduce(&cell, &connection);
         if has_changed {
-          trace!(
-            "Updated cell at cg{:?} in with {:?} new state(s)",
-            neighbour.cg,
-            neighbour_cell_state.possible_states.len()
-          );
-          stack.push(neighbour_cell_state);
+          stack.push(neighbour_cell);
         }
       }
     }
