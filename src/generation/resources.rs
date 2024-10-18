@@ -220,7 +220,7 @@ fn initialise_resources_system(
   let static_paths_atlas_layout = layouts.add(static_paths_layout);
   asset_collection.objects.path.stat = AssetPack::new(asset_server.load(PATHS_OBJ_PATH), static_paths_atlas_layout);
 
-  // Rule sets for wave function collapse
+  // Objects: Rule sets for wave function collapse
   let mut rule_sets = vec![];
   for handle in rule_set_handle.0.iter() {
     if let Some(rule_set) = rule_set_assets.remove(handle) {

@@ -30,9 +30,9 @@ pub fn get_connection_points<T: CoordType + 'static>(point: &Point<T>) -> [(Conn
   };
   let p = point;
   [
-    (Connection::Top, Point::new(p.x, p.y + offset)),
+    (Connection::Top, Point::new(p.x, p.y - offset)),
     (Connection::Left, Point::new(p.x - offset, p.y)),
     (Connection::Right, Point::new(p.x + offset, p.y)),
-    (Connection::Bottom, Point::new(p.x, p.y - offset)),
+    (Connection::Bottom, Point::new(p.x, p.y + offset)),
   ]
 }

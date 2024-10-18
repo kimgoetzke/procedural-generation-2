@@ -41,6 +41,7 @@ impl ObjectGrid {
     self.grid.iter_mut().flatten().find(|cell| cell.cg == *point)
   }
 
+  /// Replaces the `Cell` at the given point with the provided `Cell`.
   pub fn set_cell(&mut self, cell: Cell) {
     if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.cg == cell.cg) {
       *existing_cell = cell;
@@ -63,6 +64,11 @@ impl ObjectGrid {
         }
       }
     }
+    debug!(
+      "Found {} cell(s) with lowest entropy of {}",
+      lowest_entropy_cells.len(),
+      lowest_entropy
+    );
 
     lowest_entropy_cells
   }

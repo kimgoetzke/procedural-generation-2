@@ -130,6 +130,7 @@
         (
           Right,
           [
+            (SandPathLeft, 1),
             (SandPathHorizontal, 4),
           ]
         ),

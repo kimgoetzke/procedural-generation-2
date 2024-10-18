@@ -77,26 +77,11 @@ pub fn generate(
       //     }
       //   }
       // }
-      //
-      // // Collapse random cell to start the process
-      // let point = Point::<ChunkGrid>::new_chunk_grid(rng.gen_range(0..CHUNK_SIZE), rng.gen_range(0..CHUNK_SIZE));
-      // if let Some(random_cell) = grid.get_cell_mut(&point) {
-      //   let cg = random_cell.cg;
-      //   let cell_state = random_cell.collapse_to_empty();
-      //   if let Some(tile_data) = tile_data.iter().find(|&t| t.flat_tile.coords.chunk_grid == cg) {
-      //     collapsed_cells.push(CollapsedCell::new(tile_data, cell_state));
-      //   } else {
-      //     panic!(
-      //       "Failed to find tile data for cell at {:?} in [{:?}] grid",
-      //       point, grid.terrain
-      //     );
-      //   }
-      // }
 
       let mut wave_count = 0;
       while !process_wave(&mut rng, grid) {
         wave_count += 1;
-        debug!("Processed wave {} in [{:?}] grid", wave_count, grid.terrain);
+        debug!("Processed [{:?}] grid wave {}", grid.terrain, wave_count);
         continue;
       }
       collapsed_cells.extend(
@@ -143,7 +128,7 @@ fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
     return true;
   }
 
-  // Collapse random cell from the lowest entropy cells to start the process
+  // Collapse random cell from the cells with the lowest entropy
   let index = rng.gen_range(0..lowest_entropy_cells.len());
   let random_cell: &Cell = lowest_entropy_cells.get(index).expect("Failed to get random cell");
   let mut random_cell_clone = random_cell.clone();
