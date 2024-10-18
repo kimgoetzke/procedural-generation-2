@@ -157,7 +157,7 @@ fn schedule_tile_spawning_tasks(
       }
     }
   }
-  debug!("Scheduled spawning all tiles within {} ms", get_time() - start_time);
+  debug!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
 }
 
 fn attach_task_to_tile_entity(

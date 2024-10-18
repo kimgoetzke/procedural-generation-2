@@ -115,5 +115,5 @@ fn log(
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  debug!("Generated draft chunk at {:?} within {} ms", world_grid, get_time() - time);
+  debug!("Generated draft chunk at wg{:?} in {} ms", world_grid, get_time() - time);
 }
