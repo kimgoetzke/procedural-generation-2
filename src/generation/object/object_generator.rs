@@ -1,8 +1,8 @@
 use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
-use crate::generation::object::lib::Cell;
 use crate::generation::object::lib::ObjectGrid;
+use crate::generation::object::lib::{Cell, NoPossibleStatesFailure};
 use crate::generation::resources::{AssetCollection, GenerationResourcesCollection, RuleSet};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -65,24 +65,39 @@ pub fn generate(
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
 
   for (_, tile_data) in spawn_data.iter() {
+    // TODO: Consider creating single grid only and adding rule sets based on terrain
     let mut grids = initialise_wfc_object_grids(&resources.objects.rule_sets);
     let mut collapsed_cells = vec![];
 
-    for grid in grids.iter_mut() {
-      // // Collapse non-fill cells
-      // for tile_data in tile_data.iter() {
-      //   if let Some(cell_state) = grid.get_cell_mut(&tile_data.flat_tile.coords.chunk_grid) {
-      //     if tile_data.flat_tile.tile_type != TileType::Fill {
-      //       collapsed_cells.push(CollapsedCell::new(tile_data, cell_state.collapse_to_empty()));
-      //     }
-      //   }
-      // }
-
+    for mut grid in grids.iter_mut() {
       let mut wave_count = 0;
-      while !process_wave(&mut rng, grid) {
-        wave_count += 1;
-        debug!("Processed [{:?}] grid wave {}", grid.terrain, wave_count);
-        continue;
+      let mut has_entropy = true;
+      let mut snapshots = vec![];
+      let mut error_count = 0;
+
+      while has_entropy {
+        match process_wave(&mut rng, grid) {
+          Ok(is_done) => {
+            let grid_clone = grid.clone();
+            snapshots.push(grid_clone);
+            wave_count += 1;
+            debug!("Processed [{:?}] grid wave {}", grid.terrain, wave_count);
+            has_entropy = !is_done;
+          }
+          Err(_) => {
+            error_count += 1;
+            let snapshot_index = snapshots.len() - error_count;
+            let error_message = format!("Failed to get snapshot {}", snapshot_index.to_string());
+            grid.restore_from_snapshot(snapshots.get(snapshot_index).expect(error_message.as_str()));
+            warn!(
+              "Failed to reduce entropy in wave {} in [{:?}] grid - restored snapshot {}/{}",
+              wave_count + 1,
+              grid.terrain,
+              snapshot_index,
+              snapshots.len()
+            );
+          }
+        }
       }
 
       // TODO: Determine asset pack based on terrain or use cell's name
@@ -123,12 +138,12 @@ pub fn generate(
 }
 
 // TODO: Add snapshots at each wave so progress can be reset if an impossible state is reached
-fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
+fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> Result<bool, NoPossibleStatesFailure> {
   // Sort and get the lowest entropy cell
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
   if lowest_entropy_cells.is_empty() {
     info!("No more cells to collapse in this [{:?}] grid", grid.terrain);
-    return true;
+    return Ok(true);
   }
 
   // Collapse random cell from the cells with the lowest entropy
@@ -137,22 +152,25 @@ fn process_wave(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> bool {
   let mut random_cell_clone = random_cell.clone();
   random_cell_clone.collapse(&mut rng);
 
-  // Update all neighbours
+  // Update every neighbours' states
   let mut stack: Vec<Cell> = vec![random_cell_clone];
   while let Some(cell) = stack.pop() {
     grid.set_cell(cell.clone());
     let mut neighbours = grid.get_neighbours(&cell.cg);
     for (connection, neighbour) in neighbours.iter_mut() {
       if !neighbour.is_collapsed {
-        let (has_changed, neighbour_cell) = neighbour.clone_and_reduce(&cell, &connection);
-        if has_changed {
-          stack.push(neighbour_cell);
+        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
+          if has_changed {
+            stack.push(neighbour_cell);
+          }
+        } else {
+          return Err(NoPossibleStatesFailure {});
         }
       }
     }
   }
 
-  false
+  Ok(false)
 }
 
 fn sprite(

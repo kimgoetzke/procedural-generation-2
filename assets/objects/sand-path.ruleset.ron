@@ -12,6 +12,7 @@
             (SandPathRight, 1),
             (SandPathHorizontal, 1),
             (SandPathLeft, 1),
+            (SandPathTop, 1),
           ]
         ),
         (
@@ -21,6 +22,7 @@
             (SandPathVertical, 1),
             (SandPathTop, 1),
             (SandPathBottom, 1),
+            (SandPathLeft, 1),
           ]
         ),
         (
@@ -30,6 +32,7 @@
             (SandPathVertical, 1),
             (SandPathTop, 1),
             (SandPathBottom, 1),
+            (SandPathRight, 1),
           ]
         ),
         (
@@ -39,6 +42,7 @@
             (SandPathRight, 1),
             (SandPathHorizontal, 1),
             (SandPathLeft, 1),
+            (SandPathBottom, 1),
           ]
         ),
       ]

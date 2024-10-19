@@ -7,7 +7,7 @@ use crate::generation::object::lib::{Cell, Connection};
 use crate::generation::resources::RuleSet;
 use bevy::log::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ObjectGrid {
   pub terrain: TerrainType,
   pub grid: Vec<Vec<Cell>>,
@@ -32,7 +32,7 @@ impl ObjectGrid {
         neighbours.push((direction, cell));
       }
     }
-    debug!("Found {} neighbours for cg{:?}", neighbours.len(), point);
+    trace!("Found {} neighbours for cg{:?}", neighbours.len(), point);
 
     neighbours
   }
@@ -71,5 +71,9 @@ impl ObjectGrid {
     );
 
     lowest_entropy_cells
+  }
+
+  pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
+    self.grid = other.grid.clone();
   }
 }

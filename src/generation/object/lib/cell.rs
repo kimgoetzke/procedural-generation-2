@@ -1,6 +1,6 @@
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
-use crate::generation::object::lib::{Connection, ObjectName};
+use crate::generation::object::lib::{Connection, NoPossibleStatesFailure, ObjectName};
 use crate::generation::resources::{RuleSet, TileState};
 use bevy::log::*;
 use rand::prelude::StdRng;
@@ -26,53 +26,49 @@ impl Cell {
     }
   }
 
-  pub fn clone_and_reduce(&self, reference_cell: &Cell, where_is_reference: &Connection) -> (bool, Self) {
-    let currently_possible_states = self.possible_states.len();
-    let mut allowed_object_names: Vec<ObjectName> = Vec::new();
+  pub fn clone_and_reduce(
+    &self,
+    reference_cell: &Cell,
+    where_is_reference: &Connection,
+  ) -> Result<(bool, Self), NoPossibleStatesFailure> {
+    let count_currently_possible_states = self.possible_states.len();
+    let mut permitted_state_names: Vec<ObjectName> = Vec::new();
     let where_is_self_for_reference = where_is_reference.opposite();
 
-    for possible_state_other in &reference_cell.possible_states {
-      for permitted_neighbour in &possible_state_other.permitted_neighbours {
+    for possible_state_reference in &reference_cell.possible_states {
+      for permitted_neighbour in &possible_state_reference.permitted_neighbours {
         if permitted_neighbour.0 == where_is_self_for_reference {
           for (name, _) in &permitted_neighbour.1 {
-            allowed_object_names.push(name.clone());
+            permitted_state_names.push(name.clone());
           }
         }
       }
     }
 
-    let mut new_possible_states = Vec::new();
+    let mut updated_possible_states = Vec::new();
     for possible_state_self in &self.possible_states {
-      if allowed_object_names.contains(&possible_state_self.name) {
-        new_possible_states.push(possible_state_self.clone());
+      if permitted_state_names.contains(&possible_state_self.name) {
+        updated_possible_states.push(possible_state_self.clone());
       };
     }
 
     let mut clone = self.clone();
-    clone.possible_states = new_possible_states;
+    clone.possible_states = updated_possible_states;
     clone.entropy = self.possible_states.len();
-
     log_update(
       reference_cell,
       where_is_reference,
       where_is_self_for_reference,
       self,
-      currently_possible_states,
+      count_currently_possible_states,
       &mut clone,
-      &mut allowed_object_names,
+      &mut permitted_state_names,
     );
 
-    (currently_possible_states != clone.possible_states.len(), clone)
-  }
-
-  pub fn collapse_to_empty(&mut self) -> &Self {
-    let rule = self.possible_states.get(0).unwrap().clone();
-    self.index = rule.index;
-    self.possible_states = vec![rule];
-    self.is_collapsed = true;
-    self.entropy = 0;
-
-    self
+    match clone.possible_states.len() {
+      0 => Err(NoPossibleStatesFailure {}),
+      _ => Ok((count_currently_possible_states != clone.possible_states.len(), clone)),
+    }
   }
 
   // TODO: Add weights to the rules at some point
@@ -96,7 +92,7 @@ fn log_update(
   new_possible_states: &mut Vec<ObjectName>,
 ) {
   if old_possible_states_count != new_cell.possible_states.len() {
-    debug!(
+    trace!(
       "Reduced possible states of cg{:?} from {} to {}",
       new_cell.cg,
       old_possible_states_count,
@@ -139,9 +135,5 @@ fn log_update(
       new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
     debug!("");
-  }
-
-  if new_cell.possible_states.len() == 0 {
-    panic!("Failed to find any possible states while updating a cell based on a neighbour that was changed previously");
   }
 }
