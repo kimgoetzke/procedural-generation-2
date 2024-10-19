@@ -50,6 +50,7 @@ impl ObjectGrid {
     }
   }
 
+  // TODO: Investigate why entropy can increase between runs (with no snapshot being restored)
   pub fn get_cells_with_lowest_entropy(&self) -> Vec<&Cell> {
     let mut lowest_entropy = usize::MAX;
     let mut lowest_entropy_cells = vec![];

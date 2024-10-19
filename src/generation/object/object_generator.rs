@@ -79,9 +79,10 @@ pub fn generate(
         match process_wave(&mut rng, grid) {
           Ok(is_done) => {
             let grid_clone = grid.clone();
+            // TODO: Only keep snapshots for the last few waves
             snapshots.push(grid_clone);
             wave_count += 1;
-            debug!("Processed [{:?}] grid wave {}", grid.terrain, wave_count);
+            debug!("Completed [{:?}] grid wave {}", grid.terrain, wave_count);
             has_entropy = !is_done;
           }
           Err(_) => {
@@ -100,6 +101,7 @@ pub fn generate(
         }
       }
 
+      debug!("Completed processing of [{:?}] grid", grid.terrain);
       // TODO: Determine asset pack based on terrain or use cell's name
       collapsed_cells.extend(
         tile_data
