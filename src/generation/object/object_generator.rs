@@ -1,7 +1,8 @@
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
-use crate::generation::object::lib::{Cell, NoPossibleStatesFailure};
-use crate::generation::object::lib::{ObjectGrid, ObjectName};
+use crate::generation::object::lib::CollapsedCell;
+use crate::generation::object::lib::ObjectGrid;
+use crate::generation::object::wfc;
 use crate::generation::resources::{AssetCollection, GenerationResourcesCollection, RuleSet};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -11,37 +12,12 @@ use bevy::log::*;
 use bevy::prelude::{Commands, Res, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use rand::prelude::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 
 pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
-}
-
-#[derive(Debug, Clone)]
-struct CollapsedCell<'a> {
-  tile_data: &'a TileData,
-  sprite_index: i32,
-  name: Option<ObjectName>,
-}
-
-impl<'a> CollapsedCell<'a> {
-  fn new(tile_data: &'a TileData, cell_state: &Cell) -> Self {
-    let sprite_index = cell_state.index;
-    let object_name = cell_state.possible_states[0].name;
-    if sprite_index == -1 {
-      error!(
-        "Creating collapsed cell from a cell with a non-collapsed state at cg{:?}: {:?}",
-        cell_state.cg, cell_state
-      );
-    }
-    CollapsedCell {
-      tile_data,
-      sprite_index,
-      name: Some(object_name),
-    }
-  }
 }
 
 fn initialise_wfc_object_grids(rule_sets: &Vec<RuleSet>) -> Vec<ObjectGrid> {
@@ -54,7 +30,7 @@ fn initialise_wfc_object_grids(rule_sets: &Vec<RuleSet>) -> Vec<ObjectGrid> {
   grids
 }
 
-// TODO: Generate objects asynchronously later
+// TODO: Generate objects asynchronously
 pub fn generate(
   commands: &mut Commands,
   spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -75,36 +51,7 @@ pub fn generate(
     let mut collapsed_cells = vec![];
 
     for grid in grids.iter_mut() {
-      let mut wave_count = 0;
-      let mut has_entropy = true;
-      let mut snapshots = vec![];
-      let mut error_count = 0;
-
-      while has_entropy {
-        match execute_wave_function(&mut rng, grid) {
-          Ok(is_done) => {
-            let grid_clone = grid.clone();
-            // TODO: Consider keeping snapshots for the last few waves
-            snapshots.push(grid_clone);
-            wave_count += 1;
-            debug!("Completed [{:?}] grid wave {}", grid.terrain, wave_count);
-            has_entropy = !is_done;
-          }
-          Err(_) => {
-            error_count += 1;
-            let snapshot_index = snapshots.len() - error_count;
-            let error_message = format!("Failed to get snapshot {}", snapshot_index.to_string());
-            grid.restore_from_snapshot(snapshots.get(snapshot_index).expect(error_message.as_str()));
-            warn!(
-              "Failed to reduce entropy in wave {} in [{:?}] grid - restored snapshot {}/{}",
-              wave_count + 1,
-              grid.terrain,
-              snapshot_index,
-              snapshots.len()
-            );
-          }
-        }
-      }
+      wfc::determine_objects_in_grid(&mut rng, grid, settings);
 
       debug!("Completed processing of [{:?}] grid", grid.terrain);
       // TODO: Determine asset pack based on terrain or use cell's name
@@ -127,8 +74,6 @@ pub fn generate(
         commands.entity(tile_data.entity).with_children(|parent| {
           parent.spawn(sprite(
             &tile_data.flat_tile,
-            0.,
-            0.,
             sprite_index,
             &resources.objects.path,
             Name::new(format!("{:?} Object Sprite", object_name)),
@@ -141,45 +86,8 @@ pub fn generate(
   debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
 }
 
-fn execute_wave_function(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> Result<bool, NoPossibleStatesFailure> {
-  // Get the cells with the lowest entropy
-  let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
-  if lowest_entropy_cells.is_empty() {
-    info!("No more cells to collapse in this [{:?}] grid", grid.terrain);
-    return Ok(true);
-  }
-
-  // Collapse random cell from the cells with the lowest entropy
-  let index = rng.gen_range(0..lowest_entropy_cells.len());
-  let random_cell: &Cell = lowest_entropy_cells.get(index).expect("Failed to get random cell");
-  let mut random_cell_clone = random_cell.clone();
-  random_cell_clone.collapse(&mut rng);
-
-  // Update every neighbours' states and the grid
-  let mut stack: Vec<Cell> = vec![random_cell_clone];
-  while let Some(cell) = stack.pop() {
-    grid.set_cell(cell.clone());
-    let mut neighbours = grid.get_neighbours(&cell.cg);
-    for (connection, neighbour) in neighbours.iter_mut() {
-      if !neighbour.is_collapsed {
-        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
-          if has_changed {
-            stack.push(neighbour_cell);
-          }
-        } else {
-          return Err(NoPossibleStatesFailure {});
-        }
-      }
-    }
-  }
-
-  Ok(false)
-}
-
 fn sprite(
   tile: &Tile,
-  offset_x: f32,
-  offset_y: f32,
   index: i32,
   asset_collection: &AssetCollection,
   name: Name,
@@ -193,8 +101,8 @@ fn sprite(
       },
       texture: asset_collection.stat.texture.clone(),
       transform: Transform::from_xyz(
-        offset_x,
-        offset_y,
+        0.,
+        0.,
         // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
         200. + tile.coords.chunk_grid.y as f32,
       ),

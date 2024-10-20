@@ -1,5 +1,6 @@
 pub(crate) mod lib;
 mod object_generator;
+mod wfc;
 
 use bevy::app::{App, Plugin};
 
