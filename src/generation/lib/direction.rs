@@ -80,7 +80,7 @@ pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direc
     id if id == std::any::TypeId::of::<WorldGrid>() => CHUNK_SIZE,
     id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
     id if id == std::any::TypeId::of::<ChunkGrid>() => 1,
-    _ => panic!("Coord type not implemented for get_direction_points"),
+    id => panic!("Coord type {:?} not implemented for get_direction_points", id),
   };
   let p = point;
   [

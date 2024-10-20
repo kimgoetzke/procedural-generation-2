@@ -1,5 +1,4 @@
-use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::point::{ChunkGrid, CoordType, World, WorldGrid};
+use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -21,18 +20,13 @@ impl Connection {
   }
 }
 
-pub fn get_connection_points<T: CoordType + 'static>(point: &Point<T>) -> [(Connection, Point<T>); 4] {
-  let offset = match std::any::TypeId::of::<T>() {
-    id if id == std::any::TypeId::of::<WorldGrid>() => CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<ChunkGrid>() => 1,
-    _ => panic!("Coord type not implemented for get_connection_points"),
-  };
+// TODO: Find out why left/right appear to be inverted - is there a bug elsewhere?
+pub fn get_connection_points(point: &Point<ChunkGrid>) -> [(Connection, Point<ChunkGrid>); 4] {
   let p = point;
   [
-    (Connection::Top, Point::new(p.x, p.y - offset)),
-    (Connection::Left, Point::new(p.x - offset, p.y)),
-    (Connection::Right, Point::new(p.x + offset, p.y)),
-    (Connection::Bottom, Point::new(p.x, p.y + offset)),
+    (Connection::Top, Point::new(p.x, p.y + 1)),
+    (Connection::Left, Point::new(p.x + 1, p.y)),
+    (Connection::Right, Point::new(p.x - 1, p.y)),
+    (Connection::Bottom, Point::new(p.x, p.y - 1)),
   ]
 }

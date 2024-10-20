@@ -37,8 +37,8 @@ impl ObjectGrid {
     neighbours
   }
 
-  pub fn get_cell_mut(&mut self, point: &Point<ChunkGrid>) -> Option<&mut Cell> {
-    self.grid.iter_mut().flatten().find(|cell| cell.cg == *point)
+  pub fn get_cell(&self, point: &Point<ChunkGrid>) -> Option<&Cell> {
+    self.grid.iter().flatten().find(|cell| cell.cg == *point)
   }
 
   /// Replaces the `Cell` at the given point with the provided `Cell`.
