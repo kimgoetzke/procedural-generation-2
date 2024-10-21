@@ -24,10 +24,6 @@ impl Plugin for ObjectGeneratorPlugin {
   }
 }
 
-// TODO: Generate objects asynchronously
-//   - Generate resource with the object grid(s) and the tile data
-//   - Run system that runs 10 iterations of the WFC algorithm per frame (allow debugging though!)
-//   - When done, schedule spawning all objects
 pub fn generate(
   spawn_data: Vec<(Chunk, Vec<TileData>)>,
   resources: &Res<GenerationResourcesCollection>,
@@ -67,6 +63,10 @@ fn initialise_object_grid(rule_sets: &Vec<RuleSet>) -> ObjectGrid {
   grids[0].clone()
 }
 
+// TODO: Determine objects and spawn sprites asynchronously
+//   - Pick a chunk to generate objects for
+//   - Run system that runs x iterations of the WFC algorithm per frame (allow debugging if possible)
+//   - When done for a chunk, schedule spawning all objects for that chunk
 fn generate_objects_system(
   mut commands: Commands,
   mut query: Query<(Entity, &mut ObjectGenerationDataComponent)>,
@@ -108,7 +108,7 @@ fn generate_objects_system(
         parent.spawn(sprite(
           &tile_data.flat_tile,
           sprite_index,
-          &resources.objects.path,
+          &resources.objects.sand,
           Name::new(format!("{:?} Object Sprite", object_name)),
         ));
       });

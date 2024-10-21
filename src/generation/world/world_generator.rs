@@ -186,7 +186,13 @@ fn attach_task_to_tile_entity(
 fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
   let asset_collection = resources.get_terrain_collection(tile.terrain);
   if asset_collection.animated_tile_types.contains(&tile.tile_type) {
-    (true, &asset_collection.anim.as_ref().unwrap())
+    (
+      true,
+      &asset_collection
+        .anim
+        .as_ref()
+        .expect("Failed to get animated asset pack from resource collection"),
+    )
   } else {
     (false, &asset_collection.stat)
   }

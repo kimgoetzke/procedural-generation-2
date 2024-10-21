@@ -3,12 +3,16 @@
   states: [
     (
       index: 0,
-      name: SandEmpty,
+      name: Empty,
       permitted_neighbours: [
         (
           Top,
           [
-            (SandEmpty, 2),
+            (Empty, 10),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathLeft, 1),
+            (SandPathTop, 1),
             (SandStone1, 1),
             (SandStone2, 1),
             (SandStone3, 1),
@@ -26,7 +30,11 @@
         (
           Left,
           [
-            (SandEmpty, 2),
+            (Empty, 10),
+            (SandPathVertical, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+            (SandPathLeft, 1),
             (SandStone1, 1),
             (SandStone2, 1),
             (SandStone3, 1),
@@ -44,7 +52,11 @@
         (
           Right,
           [
-            (SandEmpty, 2),
+            (Empty, 10),
+            (SandPathVertical, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+            (SandPathRight, 1),
             (SandStone1, 1),
             (SandStone2, 1),
             (SandStone3, 1),
@@ -62,7 +74,11 @@
         (
           Bottom,
           [
-            (SandEmpty, 2),
+            (Empty, 10),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathLeft, 1),
+            (SandPathBottom, 1),
             (SandStone1, 1),
             (SandStone2, 1),
             (SandStone3, 1),
@@ -81,32 +97,482 @@
     ),
     (
       index: 1,
-      name: SandStone1,
+      name: SandPathRight,
       permitted_neighbours: [
         (
           Top,
           [
-            (SandEmpty, 2),
+            (Empty, 1),
           ]
         ),
         (
           Left,
           [
-            (SandEmpty, 2),
+            (Empty, 1),
           ]
         ),
         (
           Right,
           [
-            (SandEmpty, 2),
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
           ]
         ),
         (
           Bottom,
           [
-            (SandEmpty, 2),
+            (Empty, 1),
           ]
         ),
+      ]
+    ),
+    (
+      index: 2,
+      name: SandPathHorizontal,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 3,
+      name: SandPathCross,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathBottom, 1),
+            (SandPathVertical, 4),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathTop, 1),
+            (SandPathVertical, 4),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 4,
+      name: SandPathVertical,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 5,
+      name: SandPathBottom,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (SandPathCross, 2),
+            (SandPathVertical, 4),
+            (SandPathTop, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 6,
+      name: SandPathTop,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathCross, 2),
+            (SandPathVertical, 4),
+            (SandPathBottom, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 7,
+      name: SandPathLeft,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 2),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 2),
+          ]
+        ),
+        (
+          Right,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 8,
+      name: SandPathHorizontalGrassRight,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassPathLeft, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 9,
+      name: SandPathHorizontalGrassLeft,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 10,
+      name: SandPathHorizontalForestRight,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 11,
+      name: SandPathHorizontalForestLeft,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 12,
+      name: SandPathVerticalGrassTop,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 13,
+      name: SandPathVerticalGrassBottom,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 14,
+      name: SandPathVerticalForestTop,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 15,
+      name: SandPathVerticalForestBottom,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 16,
+      name: SandStone1,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 17,
+      name: SandStone2,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 18,
+      name: SandStone3,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 19,
+      name: SandStone4,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 20,
+      name: SandStone5,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 21,
+      name: SandStone6,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 22,
+      name: SandGrassPatch1,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 23,
+      name: SandGrassPatch2,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 24,
+      name: SandPattern1,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 25,
+      name: SandPattern2,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 26,
+      name: SandPattern3,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 27,
+      name: SandPattern4,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
   ]

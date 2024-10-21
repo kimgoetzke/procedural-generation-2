@@ -65,9 +65,8 @@ pub struct TileState {
 }
 
 fn pre_load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-  // let sand = asset_server.load("objects/sand.ruleset.ron");
-  let sand_path = asset_server.load("objects/sand-path.ruleset.ron");
-  commands.insert_resource(RuleSetHandle(vec![sand_path]));
+  let sand = asset_server.load("objects/sand.ruleset.ron");
+  commands.insert_resource(RuleSetHandle(vec![sand]));
 }
 
 fn check_loading_state(asset_server: Res<AssetServer>, handles: Res<RuleSetHandle>, mut state: ResMut<NextState<AppState>>) {
@@ -322,7 +321,7 @@ fn on_add_chunk_component_trigger(
   query: Query<&ChunkComponent>,
   mut index: ResMut<ChunkComponentIndex>,
 ) {
-  let cc = query.get(trigger.entity()).unwrap();
+  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
   index.grid.insert(cc.coords.world, cc.clone());
   trace!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
 }
@@ -332,7 +331,7 @@ fn on_remove_chunk_component_trigger(
   query: Query<&ChunkComponent>,
   mut index: ResMut<ChunkComponentIndex>,
 ) {
-  let cc = query.get(trigger.entity()).unwrap();
+  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
   index.grid.remove(&cc.coords.world);
   trace!(
     "ChunkComponentIndex -> Removed ChunkComponent with key w{:?}",

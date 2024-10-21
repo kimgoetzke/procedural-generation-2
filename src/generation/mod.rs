@@ -49,6 +49,7 @@ fn generation_system(
 ) {
   generate(commands, resources, settings);
   next_state.set(AppState::Running);
+  debug!("Transitioning to [{:?}] state", AppState::Running);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
@@ -62,7 +63,7 @@ fn regenerate_world_event(
 ) {
   let event_count = events.read().count();
   if event_count > 0 {
-    let world = existing_world.get_single().unwrap();
+    let world = existing_world.get_single().expect("Failed to get existing world entity");
     commands.entity(world).despawn_recursive();
     generate(commands, resources, settings);
   }
@@ -104,7 +105,7 @@ fn update_world_event(
     let start_time = get_time();
     let new_parent_chunk_world = calculate_new_current_chunk_world(&mut current_chunk, &event);
     let chunks_to_spawn = calculate_new_chunks_to_spawn(&existing_chunks, &settings, &new_parent_chunk_world);
-    let world = existing_world.get_single().unwrap();
+    let world = existing_world.get_single().expect("Failed to get existing world entity");
     let spawn_data = world::generate_chunks(&mut commands, world, chunks_to_spawn, &settings);
     object::generate(spawn_data, &resources, &settings, &mut commands);
 

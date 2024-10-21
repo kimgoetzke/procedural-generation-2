@@ -51,7 +51,7 @@ fn on_add_tile_component_trigger(
   query: Query<&TileComponent>,
   mut index: ResMut<TileComponentIndex>,
 ) {
-  let tc = query.get(trigger.entity()).unwrap();
+  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
   index.grid.entry(tc.tile.coords.world_grid).or_default().insert(tc.clone());
 }
 
@@ -97,7 +97,7 @@ fn on_remove_tile_component_trigger(
   query: Query<&TileComponent>,
   mut index: ResMut<TileComponentIndex>,
 ) {
-  let tc = query.get(trigger.entity()).unwrap();
+  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
   index.grid.entry(tc.tile.coords.world_grid).and_modify(|set| {
     set.remove(&tc.clone());
   });

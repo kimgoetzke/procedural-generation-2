@@ -28,7 +28,7 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
         let error_message = format!("Failed to get snapshot {}", snapshot_index.to_string());
         grid.restore_from_snapshot(snapshots.get(snapshot_index).expect(error_message.as_str()));
         warn!(
-          "Failed to reduce entropy in [{:?}] grid during wave {} - restored snapshot {} out of {}",
+          "Failed to reduce entropy in [{:?}] grid during iteration {} - restored snapshot {} out of {}",
           grid.terrain,
           wave_count + 1,
           snapshot_index,
@@ -40,19 +40,14 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
         // TODO: Consider keeping snapshots for the last few waves only
         snapshots.push(grid_clone);
         wave_count += 1;
-        trace!(
-          "Completed [{:?}] grid wave {} with {} errors",
-          grid.terrain,
-          wave_count,
-          error_count
-        );
+        trace!("Completed [{:?}] grid iteration {}", grid.terrain, wave_count,);
         has_entropy = result == IterationResult::Incomplete;
       }
     }
   }
 
   debug!(
-    "Completed determining objects for [{:?}] grid, resolved {} errors, in {} ms",
+    "Completed determining objects for [{:?}] grid (resolved {} errors) in {} ms",
     grid.terrain,
     error_count,
     get_time() - start_time
