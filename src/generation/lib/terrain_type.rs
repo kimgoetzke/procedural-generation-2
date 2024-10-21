@@ -1,4 +1,8 @@
-#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash)]
+use bevy::reflect::Reflect;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
+#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Reflect)]
 pub enum TerrainType {
   Water,
   Shore,
@@ -11,6 +15,12 @@ pub enum TerrainType {
 impl Default for TerrainType {
   fn default() -> Self {
     TerrainType::Any
+  }
+}
+
+impl Display for TerrainType {
+  fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
   }
 }
 

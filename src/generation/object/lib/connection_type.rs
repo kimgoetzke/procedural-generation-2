@@ -1,7 +1,8 @@
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
+use bevy::reflect::Reflect;
 
-#[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Reflect)]
 pub enum Connection {
   Top,
   Right,

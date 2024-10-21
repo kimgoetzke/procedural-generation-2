@@ -1,8 +1,18 @@
 use crate::generation::lib::TileData;
 use crate::generation::object::lib::ObjectGrid;
-use bevy::prelude::Component;
+use crate::ReflectComponent;
+use bevy::app::{App, Plugin};
+use bevy::prelude::{Component, Reflect};
 
-#[derive(Default, PartialEq)]
+pub struct ObjectGenerationComponentsPlugin;
+
+impl Plugin for ObjectGenerationComponentsPlugin {
+  fn build(&self, app: &mut App) {
+    app.register_type::<ObjectGenerationDataComponent>();
+  }
+}
+
+#[derive(Default, PartialEq, Reflect)]
 pub enum ObjectGenerationStatus {
   #[default]
   Pending,
@@ -10,7 +20,8 @@ pub enum ObjectGenerationStatus {
   Failure,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct ObjectGenerationDataComponent {
   pub status: ObjectGenerationStatus,
   pub object_grid: ObjectGrid,

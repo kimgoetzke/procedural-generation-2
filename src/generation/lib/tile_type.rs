@@ -1,9 +1,10 @@
 use crate::constants::*;
 use crate::generation::lib::TerrainType;
 use crate::generation::resources::GenerationResourcesCollection;
+use bevy::reflect::Reflect;
 
 #[allow(dead_code)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect)]
 pub enum TileType {
   Fill,
   InnerCornerBottomLeft,

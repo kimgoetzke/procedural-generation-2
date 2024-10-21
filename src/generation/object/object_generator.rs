@@ -5,7 +5,7 @@ use crate::generation::object::lib::CollapsedCell;
 use crate::generation::object::lib::ObjectGrid;
 use crate::generation::object::wfc;
 use crate::generation::object::wfc::WfcPlugin;
-use crate::generation::resources::{AssetCollection, GenerationResourcesCollection, RuleSet};
+use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
@@ -36,7 +36,7 @@ pub fn generate(
   }
   let start_time = get_time();
   for (chunk, tile_data) in spawn_data.iter() {
-    let grid = initialise_object_grid(&resources.objects.rule_sets);
+    let grid = ObjectGrid::new_initialised(&resources.objects.rule_sets, tile_data);
     commands.spawn((
       Name::new(format!(
         "Object Generation Data for Chunk w{} wg{}",
@@ -49,18 +49,6 @@ pub fn generate(
     "Generated object generation data for chunk(s) in {} ms",
     get_time() - start_time
   );
-}
-
-// TODO: Create a single grid and consider pre-resolving possible states for each cell based on terrain
-// TODO: Add constraints from neighbouring chunk tiles somehow
-fn initialise_object_grid(rule_sets: &Vec<RuleSet>) -> ObjectGrid {
-  let mut grids = vec![];
-  for rule_set in rule_sets.iter() {
-    let grid = ObjectGrid::new(rule_set);
-    grids.push(grid);
-  }
-
-  grids[0].clone()
 }
 
 // TODO: Determine objects and spawn sprites asynchronously
@@ -81,11 +69,9 @@ fn generate_objects_system(
     let start_time = get_time();
     let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
     let mut collapsed_cells = vec![];
-
     wfc::determine_objects_in_grid(&mut rng, &mut component.object_grid, &settings);
     component.status = ObjectGenerationStatus::Done;
 
-    // TODO: Determine asset pack based on terrain or use cell's name
     collapsed_cells.extend(
       component
         .tile_data
@@ -94,6 +80,7 @@ fn generate_objects_system(
           component
             .object_grid
             .get_cell(&tile_data.flat_tile.coords.chunk_grid)
+            .filter(|cell_state| cell_state.index != 1)
             .map(|cell_state| CollapsedCell::new(tile_data, cell_state))
         })
         .collect::<Vec<CollapsedCell>>(),
@@ -104,19 +91,21 @@ fn generate_objects_system(
       let sprite_index = collapsed_cell.sprite_index;
       let tile_data = collapsed_cell.tile_data;
       let object_name = collapsed_cell.name.as_ref().expect("Failed to get object name");
+      let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain);
       commands.entity(tile_data.entity).with_children(|parent| {
         parent.spawn(sprite(
           &tile_data.flat_tile,
           sprite_index,
-          &resources.objects.sand,
+          asset_collection,
           Name::new(format!("{:?} Object Sprite", object_name)),
         ));
       });
     }
 
     debug!(
-      "Generated objects for [{:?}] grid in {} ms",
-      component.object_grid.terrain,
+      "Generated {} objects for entity #{} in {} ms",
+      collapsed_cells.len(),
+      entity,
       get_time() - start_time
     );
   }

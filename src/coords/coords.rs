@@ -2,7 +2,7 @@ use crate::constants::TILE_SIZE;
 use crate::coords::point::*;
 use std::fmt;
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Coords {
   pub world: Point<World>,
   pub world_grid: Point<WorldGrid>,

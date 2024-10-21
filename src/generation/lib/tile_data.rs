@@ -1,8 +1,9 @@
 use crate::generation::lib::Tile;
 use bevy::prelude::Entity;
+use bevy::reflect::Reflect;
 
 /// Contains the tile entity, parent chunk entity, and tile of the highest, non-empty layer of a tile.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Reflect)]
 pub struct TileData {
   pub entity: Entity,
   pub chunk_entity: Entity,
