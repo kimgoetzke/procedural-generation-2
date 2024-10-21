@@ -1,3 +1,4 @@
+mod components;
 pub(crate) mod lib;
 mod object_generator;
 mod wfc;

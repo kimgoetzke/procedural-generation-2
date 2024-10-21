@@ -1,11 +1,11 @@
+use crate::generation::get_time;
+use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
+use crate::resources::Settings;
 use bevy::app::{App, Plugin};
-use bevy::log::{debug, info, warn};
+use bevy::log::*;
 use bevy::prelude::Res;
 use rand::prelude::StdRng;
 use rand::Rng;
-
-use crate::generation::object::lib::{Cell, NoPossibleStatesFailure, ObjectGrid};
-use crate::resources::Settings;
 
 pub struct WfcPlugin;
 
@@ -14,6 +14,7 @@ impl Plugin for WfcPlugin {
 }
 
 pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _settings: &Res<Settings>) {
+  let start_time = get_time();
   let mut snapshots = vec![];
   let mut wave_count = 0;
   let mut has_entropy = true;
@@ -21,15 +22,7 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
 
   while has_entropy {
     match iterate(&mut rng, grid) {
-      Ok(is_done) => {
-        let grid_clone = grid.clone();
-        // TODO: Consider keeping snapshots for the last few waves only
-        snapshots.push(grid_clone);
-        wave_count += 1;
-        debug!("Completed [{:?}] grid wave {}", grid.terrain, wave_count);
-        has_entropy = !is_done;
-      }
-      Err(_) => {
+      IterationResult::Failure => {
         error_count += 1;
         let snapshot_index = snapshots.len() - error_count;
         let error_message = format!("Failed to get snapshot {}", snapshot_index.to_string());
@@ -42,16 +35,36 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
           snapshots.len()
         );
       }
+      result => {
+        let grid_clone = grid.clone();
+        // TODO: Consider keeping snapshots for the last few waves only
+        snapshots.push(grid_clone);
+        wave_count += 1;
+        trace!(
+          "Completed [{:?}] grid wave {} with {} errors",
+          grid.terrain,
+          wave_count,
+          error_count
+        );
+        has_entropy = result == IterationResult::Incomplete;
+      }
     }
   }
+
+  debug!(
+    "Completed determining objects for [{:?}] grid, resolved {} errors, in {} ms",
+    grid.terrain,
+    error_count,
+    get_time() - start_time
+  );
 }
 
-pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> Result<bool, NoPossibleStatesFailure> {
+pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
   if lowest_entropy_cells.is_empty() {
     info!("No more cells to collapse in this [{:?}] grid", grid.terrain);
-    return Ok(true);
+    return IterationResult::Ok;
   }
 
   // Collapse: Collapse random cell from the cells with the lowest entropy
@@ -64,23 +77,22 @@ pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> Result<bool, NoPo
   let mut stack: Vec<Cell> = vec![random_cell_clone];
   while let Some(cell) = stack.pop() {
     grid.set_cell(cell.clone());
-    let mut neighbours = grid.get_neighbours(&cell.cg);
-    for (connection, neighbour) in neighbours.iter_mut() {
+    for (connection, neighbour) in grid.get_neighbours(&cell.cg).iter_mut() {
       if !neighbour.is_collapsed {
         if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
           if has_changed {
             stack.push(neighbour_cell);
           }
         } else {
-          return Err(NoPossibleStatesFailure {});
+          return IterationResult::Failure;
         }
       } else {
-        if let Err(NoPossibleStatesFailure {}) = neighbour.verify(&cell, &connection) {
-          return Err(NoPossibleStatesFailure {});
+        if let Err(_) = neighbour.verify(&cell, &connection) {
+          return IterationResult::Failure;
         }
       }
     }
   }
 
-  Ok(false)
+  IterationResult::Incomplete
 }

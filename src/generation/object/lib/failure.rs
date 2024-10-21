@@ -1,1 +1,1 @@
-pub struct NoPossibleStatesFailure {}
+pub struct PropagationFailure {}

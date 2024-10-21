@@ -65,7 +65,7 @@ impl ObjectGrid {
         }
       }
     }
-    debug!(
+    trace!(
       "Found {} cell(s) with lowest entropy of {}",
       lowest_entropy_cells.len(),
       lowest_entropy
