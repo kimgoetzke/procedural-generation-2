@@ -74,6 +74,10 @@ pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> Result<bool, NoPo
         } else {
           return Err(NoPossibleStatesFailure {});
         }
+      } else {
+        if let Err(NoPossibleStatesFailure {}) = neighbour.verify(&cell, &connection) {
+          return Err(NoPossibleStatesFailure {});
+        }
       }
     }
   }

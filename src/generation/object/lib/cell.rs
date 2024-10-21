@@ -80,6 +80,27 @@ impl Cell {
     self.entropy = 0;
     self.possible_states = vec![rule];
   }
+
+  pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<bool, NoPossibleStatesFailure> {
+    let mut permitted_state_names: Vec<ObjectName> = Vec::new();
+    let where_is_self_for_reference = where_is_reference.opposite();
+
+    for possible_state_reference in &reference_cell.possible_states {
+      for permitted_neighbour in &possible_state_reference.permitted_neighbours {
+        if permitted_neighbour.0 == where_is_self_for_reference {
+          for (name, _) in &permitted_neighbour.1 {
+            permitted_state_names.push(name.clone());
+          }
+        }
+      }
+    }
+
+    if !permitted_state_names.contains(&self.possible_states[0].name) {
+      Err(NoPossibleStatesFailure {})
+    } else {
+      Ok(true)
+    }
+  }
 }
 
 fn log_update(

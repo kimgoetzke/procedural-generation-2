@@ -1,0 +1,283 @@
+(
+  terrain: Grass,
+  states: [
+    (
+      index: 0,
+      name: GrassEmpty,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassEmpty, 10),
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 1),
+            (GrassPathLeft, 1),
+            (GrassPathTop, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassEmpty, 10),
+            (GrassPathVertical, 1),
+            (GrassPathTop, 1),
+            (GrassPathBottom, 1),
+            (GrassPathLeft, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassEmpty, 10),
+            (GrassPathVertical, 1),
+            (GrassPathTop, 1),
+            (GrassPathBottom, 1),
+            (GrassPathRight, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassEmpty, 10),
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 1),
+            (GrassPathLeft, 1),
+            (GrassPathBottom, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 1,
+      name: GrassPathRight,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassPathLeft, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 2,
+      name: GrassPathHorizontal,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassPathLeft, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 3,
+      name: GrassPathCross,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassPathBottom, 1),
+            (GrassPathVertical, 4),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 4),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassPathLeft, 1),
+            (GrassPathHorizontal, 4),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassPathTop, 1),
+            (GrassPathVertical, 4),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 4,
+      name: GrassPathVertical,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathTop, 2),
+            (GrassPathBottom, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathTop, 2),
+            (GrassPathBottom, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 5,
+      name: GrassPathBottom,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassPathCross, 2),
+            (GrassPathVertical, 4),
+            (GrassPathTop, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 6,
+      name: GrassPathTop,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassPathCross, 2),
+            (GrassPathVertical, 4),
+            (GrassPathBottom, 2),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 7,
+      name: GrassPathLeft,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (GrassPathRight, 2),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 2),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (GrassEmpty, 1),
+          ]
+        ),
+      ]
+    ),
+  ]
+)
