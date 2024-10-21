@@ -85,21 +85,16 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
-pub const PATHS_OBJ_PATH: &str = "objects/paths.png";
-pub const PATHS_OBJ_COLUMNS: u32 = 8;
-pub const PATHS_OBJ_ROWS: u32 = 3;
-pub const PATHS_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
-pub const PATHS_SAND_ROW: u32 = 0;
-pub const PATHS_GRASS_ROW: u32 = 1;
-pub const PATHS_FOREST_ROW: u32 = 2;
-pub const FOREST_OBJ_PATH: &str = "objects/trees-conifer.png";
-pub const FOREST_OBJ_COLUMNS: u32 = 5;
-pub const FOREST_OBJ_ROWS: u32 = 1;
-pub const FOREST_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
+pub const TREES_OBJ_PATH: &str = "objects/trees-conifer.png";
+pub const TREES_OBJ_COLUMNS: u32 = 5;
+pub const TREES_OBJ_ROWS: u32 = 1;
+pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
 pub const SAND_OBJ_PATH: &str = "objects/sand_objects.png";
-pub const SAND_OBJ_COLUMNS: u32 = 16;
-pub const SAND_OBJ_ROWS: u32 = 2;
-pub const SAND_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const GRASS_OBJ_PATH: &str = "objects/grass_objects.png";
+pub const FOREST_OBJ_PATH: &str = "objects/forest_objects.png";
+pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
+pub const DEFAULT_OBJ_ROWS: u32 = 2;
+pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);

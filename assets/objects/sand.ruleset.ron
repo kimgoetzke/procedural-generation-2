@@ -203,29 +203,17 @@
           Top,
           [
             (SandPathVertical, 6),
-            (SandPathTop, 2),
             (SandPathBottom, 2),
             (SandPathCross, 2),
           ]
         ),
-        (
-          Left,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Right,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
         (
           Bottom,
           [
             (SandPathVertical, 6),
             (SandPathTop, 2),
-            (SandPathBottom, 2),
             (SandPathCross, 2),
           ]
         ),
@@ -365,12 +353,7 @@
       index: 9,
       name: SandPathHorizontalGrassLeft,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ]  ),
         (
           Left,
           [
@@ -387,12 +370,7 @@
             (SandPathCross, 1),
           ]
         ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (
@@ -400,8 +378,22 @@
       name: SandPathHorizontalForestRight,
       permitted_neighbours: [
         ( Top, [ (Empty, 1), ] ),
-        ( Left, [ (Empty, 1), ] ),
-        ( Right, [ (Empty, 1), ] ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
         ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
@@ -409,9 +401,23 @@
       index: 11,
       name: SandPathHorizontalForestLeft,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
-        ( Left, [ (Empty, 1), ] ),
-        ( Right, [ (Empty, 1), ] ),
+        ( Top, [ (Empty, 1), ]  ),
+        (
+          Left,
+          [
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathLeft, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
         ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
@@ -419,40 +425,96 @@
       index: 12,
       name: SandPathVerticalGrassTop,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
+        (
+          Top,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathBottom, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
         ( Left, [ (Empty, 1), ] ),
         ( Right, [ (Empty, 1), ] ),
-        ( Bottom, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathCross, 2),
+          ]
+        ),
       ]
     ),
     (
       index: 13,
       name: SandPathVerticalGrassBottom,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
+        (
+          Top,
+          [
+            (SandPathVertical, 6),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
         ( Left, [ (Empty, 1), ] ),
         ( Right, [ (Empty, 1), ] ),
-        ( Bottom, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathTop, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
       ]
     ),
     (
       index: 14,
       name: SandPathVerticalForestTop,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
+        (
+          Top,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathBottom, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
         ( Left, [ (Empty, 1), ] ),
         ( Right, [ (Empty, 1), ] ),
-        ( Bottom, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathCross, 2),
+          ]
+        ),
       ]
     ),
     (
       index: 15,
       name: SandPathVerticalForestBottom,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
+        (
+          Top,
+          [
+            (SandPathVertical, 6),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
         ( Left, [ (Empty, 1), ] ),
         ( Right, [ (Empty, 1), ] ),
-        ( Bottom, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathTop, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
       ]
     ),
     (

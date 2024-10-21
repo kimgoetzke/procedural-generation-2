@@ -14,6 +14,5 @@ pub enum AppState {
   #[default]
   Loading,
   Initialising,
-  Generating,
   Running,
 }

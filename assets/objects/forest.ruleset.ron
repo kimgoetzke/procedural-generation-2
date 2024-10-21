@@ -3,12 +3,12 @@
   states: [
     (
       index: 0,
-      name: ForestEmpty,
+      name: Empty,
       permitted_neighbours: [
         (
           Top,
           [
-            (ForestEmpty, 10),
+            (Empty, 10),
             (ForestPathRight, 1),
             (ForestPathHorizontal, 1),
             (ForestPathLeft, 1),
@@ -18,7 +18,7 @@
         (
           Left,
           [
-            (ForestEmpty, 10),
+            (Empty, 10),
             (ForestPathVertical, 1),
             (ForestPathTop, 1),
             (ForestPathBottom, 1),
@@ -28,7 +28,7 @@
         (
           Right,
           [
-            (ForestEmpty, 10),
+            (Empty, 10),
             (ForestPathVertical, 1),
             (ForestPathTop, 1),
             (ForestPathBottom, 1),
@@ -38,7 +38,7 @@
         (
           Bottom,
           [
-            (ForestEmpty, 10),
+            (Empty, 10),
             (ForestPathRight, 1),
             (ForestPathHorizontal, 1),
             (ForestPathLeft, 1),
@@ -54,13 +54,13 @@
         (
           Top,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Left,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
@@ -74,7 +74,7 @@
         (
           Bottom,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
       ]
@@ -86,7 +86,7 @@
         (
           Top,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
@@ -108,7 +108,7 @@
         (
           Bottom,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
       ]
@@ -155,29 +155,17 @@
           Top,
           [
             (ForestPathVertical, 6),
-            (ForestPathTop, 2),
             (ForestPathBottom, 2),
             (ForestPathCross, 2),
           ]
         ),
-        (
-          Left,
-          [
-            (ForestEmpty, 1),
-          ]
-        ),
-        (
-          Right,
-          [
-            (ForestEmpty, 1),
-          ]
-        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
         (
           Bottom,
           [
             (ForestPathVertical, 6),
             (ForestPathTop, 2),
-            (ForestPathBottom, 2),
             (ForestPathCross, 2),
           ]
         ),
@@ -190,19 +178,19 @@
         (
           Top,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Left,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Right,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
@@ -230,19 +218,19 @@
         (
           Left,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Right,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Bottom,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
       ]
@@ -254,7 +242,7 @@
         (
           Top,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
@@ -268,13 +256,215 @@
         (
           Right,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
           ]
         ),
         (
           Bottom,
           [
-            (ForestEmpty, 1),
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 8,
+      name: ForestPathHorizontalGrassRight,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (Empty, 1),
+          ]
+        ),
+        (
+          Left,
+          [
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (GrassPathLeft, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Bottom,
+          [
+            (Empty, 1),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 9,
+      name: ForestPathHorizontalGrassLeft,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ]  ),
+        (
+          Left,
+          [
+            (GrassPathRight, 1),
+            (GrassPathHorizontal, 4),
+            (GrassPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (ForestPathLeft, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 10,
+      name: ForestPathHorizontalSandRight,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ] ),
+        (
+          Left,
+          [
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 11,
+      name: ForestPathHorizontalSandLeft,
+      permitted_neighbours: [
+        ( Top, [ (Empty, 1), ]  ),
+        (
+          Left,
+          [
+            (SandPathRight, 1),
+            (SandPathHorizontal, 4),
+            (SandPathCross, 1),
+          ]
+        ),
+        (
+          Right,
+          [
+            (ForestPathLeft, 1),
+            (ForestPathHorizontal, 4),
+            (ForestPathCross, 1),
+          ]
+        ),
+        ( Bottom, [ (Empty, 1), ] ),
+      ]
+    ),
+    (
+      index: 12,
+      name: ForestPathVerticalGrassTop,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathBottom, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathTop, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 13,
+      name: ForestPathVerticalGrassBottom,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathBottom, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (GrassPathVertical, 6),
+            (GrassPathTop, 2),
+            (GrassPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 14,
+      name: ForestPathVerticalSandTop,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (SandPathVertical, 6),
+            (SandPathBottom, 2),
+            (SandPathCross, 2),
+          ]
+        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathTop, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
+      ]
+    ),
+    (
+      index: 15,
+      name: ForestPathVerticalSandBottom,
+      permitted_neighbours: [
+        (
+          Top,
+          [
+            (ForestPathVertical, 6),
+            (ForestPathBottom, 2),
+            (ForestPathCross, 2),
+          ]
+        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        (
+          Bottom,
+          [
+            (SandPathVertical, 6),
+            (SandPathTop, 2),
+            (SandPathCross, 2),
           ]
         ),
       ]

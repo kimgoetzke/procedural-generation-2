@@ -1,15 +1,15 @@
-use crate::app_state::AppState;
 use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::{ChunkComponent, TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName};
+use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
 use bevy::log::*;
 use bevy::math::UVec2;
 use bevy::prelude::{
-  in_state, Commands, Image, IntoSystemConfigs, NextState, OnAdd, OnEnter, OnRemove, Query, Res, ResMut, Resource,
+  in_state, Commands, Image, IntoSystemConfigs, NextState, OnAdd, OnExit, OnRemove, Query, Res, ResMut, Resource,
   TextureAtlasLayout, Trigger, TypePath, Update,
 };
 use bevy::utils::{HashMap, HashSet};
@@ -27,9 +27,9 @@ impl Plugin for GenerationResourcesPlugin {
       .init_resource::<ChunkComponentIndex>()
       .observe(on_add_chunk_component_trigger)
       .observe(on_remove_chunk_component_trigger)
-      .add_systems(Startup, pre_load_rule_sets_system)
+      .add_systems(Startup, load_rule_sets_system)
       .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
-      .add_systems(OnEnter(AppState::Initialising), initialise_resources_system);
+      .add_systems(OnExit(AppState::Loading), initialise_resources_system);
   }
 }
 
@@ -64,9 +64,11 @@ pub struct TileState {
   pub permitted_neighbours: Vec<(Connection, Vec<(ObjectName, i32)>)>,
 }
 
-fn pre_load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let sand = asset_server.load("objects/sand.ruleset.ron");
-  commands.insert_resource(RuleSetHandle(vec![sand]));
+  let grass = asset_server.load("objects/grass.ruleset.ron");
+  let forest = asset_server.load("objects/forest.ruleset.ron");
+  commands.insert_resource(RuleSetHandle(vec![sand, grass, forest]));
 }
 
 fn check_loading_state(asset_server: Res<AssetServer>, handles: Res<RuleSetHandle>, mut state: ResMut<NextState<AppState>>) {
@@ -94,10 +96,10 @@ pub struct GenerationResourcesCollection {
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct ObjectResources {
-  pub forest: AssetCollection,
   pub rule_sets: Vec<RuleSet>,
   pub sand: AssetCollection,
-  pub path: AssetCollection,
+  pub grass: AssetCollection,
+  pub forest: AssetCollection,
 }
 
 impl GenerationResourcesCollection {
@@ -205,19 +207,27 @@ fn initialise_resources_system(
   );
 
   // Objects: Trees
-  let static_trees_layout = TextureAtlasLayout::from_grid(FOREST_OBJ_SIZE, FOREST_OBJ_COLUMNS, FOREST_OBJ_ROWS, None, None);
+  let static_trees_layout = TextureAtlasLayout::from_grid(TREES_OBJ_SIZE, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
   asset_collection.objects.forest.stat = AssetPack::new(asset_server.load(FOREST_OBJ_PATH), static_trees_atlas_layout);
 
-  // Objects: Stones
-  let static_stones_layout = TextureAtlasLayout::from_grid(SAND_OBJ_SIZE, SAND_OBJ_COLUMNS, SAND_OBJ_ROWS, None, None);
-  let static_stones_atlas_layout = layouts.add(static_stones_layout);
-  asset_collection.objects.sand.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_stones_atlas_layout);
+  // Objects: Sand
+  let static_sand_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, DEFAULT_OBJ_COLUMNS, DEFAULT_OBJ_ROWS, None, None);
+  let static_sand_atlas_layout = layouts.add(static_sand_layout);
+  asset_collection.objects.sand.stat = AssetPack::new(asset_server.load(SAND_OBJ_PATH), static_sand_atlas_layout);
 
-  // Objects: Paths
-  let static_paths_layout = TextureAtlasLayout::from_grid(PATHS_OBJ_SIZE, PATHS_OBJ_COLUMNS, PATHS_OBJ_ROWS, None, None);
-  let static_paths_atlas_layout = layouts.add(static_paths_layout);
-  asset_collection.objects.path.stat = AssetPack::new(asset_server.load(PATHS_OBJ_PATH), static_paths_atlas_layout);
+  // Objects: Grass
+  let static_grass_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, DEFAULT_OBJ_COLUMNS, DEFAULT_OBJ_ROWS, None, None);
+  let static_grass_atlas_layout = layouts.add(static_grass_layout);
+  asset_collection.objects.grass.stat = AssetPack::new(asset_server.load(GRASS_OBJ_PATH), static_grass_atlas_layout);
+
+  // Objects: Forest
+  let static_forest_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, DEFAULT_OBJ_COLUMNS, DEFAULT_OBJ_ROWS, None, None);
+  let static_forest_atlas_layout = layouts.add(static_forest_layout);
+  asset_collection.objects.forest.stat = AssetPack::new(asset_server.load(FOREST_OBJ_PATH), static_forest_atlas_layout);
 
   // Objects: Rule sets for wave function collapse
   let mut rule_sets = vec![];
@@ -229,8 +239,8 @@ fn initialise_resources_system(
   }
   asset_collection.objects.rule_sets = rule_sets;
 
-  debug!("Resources initialised, transitioning to [{:?}] state", AppState::Generating);
-  next_state.set(AppState::Generating);
+  debug!("Resources initialised, transitioning to [{:?}] state", AppState::Initialising);
+  next_state.set(AppState::Initialising);
 }
 
 fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {

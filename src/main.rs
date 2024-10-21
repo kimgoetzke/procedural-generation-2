@@ -1,5 +1,4 @@
 mod animations;
-mod app_state;
 mod camera;
 mod components;
 mod constants;
@@ -8,16 +7,17 @@ mod coords;
 mod events;
 mod generation;
 mod resources;
+mod states;
 mod ui;
 
 use crate::animations::AnimationsPlugin;
-use crate::app_state::AppStatePlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
 use crate::events::SharedEventsPlugin;
 use crate::generation::GenerationPlugin;
 use crate::resources::SharedResourcesPlugin;
+use crate::states::AppStatePlugin;
 use crate::ui::UiPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};

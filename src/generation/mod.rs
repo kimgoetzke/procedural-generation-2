@@ -1,4 +1,3 @@
-use crate::app_state::AppState;
 use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
@@ -9,6 +8,7 @@ use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
+use crate::states::AppState;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{
@@ -35,7 +35,7 @@ impl Plugin for GenerationPlugin {
         ObjectGenerationPlugin,
         DebugPlugin,
       ))
-      .add_systems(OnEnter(AppState::Generating), generation_system)
+      .add_systems(OnEnter(AppState::Initialising), generation_system)
       .add_systems(Update, (regenerate_world_event, update_world_event, prune_world_event));
   }
 }
