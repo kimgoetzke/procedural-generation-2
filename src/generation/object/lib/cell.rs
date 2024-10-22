@@ -111,18 +111,17 @@ impl Cell {
 }
 
 fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: Connection) -> Vec<ObjectName> {
-  let mut permitted_state_names: Vec<ObjectName> = Vec::new();
-  for possible_state_reference in &reference_cell.possible_states {
-    for permitted_neighbour in &possible_state_reference.permitted_neighbours {
-      if permitted_neighbour.0 == where_is_self_for_reference {
-        for (name, _) in &permitted_neighbour.1 {
-          permitted_state_names.push(name.clone());
-        }
-      }
-    }
-  }
-
-  permitted_state_names
+  reference_cell
+    .possible_states
+    .iter()
+    .flat_map(|possible_state_reference| {
+      possible_state_reference
+        .permitted_neighbours
+        .iter()
+        .filter(|(connection, _)| *connection == where_is_self_for_reference)
+        .flat_map(|(_, names)| names.iter().map(|(name, _)| name.clone()))
+    })
+    .collect()
 }
 
 fn log(
@@ -145,7 +144,7 @@ fn log(
   }
 
   if new_cell.possible_states.len() == 0 {
-    error!(
+    trace!(
       "Failed to find any possible states for cg{:?} ({:?} {:?}) during {} with cg{:?} ({:?})",
       new_cell.cg,
       old_cell.terrain,

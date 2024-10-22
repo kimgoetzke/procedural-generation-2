@@ -18,46 +18,46 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
   let mut snapshots = vec![];
   let mut iteration_count = 1;
   let mut has_entropy = true;
+  let mut no_snapshot_error_count: usize = 0;
   let mut iteration_error_count: usize = 0;
   let mut total_error_count = 0;
-  let mut last_entropy = grid.calculate_total_entropy();
 
   while has_entropy {
     match iterate(&mut rng, grid) {
       IterationResult::Failure => {
         iteration_error_count += 1;
         total_error_count += 1;
-        let snapshot_index = snapshots.len() - (iteration_error_count * 2);
-        grid.restore_from_snapshot(
-          snapshots
-            .get(snapshot_index)
-            .expect(format!("Failed to get snapshot {}", snapshot_index.to_string()).as_str()),
-        );
-        warn!(
-          "Failed (#{}) to reduce entropy in object grid during iteration {} - restored snapshot {} out of {}",
-          iteration_error_count,
-          iteration_count,
-          snapshot_index,
-          snapshots.len()
-        );
-        snapshots.truncate(snapshot_index + 1);
-        iteration_count += 1;
+        let snapshot_index = snapshots.len().saturating_sub(iteration_error_count);
+        let snapshot = snapshots.get(snapshot_index);
+        if let Some(snapshot) = snapshot {
+          grid.restore_from_snapshot(snapshot);
+          warn!(
+            "Failed (#{}) to reduce entropy in object grid during iteration {} - restored snapshot {} out of {}",
+            iteration_error_count,
+            iteration_count,
+            snapshot_index,
+            snapshots.len()
+          );
+        } else {
+          error!(
+            "Failed (#{}) to reduce entropy in object grid during iteration {} - no snapshot available",
+            iteration_error_count, iteration_count
+          );
+          no_snapshot_error_count += 1;
+          continue;
+        }
+        snapshots.truncate(snapshot_index);
       }
       result => {
         let current_entropy = grid.calculate_total_entropy();
-        debug!(
-          "Completed object grid iteration {} after resolving {} errors and with a total entropy of {}",
-          iteration_count, iteration_error_count, current_entropy
+        trace!(
+          "Completed object grid iteration {} (encountering {} errors) and with a total entropy of {}",
+          iteration_count,
+          iteration_error_count,
+          current_entropy
         );
-        if last_entropy - current_entropy > 0 {
+        if iteration_count % 10 == 0 {
           snapshots.push(grid.clone());
-          last_entropy = current_entropy;
-          debug!(
-            "Snapshot taken at iteration {} (entropy={}) - snapshots: {}",
-            iteration_count,
-            current_entropy,
-            snapshots.len()
-          );
         }
         has_entropy = result == IterationResult::Incomplete;
         iteration_count += 1;
@@ -67,8 +67,9 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
   }
 
   debug!(
-    "Completed determining objects - and resolved {} errors - in {} ms",
+    "Completed determining objects (resolving {} errors and leaving {} unresolved) in {} ms",
     total_error_count,
+    no_snapshot_error_count,
     get_time() - start_time
   );
 }
