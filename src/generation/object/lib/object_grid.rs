@@ -34,6 +34,13 @@ impl ObjectGrid {
           .get(&data.flat_tile.terrain)
           .expect(format!("Failed to find rule set for [{:?}] terrain type", &data.flat_tile.terrain).as_str());
         cell.initialise(data.flat_tile.terrain, relevant_rule_set);
+        trace!(
+          "Initialised cg{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
+          cg,
+          data.flat_tile.terrain,
+          data.flat_tile.tile_type,
+          cell.possible_states.len()
+        );
       } else {
         error!("Failed to find cell to initialise at cg{:?}", cg);
       }

@@ -9,40 +9,168 @@
           Top,
           [
             (Empty, 10),
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 1),
+            (ForestPathHorizontalSandLeft, 1),
+            (ForestPathHorizontalSandRight, 1),
+            (ForestPathHorizontalGrassLeft, 1),
+            (ForestPathHorizontalGrassRight, 1),
+            (ForestPathLeft, 1),
+            (ForestPathTop, 1),
             (GrassPathRight, 1),
             (GrassPathHorizontal, 1),
+            (GrassPathHorizontalSandRight, 1),
+            (GrassPathHorizontalSandLeft, 1),
+            (GrassPathHorizontalForestLeft, 1),
+            (GrassPathHorizontalForestRight, 1),
             (GrassPathLeft, 1),
             (GrassPathTop, 1),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathHorizontalForestRight, 1),
+            (SandPathHorizontalForestLeft, 1),
+            (SandPathHorizontalGrassRight, 1),
+            (SandPathHorizontalGrassLeft, 1),
+            (SandPathLeft, 1),
+            (SandPathTop, 1),
+            (SandStone1, 1),
+            (SandStone2, 1),
+            (SandStone3, 1),
+            (SandStone4, 1),
+            (SandStone5, 1),
+            (SandStone6, 1),
+            (SandGrassPatch1, 1),
+            (SandGrassPatch2, 1),
+            (SandPattern1, 1),
+            (SandPattern2, 1),
+            (SandPattern3, 1),
+            (SandPattern4, 1),
           ]
         ),
         (
           Left,
           [
             (Empty, 10),
+            (ForestPathVertical, 1),
+            (ForestPathVerticalSandTop, 1),
+            (ForestPathVerticalSandBottom, 1),
+            (ForestPathVerticalGrassTop, 1),
+            (ForestPathVerticalGrassBottom, 1),
+            (ForestPathTop, 1),
+            (ForestPathBottom, 1),
+            (ForestPathLeft, 1),
             (GrassPathVertical, 1),
+            (GrassPathVerticalSandTop, 1),
+            (GrassPathVerticalSandBottom, 1),
+            (GrassPathVerticalForestTop, 1),
+            (GrassPathVerticalForestBottom, 1),
             (GrassPathTop, 1),
             (GrassPathBottom, 1),
             (GrassPathLeft, 1),
+            (SandPathVertical, 1),
+            (SandPathVerticalForestTop, 1),
+            (SandPathVerticalForestBottom, 1),
+            (SandPathVerticalGrassTop, 1),
+            (SandPathVerticalGrassBottom, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+            (SandPathLeft, 1),
+            (SandStone1, 1),
+            (SandStone2, 1),
+            (SandStone3, 1),
+            (SandStone4, 1),
+            (SandStone5, 1),
+            (SandStone6, 1),
+            (SandGrassPatch1, 1),
+            (SandGrassPatch2, 1),
+            (SandPattern1, 1),
+            (SandPattern2, 1),
+            (SandPattern3, 1),
+            (SandPattern4, 1),
           ]
         ),
         (
           Right,
           [
             (Empty, 10),
+            (ForestPathVertical, 1),
+            (ForestPathVerticalSandTop, 1),
+            (ForestPathVerticalSandBottom, 1),
+            (ForestPathVerticalGrassTop, 1),
+            (ForestPathVerticalGrassBottom, 1),
+            (ForestPathTop, 1),
+            (ForestPathBottom, 1),
+            (ForestPathRight, 1),
             (GrassPathVertical, 1),
+            (GrassPathVerticalSandTop, 1),
+            (GrassPathVerticalSandBottom, 1),
+            (GrassPathVerticalForestTop, 1),
+            (GrassPathVerticalForestBottom, 1),
             (GrassPathTop, 1),
             (GrassPathBottom, 1),
             (GrassPathRight, 1),
+            (SandPathVertical, 1),
+            (SandPathVerticalForestTop, 1),
+            (SandPathVerticalForestBottom, 1),
+            (SandPathVerticalGrassTop, 1),
+            (SandPathVerticalGrassBottom, 1),
+            (SandPathTop, 1),
+            (SandPathBottom, 1),
+            (SandPathRight, 1),
+            (SandStone1, 1),
+            (SandStone2, 1),
+            (SandStone3, 1),
+            (SandStone4, 1),
+            (SandStone5, 1),
+            (SandStone6, 1),
+            (SandGrassPatch1, 1),
+            (SandGrassPatch2, 1),
+            (SandPattern1, 1),
+            (SandPattern2, 1),
+            (SandPattern3, 1),
+            (SandPattern4, 1),
           ]
         ),
         (
           Bottom,
           [
             (Empty, 10),
+            (ForestPathRight, 1),
+            (ForestPathHorizontal, 1),
+            (ForestPathHorizontalSandLeft, 1),
+            (ForestPathHorizontalSandRight, 1),
+            (ForestPathHorizontalGrassLeft, 1),
+            (ForestPathHorizontalGrassRight, 1),
+            (ForestPathLeft, 1),
+            (ForestPathBottom, 1),
             (GrassPathRight, 1),
             (GrassPathHorizontal, 1),
+            (GrassPathHorizontalSandRight, 1),
+            (GrassPathHorizontalSandLeft, 1),
+            (GrassPathHorizontalForestLeft, 1),
+            (GrassPathHorizontalForestRight, 1),
             (GrassPathLeft, 1),
             (GrassPathBottom, 1),
+            (SandPathRight, 1),
+            (SandPathHorizontal, 1),
+            (SandPathHorizontalForestRight, 1),
+            (SandPathHorizontalForestLeft, 1),
+            (SandPathHorizontalGrassRight, 1),
+            (SandPathHorizontalGrassLeft, 1),
+            (SandPathLeft, 1),
+            (SandPathBottom, 1),
+            (SandStone1, 1),
+            (SandStone2, 1),
+            (SandStone3, 1),
+            (SandStone4, 1),
+            (SandStone5, 1),
+            (SandStone6, 1),
+            (SandGrassPatch1, 1),
+            (SandGrassPatch2, 1),
+            (SandPattern1, 1),
+            (SandPattern2, 1),
+            (SandPattern3, 1),
+            (SandPattern4, 1),
           ]
         ),
       ]
@@ -51,49 +179,37 @@
       index: 1,
       name: GrassPathRight,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Left,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
         (
           Right,
           [
             (GrassPathLeft, 1),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalForestRight, 1),
+            (GrassPathHorizontalSandRight, 1),
+            (SandPathHorizontalGrassLeft, 1),
+            (ForestPathHorizontalGrassLeft, 1),
             (GrassPathCross, 1),
           ]
         ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (
       index: 2,
       name: GrassPathHorizontal,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ] ),
         (
           Left,
           [
             (GrassPathRight, 1),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalForestLeft, 1),
+            (GrassPathHorizontalSandLeft, 1),
+            (SandPathHorizontalGrassRight, 1),
+            (ForestPathHorizontalGrassRight, 1),
             (GrassPathCross, 1),
           ]
         ),
@@ -102,15 +218,14 @@
           [
             (GrassPathLeft, 1),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalForestRight, 1),
+            (GrassPathHorizontalSandRight, 1),
+            (SandPathHorizontalGrassLeft, 1),
+            (ForestPathHorizontalGrassLeft, 1),
             (GrassPathCross, 1),
           ]
         ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (
@@ -122,6 +237,10 @@
           [
             (GrassPathBottom, 1),
             (GrassPathVertical, 4),
+            (GrassPathVerticalForestTop, 1),
+            (GrassPathVerticalSandTop, 1),
+            (SandPathVerticalGrassBottom, 1),
+            (ForestPathVerticalGrassBottom, 1),
           ]
         ),
         (
@@ -129,6 +248,10 @@
           [
             (GrassPathRight, 1),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalForestLeft, 1),
+            (GrassPathHorizontalSandLeft, 1),
+            (SandPathHorizontalGrassRight, 1),
+            (ForestPathHorizontalGrassRight, 1),
           ]
         ),
         (
@@ -136,6 +259,10 @@
           [
             (GrassPathLeft, 1),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalForestRight, 1),
+            (GrassPathHorizontalSandRight, 1),
+            (SandPathHorizontalGrassLeft, 1),
+            (ForestPathHorizontalGrassLeft, 1),
           ]
         ),
         (
@@ -143,6 +270,10 @@
           [
             (GrassPathTop, 1),
             (GrassPathVertical, 4),
+            (GrassPathVerticalForestBottom, 1),
+            (GrassPathVerticalSandBottom, 1),
+            (SandPathVerticalGrassTop, 1),
+            (ForestPathVerticalGrassTop, 1),
           ]
         ),
       ]
@@ -155,6 +286,10 @@
           Top,
           [
             (GrassPathVertical, 6),
+            (GrassPathVerticalForestTop, 1),
+            (GrassPathVerticalSandTop, 1),
+            (SandPathVerticalGrassBottom, 1),
+            (ForestPathVerticalGrassBottom, 1),
             (GrassPathBottom, 2),
             (GrassPathCross, 2),
           ]
@@ -165,6 +300,10 @@
           Bottom,
           [
             (GrassPathVertical, 6),
+            (GrassPathVerticalForestBottom, 1),
+            (GrassPathVerticalSandBottom, 1),
+            (SandPathVerticalGrassTop, 1),
+            (ForestPathVerticalGrassTop, 1),
             (GrassPathTop, 2),
             (GrassPathCross, 2),
           ]
@@ -175,29 +314,18 @@
       index: 5,
       name: GrassPathBottom,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Left,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Right,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ] ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
         (
           Bottom,
           [
             (GrassPathCross, 2),
             (GrassPathVertical, 4),
+            (GrassPathVerticalSandBottom, 1),
+            (GrassPathVerticalForestBottom, 1),
+            (SandPathVerticalGrassTop, 1),
+            (ForestPathVerticalGrassTop, 1),
             (GrassPathTop, 2),
           ]
         ),
@@ -212,71 +340,44 @@
           [
             (GrassPathCross, 2),
             (GrassPathVertical, 4),
+            (GrassPathVerticalSandTop, 1),
+            (GrassPathVerticalForestTop, 1),
+            (SandPathVerticalGrassBottom, 1),
+            (ForestPathVerticalGrassBottom, 1),
             (GrassPathBottom, 2),
           ]
         ),
-        (
-          Left,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Right,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Left, [ (Empty, 1), ] ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (
       index: 7,
       name: GrassPathLeft,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ] ),
         (
           Left,
           [
             (GrassPathRight, 2),
             (GrassPathHorizontal, 4),
+            (GrassPathHorizontalSandLeft, 1),
+            (GrassPathHorizontalForestLeft, 1),
+            (SandPathHorizontalGrassRight, 1),
+            (ForestPathHorizontalGrassRight, 1),
             (GrassPathCross, 2),
           ]
         ),
-        (
-          Right,
-          [
-            (Empty, 1),
-          ]
-        ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Right, [ (Empty, 1), ] ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (
       index: 8,
       name: GrassPathHorizontalForestRight,
       permitted_neighbours: [
-        (
-          Top,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Top, [ (Empty, 1), ] ),
         (
           Left,
           [
@@ -293,12 +394,7 @@
             (ForestPathCross, 1),
           ]
         ),
-        (
-          Bottom,
-          [
-            (Empty, 1),
-          ]
-        ),
+        ( Bottom, [ (Empty, 1), ] ),
       ]
     ),
     (

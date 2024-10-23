@@ -22,6 +22,7 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
   let mut total_error_count = 0;
   let mut last_entropy = grid.calculate_total_entropy();
 
+  // TODO: Fix how snapshots are taken and restored as it's either running out of snapshots or never reaching an end
   while has_entropy {
     match iterate(&mut rng, grid) {
       IterationResult::Failure => {
