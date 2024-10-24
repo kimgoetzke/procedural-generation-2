@@ -1,0 +1,158 @@
+(
+  states: [
+    (
+      tile_type: Fill,
+      permitted_self: [
+        Empty,
+        ForestPathRight,
+        ForestPathHorizontal,
+        ForestPathHorizontalSandLeft,
+        ForestPathHorizontalSandRight,
+        ForestPathHorizontalGrassLeft,
+        ForestPathHorizontalGrassRight,
+        ForestPathLeft,
+        ForestPathTop,
+        GrassPathRight,
+        GrassPathHorizontal,
+        GrassPathHorizontalSandRight,
+        GrassPathHorizontalSandLeft,
+        GrassPathHorizontalForestLeft,
+        GrassPathHorizontalForestRight,
+        GrassPathLeft,
+        GrassPathTop,
+        SandPathRight,
+        SandPathHorizontal,
+        SandPathHorizontalForestRight,
+        SandPathHorizontalForestLeft,
+        SandPathHorizontalGrassRight,
+        SandPathHorizontalGrassLeft,
+        SandPathLeft,
+        SandPathTop,
+        SandStone1,
+        SandStone2,
+        SandStone3,
+        SandStone4,
+        SandStone5,
+        SandStone6,
+        SandGrassPatch1,
+        SandGrassPatch2,
+        SandPattern1,
+        SandPattern2,
+        SandPattern3,
+        SandPattern4,
+      ]
+    ),
+    (
+      tile_type: InnerCornerTopRight,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: InnerCornerBottomRight,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: InnerCornerTopLeft,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: InnerCornerBottomLeft,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: OuterCornerTopRight,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: OuterCornerBottomRight,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: OuterCornerTopLeft,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: OuterCornerBottomLeft,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: TopLeftToBottomRightBridge,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: TopRightToBottomLeftBridge,
+      permitted_self: [ Empty, ]
+    ),
+    (
+      tile_type: TopFill,
+      permitted_self: [
+        SandPathVerticalForestTop,
+        SandPathVerticalForestBottom,
+        SandPathVerticalGrassTop,
+        SandPathVerticalGrassBottom,
+        GrassPathVerticalSandTop,
+        GrassPathVerticalSandBottom,
+        GrassPathVerticalForestTop,
+        GrassPathVerticalForestBottom,
+        ForestPathVerticalSandTop, 
+        ForestPathVerticalSandBottom,
+        ForestPathVerticalGrassTop,
+        ForestPathVerticalGrassBottom,
+      ]
+    ),
+    (
+      tile_type: RightFill,
+      permitted_self: [
+        SandPathHorizontalForestRight,
+        SandPathHorizontalForestLeft,
+        SandPathHorizontalGrassRight,
+        SandPathHorizontalGrassLeft,
+        GrassPathHorizontalSandRight,
+        GrassPathHorizontalSandLeft,
+        GrassPathHorizontalForestRight,
+        GrassPathHorizontalForestLeft,
+        ForestPathHorizontalSandRight, 
+        ForestPathHorizontalSandLeft,
+        ForestPathHorizontalGrassRight,
+        ForestPathHorizontalGrassLeft,
+      ]
+    ),
+    (
+      tile_type: BottomFill,
+      permitted_self: [
+        ForestPathVerticalSandTop, 
+        ForestPathVerticalSandBottom,
+        ForestPathVerticalGrassTop,
+        ForestPathVerticalGrassBottom,
+        GrassPathVerticalSandTop,
+        GrassPathVerticalSandBottom,
+        GrassPathVerticalForestTop,
+        GrassPathVerticalForestBottom,
+        SandPathVerticalForestTop,
+        SandPathVerticalForestBottom,
+        SandPathVerticalGrassTop,
+        SandPathVerticalGrassBottom,
+      ]
+    ),
+    (
+      tile_type: LeftFill,
+      permitted_self: [
+        SandPathHorizontalForestRight,
+        SandPathHorizontalForestLeft,
+        SandPathHorizontalGrassRight,
+        SandPathHorizontalGrassLeft,
+        GrassPathHorizontalSandRight,
+        GrassPathHorizontalSandLeft,
+        GrassPathHorizontalForestRight,
+        GrassPathHorizontalForestLeft,
+        ForestPathHorizontalSandRight, 
+        ForestPathHorizontalSandLeft,
+        ForestPathHorizontalGrassRight,
+        ForestPathHorizontalGrassLeft,
+      ]
+    ),
+    (
+      tile_type: Single,
+      permitted_self: [ Empty, ]
+    ),
+  ]
+)

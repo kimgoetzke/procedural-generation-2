@@ -4,22 +4,22 @@ use crate::generation::resources::GenerationResourcesCollection;
 use bevy::reflect::Reflect;
 
 #[allow(dead_code)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect, serde::Deserialize)]
 pub enum TileType {
   Fill,
-  InnerCornerBottomLeft,
-  InnerCornerBottomRight,
-  InnerCornerTopLeft,
   InnerCornerTopRight,
-  OuterCornerBottomLeft,
-  OuterCornerBottomRight,
-  OuterCornerTopLeft,
+  InnerCornerBottomRight,
+  InnerCornerBottomLeft,
+  InnerCornerTopLeft,
   OuterCornerTopRight,
-  TopLeftToBottomRightBridge,
+  OuterCornerBottomRight,
+  OuterCornerBottomLeft,
+  OuterCornerTopLeft,
   TopRightToBottomLeftBridge,
+  TopLeftToBottomRightBridge,
   TopFill,
-  BottomFill,
   RightFill,
+  BottomFill,
   LeftFill,
   Single,
   Unknown,

@@ -36,7 +36,7 @@ pub fn generate(
   }
   let start_time = get_time();
   for (chunk, tile_data) in spawn_data.iter() {
-    let grid = ObjectGrid::new_initialised(&resources.objects.rule_sets, tile_data);
+    let grid = ObjectGrid::new_initialised(&resources.objects.terrain_rule_sets, tile_data);
     commands.spawn((
       Name::new(format!(
         "Object Generation Data for Chunk w{} wg{}",

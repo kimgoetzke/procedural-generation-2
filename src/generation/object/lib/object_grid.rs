@@ -25,6 +25,8 @@ impl ObjectGrid {
     ObjectGrid { grid }
   }
 
+  // TODO: Consider constructing rules for each tile type and then initialising
+  // TODO: Remove incorrect rules for non-fill tile types
   pub fn new_initialised(rule_sets: &HashMap<TerrainType, Vec<TileState>>, tile_data: &Vec<TileData>) -> Self {
     let mut grid = ObjectGrid::new_uninitialised();
     for data in tile_data.iter() {
