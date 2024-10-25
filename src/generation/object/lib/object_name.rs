@@ -1,6 +1,6 @@
 use bevy::reflect::Reflect;
 
-#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect)]
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash)]
 pub enum ObjectName {
   Empty,
   SandStone1,

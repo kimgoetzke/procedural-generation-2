@@ -38,7 +38,7 @@ impl Cell {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
-    let points = vec![Point::new_chunk_grid(9, 6), Point::new_chunk_grid(10, 6)];
+    let points = vec![Point::new_chunk_grid(9, 6)];
     if points.contains(&self.cg) {
       self.is_being_monitored = true;
     }
@@ -55,7 +55,7 @@ impl Cell {
   ) -> Result<(bool, Self), PropagationFailure> {
     let count_currently_possible_states = self.possible_states.len();
     let where_is_self_for_reference = where_is_reference.opposite();
-    let permitted_state_names = get_permitted_new_states(&reference_cell, where_is_self_for_reference);
+    let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
 
     let mut updated_possible_states = Vec::new();
     for possible_state_self in &self.possible_states {
@@ -108,7 +108,7 @@ impl Cell {
 
   pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<(), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
-    let permitted_state_names = get_permitted_new_states(&reference_cell, where_is_self_for_reference);
+    let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
 
     if !permitted_state_names.contains(&self.possible_states[0].name) {
       log(
@@ -128,7 +128,7 @@ impl Cell {
   }
 }
 
-fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: Connection) -> Vec<ObjectName> {
+fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: &Connection) -> Vec<ObjectName> {
   reference_cell
     .possible_states
     .iter()
@@ -136,7 +136,7 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
       possible_state_reference
         .permitted_neighbours
         .iter()
-        .filter(|(connection, _)| *connection == where_is_self_for_reference)
+        .filter(|(connection, _)| connection == where_is_self_for_reference)
         .flat_map(|(_, names)| names.iter().map(|(name, _)| name.clone()))
     })
     .collect()
@@ -145,8 +145,8 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
 fn log(
   is_update: bool,
   reference_cell: &Cell,
-  reference_connection: &Connection,
-  cell_connection: Connection,
+  where_is_reference: &Connection,
+  where_is_self_for_reference: Connection,
   old_cell: &Cell,
   old_possible_states_count: usize,
   new_cell: &mut Cell,
@@ -156,52 +156,53 @@ fn log(
     return;
   }
 
-  if old_possible_states_count != new_cell.possible_states.len() && is_update && new_cell.is_being_monitored {
+  if old_possible_states_count != new_cell.possible_states.len()
+    && is_update
+    && new_cell.is_being_monitored
+    && new_cell.possible_states.len() < 3
+  {
     debug!(
       "Reduced possible states of cg{:?} from {} to {}: {:?}",
       new_cell.cg,
       old_possible_states_count,
       new_cell.possible_states.len(),
-      if new_cell.possible_states.len() > 3 {
-        vec![
-          new_cell.possible_states[0].name,
-          new_cell.possible_states[1].name,
-          new_cell.possible_states[2].name,
-          "...".to_string().into(),
-        ]
-      } else {
-        new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
-      }
+      new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
   }
 
-  if new_cell.possible_states.len() == 0 {
+  if new_cell.possible_states.is_empty() {
     error!(
       "Failed to find any possible states for cg{:?} ({:?} {:?}) during {} with cg{:?} ({:?})",
       new_cell.cg,
       old_cell.terrain,
-      reference_connection,
+      where_is_reference,
       if is_update { "update" } else { "verification" },
       reference_cell.cg,
       reference_cell.terrain,
     );
   }
+
   if new_cell.possible_states.len() <= 1 {
     debug!(
-      "Summary of the {} process for cg{:?}:",
+      "┌─[ Summary of the {} process for cg{:?} ]",
       if is_update { "UPDATE" } else { "VERIFICATION" },
       old_cell.cg
     );
     debug!(
-      "- THIS cell is at cg{:?} which is at the [{:?}] of the reference cell",
-      old_cell.cg, reference_connection
+      "| - THIS cell is at cg{:?} which is at the [{:?}] of the reference cell",
+      old_cell.cg, where_is_reference
     );
     debug!(
-      "- The REFERENCE cell is at cg{:?} which is at the [{:?}] of this cell)",
-      reference_cell.cg, cell_connection
+      "| - THIS cell had {:?} possible states: {:?}",
+      old_possible_states_count,
+      old_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
     debug!(
-      "- The REFERENCE cell has the following {} possible states: {:?}",
+      "| - The REFERENCE cell is at cg{:?} which is at the [{:?}] of this cell)",
+      reference_cell.cg, where_is_self_for_reference
+    );
+    debug!(
+      "| - The REFERENCE cell has the following {} possible states: {:?}",
       reference_cell.possible_states.len(),
       reference_cell
         .possible_states
@@ -209,17 +210,29 @@ fn log(
         .map(|s| s.name)
         .collect::<Vec<ObjectName>>()
     );
-    debug!("- The permitted new states were determined to be: {:?}", new_permitted_states);
+    if reference_cell.possible_states.len() == 1 {
+      if let Some((_, neighbours)) = reference_cell.possible_states[0]
+        .permitted_neighbours
+        .iter()
+        .find(|(connection, _)| *connection == where_is_self_for_reference)
+      {
+        debug!(
+          "| - The relevant rule for a [{:?}] neighbour of the REFERENCE cell is: {:?}",
+          where_is_reference, neighbours
+        );
+      } else {
+        warn!("| - The relevant rule for only possible state of the REFERENCE cell does not exist");
+      }
+    }
     debug!(
-      "- At the start of the update process, THIS cell had {:?} possible states: {:?}",
-      old_possible_states_count,
-      old_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
+      "| - The permitted new states were determined to be: {:?}",
+      new_permitted_states
     );
     debug!(
-      "- The {} new possible states for THIS cell are: {:?}",
+      "└─> {} new possible state(s) for THIS cell: {:?}",
       new_cell.possible_states.len(),
       new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
-    debug!("");
+    debug!("")
   }
 }

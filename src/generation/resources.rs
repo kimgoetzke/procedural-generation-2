@@ -353,12 +353,12 @@ fn object_assets_static(
 
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
-  pub grid: HashMap<Point<World>, ChunkComponent>,
+  map: HashMap<Point<World>, ChunkComponent>,
 }
 
 impl ChunkComponentIndex {
   pub fn get(&self, world: Point<World>) -> Option<&ChunkComponent> {
-    if let Some(entity) = self.grid.get(&world) {
+    if let Some(entity) = self.map.get(&world) {
       Some(entity)
     } else {
       None
@@ -372,7 +372,7 @@ fn on_add_chunk_component_trigger(
   mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
-  index.grid.insert(cc.coords.world, cc.clone());
+  index.map.insert(cc.coords.world, cc.clone());
   trace!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
 }
 
@@ -382,7 +382,7 @@ fn on_remove_chunk_component_trigger(
   mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
-  index.grid.remove(&cc.coords.world);
+  index.map.remove(&cc.coords.world);
   trace!(
     "ChunkComponentIndex -> Removed ChunkComponent with key w{:?}",
     cc.coords.world

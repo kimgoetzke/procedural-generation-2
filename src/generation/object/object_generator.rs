@@ -1,8 +1,8 @@
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
-use crate::generation::object::lib::CollapsedCell;
 use crate::generation::object::lib::ObjectGrid;
+use crate::generation::object::lib::{CollapsedCell, ObjectName};
 use crate::generation::object::wfc;
 use crate::generation::object::wfc::WfcPlugin;
 use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
@@ -90,15 +90,10 @@ fn generate_objects_system(
     for collapsed_cell in collapsed_cells.iter() {
       let sprite_index = collapsed_cell.sprite_index;
       let tile_data = collapsed_cell.tile_data;
-      let object_name = collapsed_cell.name.as_ref().expect("Failed to get object name");
+      let object_name = collapsed_cell.name.expect("Failed to get object name");
       let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain);
       commands.entity(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(
-          &tile_data.flat_tile,
-          sprite_index,
-          asset_collection,
-          Name::new(format!("{:?} Object Sprite", object_name)),
-        ));
+        parent.spawn(sprite(&tile_data.flat_tile, sprite_index, asset_collection, object_name));
       });
     }
 
@@ -115,10 +110,10 @@ fn sprite(
   tile: &Tile,
   index: i32,
   asset_collection: &AssetCollection,
-  name: Name,
+  object_name: ObjectName,
 ) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
-    name,
+    Name::new(format!("{:?} Object Sprite", object_name)),
     SpriteBundle {
       sprite: Sprite {
         anchor: Anchor::TopLeft,
@@ -137,6 +132,10 @@ fn sprite(
       layout: asset_collection.stat.texture_atlas_layout.clone(),
       index: index as usize,
     },
-    ObjectComponent {},
+    ObjectComponent {
+      coords: tile.coords,
+      sprite_index: index as usize,
+      object_name: object_name.clone(),
+    },
   )
 }
