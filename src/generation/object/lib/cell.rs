@@ -13,6 +13,7 @@ pub struct Cell {
   pub cg: Point<ChunkGrid>,
   pub is_collapsed: bool,
   is_initialised: bool,
+  is_being_monitored: bool,
   pub terrain: TerrainType,
   pub entropy: usize,
   pub possible_states: Vec<TileState>,
@@ -25,6 +26,7 @@ impl Cell {
       cg: Point::new_chunk_grid(x, y),
       is_collapsed: false,
       is_initialised: false,
+      is_being_monitored: false,
       terrain: TerrainType::Any,
       entropy: usize::MAX,
       possible_states: vec![],
@@ -35,6 +37,10 @@ impl Cell {
   pub fn initialise(&mut self, terrain_type: TerrainType, states: &Vec<TileState>) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
+    }
+    let points = vec![Point::new_chunk_grid(9, 6), Point::new_chunk_grid(10, 6)];
+    if points.contains(&self.cg) {
+      self.is_being_monitored = true;
     }
     self.terrain = terrain_type;
     self.possible_states = states.clone();
@@ -80,12 +86,24 @@ impl Cell {
 
   // TODO: Add weights to the rules at some point
   pub fn collapse(&mut self, rng: &mut StdRng) {
-    let rule = self.possible_states.remove(rng.gen_range(0..self.possible_states.len()));
-    trace!("Collapsed cg{:?} to {:?}", self.cg, rule.name);
+    let rule = self
+      .possible_states
+      .get(rng.gen_range(0..self.possible_states.len()))
+      .expect("Failed to get random rule to collapse cell to");
+    if self.is_being_monitored {
+      debug!(
+        "Collapsed cg{:?} to [{:?}] with previous entropy {} and {} states: {:?}",
+        self.cg,
+        rule.name,
+        self.entropy,
+        self.possible_states.len(),
+        self.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
+      );
+    }
     self.index = rule.index;
     self.is_collapsed = true;
     self.entropy = 0;
-    self.possible_states = vec![rule];
+    self.possible_states = vec![rule.clone()];
   }
 
   pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<(), PropagationFailure> {
@@ -134,17 +152,31 @@ fn log(
   new_cell: &mut Cell,
   new_permitted_states: &Vec<ObjectName>,
 ) {
-  if old_possible_states_count != new_cell.possible_states.len() && is_update {
-    trace!(
-      "Reduced possible states of cg{:?} from {} to {}",
+  if !new_cell.is_being_monitored && !reference_cell.is_being_monitored {
+    return;
+  }
+
+  if old_possible_states_count != new_cell.possible_states.len() && is_update && new_cell.is_being_monitored {
+    debug!(
+      "Reduced possible states of cg{:?} from {} to {}: {:?}",
       new_cell.cg,
       old_possible_states_count,
-      new_cell.possible_states.len()
+      new_cell.possible_states.len(),
+      if new_cell.possible_states.len() > 3 {
+        vec![
+          new_cell.possible_states[0].name,
+          new_cell.possible_states[1].name,
+          new_cell.possible_states[2].name,
+          "...".to_string().into(),
+        ]
+      } else {
+        new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
+      }
     );
   }
 
   if new_cell.possible_states.len() == 0 {
-    trace!(
+    error!(
       "Failed to find any possible states for cg{:?} ({:?} {:?}) during {} with cg{:?} ({:?})",
       new_cell.cg,
       old_cell.terrain,
@@ -153,22 +185,22 @@ fn log(
       reference_cell.cg,
       reference_cell.terrain,
     );
-    trace!(
+  }
+  if new_cell.possible_states.len() <= 1 {
+    debug!(
       "Summary of the {} process for cg{:?}:",
       if is_update { "UPDATE" } else { "VERIFICATION" },
       old_cell.cg
     );
-    trace!(
+    debug!(
       "- THIS cell is at cg{:?} which is at the [{:?}] of the reference cell",
-      old_cell.cg,
-      reference_connection
+      old_cell.cg, reference_connection
     );
-    trace!(
+    debug!(
       "- The REFERENCE cell is at cg{:?} which is at the [{:?}] of this cell)",
-      reference_cell.cg,
-      cell_connection
+      reference_cell.cg, cell_connection
     );
-    trace!(
+    debug!(
       "- The REFERENCE cell has the following {} possible states: {:?}",
       reference_cell.possible_states.len(),
       reference_cell
@@ -177,17 +209,17 @@ fn log(
         .map(|s| s.name)
         .collect::<Vec<ObjectName>>()
     );
-    trace!("- The permitted new states were determined to be: {:?}", new_permitted_states);
-    trace!(
+    debug!("- The permitted new states were determined to be: {:?}", new_permitted_states);
+    debug!(
       "- At the start of the update process, THIS cell had {:?} possible states: {:?}",
       old_possible_states_count,
       old_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
-    trace!(
+    debug!(
       "- The {} new possible states for THIS cell are: {:?}",
       new_cell.possible_states.len(),
       new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
-    trace!("");
+    debug!("");
   }
 }
