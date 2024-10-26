@@ -85,6 +85,7 @@
     (
       tile_type: TopFill,
       permitted_self: [
+        Empty,
         SandPathVerticalForestTop,
         SandPathVerticalForestBottom,
         SandPathVerticalGrassTop,
@@ -102,6 +103,7 @@
     (
       tile_type: RightFill,
       permitted_self: [
+        Empty,
         SandPathHorizontalForestRight,
         SandPathHorizontalForestLeft,
         SandPathHorizontalGrassRight,
@@ -119,6 +121,7 @@
     (
       tile_type: BottomFill,
       permitted_self: [
+        Empty,
         ForestPathVerticalSandTop, 
         ForestPathVerticalSandBottom,
         ForestPathVerticalGrassTop,
@@ -136,6 +139,7 @@
     (
       tile_type: LeftFill,
       permitted_self: [
+        Empty,
         SandPathHorizontalForestRight,
         SandPathHorizontalForestLeft,
         SandPathHorizontalGrassRight,

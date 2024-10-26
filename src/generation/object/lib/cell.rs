@@ -2,12 +2,16 @@ use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::lib::TerrainType;
 use crate::generation::object::lib::{Connection, ObjectName, PropagationFailure};
-use crate::generation::resources::TileState;
+use crate::generation::resources::TerrainState;
 use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::prelude::StdRng;
 use rand::Rng;
 
+/// A `Cell` is a "placeholder" for an object. It is used in the `ObjectGrid`. This struct is used to represent a cell in
+/// the grid that can be collapsed to a single state. Once all `Cell`s in an `ObjectGrid` have been collapsed, they
+/// will be converted to `CollapsedCell`s which are then used to spawn object sprites in the world. A `Cell` is
+/// indirectly linked to an underlying `Tile` through its `TerrainType`.
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {
   pub cg: Point<ChunkGrid>,
@@ -16,7 +20,7 @@ pub struct Cell {
   is_being_monitored: bool,
   pub terrain: TerrainType,
   pub entropy: usize,
-  pub possible_states: Vec<TileState>,
+  pub possible_states: Vec<TerrainState>,
   pub index: i32,
 }
 
@@ -34,13 +38,23 @@ impl Cell {
     }
   }
 
-  pub fn initialise(&mut self, terrain_type: TerrainType, states: &Vec<TileState>) {
+  pub fn initialise(&mut self, terrain_type: TerrainType, states: &Vec<TerrainState>) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
-    let points = vec![Point::new_chunk_grid(9, 6)];
-    if points.contains(&self.cg) {
-      self.is_being_monitored = true;
+    // Uncomment the below to monitor specific cells
+    // let points = vec![Point::new_chunk_grid(9, 6)];
+    // if points.contains(&self.cg) {
+    //   self.is_being_monitored = true;
+    // }
+    if self.is_being_monitored {
+      debug!(
+        "Initialising cg{:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
+        self.cg,
+        terrain_type,
+        states.len(),
+        states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
+      );
     }
     self.terrain = terrain_type;
     self.possible_states = states.clone();
@@ -66,7 +80,7 @@ impl Cell {
     let mut clone = self.clone();
     clone.possible_states = updated_possible_states;
     clone.entropy = self.possible_states.len();
-    log(
+    log_result(
       true,
       reference_cell,
       where_is_reference,
@@ -82,7 +96,7 @@ impl Cell {
     }
   }
 
-  // TODO: Add weights to the rules at some point
+  // TODO: Use weights from the rules to influence the state to collapse to
   pub fn collapse(&mut self, rng: &mut StdRng) {
     let state = self
       .possible_states
@@ -109,7 +123,7 @@ impl Cell {
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
 
     if !permitted_state_names.contains(&self.possible_states[0].name) {
-      log(
+      log_result(
         false,
         reference_cell,
         where_is_reference,
@@ -139,7 +153,7 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
     .collect()
 }
 
-fn log(
+fn log_result(
   is_update: bool,
   reference_cell: &Cell,
   where_is_reference: &Connection,

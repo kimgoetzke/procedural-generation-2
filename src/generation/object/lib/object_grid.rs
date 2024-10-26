@@ -1,10 +1,10 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
-use crate::generation::lib::{TerrainType, TileData};
+use crate::generation::lib::{TerrainType, TileData, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
-use crate::generation::object::lib::{Cell, Connection};
-use crate::generation::resources::TileState;
+use crate::generation::object::lib::{Cell, Connection, ObjectName};
+use crate::generation::resources::TerrainState;
 use bevy::log::*;
 use bevy::reflect::Reflect;
 use bevy::utils::HashMap;
@@ -15,7 +15,6 @@ pub struct ObjectGrid {
   pub grid: Vec<Vec<Cell>>,
 }
 
-// TODO: Create a single grid and consider pre-resolving possible states for each cell based on terrain
 // TODO: Add constraints from neighbouring chunk tiles somehow
 impl ObjectGrid {
   fn new_uninitialised() -> Self {
@@ -25,17 +24,19 @@ impl ObjectGrid {
     ObjectGrid { grid }
   }
 
-  // TODO: Consider constructing rules for each tile type and then initialising
-  // TODO: Remove incorrect rules for non-fill tile types
-  pub fn new_initialised(rule_sets: &HashMap<TerrainType, Vec<TileState>>, tile_data: &Vec<TileData>) -> Self {
+  pub fn new_initialised(
+    terrain_rules: &HashMap<TerrainType, Vec<TerrainState>>,
+    tile_type_rules: &HashMap<TileType, Vec<ObjectName>>,
+    tile_data: &Vec<TileData>,
+  ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised();
     for data in tile_data.iter() {
       let cg = data.flat_tile.coords.chunk_grid;
+      let terrain = data.flat_tile.terrain;
+      let tile_type = data.flat_tile.tile_type;
       if let Some(cell) = grid.get_cell_mut(&cg) {
-        let relevant_rule_set = rule_sets
-          .get(&data.flat_tile.terrain)
-          .expect(format!("Failed to find rule set for [{:?}] terrain type", &data.flat_tile.terrain).as_str());
-        cell.initialise(data.flat_tile.terrain, relevant_rule_set);
+        let relevant_rules = resolve_rules(tile_type, terrain_rules, tile_type_rules, terrain);
+        cell.initialise(terrain, &relevant_rules);
         trace!(
           "Initialised cg{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           cg,
@@ -111,4 +112,39 @@ impl ObjectGrid {
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
     self.grid = other.grid.clone();
   }
+}
+
+// TODO: Make resolving rules for each tile type part of the app initialisation process
+//  instead of repeating for each tile during the object generation process
+fn resolve_rules(
+  tile_type: TileType,
+  terrain_rules: &HashMap<TerrainType, Vec<TerrainState>>,
+  tile_type_rules: &HashMap<TileType, Vec<ObjectName>>,
+  terrain: TerrainType,
+) -> Vec<TerrainState> {
+  let relevant_terrain_rules = terrain_rules
+    .get(&terrain)
+    .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str());
+  let relevant_tile_type_rules = tile_type_rules
+    .get(&tile_type)
+    .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str());
+
+  let mut resolved_rules = vec![];
+  for terrain_rule in relevant_terrain_rules {
+    if relevant_tile_type_rules.contains(&terrain_rule.name) {
+      resolved_rules.push(terrain_rule.clone());
+    }
+  }
+
+  debug!(
+    "Resolved {} rules for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
+    resolved_rules.len(),
+    tile_type,
+    terrain_rules.len(),
+    terrain,
+    tile_type_rules.len(),
+    resolved_rules.iter().map(|r| r.name).collect::<Vec<ObjectName>>()
+  );
+
+  resolved_rules
 }

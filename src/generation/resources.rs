@@ -23,8 +23,10 @@ pub struct GenerationResourcesPlugin;
 impl Plugin for GenerationResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins(RonAssetPlugin::<TerrainRuleSet>::new(&["terrain-ruleset.ron"]))
-      .add_plugins(RonAssetPlugin::<TileTypeRuleSet>::new(&["type-ruleset.ron"]))
+      .add_plugins((
+        RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
+        RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
+      ))
       .init_resource::<GenerationResourcesCollection>()
       .init_resource::<ChunkComponentIndex>()
       .observe(on_add_chunk_component_trigger)
@@ -35,14 +37,14 @@ impl Plugin for GenerationResourcesPlugin {
   }
 }
 
+#[derive(Resource, Default, Debug, Clone)]
+struct TerrainRuleSetHandle(Vec<Handle<TerrainRuleSet>>);
+
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
 struct TerrainRuleSet {
   terrain: TerrainType,
-  states: Vec<TileState>,
+  states: Vec<TerrainState>,
 }
-
-#[derive(Resource, Default, Debug, Clone)]
-struct TerrainRuleSetHandle(Vec<Handle<TerrainRuleSet>>);
 
 impl Default for TerrainRuleSet {
   fn default() -> Self {
@@ -59,23 +61,29 @@ impl Display for TerrainRuleSet {
   }
 }
 
-#[derive(Resource, Default, Debug, Clone)]
-struct TileTypeRuleSetHandle(Handle<TileTypeRuleSet>);
-
 #[derive(serde::Deserialize, Debug, Clone, Reflect)]
-pub struct TileState {
+pub struct TerrainState {
   pub name: ObjectName,
   pub index: i32,
   pub permitted_neighbours: Vec<(Connection, Vec<(ObjectName, i32)>)>,
 }
+
+#[derive(Resource, Default, Debug, Clone)]
+struct TileTypeRuleSetHandle(Handle<TileTypeRuleSet>);
 
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
 struct TileTypeRuleSet {
   states: Vec<TileTypeState>,
 }
 
+impl Display for TileTypeRuleSet {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "Tile type rule set with {} states", self.states.len())
+  }
+}
+
 #[derive(serde::Deserialize, Debug, Clone, Reflect)]
-struct TileTypeState {
+pub struct TileTypeState {
   pub tile_type: TileType,
   pub permitted_self: Vec<ObjectName>,
 }
@@ -84,12 +92,12 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
   let mut rule_set_handles = Vec::new();
   for i in 0..TerrainType::length() {
     let terrain_type = TerrainType::from(i);
-    let path = format!("objects/{}.terrain-ruleset.ron", terrain_type.to_string().to_lowercase());
+    let path = format!("objects/{}.terrain.ruleset.ron", terrain_type.to_string().to_lowercase());
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
   }
   commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
-  let handle = asset_server.load("objects/tile.type-ruleset.ron");
+  let handle = asset_server.load("objects/all.tile-type.ruleset.ron");
   commands.insert_resource(TileTypeRuleSetHandle(handle));
 }
 
@@ -104,7 +112,7 @@ fn check_loading_state(
     if asset_server.get_load_state(terrain_handle) != Some(bevy::asset::LoadState::Loaded)
       || asset_server.get_load_state(tile_type_handle) != Some(bevy::asset::LoadState::Loaded)
     {
-      debug_once!("Waiting for assets to load...");
+      info_once!("Waiting for assets to load...");
       return;
     }
   }
@@ -126,8 +134,8 @@ pub struct GenerationResourcesCollection {
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct ObjectResources {
-  pub terrain_rule_sets: HashMap<TerrainType, Vec<TileState>>,
-  pub tile_type_rule_sets: HashMap<TileType, Vec<ObjectName>>,
+  pub terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
+  pub tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
   pub water: AssetCollection,
   pub shore: AssetCollection,
   pub sand: AssetCollection,
@@ -246,7 +254,7 @@ fn initialise_resources_system(
       rule_sets.insert(rule_set.terrain, rule_set.states);
     }
   }
-  asset_collection.objects.terrain_rule_sets = rule_sets;
+  asset_collection.objects.terrain_rules = rule_sets;
 
   if let Some(rule_set) = tile_type_rule_set_assets.remove(&tile_type_rule_set_handle.0) {
     debug!("Loaded: Tile type rule set for {} tiles", rule_set.states.len());
@@ -254,7 +262,7 @@ fn initialise_resources_system(
     for state in rule_set.states {
       rule_sets.insert(state.tile_type, state.permitted_self);
     }
-    asset_collection.objects.tile_type_rule_sets = rule_sets;
+    asset_collection.objects.tile_type_rules = rule_sets;
   }
 }
 
