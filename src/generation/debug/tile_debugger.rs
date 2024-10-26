@@ -156,7 +156,7 @@ fn tile_info(
   let object = if let Some(oc) = object_component_option {
     format!("\nObject: \n{:?}\nObject sprite {}", oc.object_name, oc.sprite_index)
   } else {
-    "No object sprite".to_string()
+    "\nNo object sprite".to_string()
   };
   let visibility = if settings.general.enable_tile_debugging {
     Visibility::Visible

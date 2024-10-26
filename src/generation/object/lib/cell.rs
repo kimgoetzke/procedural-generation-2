@@ -1,6 +1,6 @@
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
-use crate::generation::lib::TerrainType;
+use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName, PropagationFailure};
 use crate::generation::resources::TerrainState;
 use bevy::log::*;
@@ -11,7 +11,7 @@ use rand::Rng;
 /// A `Cell` is a "placeholder" for an object. It is used in the `ObjectGrid`. This struct is used to represent a cell in
 /// the grid that can be collapsed to a single state. Once all `Cell`s in an `ObjectGrid` have been collapsed, they
 /// will be converted to `CollapsedCell`s which are then used to spawn object sprites in the world. A `Cell` is
-/// indirectly linked to an underlying `Tile` through its `TerrainType`.
+/// indirectly linked to an underlying `Tile` through its `TerrainType` and  `TileType` fields.
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {
   pub cg: Point<ChunkGrid>,
@@ -19,6 +19,7 @@ pub struct Cell {
   is_initialised: bool,
   is_being_monitored: bool,
   pub terrain: TerrainType,
+  pub tile_type: TileType,
   pub entropy: usize,
   pub possible_states: Vec<TerrainState>,
   pub index: i32,
@@ -32,13 +33,14 @@ impl Cell {
       is_initialised: false,
       is_being_monitored: false,
       terrain: TerrainType::Any,
+      tile_type: TileType::Unknown,
       entropy: usize::MAX,
       possible_states: vec![],
       index: -1,
     }
   }
 
-  pub fn initialise(&mut self, terrain_type: TerrainType, states: &Vec<TerrainState>) {
+  pub fn initialise(&mut self, terrain_type: TerrainType, tile_type: TileType, states: &Vec<TerrainState>) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
@@ -56,10 +58,11 @@ impl Cell {
         states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
       );
     }
+    self.is_initialised = true;
     self.terrain = terrain_type;
+    self.tile_type = tile_type;
     self.possible_states = states.clone();
     self.entropy = self.possible_states.len();
-    self.is_initialised = true;
   }
 
   pub fn clone_and_reduce(
@@ -136,6 +139,13 @@ impl Cell {
     } else {
       Ok(())
     }
+  }
+
+  pub fn is_border_cell(&self, grid_size: usize) -> bool {
+    let x = self.cg.x;
+    let y = self.cg.y;
+    let grid_size = grid_size as i32;
+    x == 0 || y == 0 || x == grid_size - 1 || y == grid_size - 1
   }
 }
 

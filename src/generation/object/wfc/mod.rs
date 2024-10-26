@@ -93,7 +93,7 @@ pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   let mut stack: Vec<Cell> = vec![random_cell_clone];
   while let Some(cell) = stack.pop() {
     grid.set_cell(cell.clone());
-    for (connection, neighbour) in grid.get_neighbours(&cell.cg).iter_mut() {
+    for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
       if !neighbour.is_collapsed {
         if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
           if has_changed {

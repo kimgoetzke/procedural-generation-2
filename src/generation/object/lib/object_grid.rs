@@ -30,13 +30,18 @@ impl ObjectGrid {
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised();
+    let grid_size = grid.grid.len();
     for data in tile_data.iter() {
       let cg = data.flat_tile.coords.chunk_grid;
       let terrain = data.flat_tile.terrain;
       let tile_type = data.flat_tile.tile_type;
       if let Some(cell) = grid.get_cell_mut(&cg) {
         let relevant_rules = resolve_rules(tile_type, terrain_rules, tile_type_rules, terrain);
-        cell.initialise(terrain, &relevant_rules);
+        if cell.is_border_cell(grid_size) {
+          cell.initialise(terrain, tile_type, &vec![relevant_rules[0].clone()]);
+        } else {
+          cell.initialise(terrain, tile_type, &relevant_rules);
+        }
         trace!(
           "Initialised cg{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           cg,
@@ -52,8 +57,9 @@ impl ObjectGrid {
     grid
   }
 
-  pub fn get_neighbours(&mut self, point: &Point<ChunkGrid>) -> Vec<(Connection, &Cell)> {
-    let points: Vec<_> = get_connection_points(point).into_iter().collect();
+  pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
+    let point = cell.cg;
+    let points: Vec<_> = get_connection_points(&point).into_iter().collect();
     let mut neighbours = vec![];
     for (direction, point) in points {
       if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.cg == point).next() {
@@ -136,7 +142,7 @@ fn resolve_rules(
     }
   }
 
-  debug!(
+  trace!(
     "Resolved {} rules for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
     resolved_rules.len(),
     tile_type,

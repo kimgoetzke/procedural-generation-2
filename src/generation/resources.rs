@@ -37,6 +37,8 @@ impl Plugin for GenerationResourcesPlugin {
   }
 }
 
+// --- Rules for wave function collapse -----------------------------------------------------
+
 #[derive(Resource, Default, Debug, Clone)]
 struct TerrainRuleSetHandle(Vec<Handle<TerrainRuleSet>>);
 
@@ -120,6 +122,8 @@ fn check_loading_state(
   debug!("Transitioning to [{:?}] state", AppState::Initialising);
   state.set(AppState::Initialising);
 }
+
+// --- Universal asset resources for the generation process ----------------------------------
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct GenerationResourcesCollection {
@@ -359,6 +363,10 @@ fn object_assets_static(
   }
 }
 
+// --- Indices for sharing states of spawned components --------------------------------------
+
+/// Contains a clone of the `ChunkComponent` of each chunk entity that currently exists in the world. This index is
+/// kept up-to-date by observing the `OnAdd<ChunkComponent>` and `OnRemove<ChunkComponent>` triggers.
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
   map: HashMap<Point<World>, ChunkComponent>,
