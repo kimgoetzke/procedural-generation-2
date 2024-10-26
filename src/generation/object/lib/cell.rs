@@ -99,12 +99,21 @@ impl Cell {
     }
   }
 
-  // TODO: Use weights from the rules to influence the state to collapse to
   pub fn collapse(&mut self, rng: &mut StdRng) {
-    let state = self
-      .possible_states
-      .get(rng.gen_range(0..self.possible_states.len()))
-      .expect("Failed to get random rule to collapse cell to");
+    let total_weight: i32 = self.possible_states.iter().map(|state| state.sum_of_weights()).sum();
+    let mut target = rng.gen_range(0..total_weight);
+    let mut selected_state = None;
+
+    for state in &self.possible_states {
+      let state_weight: i32 = state.sum_of_weights();
+      if target < state_weight {
+        selected_state = Some(state);
+        break;
+      }
+      target -= state_weight;
+    }
+    let state = selected_state.expect("Failed to get weighted random state to collapse cell to");
+
     if self.is_being_monitored {
       debug!(
         "Collapsed cg{:?} to [{:?}] with previous entropy {} and {} states: {:?}",
@@ -115,6 +124,7 @@ impl Cell {
         self.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
       );
     }
+
     self.index = state.index;
     self.is_collapsed = true;
     self.entropy = 0;

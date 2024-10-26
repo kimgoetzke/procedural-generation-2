@@ -70,6 +70,16 @@ pub struct TerrainState {
   pub permitted_neighbours: Vec<(Connection, Vec<(ObjectName, i32)>)>,
 }
 
+impl TerrainState {
+  pub fn sum_of_weights(&self) -> i32 {
+    self
+      .permitted_neighbours
+      .iter()
+      .map(|(_, v)| v.iter().map(|(_, weights)| weights).sum::<i32>())
+      .sum()
+  }
+}
+
 #[derive(Resource, Default, Debug, Clone)]
 struct TileTypeRuleSetHandle(Handle<TileTypeRuleSet>);
 

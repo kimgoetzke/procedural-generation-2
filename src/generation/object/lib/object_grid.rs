@@ -15,7 +15,6 @@ pub struct ObjectGrid {
   pub grid: Vec<Vec<Cell>>,
 }
 
-// TODO: Add constraints from neighbouring chunk tiles somehow
 impl ObjectGrid {
   fn new_uninitialised() -> Self {
     let grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
