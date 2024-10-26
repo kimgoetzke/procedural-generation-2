@@ -4,11 +4,12 @@
     (
       index: 0,
       name: Empty,
+      weight: 1,
       permitted_neighbours: [
-        ( Top, [ (Empty, 1), ] ),
-        ( Left, [ (Empty, 1), ] ),
-        ( Right, [ (Empty, 1), ] ),
-        ( Bottom, [ (Empty, 1), ] ),
+        ( Top, [ Empty, ] ),
+        ( Left, [ Empty, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, ] ),
       ]
     ),
   ]

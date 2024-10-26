@@ -67,17 +67,8 @@ impl Display for TerrainRuleSet {
 pub struct TerrainState {
   pub name: ObjectName,
   pub index: i32,
-  pub permitted_neighbours: Vec<(Connection, Vec<(ObjectName, i32)>)>,
-}
-
-impl TerrainState {
-  pub fn sum_of_weights(&self) -> i32 {
-    self
-      .permitted_neighbours
-      .iter()
-      .map(|(_, v)| v.iter().map(|(_, weights)| weights).sum::<i32>())
-      .sum()
-  }
+  pub weight: i32,
+  pub permitted_neighbours: Vec<(Connection, Vec<ObjectName>)>,
 }
 
 #[derive(Resource, Default, Debug, Clone)]

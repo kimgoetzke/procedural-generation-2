@@ -100,19 +100,31 @@ impl Cell {
   }
 
   pub fn collapse(&mut self, rng: &mut StdRng) {
-    let total_weight: i32 = self.possible_states.iter().map(|state| state.sum_of_weights()).sum();
-    let mut target = rng.gen_range(0..total_weight);
-    let mut selected_state = None;
+    let possible_states_count = self.possible_states.len();
+    let state = if possible_states_count == 1 {
+      &self.possible_states[0]
+    } else {
+      let total_weight: i32 = self.possible_states.iter().map(|state| state.weight).sum();
+      let mut target = rng.gen_range(0..total_weight);
+      let mut selected_state = None;
 
-    for state in &self.possible_states {
-      let state_weight: i32 = state.sum_of_weights();
-      if target < state_weight {
-        selected_state = Some(state);
-        break;
+      debug!("┌─|| There are {} possible states for cg{:?}", possible_states_count, self.cg);
+      for state in &self.possible_states {
+        debug!("├─ State {:?} has weight {}", state.name, state.weight);
+        if target < state.weight {
+          selected_state = Some(state);
+          break;
+        }
+        target -= state.weight;
       }
-      target -= state_weight;
-    }
-    let state = selected_state.expect("Failed to get weighted random state to collapse cell to");
+      let selected_state = selected_state.expect("Failed to get selected state");
+      debug!(
+        "└─> Selected state {:?} for cg{:?} with weight {} from total weights of {}",
+        selected_state.name, self.cg, selected_state.weight, total_weight
+      );
+
+      selected_state
+    };
 
     if self.is_being_monitored {
       debug!(
@@ -168,7 +180,7 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
         .permitted_neighbours
         .iter()
         .filter(|(connection, _)| connection == where_is_self_for_reference)
-        .flat_map(|(_, names)| names.iter().map(|(name, _)| name.clone()))
+        .flat_map(|(_, names)| names.iter().cloned())
     })
     .collect()
 }
