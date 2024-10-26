@@ -1,3 +1,4 @@
+use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
@@ -14,7 +15,7 @@ use bevy::log::*;
 use bevy::prelude::{Commands, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use rand::prelude::StdRng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 
 pub struct ObjectGeneratorPlugin;
 
@@ -59,6 +60,7 @@ pub fn generate(
 //   - Pick a chunk to generate objects for
 //   - Run system that runs x iterations of the WFC algorithm per frame (allow debugging if possible)
 //   - When done for a chunk, schedule spawning all objects for that chunk
+// TODO: Remove paths and create new algorithm for them
 fn generate_objects_system(
   mut commands: Commands,
   mut query: Query<(Entity, &mut ObjectGenerationDataComponent)>,
@@ -95,9 +97,17 @@ fn generate_objects_system(
       let sprite_index = collapsed_cell.sprite_index;
       let tile_data = collapsed_cell.tile_data;
       let object_name = collapsed_cell.name.expect("Failed to get object name");
-      let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain);
+      let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite);
+      let (offset_x, offset_y) = get_sprite_offsets(&mut rng, collapsed_cell);
       commands.entity(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(&tile_data.flat_tile, sprite_index, asset_collection, object_name));
+        parent.spawn(sprite(
+          &tile_data.flat_tile,
+          sprite_index,
+          asset_collection,
+          object_name,
+          offset_x,
+          offset_y,
+        ));
       });
     }
 
@@ -110,23 +120,36 @@ fn generate_objects_system(
   }
 }
 
+fn get_sprite_offsets(rng: &mut StdRng, collapsed_cell: &CollapsedCell) -> (f32, f32) {
+  if collapsed_cell.is_large_sprite {
+    (
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+    )
+  } else {
+    (0., 0.)
+  }
+}
+
 fn sprite(
   tile: &Tile,
   index: i32,
   asset_collection: &AssetCollection,
   object_name: ObjectName,
+  offset_x: f32,
+  offset_y: f32,
 ) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
     Name::new(format!("{:?} Object Sprite", object_name)),
     SpriteBundle {
       sprite: Sprite {
-        anchor: Anchor::TopLeft,
+        anchor: Anchor::BottomCenter,
         ..Default::default()
       },
       texture: asset_collection.stat.texture.clone(),
       transform: Transform::from_xyz(
-        0.,
-        0.,
+        TILE_SIZE as f32 / 2. + offset_x,
+        TILE_SIZE as f32 * -1. + offset_y,
         // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
         200. + tile.coords.chunk_grid.y as f32,
       ),

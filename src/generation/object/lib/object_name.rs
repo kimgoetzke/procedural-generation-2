@@ -60,4 +60,9 @@ pub enum ObjectName {
   ForestPathHorizontalGrassLeft,
   ForestPathHorizontalSandRight,
   ForestPathHorizontalSandLeft,
+  ForestTree1,
+  ForestTree2,
+  ForestTree3,
+  ForestTree4,
+  ForestTree5,
 }

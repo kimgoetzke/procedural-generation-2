@@ -146,6 +146,7 @@ pub struct ObjectResources {
   pub sand: AssetCollection,
   pub grass: AssetCollection,
   pub forest: AssetCollection,
+  pub trees: AssetCollection,
 }
 
 impl GenerationResourcesCollection {
@@ -160,7 +161,10 @@ impl GenerationResourcesCollection {
     }
   }
 
-  pub fn get_object_collection(&self, terrain: TerrainType) -> &AssetCollection {
+  pub fn get_object_collection(&self, terrain: TerrainType, is_large_sprite: bool) -> &AssetCollection {
+    if terrain == TerrainType::Forest && is_large_sprite {
+      return &self.objects.trees;
+    }
     match terrain {
       TerrainType::Water => &self.objects.water,
       TerrainType::Shore => &self.objects.shore,
@@ -242,7 +246,7 @@ fn initialise_resources_system(
   // Objects: Trees
   let static_trees_layout = TextureAtlasLayout::from_grid(TREES_OBJ_SIZE, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  asset_collection.objects.forest.stat = AssetPack::new(asset_server.load(TREES_OBJ_PATH), static_trees_atlas_layout);
+  asset_collection.objects.trees.stat = AssetPack::new(asset_server.load(TREES_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
@@ -252,23 +256,8 @@ fn initialise_resources_system(
   asset_collection.objects.forest = object_assets_static(&asset_server, &mut layouts, FOREST_OBJ_PATH);
 
   // Objects: Rule sets for wave function collapse
-  let mut rule_sets = HashMap::new();
-  for handle in terrain_rule_set_handle.0.iter() {
-    if let Some(rule_set) = terrain_rule_set_assets.remove(handle) {
-      debug!("Loaded: {}", rule_set);
-      rule_sets.insert(rule_set.terrain, rule_set.states);
-    }
-  }
-  asset_collection.objects.terrain_rules = rule_sets;
-
-  if let Some(rule_set) = tile_type_rule_set_assets.remove(&tile_type_rule_set_handle.0) {
-    debug!("Loaded: Tile type rule set for {} tiles", rule_set.states.len());
-    let mut rule_sets = HashMap::new();
-    for state in rule_set.states {
-      rule_sets.insert(state.tile_type, state.permitted_self);
-    }
-    asset_collection.objects.tile_type_rules = rule_sets;
-  }
+  asset_collection.objects.terrain_rules = terrain_rule_set(terrain_rule_set_handle, &mut terrain_rule_set_assets);
+  asset_collection.objects.tile_type_rules = tile_type_rule_set(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
 }
 
 fn tile_set_assets_static(
@@ -362,6 +351,37 @@ fn object_assets_static(
     anim: None,
     animated_tile_types: HashSet::new(),
   }
+}
+
+fn terrain_rule_set(
+  terrain_rule_set_handle: Res<TerrainRuleSetHandle>,
+  terrain_rule_set_assets: &mut ResMut<Assets<TerrainRuleSet>>,
+) -> HashMap<TerrainType, Vec<TerrainState>> {
+  let mut rule_sets = HashMap::new();
+  for handle in terrain_rule_set_handle.0.iter() {
+    if let Some(rule_set) = terrain_rule_set_assets.remove(handle) {
+      debug!("Loaded: {}", rule_set);
+      rule_sets.insert(rule_set.terrain, rule_set.states);
+    }
+  }
+
+  rule_sets
+}
+
+fn tile_type_rule_set(
+  tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
+  tile_type_rule_set_assets: &mut ResMut<Assets<TileTypeRuleSet>>,
+) -> HashMap<TileType, Vec<ObjectName>> {
+  if let Some(rule_set) = tile_type_rule_set_assets.remove(&tile_type_rule_set_handle.0) {
+    debug!("Loaded: Tile type rule set for {} tiles", rule_set.states.len());
+    let mut rule_sets = HashMap::new();
+    for state in rule_set.states {
+      rule_sets.insert(state.tile_type, state.permitted_self);
+    }
+    return rule_sets;
+  }
+
+  HashMap::new()
 }
 
 // --- Indices for sharing states of spawned components --------------------------------------
