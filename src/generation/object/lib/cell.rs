@@ -107,20 +107,26 @@ impl Cell {
       let total_weight: i32 = self.possible_states.iter().map(|state| state.weight).sum();
       let mut target = rng.gen_range(0..total_weight);
       let mut selected_state = None;
+      let mut states_logs = vec![];
+      let initial_target = target;
 
-      debug!("┌─|| There are {} possible states for cg{:?}", possible_states_count, self.cg);
       for state in &self.possible_states {
-        debug!("├─ State {:?} has weight {}", state.name, state.weight);
         if target < state.weight {
           selected_state = Some(state);
           break;
         }
+        states_logs.push(format!("│  • State [{:?}] has a weight of {}", state.name, state.weight));
         target -= state.weight;
       }
       let selected_state = selected_state.expect("Failed to get selected state");
-      debug!(
-        "└─> Selected state {:?} for cg{:?} with weight {} from total weights of {}",
-        selected_state.name, self.cg, selected_state.weight, total_weight
+
+      log_collapse_result(
+        &self,
+        possible_states_count,
+        total_weight,
+        &mut states_logs,
+        selected_state,
+        initial_target,
       );
 
       selected_state
@@ -280,5 +286,33 @@ fn log_result(
       new_possible_states_names
     );
     debug!("")
+  }
+}
+
+fn log_collapse_result(
+  cell: &Cell,
+  possible_states_count: usize,
+  total_weight: i32,
+  states_logs: &mut Vec<String>,
+  selected_state: &TerrainState,
+  target: i32,
+) {
+  if cell.is_being_monitored {
+    debug!(
+      "┌─|| There are {} possible states for [{:?}] terrain cell of type [{:?}] at cg{:?}",
+      possible_states_count, cell.terrain, cell.tile_type, cell.cg
+    );
+    debug!("├─ The randomly selected target is {} out of {}", target, total_weight);
+    debug!(
+      "├─ Skipped the following {} states while iterating towards the target:",
+      states_logs.len()
+    );
+    for log in states_logs {
+      debug!("{}", log);
+    }
+    debug!(
+      "└─> Selected state for cg{:?} is [{:?}] with a weight of {}",
+      cell.cg, selected_state.name, selected_state.weight
+    );
   }
 }
