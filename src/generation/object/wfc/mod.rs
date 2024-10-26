@@ -18,11 +18,11 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
   let mut snapshots = vec![];
   let mut iteration_count = 1;
   let mut has_entropy = true;
-  let mut no_snapshot_error_count: usize = 0;
+  let mut snapshot_error_count: usize = 0;
   let mut iteration_error_count: usize = 0;
   let mut total_error_count = 0;
 
-  // TODO: Fix how snapshots are taken and restored as it's either running out of snapshots or never reaching an end
+  // TODO: Consider simplifying the way snapshots are handled
   while has_entropy {
     match iterate(&mut rng, grid) {
       IterationResult::Failure => {
@@ -44,7 +44,7 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
             "Failed (#{}) to reduce entropy in object grid during iteration {} - no snapshot available",
             iteration_error_count, iteration_count
           );
-          no_snapshot_error_count += 1;
+          snapshot_error_count += 1;
           continue;
         }
         snapshots.truncate(snapshot_index);
@@ -70,7 +70,7 @@ pub fn determine_objects_in_grid(mut rng: &mut StdRng, grid: &mut ObjectGrid, _s
   debug!(
     "Completed determining objects (resolving {} errors and leaving {} unresolved) in {} ms",
     total_error_count,
-    no_snapshot_error_count,
+    snapshot_error_count,
     get_time() - start_time
   );
 }

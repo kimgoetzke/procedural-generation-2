@@ -80,8 +80,8 @@ fn generate_objects_system(
           component
             .object_grid
             .get_cell(&tile_data.flat_tile.coords.chunk_grid)
-            .filter(|cell_state| cell_state.index != 1)
-            .map(|cell_state| CollapsedCell::new(tile_data, cell_state))
+            .filter(|cell| cell.index != 0)
+            .map(|cell| CollapsedCell::new(tile_data, cell))
         })
         .collect::<Vec<CollapsedCell>>(),
     );
