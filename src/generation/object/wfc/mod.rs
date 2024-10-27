@@ -1,10 +1,11 @@
 use crate::generation::get_time;
+use crate::generation::lib::get_thread_info;
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
 use crate::generation::object::lib::{Cell, CollapsedCell, IterationResult, ObjectGrid};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use bevy::prelude::{Mut, Res};
+use bevy::prelude::Res;
 use rand::prelude::StdRng;
 use rand::Rng;
 
@@ -18,7 +19,7 @@ impl Plugin for WfcPlugin {
 // TODO: Refactor function as it's long and unreadable
 pub fn determine_objects_in_grid<'a>(
   mut rng: &mut StdRng,
-  component: &'a mut Mut<ObjectGenerationDataComponent>,
+  component: &'a mut ObjectGenerationDataComponent,
   _settings: &Res<Settings>,
 ) -> Vec<CollapsedCell<'a>> {
   let start_time = get_time();
@@ -39,7 +40,7 @@ pub fn determine_objects_in_grid<'a>(
         let snapshot = snapshots.get(snapshot_index);
         if let Some(snapshot) = snapshot {
           grid.restore_from_snapshot(snapshot);
-          warn!(
+          trace!(
             "Failed (#{}) to reduce entropy in object grid during iteration {} - restored snapshot {} out of {}",
             iteration_error_count,
             iteration_count,
@@ -91,10 +92,11 @@ pub fn determine_objects_in_grid<'a>(
   );
 
   debug!(
-    "Completed determining objects (resolving {} errors and leaving {} unresolved) in {} ms",
+    "Completed wave function collapse (resolving {} errors and leaving {} unresolved) in {} ms on {}",
     total_error_count,
     snapshot_error_count,
-    get_time() - start_time
+    get_time() - start_time,
+    get_thread_info()
   );
 
   collapsed_cells
@@ -104,7 +106,7 @@ pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
   if lowest_entropy_cells.is_empty() {
-    info!("No more cells to collapse in object grid");
+    trace!("No more cells to collapse in object grid");
     return IterationResult::Ok;
   }
 

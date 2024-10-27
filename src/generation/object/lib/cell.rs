@@ -1,12 +1,14 @@
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::lib::{TerrainType, TileType};
-use crate::generation::object::lib::{Connection, ObjectName, PropagationFailure};
+use crate::generation::object::lib::{Connection, ObjectName};
 use crate::generation::resources::TerrainState;
 use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::prelude::StdRng;
 use rand::Rng;
+
+pub struct PropagationFailure {}
 
 /// A `Cell` is a "placeholder" for an object. It is used in the `ObjectGrid`. This struct is used to represent a cell in
 /// the grid that can be collapsed to a single state. Once all `Cell`s in an `ObjectGrid` have been collapsed, they

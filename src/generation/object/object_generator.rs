@@ -1,6 +1,6 @@
 use crate::constants::TILE_SIZE;
 use crate::generation::get_time;
-use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::lib::{get_thread_info, Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
 use crate::generation::object::lib::ObjectGrid;
 use crate::generation::object::lib::{CollapsedCell, ObjectName};
@@ -10,11 +10,14 @@ use crate::generation::resources::{AssetCollection, GenerationResourcesCollectio
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
-use bevy::hierarchy::BuildChildren;
+use bevy::ecs::system::SystemState;
+use bevy::ecs::world::CommandQueue;
+use bevy::hierarchy::{BuildWorldChildren, DespawnRecursiveExt};
 use bevy::log::*;
-use bevy::prelude::{Commands, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
+use bevy::prelude::{Commands, Component, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
-use bevy::tasks::AsyncComputeTaskPool;
+use bevy::tasks;
+use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -22,9 +25,14 @@ pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app.add_plugins(WfcPlugin).add_systems(Update, generate_objects_system);
+    app
+      .add_plugins(WfcPlugin)
+      .add_systems(Update, (generate_objects_system, process_async_tasks_system));
   }
 }
+
+#[derive(Component)]
+struct ObjectSpawnTask(Task<CommandQueue>);
 
 pub fn generate(
   spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -52,20 +60,16 @@ pub fn generate(
     ));
   }
   debug!(
-    "Generated object generation data for chunk(s) in {} ms",
-    get_time() - start_time
+    "Generated object generation data for chunk(s) in {} ms on {}",
+    get_time() - start_time,
+    get_thread_info()
   );
 }
 
-// TODO: Determine objects and spawn sprites asynchronously
-//   - Pick a chunk to generate objects for
-//   - Run system that runs x iterations of the WFC algorithm per frame (allow debugging if possible)
-//   - When done for a chunk, schedule spawning all objects for that chunk
 // TODO: Remove paths and create new algorithm for them
 fn generate_objects_system(
   mut commands: Commands,
   mut query: Query<(Entity, &mut ObjectGenerationDataComponent)>,
-  resources: Res<GenerationResourcesCollection>,
   settings: Res<Settings>,
 ) {
   for (entity, mut component) in query.iter_mut() {
@@ -74,46 +78,62 @@ fn generate_objects_system(
       continue;
     }
 
-    let start_time = get_time();
-
     if component.status == ObjectGenerationStatus::Calculating {
+      let start_time = get_time();
+      let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
       let task_pool = AsyncComputeTaskPool::get();
-      let task = task_pool.spawn(async move {
-        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-        let collapsed_cells = wfc::determine_objects_in_grid(&mut rng, &mut component, &settings);
-        component.collapsed_cells = Some(collapsed_cells);
-      });
-    }
-
-    if component.status == ObjectGenerationStatus::Calculating {
-      // Render tiles based on collapsed cells
-      for collapsed_cell in component.collapsed_cells.iter() {
-        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-        let sprite_index = collapsed_cell.sprite_index;
-        let tile_data = collapsed_cell.tile_data;
-        let object_name = collapsed_cell.name.expect("Failed to get object name");
-        let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite);
-        let (offset_x, offset_y) = get_sprite_offsets(&mut rng, collapsed_cell);
-        commands.entity(tile_data.entity).with_children(|parent| {
-          parent.spawn(sprite(
-            &tile_data.flat_tile,
-            sprite_index,
-            asset_collection,
-            object_name,
-            offset_x,
-            offset_y,
-          ));
-        });
+      let object_grid_len = component.object_grid.grid.len();
+      let entity_id = entity;
+      let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut *component, &settings) };
+      for collapsed_cell in collapsed_cells {
+        attach_task_to_tile_entity(&mut commands, &mut rng, task_pool, collapsed_cell);
       }
-
       debug!(
-        "Generated {} objects for entity #{} in {} ms",
-        component.collapsed_cells.len(),
-        entity,
-        get_time() - start_time
+        "Determined objects and scheduled {} objects spawn tasks for entity #{} in {} ms on {}",
+        object_grid_len,
+        entity_id,
+        get_time() - start_time,
+        get_thread_info()
       );
     }
   }
+}
+
+fn attach_task_to_tile_entity(
+  commands: &mut Commands,
+  mut rng: &mut StdRng,
+  task_pool: &AsyncComputeTaskPool,
+  collapsed_cell: CollapsedCell,
+) {
+  let sprite_index = collapsed_cell.sprite_index;
+  let tile_data = collapsed_cell.tile_data.clone();
+  let object_name = collapsed_cell.name.expect("Failed to get object name");
+  let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &collapsed_cell);
+  let task = task_pool.spawn(async move {
+    let mut command_queue = CommandQueue::default();
+    command_queue.push(move |world: &mut bevy::prelude::World| {
+      let asset_collection = {
+        let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
+        let resources = system_state.get_mut(world);
+        resources
+          .get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite)
+          .clone()
+      };
+      world.entity_mut(tile_data.entity).with_children(|parent| {
+        parent.spawn(sprite(
+          &tile_data.flat_tile,
+          sprite_index,
+          &asset_collection,
+          object_name,
+          offset_x,
+          offset_y,
+        ));
+      });
+    });
+    command_queue
+  });
+
+  commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
 fn get_sprite_offsets(rng: &mut StdRng, collapsed_cell: &CollapsedCell) -> (f32, f32) {
@@ -161,4 +181,13 @@ fn sprite(
       object_name: object_name.clone(),
     },
   )
+}
+
+fn process_async_tasks_system(mut commands: Commands, mut object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+  for (entity, mut object_spawn_task) in &mut object_spawn_tasks {
+    if let Some(mut commands_queue) = block_on(tasks::poll_once(&mut object_spawn_task.0)) {
+      commands.append(&mut commands_queue);
+      commands.entity(entity).despawn_recursive();
+    }
+  }
 }

@@ -1,5 +1,5 @@
 use crate::generation::lib::TileData;
-use crate::generation::object::lib::{CollapsedCell, ObjectGrid};
+use crate::generation::object::lib::ObjectGrid;
 use crate::ReflectComponent;
 use bevy::app::{App, Plugin};
 use bevy::log::*;

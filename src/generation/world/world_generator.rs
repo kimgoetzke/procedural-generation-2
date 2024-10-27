@@ -160,12 +160,7 @@ fn schedule_tile_spawning_tasks(
   debug!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
 }
 
-fn attach_task_to_tile_entity(
-  task_pool: &AsyncComputeTaskPool,
-  tile_data: TileData,
-  tile: Tile,
-  parent: &mut ChildBuilder,
-) {
+fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, tile_data: TileData, tile: Tile, parent: &mut ChildBuilder) {
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -326,9 +321,9 @@ fn animated_terrain_sprite(
   )
 }
 
-fn process_async_tasks_system(mut commands: Commands, mut transform_tasks: Query<(Entity, &mut TileSpawnTask)>) {
-  for (entity, mut task) in &mut transform_tasks {
-    if let Some(mut commands_queue) = block_on(tasks::poll_once(&mut task.0)) {
+fn process_async_tasks_system(mut commands: Commands, mut tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
+  for (entity, mut tile_spawn_task) in &mut tile_spawn_tasks {
+    if let Some(mut commands_queue) = block_on(tasks::poll_once(&mut tile_spawn_task.0)) {
       commands.append(&mut commands_queue);
       commands.entity(entity).despawn_recursive();
     }
