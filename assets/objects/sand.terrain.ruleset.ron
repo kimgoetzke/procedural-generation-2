@@ -666,7 +666,7 @@
       ]
     ),
     (
-      index: 24,d
+      index: 24,
       name: SandPattern1,
       weight: 2,
       permitted_neighbours: [
