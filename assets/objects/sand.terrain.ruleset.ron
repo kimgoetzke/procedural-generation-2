@@ -4,7 +4,7 @@
     (
       index: 0,
       name: Empty,
-      weight: 1,
+      weight: 10,
       permitted_neighbours: [
         (
           Top,
@@ -580,7 +580,7 @@
     (
       index: 16,
       name: SandStone1,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -591,7 +591,7 @@
     (
       index: 17,
       name: SandStone2,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -602,7 +602,7 @@
     (
       index: 18,
       name: SandStone3,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -613,7 +613,7 @@
     (
       index: 19,
       name: SandStone4,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -624,7 +624,7 @@
     (
       index: 20,
       name: SandStone5,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -635,7 +635,7 @@
     (
       index: 21,
       name: SandStone6,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -646,7 +646,7 @@
     (
       index: 22,
       name: SandGrassPatch1,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -657,7 +657,7 @@
     (
       index: 23,
       name: SandGrassPatch2,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -666,47 +666,47 @@
       ]
     ),
     (
-      index: 24,
+      index: 24,d
       name: SandPattern1,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, SandPattern4, SandPattern3, SandPattern2, ] ),
+        ( Left, [ Empty, SandPattern4, SandPattern3, SandPattern2, ] ),
+        ( Right, [ Empty, SandPattern4, SandPattern3, SandPattern2, ] ),
+        ( Bottom, [ Empty, SandPattern4, SandPattern3, SandPattern2, ] ),
       ]
     ),
     (
       index: 25,
       name: SandPattern2,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Left, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern3, ] ),
       ]
     ),
     (
       index: 26,
       name: SandPattern3,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern4, SandPattern2, ] ),
+        ( Left, [ Empty, SandPattern1, SandPattern4, SandPattern2, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern4, SandPattern2, ] ),
       ]
     ),
     (
       index: 27,
       name: SandPattern4,
-      weight: 10,
+      weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Left, [ Empty, SandPattern1, SandPattern3, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern3, ] ),
       ]
     ),
   ]

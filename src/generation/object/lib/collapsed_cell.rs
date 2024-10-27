@@ -11,23 +11,19 @@ pub struct CollapsedCell<'a> {
 }
 
 impl<'a> CollapsedCell<'a> {
-  pub fn new(tile_data: &'a TileData, cell_state: &Cell) -> Self {
-    let is_large_sprite = cell_state.index >= 100;
-    let sprite_index = if is_large_sprite {
-      cell_state.index - 100
-    } else {
-      cell_state.index
-    };
-    let object_name = cell_state.possible_states[0].name;
-    let possible_states_count = cell_state.possible_states.len();
-    if sprite_index == -1 || possible_states_count > 1 {
+  pub fn new(tile_data: &'a TileData, cell: &Cell) -> Self {
+    let object_name = cell.possible_states[0].name;
+    let is_large_sprite = object_name.is_large_sprite();
+    let sprite_index = cell.index;
+    let possible_states_count = cell.possible_states.len();
+    if sprite_index == -1 || possible_states_count > 1 || !cell.is_collapsed {
       error!(
         "Attempted to create collapsed cell from cell cg{:?} which is not fully collapsed",
-        cell_state.cg,
+        cell.cg,
       );
       info!(
-        "Cell cg{:?} has {} possible states: {:?}",
-        cell_state.cg, possible_states_count, cell_state
+        "Cell cg{:?} still has {} possible states: {:?}",
+        cell.cg, possible_states_count, cell
       );
       info!("");
     }

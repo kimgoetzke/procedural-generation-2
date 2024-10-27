@@ -66,3 +66,16 @@ pub enum ObjectName {
   ForestTree4,
   ForestTree5,
 }
+
+impl ObjectName {
+  pub fn is_large_sprite(&self) -> bool {
+    matches!(
+      self,
+      ObjectName::ForestTree1
+        | ObjectName::ForestTree2
+        | ObjectName::ForestTree3
+        | ObjectName::ForestTree4
+        | ObjectName::ForestTree5
+    )
+  }
+}

@@ -603,7 +603,7 @@
       ]
     ),
     (
-      index: 100,
+      index: 0,
       name: ForestTree1,
       weight: 100,
       permitted_neighbours: [
@@ -614,7 +614,7 @@
       ]
     ),
     (
-      index: 101,
+      index: 1,
       name: ForestTree2,
       weight: 100,
       permitted_neighbours: [
@@ -625,7 +625,7 @@
       ]
     ),
     (
-      index: 102,
+      index: 2,
       name: ForestTree3,
       weight: 100,
       permitted_neighbours: [
@@ -636,7 +636,7 @@
       ]
     ),
     (
-      index: 103,
+      index: 3,
       name: ForestTree4,
       weight: 100,
       permitted_neighbours: [
@@ -647,7 +647,7 @@
       ]
     ),
     (
-      index: 104,
+      index: 4,
       name: ForestTree5,
       weight: 100,
       permitted_neighbours: [
