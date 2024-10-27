@@ -74,23 +74,7 @@ fn generate_objects_system(
     }
     let start_time = get_time();
     let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-    let mut collapsed_cells = vec![];
-    wfc::determine_objects_in_grid(&mut rng, &mut component.object_grid, &settings);
-    component.status = ObjectGenerationStatus::Done;
-
-    collapsed_cells.extend(
-      component
-        .tile_data
-        .iter()
-        .filter_map(|tile_data| {
-          component
-            .object_grid
-            .get_cell(&tile_data.flat_tile.coords.chunk_grid)
-            .filter(|cell| cell.index != 0)
-            .map(|cell| CollapsedCell::new(tile_data, cell))
-        })
-        .collect::<Vec<CollapsedCell>>(),
-    );
+    let collapsed_cells = wfc::determine_objects_in_grid(&mut rng, &mut component, &settings);
 
     // Render tiles based on collapsed cells
     for collapsed_cell in collapsed_cells.iter() {
