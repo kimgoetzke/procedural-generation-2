@@ -1,7 +1,8 @@
 use crate::generation::lib::TileData;
-use crate::generation::object::lib::ObjectGrid;
+use crate::generation::object::lib::{CollapsedCell, ObjectGrid};
 use crate::ReflectComponent;
 use bevy::app::{App, Plugin};
+use bevy::log::*;
 use bevy::prelude::{Component, Reflect};
 
 pub struct ObjectGenerationComponentsPlugin;
@@ -12,10 +13,11 @@ impl Plugin for ObjectGenerationComponentsPlugin {
   }
 }
 
-#[derive(Default, PartialEq, Reflect)]
+#[derive(Default, PartialEq, Reflect, Debug)]
 pub enum ObjectGenerationStatus {
   #[default]
-  Pending,
+  Calculating,
+  Spawning,
   Done,
   Failure,
 }
@@ -35,5 +37,10 @@ impl ObjectGenerationDataComponent {
       tile_data,
       status: ObjectGenerationStatus::default(),
     }
+  }
+
+  pub fn set_status(&mut self, status: ObjectGenerationStatus) {
+    debug!("Setting object generation status to {:?}", status);
+    self.status = status;
   }
 }

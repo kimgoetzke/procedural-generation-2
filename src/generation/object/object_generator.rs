@@ -14,6 +14,7 @@ use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{Commands, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
+use bevy::tasks::AsyncComputeTaskPool;
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -72,35 +73,46 @@ fn generate_objects_system(
       commands.entity(entity).despawn();
       continue;
     }
-    let start_time = get_time();
-    let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-    let collapsed_cells = wfc::determine_objects_in_grid(&mut rng, &mut component, &settings);
 
-    // Render tiles based on collapsed cells
-    for collapsed_cell in collapsed_cells.iter() {
-      let sprite_index = collapsed_cell.sprite_index;
-      let tile_data = collapsed_cell.tile_data;
-      let object_name = collapsed_cell.name.expect("Failed to get object name");
-      let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite);
-      let (offset_x, offset_y) = get_sprite_offsets(&mut rng, collapsed_cell);
-      commands.entity(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(
-          &tile_data.flat_tile,
-          sprite_index,
-          asset_collection,
-          object_name,
-          offset_x,
-          offset_y,
-        ));
+    let start_time = get_time();
+
+    if component.status == ObjectGenerationStatus::Calculating {
+      let task_pool = AsyncComputeTaskPool::get();
+      let task = task_pool.spawn(async move {
+        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+        let collapsed_cells = wfc::determine_objects_in_grid(&mut rng, &mut component, &settings);
+        component.collapsed_cells = Some(collapsed_cells);
       });
     }
 
-    debug!(
-      "Generated {} objects for entity #{} in {} ms",
-      collapsed_cells.len(),
-      entity,
-      get_time() - start_time
-    );
+    if component.status == ObjectGenerationStatus::Calculating {
+      // Render tiles based on collapsed cells
+      for collapsed_cell in component.collapsed_cells.iter() {
+        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+        let sprite_index = collapsed_cell.sprite_index;
+        let tile_data = collapsed_cell.tile_data;
+        let object_name = collapsed_cell.name.expect("Failed to get object name");
+        let asset_collection = resources.get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite);
+        let (offset_x, offset_y) = get_sprite_offsets(&mut rng, collapsed_cell);
+        commands.entity(tile_data.entity).with_children(|parent| {
+          parent.spawn(sprite(
+            &tile_data.flat_tile,
+            sprite_index,
+            asset_collection,
+            object_name,
+            offset_x,
+            offset_y,
+          ));
+        });
+      }
+
+      debug!(
+        "Generated {} objects for entity #{} in {} ms",
+        component.collapsed_cells.len(),
+        entity,
+        get_time() - start_time
+      );
+    }
   }
 }
 

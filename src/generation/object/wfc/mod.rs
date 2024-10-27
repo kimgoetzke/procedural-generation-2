@@ -74,7 +74,7 @@ pub fn determine_objects_in_grid<'a>(
     }
   }
 
-  component.status = ObjectGenerationStatus::Done;
+  component.set_status(ObjectGenerationStatus::Spawning);
   let grid = &component.object_grid;
   let tile_data = &component.tile_data;
   let mut collapsed_cells = vec![];

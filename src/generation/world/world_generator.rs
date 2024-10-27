@@ -135,7 +135,7 @@ fn schedule_tile_spawning_tasks(
   spawn_data: &[(Chunk, Vec<TileData>)],
 ) {
   let start_time = get_time();
-  let thread_pool = AsyncComputeTaskPool::get();
+  let task_pool = AsyncComputeTaskPool::get();
   for (chunk, tile_data_vec) in spawn_data.iter() {
     for tile_data in tile_data_vec {
       let tile_data = tile_data.clone();
@@ -150,7 +150,7 @@ fn schedule_tile_spawning_tasks(
         if let Some(plane) = chunk.layered_plane.get(layer) {
           if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.chunk_grid) {
             commands.entity(tile_data.entity).with_children(|parent| {
-              attach_task_to_tile_entity(thread_pool, tile_data, tile.clone(), parent);
+              attach_task_to_tile_entity(task_pool, tile_data, tile.clone(), parent);
             });
           }
         }
@@ -161,12 +161,12 @@ fn schedule_tile_spawning_tasks(
 }
 
 fn attach_task_to_tile_entity(
-  thread_pool: &AsyncComputeTaskPool,
+  task_pool: &AsyncComputeTaskPool,
   tile_data: TileData,
   tile: Tile,
   parent: &mut ChildBuilder,
 ) {
-  let task = thread_pool.spawn(async move {
+  let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let (resources, settings) = {
