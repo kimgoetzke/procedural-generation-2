@@ -16,8 +16,8 @@ impl Plugin for ObjectGenerationComponentsPlugin {
 #[derive(Default, PartialEq, Reflect, Debug)]
 pub enum ObjectGenerationStatus {
   #[default]
-  Done,
   Pending,
+  Done,
 }
 
 #[derive(Component, Reflect)]
@@ -38,7 +38,7 @@ impl ObjectGenerationDataComponent {
   }
 
   pub fn set_status(&mut self, status: ObjectGenerationStatus) {
-    debug!("Setting object generation status to {:?}", status);
+    debug!("Setting object generation status to [{:?}]", status);
     self.status = status;
   }
 }
