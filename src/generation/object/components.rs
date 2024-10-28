@@ -16,10 +16,8 @@ impl Plugin for ObjectGenerationComponentsPlugin {
 #[derive(Default, PartialEq, Reflect, Debug)]
 pub enum ObjectGenerationStatus {
   #[default]
-  Calculating,
-  Spawning,
   Done,
-  Failure,
+  Pending,
 }
 
 #[derive(Component, Reflect)]

@@ -82,12 +82,12 @@ fn generate_objects_system(
   settings: Res<Settings>,
 ) {
   for (entity, mut component) in query.iter_mut() {
-    if component.status == ObjectGenerationStatus::Done || component.status == ObjectGenerationStatus::Failure {
+    if component.status == ObjectGenerationStatus::Done {
       commands.entity(entity).despawn();
       continue;
     }
 
-    if component.status == ObjectGenerationStatus::Calculating {
+    if component.status == ObjectGenerationStatus::Pending {
       let start_time = get_time();
       let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
       let task_pool = AsyncComputeTaskPool::get();
