@@ -14,7 +14,6 @@ pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
-pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
@@ -26,8 +25,7 @@ pub const NOISE_ELEVATION: f64 = -0.05;
 pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
-pub const FOREST_OBJ_DENSITY: f64 = 0.5;
-pub const SAND_OBJ_DENSITY: f64 = 0.20;
+pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
