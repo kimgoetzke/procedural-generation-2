@@ -1,7 +1,6 @@
-use crate::generation::get_time;
-use crate::generation::lib::get_thread_info;
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
 use crate::generation::object::lib::{Cell, CollapsedCell, IterationResult, ObjectGrid};
+use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -96,7 +95,7 @@ pub fn determine_objects_in_grid<'a>(
     total_error_count,
     snapshot_error_count,
     get_time() - start_time,
-    get_thread_info()
+    async_utils::get_thread_info()
   );
 
   collapsed_cells

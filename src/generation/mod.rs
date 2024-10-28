@@ -18,6 +18,7 @@ use bevy::prelude::{
 use resources::GenerationResourcesPlugin;
 use std::time::SystemTime;
 
+mod async_utils;
 mod debug;
 pub(crate) mod lib;
 mod object;

@@ -1,6 +1,8 @@
 use crate::constants::TILE_SIZE;
+use crate::generation;
+use crate::generation::async_utils::AsyncTask;
 use crate::generation::get_time;
-use crate::generation::lib::{get_thread_info, Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
 use crate::generation::object::lib::ObjectGrid;
 use crate::generation::object::lib::{CollapsedCell, ObjectName};
@@ -12,12 +14,13 @@ use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildWorldChildren, DespawnRecursiveExt};
+use bevy::hierarchy::BuildWorldChildren;
 use bevy::log::*;
 use bevy::prelude::{Commands, Component, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use generation::async_utils;
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -33,6 +36,12 @@ impl Plugin for ObjectGeneratorPlugin {
 
 #[derive(Component)]
 struct ObjectSpawnTask(Task<CommandQueue>);
+
+impl AsyncTask for ObjectSpawnTask {
+  fn poll_once(&mut self) -> Option<CommandQueue> {
+    block_on(tasks::poll_once(&mut self.0))
+  }
+}
 
 pub fn generate(
   spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -62,7 +71,7 @@ pub fn generate(
   debug!(
     "Generated object generation data for chunk(s) in {} ms on {}",
     get_time() - start_time,
-    get_thread_info()
+    async_utils::get_thread_info()
   );
 }
 
@@ -93,7 +102,7 @@ fn generate_objects_system(
         object_grid_len,
         entity_id,
         get_time() - start_time,
-        get_thread_info()
+        async_utils::get_thread_info()
       );
     }
   }
@@ -183,11 +192,6 @@ fn sprite(
   )
 }
 
-fn process_async_tasks_system(mut commands: Commands, mut object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
-  for (entity, mut object_spawn_task) in &mut object_spawn_tasks {
-    if let Some(mut commands_queue) = block_on(tasks::poll_once(&mut object_spawn_task.0)) {
-      commands.append(&mut commands_queue);
-      commands.entity(entity).despawn_recursive();
-    }
-  }
+fn process_async_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+  async_utils::process_tasks(commands, object_spawn_tasks);
 }

@@ -4,18 +4,19 @@ use crate::constants::{
 };
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::get_time;
+use crate::generation::async_utils::AsyncTask;
 use crate::generation::lib::{
   get_direction_points, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
 use crate::generation::resources::{AssetPack, GenerationResourcesCollection};
 use crate::generation::world::pre_render_processor;
+use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, DespawnRecursiveExt, WorldChildBuilder};
+use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, WorldChildBuilder};
 use bevy::log::*;
 use bevy::prelude::{
   Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
@@ -34,6 +35,12 @@ impl Plugin for WorldGeneratorPlugin {
 
 #[derive(Component)]
 struct TileSpawnTask(Task<CommandQueue>);
+
+impl AsyncTask for TileSpawnTask {
+  fn poll_once(&mut self) -> Option<CommandQueue> {
+    block_on(tasks::poll_once(&mut self.0))
+  }
+}
 
 pub fn generate_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
   let draft_chunks = generate_draft_chunks(&settings);
@@ -321,13 +328,8 @@ fn animated_terrain_sprite(
   )
 }
 
-fn process_async_tasks_system(mut commands: Commands, mut tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
-  for (entity, mut tile_spawn_task) in &mut tile_spawn_tasks {
-    if let Some(mut commands_queue) = block_on(tasks::poll_once(&mut tile_spawn_task.0)) {
-      commands.append(&mut commands_queue);
-      commands.entity(entity).despawn_recursive();
-    }
-  }
+fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
+  async_utils::process_tasks(commands, tile_spawn_tasks);
 }
 
 pub fn generate_chunks(

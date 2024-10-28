@@ -1,4 +1,3 @@
-mod async_utils;
 mod chunk;
 mod components;
 mod direction;
@@ -13,7 +12,6 @@ mod tile_data;
 mod tile_type;
 
 pub use crate::resources::Settings;
-pub use async_utils::*;
 pub use chunk::Chunk;
 pub use components::{ChunkComponent, ObjectComponent, TileComponent, WorldComponent};
 pub use direction::{get_direction_points, Direction};
