@@ -28,7 +28,7 @@ pub(crate) fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> V
   chunks
 }
 
-pub(crate) fn process_single(mut chunk: Chunk, settings: &Res<Settings>) -> Chunk {
+pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {
   let start_time = get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);

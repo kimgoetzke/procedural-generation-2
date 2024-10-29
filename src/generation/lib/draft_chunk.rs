@@ -5,7 +5,6 @@ use crate::generation::get_time;
 use crate::generation::lib::{DraftTile, TerrainType};
 use crate::resources::Settings;
 use bevy::log::*;
-use bevy::prelude::Res;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -17,7 +16,7 @@ pub struct DraftChunk {
 
 impl DraftChunk {
   /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
-  pub fn new(world_grid: Point<WorldGrid>, settings: &Res<Settings>) -> Self {
+  pub fn new(world_grid: Point<WorldGrid>, settings: &Settings) -> Self {
     let data = generate_terrain_data(&world_grid, settings);
     Self {
       center: Point::new_world(
@@ -32,7 +31,7 @@ impl DraftChunk {
 
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `world_grid` to be a `Point` of type
 /// `WorldGrid` that describes the top-left corner of the grid.
-fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
+fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Settings) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)

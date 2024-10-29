@@ -2,7 +2,6 @@ use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::point::{ChunkGrid, CoordType};
 use crate::coords::Point;
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
-use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
@@ -11,7 +10,7 @@ pub struct Plane {
 }
 
 impl Plane {
-  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Res<Settings>) -> Self {
+  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Settings) -> Self {
     let plane_data = determine_tile_types(&draft_tiles);
     let plane_data = resize_grid(plane_data);
     Self { data: plane_data, layer }

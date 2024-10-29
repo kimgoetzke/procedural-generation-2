@@ -38,7 +38,7 @@ impl ObjectGenerationDataComponent {
   }
 
   pub fn set_status(&mut self, status: ObjectGenerationStatus) {
-    debug!("Setting object generation status to [{:?}]", status);
+    trace!("Setting object generation status to [{:?}]", status);
     self.status = status;
   }
 }

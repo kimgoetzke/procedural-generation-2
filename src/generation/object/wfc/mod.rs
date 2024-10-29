@@ -90,7 +90,7 @@ pub fn determine_objects_in_grid<'a>(
       .collect::<Vec<CollapsedCell>>(),
   );
 
-  debug!(
+  trace!(
     "Completed wave function collapse (resolving {} errors and leaving {} unresolved) in {} ms on {}",
     total_error_count,
     snapshot_error_count,

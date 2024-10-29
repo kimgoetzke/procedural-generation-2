@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
+use crate::generation::resources::GenerationResourcesCollection;
+use crate::resources::Settings;
+use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::prelude::{Commands, Component, Entity, Query};
+use bevy::prelude::{Commands, Component, Entity, Query, Res};
 use std::thread;
 
 pub trait AsyncTask {
@@ -23,4 +26,13 @@ pub fn process_tasks<T: AsyncTask + Component>(mut commands: Commands, mut query
       commands.entity(entity).despawn_recursive();
     }
   }
+}
+
+pub fn get_resources_and_settings(world: &mut bevy::ecs::world::World) -> (GenerationResourcesCollection, Settings) {
+  let (resources, settings) = {
+    let mut system_state = SystemState::<(Res<GenerationResourcesCollection>, Res<Settings>)>::new(world);
+    let (resources, settings) = system_state.get_mut(world);
+    (resources.clone(), settings.clone())
+  };
+  (resources, settings)
 }

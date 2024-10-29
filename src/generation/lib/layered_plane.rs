@@ -1,7 +1,6 @@
 use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::generation::lib::{DraftTile, Plane, TerrainType};
 use crate::resources::Settings;
-use bevy::prelude::Res;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LayeredPlane {
@@ -12,7 +11,7 @@ pub struct LayeredPlane {
 impl LayeredPlane {
   /// Creates a new `LayeredPlane` from the flat terrain data of a `DraftChunk` by converting the terrain data into a
   /// `Plane` for each layer and converting the `DraftTile`s to `Tile`s which contain their `TileType`s.
-  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Res<Settings>) -> Self {
+  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Settings) -> Self {
     let mut final_layers = Vec::new();
 
     // Create a plane for each layer

@@ -76,34 +76,36 @@ pub fn generate(
 }
 
 // TODO: Remove paths and create new algorithm for them
+// TODO: Make this function async
 fn generate_objects_system(
   mut commands: Commands,
   mut query: Query<(Entity, &mut ObjectGenerationDataComponent)>,
   settings: Res<Settings>,
 ) {
   for (entity, mut component) in query.iter_mut() {
-    if component.status == ObjectGenerationStatus::Done {
-      commands.entity(entity).despawn();
-      continue;
-    }
-
-    if component.status == ObjectGenerationStatus::Pending {
-      let start_time = get_time();
-      let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-      let task_pool = AsyncComputeTaskPool::get();
-      let object_grid_len = component.object_grid.grid.len();
-      let entity_id = entity;
-      let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut *component, &settings) };
-      for collapsed_cell in collapsed_cells {
-        attach_task_to_tile_entity(&mut commands, &mut rng, task_pool, collapsed_cell);
+    match component.status {
+      ObjectGenerationStatus::Pending => {
+        let start_time = get_time();
+        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+        let task_pool = AsyncComputeTaskPool::get();
+        let object_grid_len = component.object_grid.grid.len();
+        let entity_id = entity;
+        let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut *component, &settings) };
+        for collapsed_cell in collapsed_cells {
+          attach_task_to_tile_entity(&mut commands, &mut rng, task_pool, collapsed_cell);
+        }
+        debug!(
+          "Determined objects and scheduled {} objects spawn tasks for entity #{} in {} ms on {}",
+          object_grid_len,
+          entity_id,
+          get_time() - start_time,
+          async_utils::get_thread_info()
+        );
       }
-      debug!(
-        "Determined objects and scheduled {} objects spawn tasks for entity #{} in {} ms on {}",
-        object_grid_len,
-        entity_id,
-        get_time() - start_time,
-        async_utils::get_thread_info()
-      );
+      ObjectGenerationStatus::Done => {
+        commands.entity(entity).despawn();
+        continue;
+      }
     }
   }
 }
@@ -128,16 +130,18 @@ fn attach_task_to_tile_entity(
           .get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite)
           .clone()
       };
-      world.entity_mut(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(
-          &tile_data.flat_tile,
-          sprite_index,
-          &asset_collection,
-          object_name,
-          offset_x,
-          offset_y,
-        ));
-      });
+      if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+        tile_data_entity.with_children(|parent| {
+          parent.spawn(sprite(
+            &tile_data.flat_tile,
+            sprite_index,
+            &asset_collection,
+            object_name,
+            offset_x,
+            offset_y,
+          ));
+        });
+      }
     });
     command_queue
   });

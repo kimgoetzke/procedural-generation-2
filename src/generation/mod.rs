@@ -2,19 +2,27 @@ use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
+use crate::generation::async_utils::AsyncTask;
 use crate::generation::debug::DebugPlugin;
-use crate::generation::lib::{get_direction_points, ChunkComponent, Direction, WorldComponent};
+use crate::generation::lib::{
+  get_direction_points, ChunkComponent, Direction, UpdateWorldComponent, UpdateWorldStatus, WorldComponent,
+};
 use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin};
+use bevy::core::Name;
+use bevy::ecs::world::CommandQueue;
+use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, NextState, OnEnter, Query, Res, ResMut, Update,
-  With,
+  Commands, Component, DespawnRecursiveExt, Entity, EventReader, EventWriter, Local, NextState, OnEnter, Query, Res, ResMut,
+  Update, With,
 };
+use bevy::tasks;
+use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
 use resources::GenerationResourcesPlugin;
 use std::time::SystemTime;
 
@@ -37,7 +45,25 @@ impl Plugin for GenerationPlugin {
         DebugPlugin,
       ))
       .add_systems(OnEnter(AppState::Initialising), generation_system)
-      .add_systems(Update, (regenerate_world_event, update_world_event, prune_world_event));
+      .add_systems(
+        Update,
+        (
+          regenerate_world_event,
+          update_world_event,
+          prune_world_event,
+          handle_update_world_task,
+          update_world_system,
+        ),
+      );
+  }
+}
+
+#[derive(Component)]
+struct UpdateWorldTask(Task<CommandQueue>);
+
+impl AsyncTask for UpdateWorldTask {
+  fn poll_once(&mut self) -> Option<CommandQueue> {
+    block_on(tasks::poll_once(&mut self.0))
   }
 }
 
@@ -88,12 +114,9 @@ fn get_time() -> u128 {
 fn update_world_event(
   mut commands: Commands,
   mut events: EventReader<UpdateWorldEvent>,
-  existing_world: Query<Entity, With<WorldComponent>>,
   existing_chunks: Res<ChunkComponentIndex>,
   mut current_chunk: ResMut<CurrentChunk>,
-  resources: Res<GenerationResourcesCollection>,
   settings: Res<Settings>,
-  mut clean_up_event: EventWriter<PruneWorldEvent>,
 ) {
   for event in events.read() {
     // Ignore the event if the current chunk contains the world grid of the event
@@ -102,27 +125,41 @@ fn update_world_event(
       return;
     }
 
-    // Generate new chunks and objects
+    // Calculate the new current chunk and the chunks to spawn, then spawn UpdateWorldComponent to kick off processing
     let start_time = get_time();
-    let new_parent_chunk_world = calculate_new_current_chunk_world(&mut current_chunk, &event);
-    let chunks_to_spawn = calculate_new_chunks_to_spawn(&existing_chunks, &settings, &new_parent_chunk_world);
-    let world = existing_world.get_single().expect("Failed to get existing world entity");
-    let spawn_data = world::generate_chunks(&mut commands, world, chunks_to_spawn, &settings);
-    object::generate(spawn_data, &resources, &settings, &mut commands);
-
-    // Update the current chunk and clean up the world, if necessary
-    current_chunk.update(new_parent_chunk_world);
-    if !event.is_forced_update {
-      clean_up_event.send(PruneWorldEvent {
-        despawn_all_chunks: false,
-        update_world_after: false,
+    let is_forced_update = event.is_forced_update;
+    let task_pool = AsyncComputeTaskPool::get();
+    let new_parent_cg = calculate_new_current_cg(&mut current_chunk, &event);
+    let chunks_to_spawn = calculate_new_chunks_to_spawn(&existing_chunks, &settings, &new_parent_cg);
+    let task = task_pool.spawn(async move {
+      let mut command_queue = CommandQueue::default();
+      command_queue.push(move |world: &mut bevy::prelude::World| {
+        let (_resources, settings) = async_utils::get_resources_and_settings(world);
+        let chunks = world::calculate_chunks(chunks_to_spawn, &settings);
+        world.spawn((
+          Name::new(format!("Update World Component for wg{} Parent", new_parent_cg)),
+          UpdateWorldComponent {
+            status: UpdateWorldStatus::SpawnEmptyEntities,
+            stage_1_chunks: chunks,
+            stage_2_spawn_data: Vec::new(),
+            stage_3_spawn_data: Vec::new(),
+            force_update_after: is_forced_update,
+          },
+        ));
       });
-    }
-    info!("World update took {} ms", get_time() - start_time);
+      command_queue
+    });
+    commands.spawn((Name::new("Update World Task"), UpdateWorldTask(task)));
+    current_chunk.update(new_parent_cg);
+    info!("Scheduling world update took {} ms", get_time() - start_time);
   }
 }
 
-fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, event: &UpdateWorldEvent) -> Point<World> {
+fn handle_update_world_task(commands: Commands, query: Query<(Entity, &mut UpdateWorldTask)>) {
+  async_utils::process_tasks(commands, query);
+}
+
+fn calculate_new_current_cg(current_chunk: &mut CurrentChunk, event: &UpdateWorldEvent) -> Point<World> {
   let current_chunk_world = current_chunk.get_world();
   let direction = Direction::from_chunk(&current_chunk_world, &event.world);
   let direction_point = Point::<World>::from_direction(&direction);
@@ -144,7 +181,7 @@ fn calculate_new_current_chunk_world(current_chunk: &mut ResMut<CurrentChunk>, e
 
 fn calculate_new_chunks_to_spawn(
   existing_chunks: &Res<ChunkComponentIndex>,
-  settings: &Res<Settings>,
+  settings: &Settings,
   new_parent_chunk_world: &Point<World>,
 ) -> Vec<Point<World>> {
   let mut chunks_to_spawn = Vec::new();
@@ -168,6 +205,64 @@ fn calculate_new_chunks_to_spawn(
     });
 
   chunks_to_spawn
+}
+
+fn update_world_system(
+  mut commands: Commands,
+  existing_world: Query<Entity, With<WorldComponent>>,
+  mut update_world: Query<(Entity, &mut UpdateWorldComponent), With<UpdateWorldComponent>>,
+  settings: Res<Settings>,
+  resources: Res<GenerationResourcesCollection>,
+  mut clean_up_event: EventWriter<PruneWorldEvent>,
+) {
+  for (entity, mut component) in update_world.iter_mut() {
+    let start_time = get_time();
+    let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
+    match component.status {
+      UpdateWorldStatus::SpawnEmptyEntities => {
+        if !component.stage_1_chunks.is_empty() {
+          let chunk = component.stage_1_chunks.remove(0);
+          commands.entity(world_entity).with_children(|parent| {
+            let tile_data = world::spawn_chunk(parent, &chunk);
+            component.stage_2_spawn_data.push((chunk, tile_data));
+          });
+        } else {
+          component.status = UpdateWorldStatus::ScheduleTileSpawning;
+        }
+      }
+      UpdateWorldStatus::ScheduleTileSpawning => {
+        if !component.stage_2_spawn_data.is_empty() {
+          let spawn_data = component.stage_2_spawn_data.remove(0);
+          world::schedule_tile_spawning_tasks(&mut commands, &settings, &vec![spawn_data.clone()]);
+          component.stage_3_spawn_data.push(spawn_data);
+        } else {
+          component.status = UpdateWorldStatus::GenerateObjects;
+        }
+      }
+      UpdateWorldStatus::GenerateObjects => {
+        if !component.stage_3_spawn_data.is_empty() {
+          let spawn_data = component.stage_3_spawn_data.remove(0);
+          object::generate(vec![spawn_data], &resources, &settings, &mut commands);
+        } else {
+          component.status = UpdateWorldStatus::ScheduleWorldPruning;
+        }
+      }
+      UpdateWorldStatus::ScheduleWorldPruning => {
+        // // Update the current chunk and clean up the world, if necessary
+        if !component.force_update_after {
+          clean_up_event.send(PruneWorldEvent {
+            despawn_all_chunks: false,
+            update_world_after: false,
+          });
+        }
+        component.status = UpdateWorldStatus::Done;
+      }
+      UpdateWorldStatus::Done => {
+        commands.entity(entity).despawn_recursive();
+      }
+    }
+    debug!("Processing {} took {} ms", *component, get_time() - start_time);
+  }
 }
 
 pub fn prune_world_event(

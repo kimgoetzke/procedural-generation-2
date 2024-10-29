@@ -14,7 +14,6 @@ use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
-use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, WorldChildBuilder};
 use bevy::log::*;
@@ -101,7 +100,7 @@ fn spawn_world_and_chunk_entities(commands: &mut Commands, chunks: &Vec<Chunk>) 
   spawn_data
 }
 
-fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
+pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
   let mut tile_data = Vec::new();
   let chunk_end_wg = chunk.coords.world_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
@@ -136,9 +135,9 @@ fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<Til
   tile_data
 }
 
-fn schedule_tile_spawning_tasks(
+pub fn schedule_tile_spawning_tasks(
   commands: &mut Commands,
-  settings_ref: &Res<Settings>,
+  settings_ref: &Settings,
   spawn_data: &[(Chunk, Vec<TileData>)],
 ) {
   let start_time = get_time();
@@ -156,29 +155,29 @@ fn schedule_tile_spawning_tasks(
         }
         if let Some(plane) = chunk.layered_plane.get(layer) {
           if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.chunk_grid) {
-            commands.entity(tile_data.entity).with_children(|parent| {
-              attach_task_to_tile_entity(task_pool, tile_data, tile.clone(), parent);
-            });
+            if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
+              tile_entity.with_children(|parent| {
+                attach_task_to_tile_entity(task_pool, tile_data, tile.clone(), parent);
+              });
+            }
           }
         }
       }
     }
   }
-  debug!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
+  trace!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
 }
 
 fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, tile_data: TileData, tile: Tile, parent: &mut ChildBuilder) {
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (resources, settings) = {
-        let mut system_state = SystemState::<(Res<GenerationResourcesCollection>, Res<Settings>)>::new(world);
-        let (resources, settings) = system_state.get_mut(world);
-        (resources.clone(), settings.clone())
-      };
-      world.entity_mut(tile_data.entity).with_children(|parent| {
-        spawn_tile(tile_data, &tile, &resources, settings, parent);
-      });
+      let (resources, settings) = async_utils::get_resources_and_settings(world);
+      if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+        tile_data_entity.with_children(|parent| {
+          spawn_tile(tile_data, &tile, &resources, settings, parent);
+        });
+      }
     });
     command_queue
   });
@@ -332,24 +331,15 @@ fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entit
   async_utils::process_tasks(commands, tile_spawn_tasks);
 }
 
-pub fn generate_chunks(
-  mut commands: &mut Commands,
-  world: Entity,
-  chunks_to_spawn: Vec<Point<World>>,
-  settings: &Res<Settings>,
-) -> Vec<(Chunk, Vec<TileData>)> {
-  let mut spawn_data = Vec::new();
-  commands.entity(world).with_children(|parent| {
-    for chunk_world in chunks_to_spawn.iter() {
-      let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
-      let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
-      let mut chunk = Chunk::new(draft_chunk, settings);
-      chunk = pre_render_processor::process_single(chunk, &settings);
-      let tile_data = spawn_chunk(parent, &chunk);
-      spawn_data.push((chunk, tile_data));
-    }
-  });
-  schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
+pub fn calculate_chunks(chunks_to_spawn: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
+  let mut chunks: Vec<Chunk> = Vec::new();
+  for chunk_world in chunks_to_spawn {
+    let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
+    let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
+    let mut chunk = Chunk::new(draft_chunk, &settings);
+    chunk = pre_render_processor::process_single(chunk, &settings);
+    chunks.push(chunk);
+  }
 
-  spawn_data
+  chunks
 }

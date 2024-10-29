@@ -13,7 +13,9 @@ mod tile_type;
 
 pub use crate::resources::Settings;
 pub use chunk::Chunk;
-pub use components::{ChunkComponent, ObjectComponent, TileComponent, WorldComponent};
+pub use components::{
+  ChunkComponent, ObjectComponent, TileComponent, UpdateWorldComponent, UpdateWorldStatus, WorldComponent,
+};
 pub use direction::{get_direction_points, Direction};
 pub use draft_chunk::DraftChunk;
 pub use draft_tile::DraftTile;
