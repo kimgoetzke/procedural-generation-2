@@ -1,11 +1,10 @@
 use crate::constants::TILE_SIZE;
 use crate::generation;
-use crate::generation::async_utils::AsyncTask;
+use crate::generation::async_utils::CommandQueueTask;
 use crate::generation::get_time;
 use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
-use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
-use crate::generation::object::lib::ObjectGrid;
-use crate::generation::object::lib::{CollapsedCell, ObjectName};
+use crate::generation::object::lib::ObjectName;
+use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::object::wfc;
 use crate::generation::object::wfc::WfcPlugin;
 use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
@@ -28,98 +27,78 @@ pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app
-      .add_plugins(WfcPlugin)
-      .add_systems(Update, (generate_objects_system, process_async_tasks_system));
+    app.add_plugins(WfcPlugin).add_systems(Update, process_async_tasks_system);
   }
 }
 
 #[derive(Component)]
 struct ObjectSpawnTask(Task<CommandQueue>);
 
-impl AsyncTask for ObjectSpawnTask {
+impl CommandQueueTask for ObjectSpawnTask {
   fn poll_once(&mut self) -> Option<CommandQueue> {
     block_on(tasks::poll_once(&mut self.0))
   }
 }
 
-pub fn generate(
-  spawn_data: Vec<(Chunk, Vec<TileData>)>,
-  resources: &Res<GenerationResourcesCollection>,
-  settings: &Res<Settings>,
-  commands: &mut Commands,
-) {
+pub fn generate_object_data(
+  resources: &GenerationResourcesCollection,
+  settings: &Settings,
+  spawn_data: (Chunk, Vec<TileData>),
+) -> Vec<ObjectData> {
   if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
-    return;
+    return vec![];
   }
   let start_time = get_time();
-  for (chunk, tile_data) in spawn_data.iter() {
-    let grid = ObjectGrid::new_initialised(
-      &resources.objects.terrain_rules,
-      &resources.objects.tile_type_rules,
-      tile_data,
-    );
-    commands.spawn((
-      Name::new(format!(
-        "Object Generation Data for Chunk w{} wg{}",
-        chunk.coords.world, chunk.coords.world_grid
-      )),
-      ObjectGenerationDataComponent::new(grid.clone(), tile_data.clone()),
-    ));
-  }
+  let grid = ObjectGrid::new_initialised(
+    &resources.objects.terrain_rules,
+    &resources.objects.tile_type_rules,
+    &spawn_data.1,
+  );
+  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+  let object_grid_len = grid.grid.len();
+  let mut object_data = (grid.clone(), spawn_data.1.clone());
+  let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut object_data, &settings) };
+
   debug!(
-    "Generated object generation data for chunk(s) in {} ms on {}",
+    "Generated object data for {} objects in {} ms on {}",
+    object_grid_len,
     get_time() - start_time,
     async_utils::get_thread_info()
   );
+
+  // TODO: Remove collapsed cells entirely once start up process is async 
+  collapsed_cells
+    .iter()
+    .map(|cell| ObjectData::from_collapsed_cell(cell))
+    .collect()
 }
 
-// TODO: Remove paths and create new algorithm for them
-// TODO: Make this function async
-fn generate_objects_system(
-  mut commands: Commands,
-  mut query: Query<(Entity, &mut ObjectGenerationDataComponent)>,
-  settings: Res<Settings>,
-) {
-  for (entity, mut component) in query.iter_mut() {
-    match component.status {
-      ObjectGenerationStatus::Pending => {
-        let start_time = get_time();
-        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-        let task_pool = AsyncComputeTaskPool::get();
-        let object_grid_len = component.object_grid.grid.len();
-        let entity_id = entity;
-        let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut *component, &settings) };
-        for collapsed_cell in collapsed_cells {
-          attach_task_to_tile_entity(&mut commands, &mut rng, task_pool, collapsed_cell);
-        }
-        debug!(
-          "Determined objects and scheduled {} objects spawn tasks for entity #{} in {} ms on {}",
-          object_grid_len,
-          entity_id,
-          get_time() - start_time,
-          async_utils::get_thread_info()
-        );
-      }
-      ObjectGenerationStatus::Done => {
-        commands.entity(entity).despawn();
-        continue;
-      }
-    }
+pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, object_data: Vec<ObjectData>) {
+  let start_time = get_time();
+  let task_pool = AsyncComputeTaskPool::get();
+  let object_data_len = object_data.len();
+  for object in object_data {
+    attach_task_to_tile_entity(commands, &mut rng, task_pool, object);
   }
+  debug!(
+    "Scheduled {} object spawn tasks in {} ms on {}",
+    object_data_len,
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
 }
 
 fn attach_task_to_tile_entity(
   commands: &mut Commands,
   mut rng: &mut StdRng,
   task_pool: &AsyncComputeTaskPool,
-  collapsed_cell: CollapsedCell,
+  object_data: ObjectData,
 ) {
-  let sprite_index = collapsed_cell.sprite_index;
-  let tile_data = collapsed_cell.tile_data.clone();
-  let object_name = collapsed_cell.name.expect("Failed to get object name");
-  let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &collapsed_cell);
+  let sprite_index = object_data.sprite_index;
+  let tile_data = object_data.tile_data.clone();
+  let object_name = object_data.name.expect("Failed to get object name");
+  let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -127,7 +106,7 @@ fn attach_task_to_tile_entity(
         let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
         let resources = system_state.get_mut(world);
         resources
-          .get_object_collection(tile_data.flat_tile.terrain, collapsed_cell.is_large_sprite)
+          .get_object_collection(tile_data.flat_tile.terrain, object_data.is_large_sprite)
           .clone()
       };
       if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
@@ -149,8 +128,8 @@ fn attach_task_to_tile_entity(
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
-fn get_sprite_offsets(rng: &mut StdRng, collapsed_cell: &CollapsedCell) -> (f32, f32) {
-  if collapsed_cell.is_large_sprite {
+fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) {
+  if object_data.is_large_sprite {
     (
       rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
       rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),

@@ -6,7 +6,7 @@ mod object_name;
 mod wfc_status;
 
 pub use cell::Cell;
-pub use collapsed_cell::CollapsedCell;
+pub use collapsed_cell::{CollapsedCell, ObjectData};
 pub use connection_type::Connection;
 pub use object_grid::ObjectGrid;
 pub use object_name::ObjectName;

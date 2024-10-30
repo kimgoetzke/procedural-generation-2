@@ -4,7 +4,7 @@ use crate::constants::{
 };
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::async_utils::AsyncTask;
+use crate::generation::async_utils::CommandQueueTask;
 use crate::generation::lib::{
   get_direction_points, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
 };
@@ -35,7 +35,7 @@ impl Plugin for WorldGeneratorPlugin {
 #[derive(Component)]
 struct TileSpawnTask(Task<CommandQueue>);
 
-impl AsyncTask for TileSpawnTask {
+impl CommandQueueTask for TileSpawnTask {
   fn poll_once(&mut self) -> Option<CommandQueue> {
     block_on(tasks::poll_once(&mut self.0))
   }
@@ -157,7 +157,7 @@ pub fn schedule_tile_spawning_tasks(
           if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.chunk_grid) {
             if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
               tile_entity.with_children(|parent| {
-                attach_task_to_tile_entity(task_pool, tile_data, tile.clone(), parent);
+                attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());
               });
             }
           }
@@ -168,7 +168,7 @@ pub fn schedule_tile_spawning_tasks(
   trace!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
 }
 
-fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, tile_data: TileData, tile: Tile, parent: &mut ChildBuilder) {
+fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut ChildBuilder, tile_data: TileData, tile: Tile) {
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {

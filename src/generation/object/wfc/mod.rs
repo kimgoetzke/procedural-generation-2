@@ -1,10 +1,9 @@
-use crate::generation::object::components::{ObjectGenerationDataComponent, ObjectGenerationStatus};
+use crate::generation::lib::TileData;
 use crate::generation::object::lib::{Cell, CollapsedCell, IterationResult, ObjectGrid};
 use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use bevy::prelude::Res;
 use rand::prelude::StdRng;
 use rand::Rng;
 
@@ -18,11 +17,11 @@ impl Plugin for WfcPlugin {
 // TODO: Refactor function as it's long and unreadable
 pub fn determine_objects_in_grid<'a>(
   mut rng: &mut StdRng,
-  component: &'a mut ObjectGenerationDataComponent,
-  _settings: &Res<Settings>,
+  object_data: &'a mut (ObjectGrid, Vec<TileData>),
+  _settings: &Settings,
 ) -> Vec<CollapsedCell<'a>> {
   let start_time = get_time();
-  let grid = &mut component.object_grid;
+  let grid = &mut object_data.0;
   let mut snapshots = vec![];
   let mut iteration_count = 1;
   let mut has_entropy = true;
@@ -74,9 +73,8 @@ pub fn determine_objects_in_grid<'a>(
     }
   }
 
-  component.set_status(ObjectGenerationStatus::Done);
-  let grid = &component.object_grid;
-  let tile_data = &component.tile_data;
+  let grid = &object_data.0;
+  let tile_data = &object_data.1;
   let mut collapsed_cells = vec![];
   collapsed_cells.extend(
     tile_data

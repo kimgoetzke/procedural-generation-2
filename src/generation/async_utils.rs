@@ -8,7 +8,7 @@ use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{Commands, Component, Entity, Query, Res};
 use std::thread;
 
-pub trait AsyncTask {
+pub trait CommandQueueTask {
   fn poll_once(&mut self) -> Option<CommandQueue>;
 }
 
@@ -19,7 +19,7 @@ pub fn get_thread_info() -> String {
   format!("[{} {:?}]", thread_name, thread_id)
 }
 
-pub fn process_tasks<T: AsyncTask + Component>(mut commands: Commands, mut query: Query<(Entity, &mut T)>) {
+pub fn process_tasks<T: CommandQueueTask + Component>(mut commands: Commands, mut query: Query<(Entity, &mut T)>) {
   for (entity, mut task) in &mut query {
     if let Some(mut commands_queue) = task.poll_once() {
       commands.append(&mut commands_queue);
