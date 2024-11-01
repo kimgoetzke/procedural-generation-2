@@ -67,7 +67,7 @@ pub fn generate_object_data(
     async_utils::get_thread_info()
   );
 
-  // TODO: Remove collapsed cells entirely once start up process is async 
+  // TODO: Remove collapsed cells entirely once start up process is async
   collapsed_cells
     .iter()
     .map(|cell| ObjectData::from_collapsed_cell(cell))

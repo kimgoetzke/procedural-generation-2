@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::coords::point::WorldGrid;
+use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use bevy::color::Color;
 use bevy::math::UVec2;
@@ -8,7 +8,7 @@ use bevy::math::UVec2;
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
 pub const DRAW_GIZMOS: bool = false;
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = false;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
 pub const ENABLE_TILE_DEBUGGING: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
@@ -36,6 +36,8 @@ pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The size of a chunk that is rendered on the screen.
 pub const CHUNK_SIZE: i32 = 16;
 pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point<WorldGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
+pub const ORIGIN_WORLD_SPAWN_POINT: Point<World> =
+  Point::new_const(-(CHUNK_SIZE / 2) * TILE_SIZE as i32, (CHUNK_SIZE / 2) * TILE_SIZE as i32);
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
 // Tiles

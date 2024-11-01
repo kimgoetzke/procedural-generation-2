@@ -3,29 +3,11 @@ use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use bevy::prelude::Res;
 
 pub struct PreRenderProcessorPlugin;
 
 impl Plugin for PreRenderProcessorPlugin {
   fn build(&self, _app: &mut App) {}
-}
-
-pub(crate) fn process_all(mut chunks: Vec<Chunk>, settings: &Res<Settings>) -> Vec<Chunk> {
-  let start_time = get_time();
-  for layer in 1..TerrainType::length() {
-    let layer_name = TerrainType::from(layer);
-    if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
-      trace!("Skipped processing [{:?}] layer because it's disabled", layer_name);
-      continue;
-    }
-    for chunk in chunks.iter_mut() {
-      clear_single_tiles_from_chunk_with_no_fill_below(layer, chunk);
-    }
-  }
-  debug!("Pre-processed chunk(s) in {} ms", get_time() - start_time);
-
-  chunks
 }
 
 pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {

@@ -1,13 +1,9 @@
 use crate::components::{AnimationComponent, AnimationTimer};
-use crate::constants::{
-  ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, ORIGIN_WORLD_GRID_SPAWN_POINT, TERRAIN_TYPE_ERROR,
-};
+use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TERRAIN_TYPE_ERROR};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::async_utils::CommandQueueTask;
-use crate::generation::lib::{
-  get_direction_points, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData, WorldComponent,
-};
+use crate::generation::lib::{Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
 use crate::generation::resources::{AssetPack, GenerationResourcesCollection};
 use crate::generation::world::pre_render_processor;
 use crate::generation::{async_utils, get_time};
@@ -18,7 +14,7 @@ use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, WorldChildBuilder};
 use bevy::log::*;
 use bevy::prelude::{
-  Commands, Component, Entity, Query, Res, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
+  Commands, Component, Entity, Query, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
 };
 use bevy::sprite::Anchor;
 use bevy::tasks;
@@ -41,63 +37,24 @@ impl CommandQueueTask for TileSpawnTask {
   }
 }
 
-pub fn generate_world(mut commands: &mut Commands, settings: &Res<Settings>) -> Vec<(Chunk, Vec<TileData>)> {
-  let draft_chunks = generate_draft_chunks(&settings);
-  let mut chunks = convert_draft_chunks_to_chunks(&settings, draft_chunks);
-  chunks = pre_render_processor::process_all(chunks, &settings);
-  let spawn_data = spawn_world_and_chunk_entities(commands, &chunks);
-  schedule_tile_spawning_tasks(&mut commands, &settings, &spawn_data);
-
-  spawn_data
-}
-
-fn generate_draft_chunks(settings: &Res<Settings>) -> Vec<DraftChunk> {
+pub fn generate_chunks(spawn_points: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
   let start_time = get_time();
-  let mut draft_chunks: Vec<DraftChunk> = Vec::new();
-  let spawn_point = ORIGIN_WORLD_GRID_SPAWN_POINT;
-  get_direction_points(&spawn_point).iter().for_each(|(_, point)| {
-    if settings.general.generate_neighbour_chunks {
-      let draft_chunk = DraftChunk::new(point.clone(), settings);
-      draft_chunks.push(draft_chunk);
-    } else {
-      if point.x == spawn_point.x && point.y == spawn_point.y {
-        debug!("Skipped generating neighbour chunks because it's disabled");
-        let draft_chunk = DraftChunk::new(point.clone(), settings);
-        draft_chunks.push(draft_chunk);
-      }
-    }
-  });
-  debug!("Generated draft chunk(s) in {} ms", get_time() - start_time);
-
-  draft_chunks
-}
-
-fn convert_draft_chunks_to_chunks(settings: &Res<Settings>, draft_chunks: Vec<DraftChunk>) -> Vec<Chunk> {
-  let start_time = get_time();
-  let mut final_chunks: Vec<Chunk> = Vec::new();
-  for draft_chunk in draft_chunks {
-    let chunk = Chunk::new(draft_chunk, settings);
-    final_chunks.push(chunk);
+  let mut chunks: Vec<Chunk> = Vec::new();
+  for chunk_w in spawn_points {
+    let chunk_wg = Point::new_world_grid_from_world(chunk_w.clone());
+    let draft_chunk = DraftChunk::new(chunk_wg, &settings);
+    let mut chunk = Chunk::new(draft_chunk, &settings);
+    chunk = pre_render_processor::process_single(chunk, &settings);
+    chunks.push(chunk);
   }
-  debug!("Converted draft chunk(s) to chunk(s) in {} ms", get_time() - start_time);
 
-  final_chunks
-}
+  debug!(
+    "Generated chunks in {} ms on [{}]",
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
 
-fn spawn_world_and_chunk_entities(commands: &mut Commands, chunks: &Vec<Chunk>) -> Vec<(Chunk, Vec<TileData>)> {
-  let start_time = get_time();
-  let mut spawn_data: Vec<(Chunk, Vec<TileData>)> = Vec::new();
-  commands
-    .spawn((Name::new("World"), SpatialBundle::default(), WorldComponent))
-    .with_children(|parent| {
-      for chunk in chunks.iter() {
-        let tile_data = spawn_chunk(parent, &chunk);
-        spawn_data.push((chunk.clone(), tile_data));
-      }
-    });
-  debug!("Spawned world and chunk entities in {} ms", get_time() - start_time);
-
-  spawn_data
+  chunks
 }
 
 pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
@@ -165,7 +122,11 @@ pub fn schedule_tile_spawning_tasks(
       }
     }
   }
-  trace!("Scheduled spawning all tiles in {} ms", get_time() - start_time);
+  debug!(
+    "Scheduled spawning all tiles in {} ms on [{}]",
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
 }
 
 fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut ChildBuilder, tile_data: TileData, tile: Tile) {
@@ -329,24 +290,4 @@ fn animated_terrain_sprite(
 
 fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
   async_utils::process_tasks(commands, tile_spawn_tasks);
-}
-
-pub fn generate_chunks(chunks_to_spawn: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
-  let start_time = get_time();
-  let mut chunks: Vec<Chunk> = Vec::new();
-  for chunk_w in chunks_to_spawn {
-    let chunk_world_grid = Point::new_world_grid_from_world(chunk_w.clone());
-    let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
-    let mut chunk = Chunk::new(draft_chunk, &settings);
-    chunk = pre_render_processor::process_single(chunk, &settings);
-    chunks.push(chunk);
-  }
-
-  debug!(
-    "Generated chunks in {} ms on [{}]",
-    get_time() - start_time,
-    async_utils::get_thread_info()
-  );
-
-  chunks
 }
