@@ -12,7 +12,7 @@ pub struct PropagationFailure {}
 
 /// A `Cell` is a "placeholder" for an object. It is used in the `ObjectGrid`. This struct is used to represent a cell in
 /// the grid that can be collapsed to a single state. Once all `Cell`s in an `ObjectGrid` have been collapsed, they
-/// will be converted to `CollapsedCell`s which are then used to spawn object sprites in the world. A `Cell` is
+/// will be converted to `ObjectData`s which are then used to spawn object sprites in the world. A `Cell` is
 /// indirectly linked to an underlying `Tile` through its `TerrainType` and  `TileType` fields.
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {

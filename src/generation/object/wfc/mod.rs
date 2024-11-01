@@ -1,5 +1,5 @@
 use crate::generation::lib::TileData;
-use crate::generation::object::lib::{Cell, CollapsedCell, IterationResult, ObjectGrid};
+use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid};
 use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -15,13 +15,13 @@ impl Plugin for WfcPlugin {
 
 // TODO: Consider simplifying the way snapshots are handled
 // TODO: Refactor function as it's long and unreadable
-pub fn determine_objects_in_grid<'a>(
+pub fn determine_objects_in_grid(
   mut rng: &mut StdRng,
-  object_data: &'a mut (ObjectGrid, Vec<TileData>),
+  object_generation_data: &mut (ObjectGrid, Vec<TileData>),
   _settings: &Settings,
-) -> Vec<CollapsedCell<'a>> {
+) -> Vec<ObjectData> {
   let start_time = get_time();
-  let grid = &mut object_data.0;
+  let grid = &mut object_generation_data.0;
   let mut snapshots = vec![];
   let mut iteration_count = 1;
   let mut has_entropy = true;
@@ -73,19 +73,19 @@ pub fn determine_objects_in_grid<'a>(
     }
   }
 
-  let grid = &object_data.0;
-  let tile_data = &object_data.1;
-  let mut collapsed_cells = vec![];
-  collapsed_cells.extend(
+  let grid = &object_generation_data.0;
+  let tile_data = &object_generation_data.1;
+  let mut object_data = vec![];
+  object_data.extend(
     tile_data
       .iter()
       .filter_map(|tile_data| {
         grid
           .get_cell(&tile_data.flat_tile.coords.chunk_grid)
           .filter(|cell| cell.index != 0)
-          .map(|cell| CollapsedCell::new(tile_data, cell))
+          .map(|cell| ObjectData::new(tile_data, cell))
       })
-      .collect::<Vec<CollapsedCell>>(),
+      .collect::<Vec<ObjectData>>(),
   );
 
   trace!(
@@ -96,7 +96,7 @@ pub fn determine_objects_in_grid<'a>(
     async_utils::get_thread_info()
   );
 
-  collapsed_cells
+  object_data
 }
 
 pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {

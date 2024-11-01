@@ -57,8 +57,8 @@ pub fn generate_object_data(
   );
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
   let object_grid_len = grid.grid.len();
-  let mut object_data = (grid.clone(), spawn_data.1.clone());
-  let collapsed_cells = { wfc::determine_objects_in_grid(&mut rng, &mut object_data, &settings) };
+  let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
+  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
 
   debug!(
     "Generated object data for {} objects in {} ms on {}",
@@ -67,11 +67,7 @@ pub fn generate_object_data(
     async_utils::get_thread_info()
   );
 
-  // TODO: Remove collapsed cells entirely once start up process is async
-  collapsed_cells
-    .iter()
-    .map(|cell| ObjectData::from_collapsed_cell(cell))
-    .collect()
+  object_data
 }
 
 pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, object_data: Vec<ObjectData>) {
