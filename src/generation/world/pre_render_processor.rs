@@ -1,5 +1,5 @@
-use crate::generation::get_time;
 use crate::generation::lib::{Chunk, TerrainType, TileType};
+use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -38,7 +38,11 @@ pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {
     }
     clear_single_tiles_from_chunk_with_no_fill_below(layer, &mut chunk);
   }
-  debug!("Pre-processed chunk in {} ms", get_time() - start_time);
+  trace!(
+    "Pre-processed chunk in {} ms on [{}]",
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
 
   chunk
 }

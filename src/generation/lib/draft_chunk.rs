@@ -1,8 +1,8 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::{Coords, Point};
-use crate::generation::get_time;
 use crate::generation::lib::{DraftTile, TerrainType};
+use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
@@ -114,5 +114,10 @@ fn log(
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  debug!("Generated draft chunk at wg{:?} in {} ms", world_grid, get_time() - time);
+  trace!(
+    "Generated draft chunk at wg{:?} in {} ms on [{}]",
+    world_grid,
+    get_time() - time,
+    async_utils::get_thread_info()
+  );
 }

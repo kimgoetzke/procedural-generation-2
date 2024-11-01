@@ -331,15 +331,22 @@ fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entit
   async_utils::process_tasks(commands, tile_spawn_tasks);
 }
 
-pub fn calculate_chunks(chunks_to_spawn: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
+pub fn generate_chunks(chunks_to_spawn: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
+  let start_time = get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
-  for chunk_world in chunks_to_spawn {
-    let chunk_world_grid = Point::new_world_grid_from_world(chunk_world.clone());
+  for chunk_w in chunks_to_spawn {
+    let chunk_world_grid = Point::new_world_grid_from_world(chunk_w.clone());
     let draft_chunk = DraftChunk::new(chunk_world_grid, &settings);
     let mut chunk = Chunk::new(draft_chunk, &settings);
     chunk = pre_render_processor::process_single(chunk, &settings);
     chunks.push(chunk);
   }
+
+  debug!(
+    "Generated chunks in {} ms on [{}]",
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
 
   chunks
 }
