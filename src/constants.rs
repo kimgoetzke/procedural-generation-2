@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::coords::point::WorldGrid;
+use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use bevy::color::Color;
 use bevy::math::UVec2;
@@ -14,7 +14,6 @@ pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
-pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
@@ -26,19 +25,19 @@ pub const NOISE_ELEVATION: f64 = -0.05;
 pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
-pub const FOREST_OBJ_DENSITY: f64 = 0.5;
-pub const SAND_OBJ_DENSITY: f64 = 0.20;
+pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
-/// The size of a buffer around a chunk that is not rendered. Must be 1, always.
+/// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
-/// `TileType`s of outer tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
+/// `TileType`s of outermost tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
-/// The size of a chunk that is rendered on the screen. This is the size of a chunk minus the
-/// border.
+/// The size of a chunk that is rendered on the screen.
 pub const CHUNK_SIZE: i32 = 16;
 pub const ORIGIN_WORLD_GRID_SPAWN_POINT: Point<WorldGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
+pub const ORIGIN_WORLD_SPAWN_POINT: Point<World> =
+  Point::new_const(-(CHUNK_SIZE / 2) * TILE_SIZE as i32, (CHUNK_SIZE / 2) * TILE_SIZE as i32);
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
 // Tiles
@@ -86,14 +85,18 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
-pub const FOREST_OBJ_PATH: &str = "objects/trees-conifer.png";
-pub const FOREST_OBJ_COLUMNS: u32 = 5;
-pub const FOREST_OBJ_ROWS: u32 = 1;
-pub const FOREST_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
+pub const TREES_OBJ_PATH: &str = "objects/trees-conifer.png";
+pub const TREES_OBJ_COLUMNS: u32 = 5;
+pub const TREES_OBJ_ROWS: u32 = 1;
+pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
+pub const WATER_OBJ_PATH: &str = "objects/water_objects.png";
+pub const SHORE_OBJ_PATH: &str = "objects/shore_objects.png";
 pub const SAND_OBJ_PATH: &str = "objects/sand_objects.png";
-pub const SAND_OBJ_COLUMNS: u32 = 12;
-pub const SAND_OBJ_ROWS: u32 = 1;
-pub const SAND_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const GRASS_OBJ_PATH: &str = "objects/grass_objects.png";
+pub const FOREST_OBJ_PATH: &str = "objects/forest_objects.png";
+pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
+pub const DEFAULT_OBJ_ROWS: u32 = 2;
+pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);

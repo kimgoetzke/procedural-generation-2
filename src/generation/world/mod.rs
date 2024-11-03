@@ -13,5 +13,4 @@ impl Plugin for WorldGenerationPlugin {
   }
 }
 
-pub use crate::generation::world::world_generator::generate_chunks;
-pub use crate::generation::world::world_generator::generate_world;
+pub use crate::generation::world::world_generator::*;

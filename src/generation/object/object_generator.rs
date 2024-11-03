@@ -1,158 +1,176 @@
-use crate::constants::{FOREST_OBJ_COLUMNS, SAND_OBJ_COLUMNS, TILE_SIZE};
+use crate::constants::TILE_SIZE;
+use crate::generation;
+use crate::generation::async_utils::CommandQueueTask;
 use crate::generation::get_time;
-use crate::generation::lib::{Chunk, ObjectComponent, TerrainType, Tile, TileData, TileType};
-use crate::generation::resources::{AssetPacks, AssetPacksCollection};
+use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::object::lib::ObjectName;
+use crate::generation::object::lib::{ObjectData, ObjectGrid};
+use crate::generation::object::wfc;
+use crate::generation::object::wfc::WfcPlugin;
+use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
 use crate::resources::Settings;
-use bevy::app::{App, Plugin};
+use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
-use bevy::hierarchy::BuildChildren;
-use bevy::log::{debug, trace};
-use bevy::prelude::{Commands, Res, SpriteBundle, TextureAtlas, Transform};
+use bevy::ecs::system::SystemState;
+use bevy::ecs::world::CommandQueue;
+use bevy::hierarchy::BuildWorldChildren;
+use bevy::log::*;
+use bevy::prelude::{Commands, Component, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
+use bevy::sprite::{Anchor, Sprite};
+use bevy::tasks;
+use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use generation::async_utils;
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
 pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
-  fn build(&self, _app: &mut App) {}
+  fn build(&self, app: &mut App) {
+    app.add_plugins(WfcPlugin).add_systems(Update, process_async_tasks_system);
+  }
 }
 
-type OffsetFn = fn(&mut StdRng) -> f32;
+#[derive(Component)]
+struct ObjectSpawnTask(Task<CommandQueue>);
 
-// TODO: Generate objects asynchronously
-pub fn generate(
-  commands: &mut Commands,
-  spawn_data: &mut Vec<(Chunk, Vec<TileData>)>,
-  asset_collection: &Res<AssetPacksCollection>,
-  settings: &Res<Settings>,
-) {
+impl CommandQueueTask for ObjectSpawnTask {
+  fn poll_once(&mut self) -> Option<CommandQueue> {
+    block_on(tasks::poll_once(&mut self.0))
+  }
+}
+
+pub fn generate_object_data(
+  resources: &GenerationResourcesCollection,
+  settings: &Settings,
+  spawn_data: (Chunk, Vec<TileData>),
+) -> Vec<ObjectData> {
   if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
-    return;
+    return vec![];
   }
   let start_time = get_time();
-  for (_, tile_data) in spawn_data.iter_mut() {
-    place_trees(commands, tile_data, asset_collection, settings);
-    place_stones(commands, tile_data, asset_collection, settings);
+  let grid = ObjectGrid::new_initialised(
+    &resources.objects.terrain_rules,
+    &resources.objects.tile_type_rules,
+    &spawn_data.1,
+  );
+  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+  let object_grid_len = grid.grid.len();
+  let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
+  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
+
+  debug!(
+    "Generated object data for {} objects in {} ms on {}",
+    object_grid_len,
+    get_time() - start_time,
+    async_utils::get_thread_info()
+  );
+
+  object_data
+}
+
+pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, object_data: Vec<ObjectData>) {
+  let start_time = get_time();
+  let task_pool = AsyncComputeTaskPool::get();
+  let object_data_len = object_data.len();
+  for object in object_data {
+    attach_task_to_tile_entity(commands, &mut rng, task_pool, object);
   }
-  debug!("Generated objects for chunk(s) in {} ms", get_time() - start_time);
-}
-
-fn place_trees(
-  commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  asset_collection: &Res<AssetPacksCollection>,
-  settings: &Res<Settings>,
-) {
-  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-  generate_objects(
-    commands,
-    tile_data,
-    &asset_collection.forest_obj,
-    TerrainType::Forest,
-    settings.object.forest_obj_density,
-    "Forest Object Sprite",
-    FOREST_OBJ_COLUMNS as usize,
-    &mut rng,
-    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
-    |rng| rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0) + TILE_SIZE as f32,
+  debug!(
+    "Scheduled {} object spawn tasks in {} ms on {}",
+    object_data_len,
+    get_time() - start_time,
+    async_utils::get_thread_info()
   );
 }
 
-fn place_stones(
+fn attach_task_to_tile_entity(
   commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  asset_collection: &Res<AssetPacksCollection>,
-  settings: &Res<Settings>,
+  mut rng: &mut StdRng,
+  task_pool: &AsyncComputeTaskPool,
+  object_data: ObjectData,
 ) {
-  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-  generate_objects(
-    commands,
-    tile_data,
-    &asset_collection.sand_obj,
-    TerrainType::Sand,
-    settings.object.sand_obj_density,
-    "Sand Object Sprite",
-    SAND_OBJ_COLUMNS as usize,
-    &mut rng,
-    |_| 0.,
-    |_| -(TILE_SIZE as f32) / 2.,
-  );
-}
-
-fn generate_objects(
-  commands: &mut Commands,
-  tile_data: &mut Vec<TileData>,
-  asset_packs: &AssetPacks,
-  terrain_type: TerrainType,
-  density: f64,
-  sprite_name: &str,
-  columns: usize,
-  rng: &mut StdRng,
-  offset_x: OffsetFn,
-  offset_y: OffsetFn,
-) {
-  let relevant_tiles: Vec<_> = tile_data
-    .iter_mut()
-    .filter_map(|t| {
-      if t.tile.terrain == terrain_type && t.tile.tile_type == TileType::Fill {
-        Some(t)
-      } else {
-        None
+  let sprite_index = object_data.sprite_index;
+  let tile_data = object_data.tile_data.clone();
+  let object_name = object_data.name.expect("Failed to get object name");
+  let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
+  let task = task_pool.spawn(async move {
+    let mut command_queue = CommandQueue::default();
+    command_queue.push(move |world: &mut bevy::prelude::World| {
+      let asset_collection = {
+        let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
+        let resources = system_state.get_mut(world);
+        resources
+          .get_object_collection(tile_data.flat_tile.terrain, object_data.is_large_sprite)
+          .clone()
+      };
+      if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+        tile_data_entity.with_children(|parent| {
+          parent.spawn(sprite(
+            &tile_data.flat_tile,
+            sprite_index,
+            &asset_collection,
+            object_name,
+            offset_x,
+            offset_y,
+          ));
+        });
       }
-    })
-    .collect();
+    });
+    command_queue
+  });
 
-  for tile_data in relevant_tiles {
-    if rng.gen_bool(density) {
-      let offset_x = offset_x(rng);
-      let offset_y = offset_y(rng);
-      let index = rng.gen_range(0..columns as i32);
-      trace!(
-        "Placing [{}] at {:?} with offset ({}, {})",
-        sprite_name,
-        tile_data.tile.coords.chunk_grid,
-        offset_x,
-        offset_y
-      );
-      commands.entity(tile_data.entity).with_children(|parent| {
-        parent.spawn(sprite(
-          &tile_data.tile,
-          offset_x,
-          offset_y,
-          index,
-          asset_packs,
-          Name::new(sprite_name.to_string()),
-        ));
-      });
-    }
+  commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
+}
+
+fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) {
+  if object_data.is_large_sprite {
+    (
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+    )
+  } else {
+    (0., 0.)
   }
 }
 
 fn sprite(
   tile: &Tile,
+  index: i32,
+  asset_collection: &AssetCollection,
+  object_name: ObjectName,
   offset_x: f32,
   offset_y: f32,
-  index: i32,
-  asset_packs: &AssetPacks,
-  name: Name,
 ) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
   (
-    name,
+    Name::new(format!("{:?} Object Sprite", object_name)),
     SpriteBundle {
-      texture: asset_packs.stat.texture.clone(),
+      sprite: Sprite {
+        anchor: Anchor::BottomCenter,
+        ..Default::default()
+      },
+      texture: asset_collection.stat.texture.clone(),
       transform: Transform::from_xyz(
-        offset_x + TILE_SIZE as f32 / 2.0,
-        offset_y,
+        TILE_SIZE as f32 / 2. + offset_x,
+        TILE_SIZE as f32 * -1. + offset_y,
         // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
         200. + tile.coords.chunk_grid.y as f32,
       ),
       ..Default::default()
     },
     TextureAtlas {
-      layout: asset_packs.stat.texture_atlas_layout.clone(),
+      layout: asset_collection.stat.texture_atlas_layout.clone(),
       index: index as usize,
     },
-    ObjectComponent {},
+    ObjectComponent {
+      coords: tile.coords,
+      sprite_index: index as usize,
+      object_name: object_name.clone(),
+    },
   )
+}
+
+fn process_async_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+  async_utils::process_tasks(commands, object_spawn_tasks);
 }

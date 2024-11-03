@@ -3,6 +3,7 @@ use crate::coords::point::{ChunkGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::{DraftTile, TerrainType, TileType};
 use bevy::log::*;
+use bevy::reflect::Reflect;
 
 /// A `Tile` represents a single tile of `TILE_SIZE` in the world. It contains information about its `Coords`,
 /// `TerrainType`, `TileType`, and layer. If created from a `DraftTile`, the `layer` of a `Tile` adds the y-coordinate
@@ -10,8 +11,9 @@ use bevy::log::*;
 /// `ChunkGrid` `Coords` to account for the buffer of a `DraftChunk` i.e. it shifts the `ChunkGrid` `Coords` by the
 /// `BUFFER_SIZE` to towards the top-left, allowing for the outer tiles of a `DraftChunk` to be cut off in a way that
 /// the `Tile`s in the resulting `Chunk` have `ChunkGrid` `Coords` ranging from 0 to `CHUNK_SIZE`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect)]
 pub struct Tile {
+  #[reflect(ignore)]
   pub coords: Coords,
   pub terrain: TerrainType,
   pub layer: i32,

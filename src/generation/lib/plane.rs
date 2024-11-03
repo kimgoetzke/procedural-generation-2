@@ -2,8 +2,10 @@ use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
 use crate::coords::point::{ChunkGrid, CoordType};
 use crate::coords::Point;
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
-use bevy::prelude::Res;
 
+/// A 2D grid of `Tile`s that is created using `DraftTile`s. During it's creation, it determines the `TileType` of each
+/// `Tile` based on the `TerrainType` of its neighbours and resizes the grid by cutting off `BUFFER_SIZE` from each
+/// side of the grid.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
   pub layer: Option<usize>,
@@ -11,7 +13,9 @@ pub struct Plane {
 }
 
 impl Plane {
-  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Res<Settings>) -> Self {
+  /// Creates a new `Plane` from a 2D grid of `DraftTile`s. Fist, the `DraftTile`s `TileType` is being determined,
+  /// therefore, converting them to `Tile`s. The `Plane` is then resized by cutting off `BUFFER_SIZE` from each side.
+  pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Settings) -> Self {
     let plane_data = determine_tile_types(&draft_tiles);
     let plane_data = resize_grid(plane_data);
     Self { data: plane_data, layer }

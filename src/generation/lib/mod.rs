@@ -1,20 +1,22 @@
-pub mod chunk;
-pub mod components;
-pub mod direction;
-pub mod draft_chunk;
+mod chunk;
+mod components;
+mod direction;
+mod draft_chunk;
 mod draft_tile;
 mod layered_plane;
 mod neighbours;
 mod plane;
-pub mod terrain_type;
-pub mod tile;
-pub mod tile_data;
-pub mod tile_type;
+mod terrain_type;
+mod tile;
+mod tile_data;
+mod tile_type;
 
 pub use crate::resources::Settings;
 pub use chunk::Chunk;
-pub use components::{ChunkComponent, ObjectComponent, TileComponent, WorldComponent};
-pub use direction::Direction;
+pub use components::{
+  ChunkComponent, ObjectComponent, TileComponent, UpdateWorldComponent, UpdateWorldStatus, WorldComponent,
+};
+pub use direction::{get_direction_points, Direction};
 pub use draft_chunk::DraftChunk;
 pub use draft_tile::DraftTile;
 pub use layered_plane::LayeredPlane;

@@ -1,5 +1,5 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::point::{CoordType, World, WorldGrid};
+use crate::coords::point::{ChunkGrid, CoordType, World, WorldGrid};
 use crate::coords::Point;
 use cmp::Ordering;
 use std::cmp;
@@ -69,11 +69,18 @@ impl Direction {
   }
 }
 
+impl PartialEq<Direction> for &Direction {
+  fn eq(&self, other: &Direction) -> bool {
+    **self == *other
+  }
+}
+
 pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 9] {
   let offset = match std::any::TypeId::of::<T>() {
     id if id == std::any::TypeId::of::<WorldGrid>() => CHUNK_SIZE,
     id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
-    _ => panic!("Coord type not implemented for get_direction_points"),
+    id if id == std::any::TypeId::of::<ChunkGrid>() => 1,
+    id => panic!("Coord type {:?} not implemented for get_direction_points", id),
   };
   let p = point;
   [

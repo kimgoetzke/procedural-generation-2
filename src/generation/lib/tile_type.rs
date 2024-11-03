@@ -1,41 +1,52 @@
 use crate::constants::*;
 use crate::generation::lib::TerrainType;
-use crate::generation::resources::AssetPacksCollection;
+use crate::generation::resources::GenerationResourcesCollection;
+use bevy::reflect::Reflect;
 
 #[allow(dead_code)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect, serde::Deserialize)]
 pub enum TileType {
   Fill,
-  InnerCornerBottomLeft,
-  InnerCornerBottomRight,
-  InnerCornerTopLeft,
   InnerCornerTopRight,
-  OuterCornerBottomLeft,
-  OuterCornerBottomRight,
-  OuterCornerTopLeft,
+  InnerCornerBottomRight,
+  InnerCornerBottomLeft,
+  InnerCornerTopLeft,
   OuterCornerTopRight,
-  TopLeftToBottomRightBridge,
+  OuterCornerBottomRight,
+  OuterCornerBottomLeft,
+  OuterCornerTopLeft,
   TopRightToBottomLeftBridge,
+  TopLeftToBottomRightBridge,
   TopFill,
-  BottomFill,
   RightFill,
+  BottomFill,
   LeftFill,
   Single,
   Unknown,
 }
 
-pub fn get_sprite_index_from(terrain: &TerrainType, tile_type: &TileType, asset_collection: &AssetPacksCollection) -> usize {
+impl TileType {
+  pub fn get_sprite_index(&self, index_offset: usize) -> usize {
+    get_sprite_index(self, index_offset)
+  }
+
+  pub fn calculate_sprite_index(&self, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
+    get_sprite_index_from(&self, terrain, resources)
+  }
+}
+
+fn get_sprite_index_from(tile_type: &TileType, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
   match terrain {
-    TerrainType::Water => get_sprite_index(&tile_type, asset_collection.water.index_offset()),
-    TerrainType::Shore => get_sprite_index(&tile_type, asset_collection.shore.index_offset()),
-    TerrainType::Sand => get_sprite_index(&tile_type, asset_collection.sand.index_offset()),
-    TerrainType::Grass => get_sprite_index(&tile_type, asset_collection.grass.index_offset()),
-    TerrainType::Forest => get_sprite_index(&tile_type, asset_collection.forest.index_offset()),
+    TerrainType::Water => get_sprite_index(&tile_type, resources.water.index_offset()),
+    TerrainType::Shore => get_sprite_index(&tile_type, resources.shore.index_offset()),
+    TerrainType::Sand => get_sprite_index(&tile_type, resources.sand.index_offset()),
+    TerrainType::Grass => get_sprite_index(&tile_type, resources.grass.index_offset()),
+    TerrainType::Forest => get_sprite_index(&tile_type, resources.forest.index_offset()),
     TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
   }
 }
 
-pub fn get_sprite_index(tile_type: &TileType, index_offset: usize) -> usize {
+fn get_sprite_index(tile_type: &TileType, index_offset: usize) -> usize {
   match tile_type {
     TileType::Fill => FILL * index_offset,
     TileType::InnerCornerBottomLeft => INNER_CORNER_BOTTOM_LEFT * index_offset,

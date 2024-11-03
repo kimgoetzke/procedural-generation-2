@@ -2,9 +2,8 @@ use crate::constants::*;
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::tile_type::get_sprite_index_from;
-use crate::generation::lib::{Tile, TileComponent};
-use crate::generation::resources::{AssetPacksCollection, ChunkComponentIndex};
+use crate::generation::lib::{ObjectComponent, Tile, TileComponent};
+use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
@@ -21,11 +20,14 @@ pub struct TileDebuggerPlugin;
 impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
+      .observe(on_add_object_component_trigger)
       .observe(on_add_tile_component_trigger)
       .observe(on_left_mouse_click_trigger)
       .observe(on_remove_tile_component_trigger)
+      .observe(on_remove_object_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, regenerate_world_event))
-      .init_resource::<TileComponentIndex>();
+      .init_resource::<TileComponentIndex>()
+      .init_resource::<ObjectComponentIndex>();
   }
 }
 
@@ -34,17 +36,50 @@ struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
 struct TileComponentIndex {
-  grid: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
+  map: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
 }
 
 impl TileComponentIndex {
   pub fn get_entities(&self, point: Point<WorldGrid>) -> Vec<&TileComponent> {
     let mut tile_components = Vec::new();
-    if let Some(t) = self.grid.get(&point) {
+    if let Some(t) = self.map.get(&point) {
       tile_components.extend(t.iter());
     }
     tile_components
   }
+}
+
+#[derive(Resource, Default)]
+struct ObjectComponentIndex {
+  map: HashMap<Point<WorldGrid>, ObjectComponent>,
+}
+
+impl ObjectComponentIndex {
+  pub fn get(&self, point: Point<WorldGrid>) -> Option<&ObjectComponent> {
+    if let Some(t) = self.map.get(&point) {
+      Some(t)
+    } else {
+      None
+    }
+  }
+}
+
+fn on_add_object_component_trigger(
+  trigger: Trigger<OnAdd, ObjectComponent>,
+  query: Query<&ObjectComponent>,
+  mut index: ResMut<ObjectComponentIndex>,
+) {
+  let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
+  index.map.insert(oc.coords.world_grid, oc.clone());
+}
+
+fn on_remove_object_component_trigger(
+  trigger: Trigger<OnRemove, ObjectComponent>,
+  query: Query<&ObjectComponent>,
+  mut index: ResMut<ObjectComponentIndex>,
+) {
+  let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
+  index.map.remove(&oc.coords.world_grid);
 }
 
 fn on_add_tile_component_trigger(
@@ -52,15 +87,27 @@ fn on_add_tile_component_trigger(
   query: Query<&TileComponent>,
   mut index: ResMut<TileComponentIndex>,
 ) {
-  let tc = query.get(trigger.entity()).unwrap();
-  index.grid.entry(tc.tile.coords.world_grid).or_default().insert(tc.clone());
+  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
+  index.map.entry(tc.tile.coords.world_grid).or_default().insert(tc.clone());
+}
+
+fn on_remove_tile_component_trigger(
+  trigger: Trigger<OnRemove, TileComponent>,
+  query: Query<&TileComponent>,
+  mut index: ResMut<TileComponentIndex>,
+) {
+  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
+  index.map.entry(tc.tile.coords.world_grid).and_modify(|set| {
+    set.remove(&tc.clone());
+  });
 }
 
 fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
+  object_index: Res<ObjectComponentIndex>,
   tile_index: Res<TileComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
-  asset_collection: Res<AssetPacksCollection>,
+  resources: Res<GenerationResourcesCollection>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
@@ -74,7 +121,8 @@ fn on_left_mouse_click_trigger(
     .max_by_key(|tc| tc.tile.layer)
   {
     debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
-    commands.spawn(tile_info(&asset_collection, &tc.tile, event.world, &settings));
+    let object_component = object_index.get(event.world_grid);
+    commands.spawn(tile_info(&resources, &tc.tile, event.world, &settings, &object_component));
     let parent_w = tc.tile.get_parent_chunk_world();
     if let Some(parent_chunk) = chunk_index.get(parent_w) {
       debug!("Parent is chunk w{:?}; any tiles are listed below", parent_w);
@@ -90,40 +138,40 @@ fn on_left_mouse_click_trigger(
         parent_w, tc.tile.coords
       );
     }
+    if let Some(oc) = object_index.get(event.world_grid) {
+      debug!("{:?}", oc);
+    } else {
+      debug!("No object(s) found at w{:?} wg{:?}", event.world, event.world_grid);
+    }
   }
 }
 
-fn on_remove_tile_component_trigger(
-  trigger: Trigger<OnRemove, TileComponent>,
-  query: Query<&TileComponent>,
-  mut index: ResMut<TileComponentIndex>,
-) {
-  let tc = query.get(trigger.entity()).unwrap();
-  index.grid.entry(tc.tile.coords.world_grid).and_modify(|set| {
-    set.remove(&tc.clone());
-  });
-}
-
 fn tile_info(
-  asset_collection: &AssetPacksCollection,
+  resources: &GenerationResourcesCollection,
   tile: &Tile,
   spawn_point: Point<World>,
   settings: &Res<Settings>,
+  object_component_option: &Option<&ObjectComponent>,
 ) -> (Name, Text2dBundle, TileDebugInfoComponent) {
+  let object = if let Some(oc) = object_component_option {
+    format!("\nObject: \n{:?}\nObject sprite {}", oc.object_name, oc.sprite_index)
+  } else {
+    "\nNo object sprite".to_string()
+  };
   let visibility = if settings.general.enable_tile_debugging {
     Visibility::Visible
   } else {
     Visibility::Hidden
   };
-  let sprite_index = get_sprite_index_from(&tile.terrain, &tile.tile_type, asset_collection);
+  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
   (
     Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
     Text2dBundle {
       text_anchor: Anchor::Center,
       text: Text::from_section(
         format!(
-          "wg{:?} cg{:?}\n{:?}\n{:?}\nSprite index {:?}\nLayer {:?}",
-          tile.coords.world_grid, tile.coords.chunk_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer
+          "wg{:?} cg{:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
+          tile.coords.world_grid, tile.coords.chunk_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer, object
         ),
         TextStyle {
           font_size: 30.,

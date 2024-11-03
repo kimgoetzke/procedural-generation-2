@@ -1,29 +1,33 @@
 use crate::constants::TILE_SIZE;
-use crate::generation::lib::direction::Direction;
+use crate::generation::lib::Direction;
 use bevy::prelude::Vec2;
+use bevy::reflect::{reflect_trait, Reflect};
 use std::fmt;
+use std::ops::Add;
 
+#[reflect_trait]
 pub trait CoordType {}
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct World;
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct WorldGrid;
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct ChunkGrid;
 
 impl CoordType for World {}
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
+pub struct WorldGrid;
+
 impl CoordType for WorldGrid {}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
+pub struct ChunkGrid;
 
 impl CoordType for ChunkGrid {}
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct Point<T: CoordType> {
   pub x: i32,
   pub y: i32,
+  #[reflect(ignore)]
   _marker: std::marker::PhantomData<T>,
 }
 
@@ -44,6 +48,18 @@ impl<T: CoordType> Default for Point<T> {
     Self {
       x: 0,
       y: 0,
+      _marker: std::marker::PhantomData,
+    }
+  }
+}
+
+impl<T: CoordType> Add for Point<T> {
+  type Output = Self;
+
+  fn add(self, other: Self) -> Self {
+    Self {
+      x: self.x + other.x,
+      y: self.y + other.y,
       _marker: std::marker::PhantomData,
     }
   }

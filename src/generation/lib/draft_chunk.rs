@@ -1,13 +1,15 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::point::{World, WorldGrid};
 use crate::coords::{Coords, Point};
-use crate::generation::get_time;
 use crate::generation::lib::{DraftTile, TerrainType};
+use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::log::*;
-use bevy::prelude::Res;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
+/// A rather short-lived struct that is used to generate a `Chunk`. It only contains a single, flat plane of
+/// `DraftTile`s. When creating a `DraftChunk`, the terrain data is generated procedurally, the result of which is
+/// stored in the `data` field.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftChunk {
   pub coords: Coords,
@@ -17,7 +19,7 @@ pub struct DraftChunk {
 
 impl DraftChunk {
   /// Creates a new, flat draft chunk with terrain data based on noise by using Perlin noise.
-  pub fn new(world_grid: Point<WorldGrid>, settings: &Res<Settings>) -> Self {
+  pub fn new(world_grid: Point<WorldGrid>, settings: &Settings) -> Self {
     let data = generate_terrain_data(&world_grid, settings);
     Self {
       center: Point::new_world(
@@ -30,9 +32,10 @@ impl DraftChunk {
   }
 }
 
+// TODO: Allow for slowly changing terrain (e.g. the further south, the less water there is)
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `world_grid` to be a `Point` of type
 /// `WorldGrid` that describes the top-left corner of the grid.
-fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Res<Settings>) -> Vec<Vec<Option<DraftTile>>> {
+fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Settings) -> Vec<Vec<Option<DraftTile>>> {
   let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let time = get_time();
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
@@ -115,5 +118,10 @@ fn log(
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  debug!("Generated draft chunk at {:?} within {} ms", world_grid, get_time() - time);
+  trace!(
+    "Generated draft chunk at wg{:?} in {} ms on [{}]",
+    world_grid,
+    get_time() - time,
+    async_utils::get_thread_info()
+  );
 }

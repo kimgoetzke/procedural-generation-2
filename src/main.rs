@@ -7,6 +7,7 @@ mod coords;
 mod events;
 mod generation;
 mod resources;
+mod states;
 mod ui;
 
 use crate::animations::AnimationsPlugin;
@@ -16,6 +17,7 @@ use crate::controls::ControlPlugin;
 use crate::events::SharedEventsPlugin;
 use crate::generation::GenerationPlugin;
 use crate::resources::SharedResourcesPlugin;
+use crate::states::AppStatePlugin;
 use crate::ui::UiPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::audio::{AudioPlugin, SpatialScale};
@@ -55,6 +57,7 @@ fn main() {
     .add_plugins(PanCamPlugin::default())
     .add_plugins((
       CameraPlugin,
+      AppStatePlugin,
       GenerationPlugin,
       AnimationsPlugin,
       SharedEventsPlugin,

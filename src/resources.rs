@@ -124,18 +124,12 @@ impl Default for WorldGenerationSettings {
 #[reflect(Resource, InspectorOptions)]
 pub struct ObjectGenerationSettings {
   pub generate_objects: bool,
-  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
-  pub forest_obj_density: f64,
-  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
-  pub sand_obj_density: f64,
 }
 
 impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
       generate_objects: GENERATE_OBJECTS,
-      forest_obj_density: FOREST_OBJ_DENSITY,
-      sand_obj_density: SAND_OBJ_DENSITY,
     }
   }
 }

@@ -1,0 +1,16 @@
+(
+  terrain: Shore,
+  states: [
+    (
+      index: 0,
+      name: Empty,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Left, [ Empty, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, ] ),
+      ]
+    ),
+  ]
+)
