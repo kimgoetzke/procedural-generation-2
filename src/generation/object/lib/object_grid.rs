@@ -9,6 +9,10 @@ use bevy::log::*;
 use bevy::reflect::Reflect;
 use bevy::utils::HashMap;
 
+/// An `ObjectGrid` is a 2D grid of `Cell`s, each of which representing the possible states of objects that may be
+/// spawned for the corresponding tile. The `ObjectGrid` is used to keep track of the state of each tile during the
+/// object generation process and is discarded once the object generation process is complete as the outcome is
+/// spawned as a child entity of the tile.
 #[derive(Debug, Clone, Reflect)]
 pub struct ObjectGrid {
   #[reflect(ignore)]

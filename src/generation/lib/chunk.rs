@@ -3,6 +3,7 @@ use crate::coords::{Coords, Point};
 use crate::generation::lib::{DraftChunk, LayeredPlane};
 use crate::resources::Settings;
 
+/// A `Chunk` represents a single chunk of the world.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
   pub coords: Coords,

@@ -2,6 +2,9 @@ use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::generation::lib::{DraftTile, Plane, TerrainType};
 use crate::resources::Settings;
 
+/// A `LayeredPlane` contains all relevant information about the `Tile`s in a `Chunk`. It contains a `Vec<Plane>` with
+/// an `Plane` for each `TerrainType` and, for ease of use, it also contains the flat terrain data in a separate
+/// `Plane`.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LayeredPlane {
   pub planes: Vec<Plane>,

@@ -15,6 +15,7 @@ impl Plugin for WfcPlugin {
 
 // TODO: Consider simplifying the way snapshots are handled
 // TODO: Refactor function as it's long and unreadable
+/// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn determine_objects_in_grid(
   mut rng: &mut StdRng,
   object_generation_data: &mut (ObjectGrid, Vec<TileData>),
@@ -89,7 +90,7 @@ pub fn determine_objects_in_grid(
   );
 
   trace!(
-    "Completed wave function collapse (resolving {} errors and leaving {} unresolved) in {} ms on {}",
+    "Completed wave function collapse (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
     total_error_count,
     snapshot_error_count,
     get_time() - start_time,
@@ -99,7 +100,7 @@ pub fn determine_objects_in_grid(
   object_data
 }
 
-pub fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
+fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
   if lowest_entropy_cells.is_empty() {

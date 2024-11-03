@@ -7,6 +7,9 @@ use crate::resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
+/// A rather short-lived struct that is used to generate a `Chunk`. It only contains a single, flat plane of
+/// `DraftTile`s. When creating a `DraftChunk`, the terrain data is generated procedurally, the result of which is
+/// stored in the `data` field.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftChunk {
   pub coords: Coords,
@@ -29,6 +32,7 @@ impl DraftChunk {
   }
 }
 
+// TODO: Allow for slowly changing terrain (e.g. the further south, the less water there is)
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `world_grid` to be a `Point` of type
 /// `WorldGrid` that describes the top-left corner of the grid.
 fn generate_terrain_data(world_grid: &Point<WorldGrid>, settings: &Settings) -> Vec<Vec<Option<DraftTile>>> {
