@@ -77,7 +77,7 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
         if let Some(tile) = cell {
           let tile_entity = parent
             .spawn((
-              Name::new("Tile tg".to_string() + &tile.coords.tile_grid.to_string()),
+              Name::new("Tile ".to_string() + &tile.coords.tile_grid.to_string()),
               SpatialBundle {
                 transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
                 ..Default::default()

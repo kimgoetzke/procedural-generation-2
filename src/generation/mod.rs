@@ -16,8 +16,8 @@ use bevy::core::Name;
 use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, NextState, OnEnter,
-  Query, Res, ResMut, SpatialBundle, Update, With,
+  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, OnExit, Query, Res,
+  ResMut, SpatialBundle, Update, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool};
 use rand::prelude::StdRng;
@@ -43,7 +43,7 @@ impl Plugin for GenerationPlugin {
         ObjectGenerationPlugin,
         DebugPlugin,
       ))
-      .add_systems(OnEnter(AppState::Initialising), generation_system)
+      .add_systems(OnExit(AppState::Initialising), generation_system)
       .add_systems(
         Update,
         (
@@ -58,15 +58,8 @@ impl Plugin for GenerationPlugin {
 }
 
 /// Generates the world and all its objects. Called once after resources have been loaded.
-fn generation_system(
-  commands: Commands,
-  resources: Res<GenerationResourcesCollection>,
-  settings: Res<Settings>,
-  mut next_state: ResMut<NextState<AppState>>,
-) {
+fn generation_system(commands: Commands, resources: Res<GenerationResourcesCollection>, settings: Res<Settings>) {
   generate(commands, resources, settings);
-  next_state.set(AppState::Running);
-  debug!("Transitioning to [{:?}] state", AppState::Running);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is

@@ -1,26 +1,23 @@
 use crate::constants::*;
-use crate::coords::point::World;
-use crate::coords::Point;
-use crate::generation::lib::{ChunkComponent, TerrainType, TileType};
+use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName};
 use crate::states::AppState;
-use bevy::app::{App, Plugin, Startup};
+use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
-use bevy::log::*;
+use bevy::log::{debug, info_once};
 use bevy::math::UVec2;
 use bevy::prelude::{
-  in_state, Commands, Image, IntoSystemConfigs, NextState, OnAdd, OnExit, OnRemove, Query, Res, ResMut, Resource,
-  TextureAtlasLayout, Trigger, TypePath, Update,
+  in_state, Commands, Image, IntoSystemConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout,
+  TypePath,
 };
-use bevy::reflect::Reflect;
 use bevy::utils::{HashMap, HashSet};
 use bevy_common_assets::ron::RonAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-pub struct GenerationResourcesPlugin;
+pub struct GenerationResourcesCollectionPlugin;
 
-impl Plugin for GenerationResourcesPlugin {
+impl Plugin for GenerationResourcesCollectionPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_plugins((
@@ -28,9 +25,6 @@ impl Plugin for GenerationResourcesPlugin {
         RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
       ))
       .init_resource::<GenerationResourcesCollection>()
-      .init_resource::<ChunkComponentIndex>()
-      .observe(on_add_chunk_component_trigger)
-      .observe(on_remove_chunk_component_trigger)
       .add_systems(Startup, load_rule_sets_system)
       .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
       .add_systems(OnExit(AppState::Loading), initialise_resources_system);
@@ -382,43 +376,4 @@ fn tile_type_rule_set(
   }
 
   HashMap::new()
-}
-
-// --- Indices for sharing states of spawned components --------------------------------------
-
-/// Contains a clone of the `ChunkComponent` of each chunk entity that currently exists in the world. This index is
-/// kept up-to-date by observing the `OnAdd<ChunkComponent>` and `OnRemove<ChunkComponent>` triggers.
-#[derive(Resource, Default)]
-pub struct ChunkComponentIndex {
-  map: HashMap<Point<World>, ChunkComponent>,
-}
-
-impl ChunkComponentIndex {
-  pub fn get(&self, world: Point<World>) -> Option<&ChunkComponent> {
-    if let Some(entity) = self.map.get(&world) {
-      Some(entity)
-    } else {
-      None
-    }
-  }
-}
-
-fn on_add_chunk_component_trigger(
-  trigger: Trigger<OnAdd, ChunkComponent>,
-  query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkComponentIndex>,
-) {
-  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
-  index.map.insert(cc.coords.world, cc.clone());
-  trace!("ChunkComponentIndex <- Added ChunkComponent key {:?}", cc.coords.world);
-}
-
-fn on_remove_chunk_component_trigger(
-  trigger: Trigger<OnRemove, ChunkComponent>,
-  query: Query<&ChunkComponent>,
-  mut index: ResMut<ChunkComponentIndex>,
-) {
-  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
-  index.map.remove(&cc.coords.world);
-  trace!("ChunkComponentIndex -> Removed ChunkComponent with key {:?}", cc.coords.world);
 }

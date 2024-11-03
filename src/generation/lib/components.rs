@@ -1,10 +1,17 @@
-use crate::coords::point::World;
+use crate::coords::point::{ChunkGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::{Chunk, LayeredPlane, Tile, TileData};
 use crate::generation::object::lib::{ObjectData, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
 use std::fmt::{Display, Formatter};
+
+/// A component that exists separate to the world and contains metadata about the world. This data influences the world
+/// generation process in various ways but does not represent any physical entity in the world.
+#[derive(Component, Debug, Clone, PartialEq)]
+pub struct MetadataComponent {
+  pub cg: Point<ChunkGrid>,
+}
 
 /// A simple tag component for the world entity. Used to identify the world entity in the ECS for
 /// easy removal (used when regenerating the world).
