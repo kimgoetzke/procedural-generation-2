@@ -1,5 +1,5 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
-use crate::coords::point::{ChunkGrid, CoordType};
+use crate::coords::point::{CoordType, InternalGrid};
 use crate::coords::Point;
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
 
@@ -21,7 +21,7 @@ impl Plane {
     Self { data: plane_data, layer }
   }
 
-  pub fn get_tile(&self, point: Point<ChunkGrid>) -> Option<&Tile> {
+  pub fn get_tile(&self, point: Point<InternalGrid>) -> Option<&Tile> {
     let i = point.x as usize;
     let j = point.y as usize;
     if i < self.data.len() && j < self.data[0].len() {
@@ -31,26 +31,26 @@ impl Plane {
     }
   }
 
-  pub fn clear_tile(&mut self, point: Point<ChunkGrid>) {
+  pub fn clear_tile(&mut self, point: Point<InternalGrid>) {
     self.data[point.x as usize][point.y as usize] = None;
   }
 
-  pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles<ChunkGrid> {
-    let x = of.coords.chunk_grid.x;
-    let y = of.coords.chunk_grid.y;
+  pub fn get_neighbours(&self, of: &Tile) -> NeighbourTiles<InternalGrid> {
+    let x = of.coords.internal_grid.x;
+    let y = of.coords.internal_grid.y;
     let mut neighbours = NeighbourTiles::empty();
 
     for p in neighbour_points().iter() {
-      let point = Point::new_chunk_grid(x + p.0, y + p.1);
+      let point = Point::new_internal_grid(x + p.0, y + p.1);
       if let Some(neighbour) = self.get_tile(point) {
         let neighbour_tile = NeighbourTile::new(
-          Point::new_chunk_grid(p.0, p.1),
+          Point::new_internal_grid(p.0, p.1),
           neighbour.terrain,
           neighbour.terrain == of.terrain || neighbour.layer > of.layer,
         );
         neighbours.put(neighbour_tile);
       } else {
-        let neighbour_tile = NeighbourTile::default(Point::new_chunk_grid(p.0, p.1));
+        let neighbour_tile = NeighbourTile::default(Point::new_internal_grid(p.0, p.1));
         neighbours.put(neighbour_tile);
       }
     }
@@ -68,13 +68,15 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
       if let Some(draft_tile) = draft_tiles[x][y].as_ref() {
         if draft_tile.terrain == TerrainType::Water {
           let final_tile = Tile::from(draft_tile.clone(), TileType::Fill);
-          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
+          final_tiles[draft_tile.coords.internal_grid.x as usize][draft_tile.coords.internal_grid.y as usize] =
+            Some(final_tile);
         } else {
           let neighbour_tiles = get_neighbours(draft_tile, &draft_tiles);
           let same_neighbours_count = neighbour_tiles.count_same();
           let tile_type = determine_tile_type(neighbour_tiles, same_neighbours_count);
           let final_tile = Tile::from(draft_tile.clone(), tile_type);
-          final_tiles[draft_tile.coords.chunk_grid.x as usize][draft_tile.coords.chunk_grid.y as usize] = Some(final_tile);
+          final_tiles[draft_tile.coords.internal_grid.x as usize][draft_tile.coords.internal_grid.y as usize] =
+            Some(final_tile);
         }
       }
     }
@@ -159,21 +161,21 @@ fn determine_tile_type<T: CoordType>(n: NeighbourTiles<T>, same_neighbours: usiz
   }
 }
 
-fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles<ChunkGrid> {
-  let x = of.coords.chunk_grid.x;
-  let y = of.coords.chunk_grid.y;
+fn get_neighbours(of: &DraftTile, from: &Vec<Vec<Option<DraftTile>>>) -> NeighbourTiles<InternalGrid> {
+  let x = of.coords.internal_grid.x;
+  let y = of.coords.internal_grid.y;
   let mut neighbours = NeighbourTiles::empty();
 
   for p in neighbour_points().iter() {
     if let Some(neighbour) = get_draft_tile(x + p.0, y + p.1 * -1, from) {
       let neighbour_tile = NeighbourTile::new(
-        Point::new_chunk_grid(p.0, p.1),
+        Point::new_internal_grid(p.0, p.1),
         neighbour.terrain,
         neighbour.terrain == of.terrain || neighbour.layer > of.layer,
       );
       neighbours.put(neighbour_tile);
     } else {
-      let neighbour_tile = NeighbourTile::default(Point::new_chunk_grid(p.0, p.1));
+      let neighbour_tile = NeighbourTile::default(Point::new_internal_grid(p.0, p.1));
       neighbours.put(neighbour_tile);
     }
   }
@@ -196,7 +198,8 @@ fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<
 /// Resizes the grid by cutting off `BUFFER_SIZE` from each side of the grid. This is because the input data for
 /// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges
 /// (which requires knowledge about the tiles neighbours).
-/// For this to work, the `Point<ChunkGrid>` in `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
+/// ###### Important:
+/// For this to work, the `Point<TileGrid>` in `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
 fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
   let cut_off = BUFFER_SIZE as usize;
   let mut cut_off_tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];

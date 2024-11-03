@@ -1,4 +1,4 @@
-use crate::coords::point::ChunkGrid;
+use crate::coords::point::InternalGrid;
 use crate::coords::Point;
 use bevy::reflect::Reflect;
 
@@ -22,7 +22,7 @@ impl Connection {
 }
 
 // TODO: Find out why left/right appear to be inverted - is there a bug elsewhere?
-pub fn get_connection_points(point: &Point<ChunkGrid>) -> [(Connection, Point<ChunkGrid>); 4] {
+pub fn get_connection_points(point: &Point<InternalGrid>) -> [(Connection, Point<InternalGrid>); 4] {
   let p = point;
   [
     (Connection::Top, Point::new(p.x, p.y + 1)),

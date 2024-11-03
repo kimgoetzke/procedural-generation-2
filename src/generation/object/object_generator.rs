@@ -155,7 +155,7 @@ fn sprite(
         TILE_SIZE as f32 / 2. + offset_x,
         TILE_SIZE as f32 * -1. + offset_y,
         // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
-        200. + tile.coords.chunk_grid.y as f32,
+        200. + tile.coords.internal_grid.y as f32,
       ),
       ..Default::default()
     },

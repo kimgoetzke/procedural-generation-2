@@ -1,4 +1,4 @@
-use crate::constants::{CHUNK_SIZE, ORIGIN_WORLD_GRID_SPAWN_POINT, TILE_SIZE};
+use crate::constants::{CHUNK_SIZE, ORIGIN_TILE_GRID_SPAWN_POINT, TILE_SIZE};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, PruneWorldEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
@@ -30,7 +30,7 @@ fn event_control_system(
 ) {
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
     info!("[F5]/[R] Triggered regeneration of the world");
-    if current_chunk.get_world_grid() == ORIGIN_WORLD_GRID_SPAWN_POINT {
+    if current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT {
       regenerate_event.send(RegenerateWorldEvent {});
     } else {
       prune_event.send(PruneWorldEvent {
@@ -110,15 +110,10 @@ fn left_mouse_click_system(
       .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
       .map(|ray| ray.origin.truncate())
     {
-      let world_grid = Point::new_world_grid_from_world_vec2(vec2);
-      let world = Point::new_world_from_world_grid(world_grid);
-      debug!(
-        "[Left Mouse Button] Clicked on {} => w{:?} wg{:?}",
-        vec2.round(),
-        world,
-        world_grid
-      );
-      commands.trigger(MouseClickEvent { world, world_grid });
+      let tg = Point::new_tile_grid_from_world_vec2(vec2);
+      let w = Point::new_world_from_tile_grid(tg);
+      debug!("[Left Mouse Button] Clicked on {} => w{:?} tg{:?}", vec2.round(), w, tg);
+      commands.trigger(MouseClickEvent { w, tg });
     }
   }
 }
@@ -145,8 +140,8 @@ fn camera_movement_system(
   if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
     event.send(UpdateWorldEvent {
       is_forced_update: false,
-      world_grid: Point::new_world_grid_from_world(current_world),
-      world: current_world,
+      tg: Point::new_tile_grid_from_world(current_world),
+      w: current_world,
     });
   };
 }

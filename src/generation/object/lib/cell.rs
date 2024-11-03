@@ -1,4 +1,4 @@
-use crate::coords::point::ChunkGrid;
+use crate::coords::point::InternalGrid;
 use crate::coords::Point;
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName};
@@ -16,7 +16,7 @@ pub struct PropagationFailure {}
 /// indirectly linked to an underlying `Tile` through its `TerrainType` and  `TileType` fields.
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {
-  pub cg: Point<ChunkGrid>,
+  pub ig: Point<InternalGrid>,
   pub is_collapsed: bool,
   is_initialised: bool,
   is_being_monitored: bool,
@@ -30,7 +30,7 @@ pub struct Cell {
 impl Cell {
   pub fn new(x: i32, y: i32) -> Self {
     Cell {
-      cg: Point::new_chunk_grid(x, y),
+      ig: Point::new_internal_grid(x, y),
       is_collapsed: false,
       is_initialised: false,
       is_being_monitored: false,
@@ -47,14 +47,14 @@ impl Cell {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
     // Uncomment the below to monitor specific cells
-    // let points = vec![Point::new_chunk_grid(9, 6)];
-    // if points.contains(&self.cg) {
+    // let points = vec![Point::new_internal_grid(9, 6)];
+    // if points.contains(&self.ig) {
     //   self.is_being_monitored = true;
     // }
     if self.is_being_monitored {
       debug!(
-        "Initialising cg{:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
-        self.cg,
+        "Initialising ig{:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
+        self.ig,
         terrain_type,
         states.len(),
         states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
@@ -136,8 +136,8 @@ impl Cell {
 
     if self.is_being_monitored {
       debug!(
-        "Collapsed cg{:?} to [{:?}] with previous entropy {} and {} states: {:?}",
-        self.cg,
+        "Collapsed ig{:?} to [{:?}] with previous entropy {} and {} states: {:?}",
+        self.ig,
         state.name,
         self.entropy,
         self.possible_states.len(),
@@ -172,8 +172,8 @@ impl Cell {
   }
 
   pub fn is_border_cell(&self, grid_size: usize) -> bool {
-    let x = self.cg.x;
-    let y = self.cg.y;
+    let x = self.ig.x;
+    let y = self.ig.y;
     let grid_size = grid_size as i32;
     x == 0 || y == 0 || x == grid_size - 1 || y == grid_size - 1
   }
@@ -216,8 +216,8 @@ fn log_result(
     && new_possible_states_count < 3
   {
     debug!(
-      "Reduced possible states of cg{:?} from {} to {}: {:?}",
-      new_cell.cg,
+      "Reduced possible states of ig{:?} from {} to {}: {:?}",
+      new_cell.ig,
       old_possible_states_count,
       new_cell.possible_states.len(),
       new_possible_states_names
@@ -226,25 +226,25 @@ fn log_result(
 
   if new_cell.possible_states.is_empty() {
     error!(
-      "Failed to find any possible states for cg{:?} ({:?}, at [{:?}] of latter) during {} with cg{:?} ({:?})",
-      new_cell.cg,
+      "Failed to find any possible states for ig{:?} ({:?}, at [{:?}] of latter) during {} with ig{:?} ({:?})",
+      new_cell.ig,
       old_cell.terrain,
       where_is_reference,
       if is_update { "update" } else { "verification" },
-      reference_cell.cg,
+      reference_cell.ig,
       reference_cell.terrain,
     );
   }
 
   if new_possible_states_count <= 1 {
     debug!(
-      "┌─|| Summary of the [{}] process for cg{:?}",
+      "┌─|| Summary of the [{}] process for ig{:?}",
       if is_update { "update" } else { "verification" },
-      old_cell.cg
+      old_cell.ig
     );
     debug!(
-      "| - THIS cell is at cg{:?} which is at the [{:?}] of the reference cell",
-      old_cell.cg, where_is_reference
+      "| - THIS cell is at ig{:?} which is at the [{:?}] of the reference cell",
+      old_cell.ig, where_is_reference
     );
     debug!(
       "| - THIS cell had {:?} possible state(s): {:?}",
@@ -252,8 +252,8 @@ fn log_result(
       old_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
     debug!(
-      "| - The REFERENCE cell is at cg{:?} which is at the [{:?}] of this cell)",
-      reference_cell.cg, where_is_self_for_reference
+      "| - The REFERENCE cell is at ig{:?} which is at the [{:?}] of this cell)",
+      reference_cell.ig, where_is_self_for_reference
     );
     debug!(
       "| - The REFERENCE cell has the following {} possible state(s): {:?}",
@@ -301,8 +301,8 @@ fn log_collapse_result(
 ) {
   if cell.is_being_monitored {
     debug!(
-      "┌─|| There are {} possible states for [{:?}] terrain cell of type [{:?}] at cg{:?}",
-      possible_states_count, cell.terrain, cell.tile_type, cell.cg
+      "┌─|| There are {} possible states for [{:?}] terrain cell of type [{:?}] at ig{:?}",
+      possible_states_count, cell.terrain, cell.tile_type, cell.ig
     );
     debug!("├─ The randomly selected target is {} out of {}", target, total_weight);
     debug!(
@@ -313,8 +313,8 @@ fn log_collapse_result(
       debug!("{}", log);
     }
     debug!(
-      "└─> Selected state for cg{:?} is [{:?}] with a weight of {}",
-      cell.cg, selected_state.name, selected_state.weight
+      "└─> Selected state for ig{:?} is [{:?}] with a weight of {}",
+      cell.ig, selected_state.name, selected_state.weight
     );
   }
 }

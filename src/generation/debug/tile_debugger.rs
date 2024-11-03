@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::point::{World, WorldGrid};
+use crate::coords::point::{TileGrid, World};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::lib::{ObjectComponent, Tile, TileComponent};
@@ -36,11 +36,11 @@ struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
 struct TileComponentIndex {
-  map: HashMap<Point<WorldGrid>, HashSet<TileComponent>>,
+  map: HashMap<Point<TileGrid>, HashSet<TileComponent>>,
 }
 
 impl TileComponentIndex {
-  pub fn get_entities(&self, point: Point<WorldGrid>) -> Vec<&TileComponent> {
+  pub fn get_entities(&self, point: Point<TileGrid>) -> Vec<&TileComponent> {
     let mut tile_components = Vec::new();
     if let Some(t) = self.map.get(&point) {
       tile_components.extend(t.iter());
@@ -51,11 +51,11 @@ impl TileComponentIndex {
 
 #[derive(Resource, Default)]
 struct ObjectComponentIndex {
-  map: HashMap<Point<WorldGrid>, ObjectComponent>,
+  map: HashMap<Point<TileGrid>, ObjectComponent>,
 }
 
 impl ObjectComponentIndex {
-  pub fn get(&self, point: Point<WorldGrid>) -> Option<&ObjectComponent> {
+  pub fn get(&self, point: Point<TileGrid>) -> Option<&ObjectComponent> {
     if let Some(t) = self.map.get(&point) {
       Some(t)
     } else {
@@ -70,7 +70,7 @@ fn on_add_object_component_trigger(
   mut index: ResMut<ObjectComponentIndex>,
 ) {
   let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
-  index.map.insert(oc.coords.world_grid, oc.clone());
+  index.map.insert(oc.coords.tile_grid, oc.clone());
 }
 
 fn on_remove_object_component_trigger(
@@ -79,7 +79,7 @@ fn on_remove_object_component_trigger(
   mut index: ResMut<ObjectComponentIndex>,
 ) {
   let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
-  index.map.remove(&oc.coords.world_grid);
+  index.map.remove(&oc.coords.tile_grid);
 }
 
 fn on_add_tile_component_trigger(
@@ -88,7 +88,7 @@ fn on_add_tile_component_trigger(
   mut index: ResMut<TileComponentIndex>,
 ) {
   let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
-  index.map.entry(tc.tile.coords.world_grid).or_default().insert(tc.clone());
+  index.map.entry(tc.tile.coords.tile_grid).or_default().insert(tc.clone());
 }
 
 fn on_remove_tile_component_trigger(
@@ -97,7 +97,7 @@ fn on_remove_tile_component_trigger(
   mut index: ResMut<TileComponentIndex>,
 ) {
   let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
-  index.map.entry(tc.tile.coords.world_grid).and_modify(|set| {
+  index.map.entry(tc.tile.coords.tile_grid).and_modify(|set| {
     set.remove(&tc.clone());
   });
 }
@@ -115,19 +115,15 @@ fn on_left_mouse_click_trigger(
     return;
   }
   let event = trigger.event();
-  if let Some(tc) = tile_index
-    .get_entities(event.world_grid)
-    .iter()
-    .max_by_key(|tc| tc.tile.layer)
-  {
-    debug!("You are debugging w{:?} wg{:?}", event.world, event.world_grid);
-    let object_component = object_index.get(event.world_grid);
-    commands.spawn(tile_info(&resources, &tc.tile, event.world, &settings, &object_component));
-    let parent_w = tc.tile.get_parent_chunk_world();
+  if let Some(tc) = tile_index.get_entities(event.tg).iter().max_by_key(|tc| tc.tile.layer) {
+    debug!("You are debugging w{:?} tg{:?}", event.w, event.tg);
+    let object_component = object_index.get(event.tg);
+    commands.spawn(tile_info(&resources, &tc.tile, event.w, &settings, &object_component));
+    let parent_w = tc.tile.get_parent_chunk_w();
     if let Some(parent_chunk) = chunk_index.get(parent_w) {
       debug!("Parent is chunk w{:?}; any tiles are listed below", parent_w);
       for plane in &parent_chunk.layered_plane.planes {
-        if let Some(tile) = plane.get_tile(tc.tile.coords.chunk_grid) {
+        if let Some(tile) = plane.get_tile(tc.tile.coords.internal_grid) {
           let neighbours = plane.get_neighbours(tile);
           neighbours.log(tile, neighbours.count_same());
         }
@@ -138,10 +134,10 @@ fn on_left_mouse_click_trigger(
         parent_w, tc.tile.coords
       );
     }
-    if let Some(oc) = object_index.get(event.world_grid) {
+    if let Some(oc) = object_index.get(event.tg) {
       debug!("{:?}", oc);
     } else {
-      debug!("No object(s) found at w{:?} wg{:?}", event.world, event.world_grid);
+      debug!("No object(s) found at w{:?} tg{:?}", event.w, event.tg);
     }
   }
 }
@@ -165,13 +161,13 @@ fn tile_info(
   };
   let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
   (
-    Name::new(format!("Tile wg{:?} Debug Info", tile.coords.world_grid)),
+    Name::new(format!("Tile tg{:?} Debug Info", tile.coords.tile_grid)),
     Text2dBundle {
       text_anchor: Anchor::Center,
       text: Text::from_section(
         format!(
-          "wg{:?} cg{:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
-          tile.coords.world_grid, tile.coords.chunk_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer, object
+          "tg{:?} ig{:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
+          tile.coords.tile_grid, tile.coords.internal_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer, object
         ),
         TextStyle {
           font_size: 30.,

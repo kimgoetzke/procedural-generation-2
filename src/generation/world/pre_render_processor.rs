@@ -38,16 +38,16 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
       .filter_map(|tile| {
         if let Some(tile) = tile {
           if tile.tile_type == TileType::Single {
-            if let Some(tile_below) = plane_below.get_tile(tile.coords.chunk_grid) {
+            if let Some(tile_below) = plane_below.get_tile(tile.coords.internal_grid) {
               if tile_below.tile_type != TileType::Fill {
-                return Some(tile.coords.chunk_grid);
+                return Some(tile.coords.internal_grid);
               }
             } else {
               warn!(
-                "{:?} tile wg{:?} cg{:?} removed because the layer below it was missing",
-                tile.terrain, tile.coords.world_grid, tile.coords.chunk_grid
+                "{:?} tile tg{:?} ig{:?} removed because the layer below it was missing",
+                tile.terrain, tile.coords.tile_grid, tile.coords.internal_grid
               );
-              return Some(tile.coords.chunk_grid);
+              return Some(tile.coords.internal_grid);
             }
           }
         }

@@ -118,14 +118,14 @@ fn update_world_event(
 ) {
   for event in events.read() {
     // Ignore the event if the current chunk contains the world grid of the event
-    if current_chunk.contains(event.world_grid) && !event.is_forced_update {
-      debug!("wg{} is inside current chunk, ignoring event...", event.world_grid);
+    if current_chunk.contains(event.tg) && !event.is_forced_update {
+      debug!("tg{} is inside current chunk, ignoring event...", event.tg);
       return;
     }
 
     // Calculate the new current chunk and the chunks to spawn, then spawn UpdateWorldComponent to kick off processing
     let settings = settings.clone();
-    let new_parent_w = calculate_new_current_chunk_wg(&mut current_chunk, &event);
+    let new_parent_w = calculate_new_current_chunk_w(&mut current_chunk, &event);
     let spawn_points = calculate_chunk_spawn_points(&existing_chunks, &settings, &new_parent_w);
     let task_pool = AsyncComputeTaskPool::get();
     let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, &settings) });
@@ -137,24 +137,24 @@ fn update_world_event(
   }
 }
 
-fn calculate_new_current_chunk_wg(current_chunk: &mut CurrentChunk, event: &UpdateWorldEvent) -> Point<World> {
-  let current_chunk_world = current_chunk.get_world();
-  let direction = Direction::from_chunk(&current_chunk_world, &event.world);
-  let direction_point = Point::<World>::from_direction(&direction);
-  let new_parent_chunk_world = Point::new_world(
-    current_chunk_world.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.x),
-    current_chunk_world.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point.y),
+fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &UpdateWorldEvent) -> Point<World> {
+  let current_chunk_w = current_chunk.get_world();
+  let direction = Direction::from_chunk(&current_chunk_w, &event.w);
+  let direction_point_w = Point::<World>::from_direction(&direction);
+  let new_parent_chunk_w = Point::new_world(
+    current_chunk_w.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.x),
+    current_chunk_w.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.y),
   );
   trace!(
-    "Update world event at w{} wg{} will change the current chunk to be at [{:?}] of w{} i.e. w{}",
-    event.world,
-    event.world_grid,
+    "Update world event at w{} tg{} will change the current chunk to be at [{:?}] of w{} i.e. w{}",
+    event.w,
+    event.tg,
     direction,
-    current_chunk_world,
-    new_parent_chunk_world
+    current_chunk_w,
+    new_parent_chunk_w
   );
 
-  new_parent_chunk_world
+  new_parent_chunk_w
 }
 
 fn calculate_chunk_spawn_points(
@@ -314,8 +314,8 @@ pub fn prune_world_event(
     if event.update_world_after {
       *delayed_update_world_event = Some(UpdateWorldEvent {
         is_forced_update: true,
-        world_grid: current_chunk.get_world_grid(),
-        world: current_chunk.get_world(),
+        tg: current_chunk.get_tile_grid(),
+        w: current_chunk.get_world(),
       });
     }
   }

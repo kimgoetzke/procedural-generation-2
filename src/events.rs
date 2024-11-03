@@ -1,4 +1,4 @@
-use crate::coords::point::{World, WorldGrid};
+use crate::coords::point::{TileGrid, World};
 use crate::coords::Point;
 use bevy::prelude::{App, Event, Plugin};
 
@@ -28,8 +28,8 @@ pub struct UpdateWorldEvent {
   /// `PruneWorldEvent` after the update which would happen by default. Used when updating the world via the UI when
   /// the `CurrentChunk` has not changed.
   pub is_forced_update: bool,
-  pub world: Point<World>,
-  pub world_grid: Point<WorldGrid>,
+  pub w: Point<World>,
+  pub tg: Point<TileGrid>,
 }
 
 #[derive(Event)]
@@ -46,6 +46,6 @@ pub struct ToggleDebugInfo {}
 
 #[derive(Event)]
 pub struct MouseClickEvent {
-  pub world: Point<World>,
-  pub world_grid: Point<WorldGrid>,
+  pub w: Point<World>,
+  pub tg: Point<TileGrid>,
 }

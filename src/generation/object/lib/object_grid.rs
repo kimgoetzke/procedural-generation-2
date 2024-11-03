@@ -1,5 +1,5 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::point::ChunkGrid;
+use crate::coords::point::InternalGrid;
 use crate::coords::Point;
 use crate::generation::lib::{TerrainType, TileData, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
@@ -35,10 +35,10 @@ impl ObjectGrid {
     let mut grid = ObjectGrid::new_uninitialised();
     let grid_size = grid.grid.len();
     for data in tile_data.iter() {
-      let cg = data.flat_tile.coords.chunk_grid;
+      let ig = data.flat_tile.coords.internal_grid;
       let terrain = data.flat_tile.terrain;
       let tile_type = data.flat_tile.tile_type;
-      if let Some(cell) = grid.get_cell_mut(&cg) {
+      if let Some(cell) = grid.get_cell_mut(&ig) {
         let relevant_rules = resolve_rules(tile_type, terrain_rules, tile_type_rules, terrain);
         if cell.is_border_cell(grid_size) {
           cell.initialise(terrain, tile_type, &vec![relevant_rules[0].clone()]);
@@ -46,14 +46,14 @@ impl ObjectGrid {
           cell.initialise(terrain, tile_type, &relevant_rules);
         }
         trace!(
-          "Initialised cg{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
-          cg,
+          "Initialised ig{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
+          ig,
           data.flat_tile.terrain,
           data.flat_tile.tile_type,
           cell.possible_states.len()
         );
       } else {
-        error!("Failed to find cell to initialise at cg{:?}", cg);
+        error!("Failed to find cell to initialise at ig{:?}", ig);
       }
     }
 
@@ -61,33 +61,33 @@ impl ObjectGrid {
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
-    let point = cell.cg;
+    let point = cell.ig;
     let points: Vec<_> = get_connection_points(&point).into_iter().collect();
     let mut neighbours = vec![];
     for (direction, point) in points {
-      if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.cg == point).next() {
+      if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.ig == point).next() {
         neighbours.push((direction, cell));
       }
     }
-    trace!("Found {} neighbours for cg{:?}", neighbours.len(), point);
+    trace!("Found {} neighbours for ig{:?}", neighbours.len(), point);
 
     neighbours
   }
 
-  pub fn get_cell(&self, point: &Point<ChunkGrid>) -> Option<&Cell> {
-    self.grid.iter().flatten().find(|cell| cell.cg == *point)
+  pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {
+    self.grid.iter().flatten().find(|cell| cell.ig == *point)
   }
 
-  pub fn get_cell_mut(&mut self, point: &Point<ChunkGrid>) -> Option<&mut Cell> {
-    self.grid.iter_mut().flatten().find(|cell| cell.cg == *point)
+  pub fn get_cell_mut(&mut self, point: &Point<InternalGrid>) -> Option<&mut Cell> {
+    self.grid.iter_mut().flatten().find(|cell| cell.ig == *point)
   }
 
   /// Replaces the `Cell` at the given point with the provided `Cell`.
   pub fn set_cell(&mut self, cell: Cell) {
-    if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.cg == cell.cg) {
+    if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
       *existing_cell = cell;
     } else {
-      error!("Failed to find cell to update at cg{:?}", cell.cg);
+      error!("Failed to find cell to update at ig{:?}", cell.ig);
     }
   }
 

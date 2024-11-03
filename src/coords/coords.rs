@@ -5,30 +5,30 @@ use std::fmt;
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Coords {
   pub world: Point<World>,
-  pub world_grid: Point<WorldGrid>,
-  pub chunk_grid: Point<ChunkGrid>,
+  pub tile_grid: Point<TileGrid>,
+  pub internal_grid: Point<InternalGrid>,
 }
 
 impl Coords {
-  pub fn new(cg: Point<ChunkGrid>, wg: Point<WorldGrid>) -> Self {
+  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>) -> Self {
     Self {
-      world: Point::new_world_from_world_grid(wg.clone()),
-      world_grid: wg,
-      chunk_grid: cg,
+      world: Point::new_world_from_tile_grid(tg.clone()),
+      tile_grid: tg,
+      internal_grid: ig,
     }
   }
 
-  pub fn new_for_chunk(wg: Point<WorldGrid>) -> Self {
+  pub fn new_for_chunk(tg: Point<TileGrid>) -> Self {
     Self {
-      world: Point::new_world(wg.x * TILE_SIZE as i32, wg.y * TILE_SIZE as i32),
-      world_grid: wg,
-      chunk_grid: Point::new_chunk_grid(0, 0),
+      world: Point::new_world(tg.x * TILE_SIZE as i32, tg.y * TILE_SIZE as i32),
+      tile_grid: tg,
+      internal_grid: Point::new_internal_grid(0, 0),
     }
   }
 }
 
 impl fmt::Debug for Coords {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "[w{}, wg{}, cg{}]", self.world, self.world_grid, self.chunk_grid)
+    write!(f, "[w{}, tg{}, ig{}]", self.world, self.tile_grid, self.internal_grid)
   }
 }

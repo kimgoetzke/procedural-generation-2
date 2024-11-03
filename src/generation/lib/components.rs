@@ -54,7 +54,7 @@ pub enum UpdateWorldStatus {
 pub struct UpdateWorldComponent {
   pub created_at: u128,
   pub status: UpdateWorldStatus,
-  pub wg: Point<World>,
+  pub w: Point<World>,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
   pub stage_3_spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -64,11 +64,11 @@ pub struct UpdateWorldComponent {
 }
 
 impl UpdateWorldComponent {
-  pub fn new(wg: Point<World>, task: Task<Vec<Chunk>>, prune_world_after: bool, created_at: u128) -> Self {
+  pub fn new(w: Point<World>, task: Task<Vec<Chunk>>, prune_world_after: bool, created_at: u128) -> Self {
     Self {
       created_at,
       status: UpdateWorldStatus::GenerateChunks,
-      wg,
+      w,
       stage_1_gen_task: Some(task),
       stage_2_chunks: vec![],
       stage_3_spawn_data: vec![],
@@ -83,8 +83,8 @@ impl Display for UpdateWorldComponent {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
-      "Update world status is [{:?}] with [wg{}, prune_world_after={}]",
-      self.status, self.wg, self.prune_world_after
+      "Update world status is [{:?}] with [w{}, prune_world_after={}]",
+      self.status, self.w, self.prune_world_after
     )
   }
 }

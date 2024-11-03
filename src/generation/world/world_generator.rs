@@ -41,8 +41,8 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, settings: &Settings) -> 
   let start_time = get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
   for chunk_w in spawn_points {
-    let chunk_wg = Point::new_world_grid_from_world(chunk_w.clone());
-    let draft_chunk = DraftChunk::new(chunk_wg, &settings);
+    let chunk_tg = Point::new_tile_grid_from_world(chunk_w.clone());
+    let draft_chunk = DraftChunk::new(chunk_tg, &settings);
     let mut chunk = Chunk::new(draft_chunk, &settings);
     chunk = pre_render_processor::process_single(chunk, &settings);
     chunks.push(chunk);
@@ -59,12 +59,12 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, settings: &Settings) -> 
 
 pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
   let mut tile_data = Vec::new();
-  let chunk_end_wg = chunk.coords.world_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
+  let chunk_end_tg = chunk.coords.tile_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
     .spawn((
       Name::new(format!(
-        "Chunk w{} wg{} to wg{}",
-        chunk.coords.world, chunk.coords.world_grid, chunk_end_wg
+        "Chunk w{} tg{} to tg{}",
+        chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
       )),
       SpatialBundle::default(),
       ChunkComponent {
@@ -77,7 +77,7 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
         if let Some(tile) = cell {
           let tile_entity = parent
             .spawn((
-              Name::new("Tile wg".to_string() + &tile.coords.world_grid.to_string()),
+              Name::new("Tile tg".to_string() + &tile.coords.tile_grid.to_string()),
               SpatialBundle {
                 transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
                 ..Default::default()
@@ -111,7 +111,7 @@ pub fn schedule_tile_spawning_tasks(
           continue;
         }
         if let Some(plane) = chunk.layered_plane.get(layer) {
-          if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.chunk_grid) {
+          if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.internal_grid) {
             if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
               tile_entity.with_children(|parent| {
                 attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());

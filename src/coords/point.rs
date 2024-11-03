@@ -8,20 +8,28 @@ use std::ops::Add;
 #[reflect_trait]
 pub trait CoordType {}
 
+/// Represents the world coordinates of the application. Like every `Point`, it stores the `x` and `y` values as `i32`.
+/// Each `x`-`y` value pair represents a pixel in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct World;
 
 impl CoordType for World {}
 
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `TileGrid`
+/// represents a tile of `TILE_SIZE` in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
-pub struct WorldGrid;
+pub struct TileGrid;
 
-impl CoordType for WorldGrid {}
+impl CoordType for TileGrid {}
 
+/// Represents coordinates internal to any type of grid structure that uses them. `Point<InternalGrid>` differ from
+/// other `Point`s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
+/// values increase towards the bottom right corner, whereas all other `Point`s are based on the world coordinates i.e.
+/// not linked to structure that uses them.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
-pub struct ChunkGrid;
+pub struct InternalGrid;
 
-impl CoordType for ChunkGrid {}
+impl CoordType for InternalGrid {}
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct Point<T: CoordType> {
@@ -116,32 +124,34 @@ impl Point<World> {
     Self::new(w.x.round() as i32, w.y.round() as i32)
   }
 
-  pub fn new_world_from_world_grid(wg: Point<WorldGrid>) -> Self {
-    Self::new(wg.x * TILE_SIZE as i32, wg.y * TILE_SIZE as i32)
+  pub fn new_world_from_tile_grid(tg: Point<TileGrid>) -> Self {
+    Self::new(tg.x * TILE_SIZE as i32, tg.y * TILE_SIZE as i32)
   }
 }
 
-impl Point<ChunkGrid> {
-  pub fn new_chunk_grid(x: i32, y: i32) -> Self {
+impl Point<InternalGrid> {
+  /// Creates new `Point` of type `InternalGrid` whereby the top left corner of the grid is (0, 0) and x and y values
+  /// increase towards the bottom right corner.
+  pub fn new_internal_grid(x: i32, y: i32) -> Self {
     Self::new(x, y)
   }
 }
 
-impl Point<WorldGrid> {
-  pub fn new_world_grid(x: i32, y: i32) -> Self {
+impl Point<TileGrid> {
+  pub fn new_tile_grid(x: i32, y: i32) -> Self {
     Self::new(x, y)
   }
 
   /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
   /// to convert world coordinates to grid coordinates.
-  pub fn new_world_grid_from_world_vec2(w: Vec2) -> Self {
+  pub fn new_tile_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       ((w.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
       ((w.y + (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
     )
   }
 
-  pub fn new_world_grid_from_world(w: Point<World>) -> Self {
+  pub fn new_tile_grid_from_world(w: Point<World>) -> Self {
     Self::new(
       (w.x as f32 / TILE_SIZE as f32).round() as i32,
       (w.y as f32 / TILE_SIZE as f32).round() as i32,

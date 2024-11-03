@@ -1,4 +1,4 @@
-use crate::coords::point::{ChunkGrid, WorldGrid};
+use crate::coords::point::{InternalGrid, TileGrid};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::terrain_type::TerrainType;
 
@@ -14,9 +14,9 @@ pub struct DraftTile {
 }
 
 impl DraftTile {
-  pub fn new(chunk_grid: Point<ChunkGrid>, world_grid: Point<WorldGrid>, terrain: TerrainType) -> Self {
+  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType) -> Self {
     Self {
-      coords: Coords::new(chunk_grid, world_grid),
+      coords: Coords::new(ig, tg),
       terrain,
       layer: terrain as i32,
     }

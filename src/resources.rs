@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::point::{World, WorldGrid};
+use crate::coords::point::{TileGrid, World};
 use crate::coords::Point;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -136,61 +136,58 @@ impl Default for ObjectGenerationSettings {
 
 #[derive(Resource, Debug, Clone)]
 pub struct CurrentChunk {
-  center_world: Point<World>,
-  world: Point<World>,
-  world_grid: Point<WorldGrid>,
+  center_w: Point<World>,
+  w: Point<World>,
+  tg: Point<TileGrid>,
 }
 
 #[allow(dead_code)]
 impl CurrentChunk {
   pub fn get_world(&self) -> Point<World> {
-    self.world
+    self.w
   }
 
   pub fn get_center_world(&self) -> Point<World> {
-    self.center_world
+    self.center_w
   }
 
-  pub fn get_world_grid(&self) -> Point<WorldGrid> {
-    self.world_grid
+  pub fn get_tile_grid(&self) -> Point<TileGrid> {
+    self.tg
   }
 
   pub fn is_world_in_chunk(&self, world: Point<World>) -> bool {
-    world.x >= self.world.x
-      && world.x < (self.world.x + (CHUNK_SIZE * TILE_SIZE as i32))
-      && world.y >= self.world.y
-      && world.y < (self.world.y + (CHUNK_SIZE * TILE_SIZE as i32))
+    world.x >= self.w.x
+      && world.x < (self.w.x + (CHUNK_SIZE * TILE_SIZE as i32))
+      && world.y >= self.w.y
+      && world.y < (self.w.y + (CHUNK_SIZE * TILE_SIZE as i32))
   }
 
-  pub fn contains(&self, world_grid: Point<WorldGrid>) -> bool {
-    world_grid.x >= self.world_grid.x
-      && world_grid.x < (self.world_grid.x + CHUNK_SIZE)
-      && world_grid.y >= self.world_grid.y
-      && world_grid.y < (self.world_grid.y - CHUNK_SIZE)
+  pub fn contains(&self, tg: Point<TileGrid>) -> bool {
+    tg.x >= self.tg.x && tg.x < (self.tg.x + CHUNK_SIZE) && tg.y >= self.tg.y && tg.y < (self.tg.y - CHUNK_SIZE)
   }
 
-  pub fn update(&mut self, world: Point<World>) {
-    let old_value = self.world;
-    self.world = world;
-    self.world_grid = Point::new_world_grid_from_world(world);
-    self.center_world = Point::new_world(
-      world.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-      world.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+  pub fn update(&mut self, w: Point<World>) {
+    let old_value = self.w;
+    self.w = w;
+    self.tg = Point::new_tile_grid_from_world(w);
+    self.center_w = Point::new_world(
+      w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+      w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
     );
-    debug!("CurrentChunk updated from w{} to w{}", old_value, self.world);
+    debug!("CurrentChunk updated from w{} to w{}", old_value, self.w);
   }
 }
 
 impl Default for CurrentChunk {
   fn default() -> Self {
-    let world = Point::new_world_from_world_grid(ORIGIN_WORLD_GRID_SPAWN_POINT);
+    let w = Point::new_world_from_tile_grid(ORIGIN_TILE_GRID_SPAWN_POINT);
     Self {
-      center_world: Point::new_world(
-        world.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-        world.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+      center_w: Point::new_world(
+        w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+        w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       ),
-      world,
-      world_grid: ORIGIN_WORLD_GRID_SPAWN_POINT,
+      w,
+      tg: ORIGIN_TILE_GRID_SPAWN_POINT,
     }
   }
 }

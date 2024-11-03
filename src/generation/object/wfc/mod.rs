@@ -82,7 +82,7 @@ pub fn determine_objects_in_grid(
       .iter()
       .filter_map(|tile_data| {
         grid
-          .get_cell(&tile_data.flat_tile.coords.chunk_grid)
+          .get_cell(&tile_data.flat_tile.coords.internal_grid)
           .filter(|cell| cell.index != 0)
           .map(|cell| ObjectData::new(tile_data, cell))
       })

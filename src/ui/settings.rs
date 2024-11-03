@@ -1,4 +1,4 @@
-use crate::constants::ORIGIN_WORLD_GRID_SPAWN_POINT;
+use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings, WorldGenerationSettings,
@@ -129,7 +129,7 @@ fn send_regenerate_or_prune_event(
   prune_event: &mut EventWriter<PruneWorldEvent>,
   current_chunk: &Res<CurrentChunk>,
 ) {
-  if current_chunk.get_world_grid() == ORIGIN_WORLD_GRID_SPAWN_POINT {
+  if current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT {
     regenerate_event.send(RegenerateWorldEvent {});
   } else {
     prune_event.send(PruneWorldEvent {
