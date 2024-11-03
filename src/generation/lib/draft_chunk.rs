@@ -111,7 +111,7 @@ fn log(tg: &Point<TileGrid>, noise_stats: &mut (f64, f64, f64, f64), time: u128,
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
   trace!(
-    "Generated draft chunk at tg{:?} in {} ms on [{}]",
+    "Generated draft chunk at {:?} in {} ms on [{}]",
     tg,
     get_time() - time,
     async_utils::get_thread_info()

@@ -410,7 +410,7 @@ fn on_add_chunk_component_trigger(
 ) {
   let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
   index.map.insert(cc.coords.world, cc.clone());
-  trace!("ChunkComponentIndex <- Added ChunkComponent key w{:?}", cc.coords.world);
+  trace!("ChunkComponentIndex <- Added ChunkComponent key {:?}", cc.coords.world);
 }
 
 fn on_remove_chunk_component_trigger(
@@ -421,7 +421,7 @@ fn on_remove_chunk_component_trigger(
   let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
   index.map.remove(&cc.coords.world);
   trace!(
-    "ChunkComponentIndex -> Removed ChunkComponent with key w{:?}",
+    "ChunkComponentIndex -> Removed ChunkComponent with key {:?}",
     cc.coords.world
   );
 }

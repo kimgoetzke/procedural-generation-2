@@ -1,4 +1,4 @@
-use crate::constants::TILE_SIZE;
+use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::generation::lib::Direction;
 use bevy::prelude::Vec2;
 use bevy::reflect::{reflect_trait, Reflect};
@@ -6,21 +6,44 @@ use std::fmt;
 use std::ops::Add;
 
 #[reflect_trait]
-pub trait CoordType {}
+pub trait CoordType {
+  fn type_name() -> &'static str
+  where
+    Self: Sized;
+}
 
 /// Represents the world coordinates of the application. Like every `Point`, it stores the `x` and `y` values as `i32`.
 /// Each `x`-`y` value pair represents a pixel in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct World;
 
-impl CoordType for World {}
+impl CoordType for World {
+  fn type_name() -> &'static str {
+    "w"
+  }
+}
 
 /// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `TileGrid`
 /// represents a tile of `TILE_SIZE` in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct TileGrid;
 
-impl CoordType for TileGrid {}
+impl CoordType for TileGrid {
+  fn type_name() -> &'static str {
+    "tg"
+  }
+}
+
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `ChunkGrid`
+/// represents a chunk of `TILE_SIZE` * `CHUNK_SIZE` in the world.
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
+pub struct ChunkGrid;
+
+impl CoordType for ChunkGrid {
+  fn type_name() -> &'static str {
+    "cg"
+  }
+}
 
 /// Represents coordinates internal to any type of grid structure that uses them. `Point<InternalGrid>` differ from
 /// other `Point`s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
@@ -29,7 +52,11 @@ impl CoordType for TileGrid {}
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct InternalGrid;
 
-impl CoordType for InternalGrid {}
+impl CoordType for InternalGrid {
+  fn type_name() -> &'static str {
+    "ig"
+  }
+}
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct Point<T: CoordType> {
@@ -41,13 +68,13 @@ pub struct Point<T: CoordType> {
 
 impl<T: CoordType> fmt::Debug for Point<T> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "({}, {})", self.x, self.y)
+    write!(f, "{}({}, {})", T::type_name(), self.x, self.y)
   }
 }
 
 impl<T: CoordType> fmt::Display for Point<T> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "({}, {})", self.x, self.y)
+    write!(f, "{}({}, {})", T::type_name(), self.x, self.y)
   }
 }
 
@@ -143,7 +170,7 @@ impl Point<TileGrid> {
   }
 
   /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
-  /// to convert world coordinates to grid coordinates.
+  /// to convert world coordinates to tile grid coordinates.
   pub fn new_tile_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       ((w.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
@@ -155,6 +182,28 @@ impl Point<TileGrid> {
     Self::new(
       (w.x as f32 / TILE_SIZE as f32).round() as i32,
       (w.y as f32 / TILE_SIZE as f32).round() as i32,
+    )
+  }
+}
+
+impl Point<ChunkGrid> {
+  pub fn new_chunk_grid(x: i32, y: i32) -> Self {
+    Self::new(x, y)
+  }
+
+  /// Returns a `Point` on the chunk grid with the `x` and `y` values rounded to the nearest chunk to achieve this. Used
+  /// to convert world coordinates to chunk grid coordinates.
+  pub fn new_chunk_grid_from_world_vec2(w: Vec2) -> Self {
+    Self::new(
+      ((w.x - ((TILE_SIZE as f32 * CHUNK_SIZE as f32) / 2.)) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      ((w.y + ((TILE_SIZE as f32 * CHUNK_SIZE as f32) / 2.)) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+    )
+  }
+
+  pub fn new_chunk_grid_from_world(w: Point<World>) -> Self {
+    Self::new(
+      (w.x as f32 / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      (w.y as f32 / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
     )
   }
 }

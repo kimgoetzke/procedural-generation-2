@@ -18,11 +18,11 @@ impl ObjectData {
     let possible_states_count = cell.possible_states.len();
     if sprite_index == -1 || possible_states_count > 1 || !cell.is_collapsed {
       error!(
-        "Attempted to create object data from cell ig{:?} which is not fully collapsed",
+        "Attempted to create object data from cell {:?} which is not fully collapsed",
         cell.ig,
       );
       info!(
-        "Cell ig{:?} still has {} possible states: {:?}",
+        "Cell {:?} still has {} possible states: {:?}",
         cell.ig, possible_states_count, cell
       );
     }

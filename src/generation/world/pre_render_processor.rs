@@ -44,7 +44,7 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
               }
             } else {
               warn!(
-                "{:?} tile tg{:?} ig{:?} removed because the layer below it was missing",
+                "{:?} tile {:?} {:?} removed because the layer below it was missing",
                 tile.terrain, tile.coords.tile_grid, tile.coords.internal_grid
               );
               return Some(tile.coords.internal_grid);

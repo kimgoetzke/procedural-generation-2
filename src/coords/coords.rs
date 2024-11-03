@@ -29,6 +29,6 @@ impl Coords {
 
 impl fmt::Debug for Coords {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "[w{}, tg{}, ig{}]", self.world, self.tile_grid, self.internal_grid)
+    write!(f, "[{}, {}, {}]", self.world, self.tile_grid, self.internal_grid)
   }
 }

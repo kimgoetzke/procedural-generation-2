@@ -100,7 +100,7 @@ fn generate(mut commands: Commands, _resources: Res<GenerationResourcesCollectio
   let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, &settings) });
   commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
   commands.spawn((
-    Name::new(format!("Update World Component w{}", w)),
+    Name::new(format!("Update World Component {}", w)),
     UpdateWorldComponent::new(w, task, false, get_time()),
   ));
   info!("Scheduled world generation which took {} ms", get_time() - start_time);
@@ -119,7 +119,7 @@ fn update_world_event(
   for event in events.read() {
     // Ignore the event if the current chunk contains the world grid of the event
     if current_chunk.contains(event.tg) && !event.is_forced_update {
-      debug!("tg{} is inside current chunk, ignoring event...", event.tg);
+      debug!("{} is inside current chunk, ignoring event...", event.tg);
       return;
     }
 
@@ -130,7 +130,7 @@ fn update_world_event(
     let task_pool = AsyncComputeTaskPool::get();
     let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, &settings) });
     commands.spawn((
-      Name::new(format!("Update World Component w{}", new_parent_w)),
+      Name::new(format!("Update World Component {}", new_parent_w)),
       UpdateWorldComponent::new(new_parent_w, task, event.is_forced_update, get_time()),
     ));
     current_chunk.update(new_parent_w);
@@ -146,7 +146,7 @@ fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &Updat
     current_chunk_w.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.y),
   );
   trace!(
-    "Update world event at w{} tg{} will change the current chunk to be at [{:?}] of w{} i.e. w{}",
+    "Update world event at {} {} will change the current chunk to be at [{:?}] of {} i.e. {}",
     event.w,
     event.tg,
     direction,
@@ -167,17 +167,17 @@ fn calculate_chunk_spawn_points(
     .iter()
     .for_each(|(direction, chunk_w)| {
       if let Some(_) = existing_chunks.get(*chunk_w) {
-        trace!("✅  [{:?}] chunk at w{:?} already exists", direction, chunk_w);
+        trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
       } else {
         if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
           trace!(
-            "❎  [{:?}] chunk at w{:?} skipped because generating neighbours is disabled",
+            "❎  [{:?}] chunk at {:?} skipped because generating neighbours is disabled",
             direction,
             chunk_w
           );
           return;
         }
-        trace!("🚫 [{:?}] chunk at w{:?} needs to be generated", direction, chunk_w);
+        trace!("🚫 [{:?}] chunk at {:?} needs to be generated", direction, chunk_w);
         spawn_points.push(chunk_w.clone());
       }
     });
@@ -353,7 +353,7 @@ fn calculate_chunks_to_despawn(
   for (entity, chunk_component) in existing_chunks.iter() {
     if despawn_all_chunks {
       trace!(
-        "Despawning chunk at w{:?} because all chunks have to be despawned",
+        "Despawning chunk at {:?} because all chunks have to be despawned",
         chunk_component.coords.world
       );
       chunks_to_despawn.push(entity);
@@ -362,7 +362,7 @@ fn calculate_chunks_to_despawn(
     let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
     if distance > DESPAWN_DISTANCE {
       trace!(
-        "Despawning chunk at w{:?} because it's {}px away from current chunk at w{:?}",
+        "Despawning chunk at {:?} because it's {}px away from current chunk at {:?}",
         chunk_component.coords.world,
         distance as i32,
         current_chunk.get_world()

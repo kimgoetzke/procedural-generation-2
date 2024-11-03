@@ -46,14 +46,14 @@ impl ObjectGrid {
           cell.initialise(terrain, tile_type, &relevant_rules);
         }
         trace!(
-          "Initialised ig{:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
+          "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           ig,
           data.flat_tile.terrain,
           data.flat_tile.tile_type,
           cell.possible_states.len()
         );
       } else {
-        error!("Failed to find cell to initialise at ig{:?}", ig);
+        error!("Failed to find cell to initialise at {:?}", ig);
       }
     }
 
@@ -69,7 +69,7 @@ impl ObjectGrid {
         neighbours.push((direction, cell));
       }
     }
-    trace!("Found {} neighbours for ig{:?}", neighbours.len(), point);
+    trace!("Found {} neighbours for {:?}", neighbours.len(), point);
 
     neighbours
   }
@@ -87,7 +87,7 @@ impl ObjectGrid {
     if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
       *existing_cell = cell;
     } else {
-      error!("Failed to find cell to update at ig{:?}", cell.ig);
+      error!("Failed to find cell to update at {:?}", cell.ig);
     }
   }
 

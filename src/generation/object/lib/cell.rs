@@ -53,7 +53,7 @@ impl Cell {
     // }
     if self.is_being_monitored {
       debug!(
-        "Initialising ig{:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
+        "Initialising {:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
         self.ig,
         terrain_type,
         states.len(),
@@ -136,7 +136,7 @@ impl Cell {
 
     if self.is_being_monitored {
       debug!(
-        "Collapsed ig{:?} to [{:?}] with previous entropy {} and {} states: {:?}",
+        "Collapsed {:?} to [{:?}] with previous entropy {} and {} states: {:?}",
         self.ig,
         state.name,
         self.entropy,
@@ -216,7 +216,7 @@ fn log_result(
     && new_possible_states_count < 3
   {
     debug!(
-      "Reduced possible states of ig{:?} from {} to {}: {:?}",
+      "Reduced possible states of {:?} from {} to {}: {:?}",
       new_cell.ig,
       old_possible_states_count,
       new_cell.possible_states.len(),
@@ -226,7 +226,7 @@ fn log_result(
 
   if new_cell.possible_states.is_empty() {
     error!(
-      "Failed to find any possible states for ig{:?} ({:?}, at [{:?}] of latter) during {} with ig{:?} ({:?})",
+      "Failed to find any possible states for {:?} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
       new_cell.ig,
       old_cell.terrain,
       where_is_reference,
@@ -238,12 +238,12 @@ fn log_result(
 
   if new_possible_states_count <= 1 {
     debug!(
-      "┌─|| Summary of the [{}] process for ig{:?}",
+      "┌─|| Summary of the [{}] process for {:?}",
       if is_update { "update" } else { "verification" },
       old_cell.ig
     );
     debug!(
-      "| - THIS cell is at ig{:?} which is at the [{:?}] of the reference cell",
+      "| - THIS cell is at {:?} which is at the [{:?}] of the reference cell",
       old_cell.ig, where_is_reference
     );
     debug!(
@@ -252,7 +252,7 @@ fn log_result(
       old_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
     );
     debug!(
-      "| - The REFERENCE cell is at ig{:?} which is at the [{:?}] of this cell)",
+      "| - The REFERENCE cell is at {:?} which is at the [{:?}] of this cell)",
       reference_cell.ig, where_is_self_for_reference
     );
     debug!(
@@ -301,7 +301,7 @@ fn log_collapse_result(
 ) {
   if cell.is_being_monitored {
     debug!(
-      "┌─|| There are {} possible states for [{:?}] terrain cell of type [{:?}] at ig{:?}",
+      "┌─|| There are {} possible states for [{:?}] terrain cell of type [{:?}] at {:?}",
       possible_states_count, cell.terrain, cell.tile_type, cell.ig
     );
     debug!("├─ The randomly selected target is {} out of {}", target, total_weight);
@@ -313,7 +313,7 @@ fn log_collapse_result(
       debug!("{}", log);
     }
     debug!(
-      "└─> Selected state for ig{:?} is [{:?}] with a weight of {}",
+      "└─> Selected state for {:?} is [{:?}] with a weight of {}",
       cell.ig, selected_state.name, selected_state.weight
     );
   }

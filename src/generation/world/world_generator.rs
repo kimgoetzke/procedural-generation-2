@@ -63,7 +63,7 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
   world_child_builder
     .spawn((
       Name::new(format!(
-        "Chunk w{} tg{} to tg{}",
+        "Chunk {} {} to {}",
         chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
       )),
       SpatialBundle::default(),

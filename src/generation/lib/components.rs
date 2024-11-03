@@ -83,7 +83,7 @@ impl Display for UpdateWorldComponent {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
-      "Update world status is [{:?}] with [w{}, prune_world_after={}]",
+      "Update world status is [{:?}] with [{}, prune_world_after={}]",
       self.status, self.w, self.prune_world_after
     )
   }

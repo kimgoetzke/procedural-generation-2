@@ -174,7 +174,7 @@ impl CurrentChunk {
       w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
     );
-    debug!("CurrentChunk updated from w{} to w{}", old_value, self.w);
+    debug!("CurrentChunk updated from {} to {}", old_value, self.w);
   }
 }
 

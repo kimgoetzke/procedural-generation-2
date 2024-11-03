@@ -112,7 +112,7 @@ fn left_mouse_click_system(
     {
       let tg = Point::new_tile_grid_from_world_vec2(vec2);
       let w = Point::new_world_from_tile_grid(tg);
-      debug!("[Left Mouse Button] Clicked on {} => w{:?} tg{:?}", vec2.round(), w, tg);
+      debug!("[Left Mouse Button] Clicked on {} => {:?} {:?}", vec2.round(), w, tg);
       commands.trigger(MouseClickEvent { w, tg });
     }
   }
@@ -130,7 +130,7 @@ fn camera_movement_system(
   let distance_y = (current_world.y - chunk_center_world.y).abs();
   let trigger_distance = ((CHUNK_SIZE * TILE_SIZE as i32) / 2) + 1;
   trace!(
-    "Camera moved to w{:?} with distance x={:?}, y={:?} (trigger distance {})",
+    "Camera moved to {:?} with distance x={:?}, y={:?} (trigger distance {})",
     current_world,
     distance_x,
     distance_y,

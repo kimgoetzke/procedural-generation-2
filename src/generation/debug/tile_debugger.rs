@@ -116,12 +116,15 @@ fn on_left_mouse_click_trigger(
   }
   let event = trigger.event();
   if let Some(tc) = tile_index.get_entities(event.tg).iter().max_by_key(|tc| tc.tile.layer) {
-    debug!("You are debugging w{:?} tg{:?}", event.w, event.tg);
+    debug!("You are debugging {:?} {:?}", event.w, event.tg);
     let object_component = object_index.get(event.tg);
     commands.spawn(tile_info(&resources, &tc.tile, event.w, &settings, &object_component));
     let parent_w = tc.tile.get_parent_chunk_w();
+    let cg1 = Point::new_chunk_grid_from_world(event.w);
+    let cg2 = Point::new_chunk_grid(event.w.x, event.w.y);
+    debug!("Chunk grid: {:?} {}", cg1, cg2);
     if let Some(parent_chunk) = chunk_index.get(parent_w) {
-      debug!("Parent is chunk w{:?}; any tiles are listed below", parent_w);
+      debug!("Parent is chunk {:?}; any tiles are listed below", parent_w);
       for plane in &parent_chunk.layered_plane.planes {
         if let Some(tile) = plane.get_tile(tc.tile.coords.internal_grid) {
           let neighbours = plane.get_neighbours(tile);
@@ -130,14 +133,14 @@ fn on_left_mouse_click_trigger(
       }
     } else {
       error!(
-        "Failed to find parent chunk at w{} for tile at {:?}",
+        "Failed to find parent chunk at {} for tile at {:?}",
         parent_w, tc.tile.coords
       );
     }
     if let Some(oc) = object_index.get(event.tg) {
       debug!("{:?}", oc);
     } else {
-      debug!("No object(s) found at w{:?} tg{:?}", event.w, event.tg);
+      debug!("No object(s) found at {:?} {:?}", event.w, event.tg);
     }
   }
 }
@@ -161,12 +164,12 @@ fn tile_info(
   };
   let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
   (
-    Name::new(format!("Tile tg{:?} Debug Info", tile.coords.tile_grid)),
+    Name::new(format!("Tile {:?} Debug Info", tile.coords.tile_grid)),
     Text2dBundle {
       text_anchor: Anchor::Center,
       text: Text::from_section(
         format!(
-          "tg{:?} ig{:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
+          "{:?} {:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
           tile.coords.tile_grid, tile.coords.internal_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer, object
         ),
         TextStyle {
