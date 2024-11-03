@@ -111,9 +111,9 @@ fn left_mouse_click_system(
       .map(|ray| ray.origin.truncate())
     {
       let tg = Point::new_tile_grid_from_world_vec2(vec2);
-      let w = Point::new_world_from_tile_grid(tg);
-      debug!("[Left Mouse Button] Clicked on {} => {:?} {:?}", vec2.round(), w, tg);
-      commands.trigger(MouseClickEvent { w, tg });
+      let tile_w = Point::new_world_from_tile_grid(tg);
+      debug!("[Left Mouse Button] Clicked on {} => {:?} {:?}", vec2.round(), tile_w, tg);
+      commands.trigger(MouseClickEvent { tile_w, tg });
     }
   }
 }

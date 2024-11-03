@@ -420,8 +420,5 @@ fn on_remove_chunk_component_trigger(
 ) {
   let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
   index.map.remove(&cc.coords.world);
-  trace!(
-    "ChunkComponentIndex -> Removed ChunkComponent with key {:?}",
-    cc.coords.world
-  );
+  trace!("ChunkComponentIndex -> Removed ChunkComponent with key {:?}", cc.coords.world);
 }

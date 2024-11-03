@@ -46,6 +46,6 @@ pub struct ToggleDebugInfo {}
 
 #[derive(Event)]
 pub struct MouseClickEvent {
-  pub w: Point<World>,
+  pub tile_w: Point<World>,
   pub tg: Point<TileGrid>,
 }

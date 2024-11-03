@@ -195,15 +195,15 @@ impl Point<ChunkGrid> {
   /// to convert world coordinates to chunk grid coordinates.
   pub fn new_chunk_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
-      ((w.x - ((TILE_SIZE as f32 * CHUNK_SIZE as f32) / 2.)) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
-      ((w.y + ((TILE_SIZE as f32 * CHUNK_SIZE as f32) / 2.)) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      (w.x / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      (w.y / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
     )
   }
 
   pub fn new_chunk_grid_from_world(w: Point<World>) -> Self {
     Self::new(
-      (w.x as f32 / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
-      (w.y as f32 / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      ((w.x as f32 + 1.) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
+      ((w.y as f32 - 1.) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
     )
   }
 }
