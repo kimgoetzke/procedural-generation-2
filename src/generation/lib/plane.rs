@@ -41,7 +41,7 @@ impl Plane {
     let mut neighbours = NeighbourTiles::empty();
 
     for p in neighbour_points().iter() {
-      let point = Point::new_internal_grid(x + p.0, y + p.1);
+      let point = Point::new_internal_grid(x + p.0, y - p.1);
       if let Some(neighbour) = self.get_tile(point) {
         let neighbour_tile = NeighbourTile::new(
           Point::new_internal_grid(p.0, p.1),
