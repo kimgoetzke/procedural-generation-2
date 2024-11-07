@@ -1,7 +1,8 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent};
 use crate::resources::{
-  CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings, WorldGenerationSettings,
+  CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
+  WorldGenerationSettings,
 };
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
@@ -56,7 +57,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     .clone();
 
   Window::new("Settings")
-    .default_size([325.0, 550.0])
+    .default_size([325.0, 600.0])
     .pivot(Align2::LEFT_BOTTOM)
     .anchor(Align2::LEFT_BOTTOM, [10.0, -10.0])
     .show(egui_context.get_mut(), |ui| {
@@ -64,6 +65,11 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
         ui.push_id("general_generation", |ui| {
           ui.label(RichText::new("General Generation").font(HEADING));
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<GeneralGenerationSettings>(world, ui);
+        });
+        ui.add_space(20.0);
+        ui.push_id("generation_metadata", |ui| {
+          ui.label(RichText::new("Generation Metadata").font(HEADING));
+          bevy_inspector_egui::bevy_inspector::ui_for_resource::<GenerationMetadataSettings>(world, ui);
         });
         ui.add_space(20.0);
         ui.push_id("world_generation", |ui| {
@@ -100,6 +106,7 @@ fn handle_ui_events_system(
   mut state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
+  metadata_settings: Res<GenerationMetadataSettings>,
   object: Res<ObjectGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
   current_chunk: Res<CurrentChunk>,
@@ -107,6 +114,7 @@ fn handle_ui_events_system(
   if state.has_changed {
     state.has_changed = false;
     settings.general = general.clone();
+    settings.metadata = metadata_settings.clone();
     settings.world = world_gen.clone();
     settings.object = object.clone();
 

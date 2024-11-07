@@ -43,7 +43,7 @@ impl ElevationMetadata {
   }
 
   fn calculate_y(&self, axis: f64, grid_size: f64) -> f64 {
-    self.y.start as f64 + (axis / grid_size) * self.y_step as f64 - self.y_step as f64 / 2.0
+    self.y.end as f64 - (axis / grid_size) * self.y_step as f64 + self.y_step as f64 / 2.0
   }
 }
 

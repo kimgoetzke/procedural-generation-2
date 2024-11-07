@@ -25,6 +25,9 @@ impl Plugin for SharedResourcesPlugin {
       .init_resource::<WorldGenerationSettings>()
       .register_type::<WorldGenerationSettings>()
       .insert_resource(WorldGenerationSettings::default())
+      .init_resource::<GenerationMetadataSettings>()
+      .register_type::<GenerationMetadataSettings>()
+      .insert_resource(GenerationMetadataSettings::default())
       .insert_resource(CurrentChunk::default());
   }
 }
@@ -32,7 +35,7 @@ impl Plugin for SharedResourcesPlugin {
 #[derive(Resource, Reflect, Clone, Copy)]
 pub struct Settings {
   pub general: GeneralGenerationSettings,
-  pub metadata: MetadataSettings,
+  pub metadata: GenerationMetadataSettings,
   pub world: WorldGenerationSettings,
   pub object: ObjectGenerationSettings,
 }
@@ -41,7 +44,7 @@ impl Default for Settings {
   fn default() -> Self {
     Self {
       general: GeneralGenerationSettings::default(),
-      metadata: MetadataSettings::default(),
+      metadata: GenerationMetadataSettings::default(),
       world: WorldGenerationSettings::default(),
       object: ObjectGenerationSettings::default(),
     }
@@ -78,18 +81,20 @@ impl Default for GeneralGenerationSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct MetadataSettings {
-  /// The amount of elevation increase per step in the x direction. The higher the value, faster the terrain goes from
-  /// the lowest terrain layer (water) to the highest terrain layer (forest).
-  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+pub struct GenerationMetadataSettings {
+  /// The increase in elevation for a given chunk's x-axis. The higher the value, faster the terrain goes from
+  /// the lowest terrain layer to the highest terrain layer from left to right. Negative values will reverse the
+  /// direction.
+  #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
   pub elevation_step_increase_x: f32,
-  /// The amount of elevation increase per step in the y direction. The higher the value, faster the terrain goes from
-  /// the lowest terrain layer (water) to the highest terrain layer (forest).
-  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  /// The increase in elevation for a given chunk's y-axis. The higher the value, faster the terrain goes from
+  /// the lowest terrain layer to the highest terrain layer from top to bottom. Negative values will reverse the
+  /// direction.
+  #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
   pub elevation_step_increase_y: f32,
 }
 
-impl Default for MetadataSettings {
+impl Default for GenerationMetadataSettings {
   fn default() -> Self {
     Self {
       elevation_step_increase_x: ELEVATION_STEP_INCREASE_X,
