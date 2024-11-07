@@ -32,7 +32,7 @@ pub const FALLOFF_STRENGTH: f64 = 0.;
 pub const GENERATE_OBJECTS: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Metadata
-pub const ELEVATION_GRID_BUFFER_SIZE: i32 = 3;
+pub const ELEVATION_GRID_APOTHEM: i32 = 3;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.

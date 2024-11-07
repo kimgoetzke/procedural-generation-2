@@ -1,4 +1,4 @@
-use crate::constants::{BUFFER_SIZE, CHUNK_SIZE_PLUS_BUFFER};
+use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
@@ -32,7 +32,6 @@ impl DraftChunk {
   }
 }
 
-// TODO: Allow for slowly changing terrain (e.g. the further south, the less water there is)
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a `Point` of type
 /// `TileGrid` that describes the top-left corner of the grid.
 fn generate_terrain_data(
@@ -41,8 +40,8 @@ fn generate_terrain_data(
   metadata: &Metadata,
   settings: &Settings,
 ) -> Vec<Vec<Option<DraftTile>>> {
-  let mut noise_stats: (f64, f64, f64, f64, f64, f64) = (5., -5., 5., -5., 0., 0.);
-  let time = get_time();
+  let start_time = get_time();
+  let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let elevation_metadata = metadata
     .elevation
     .get(cg)
@@ -64,8 +63,8 @@ fn generate_terrain_data(
 
   for ty in (end.y..=start.y).rev() {
     for tx in start.x..=end.x {
-      let tg = Point::new_tile_grid(tx, ty);
-      let ig = Point::new_internal_grid(ix, iy);
+      let tg = Point::new_tile_grid(tx, ty); // Final tile grid coordinates
+      let ig = Point::new_internal_grid(ix, iy); // Adjusted later when converting to tile
 
       // Calculate noise value
       let noise = perlin.get([tx as f64, ty as f64]);
@@ -73,7 +72,7 @@ fn generate_terrain_data(
       let normalised_noise = (clamped_noise + 1.) / 2.;
 
       // Adjust noise based on elevation metadata
-      let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE_PLUS_BUFFER);
+      let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
       let normalised_noise = (normalised_noise + base_elevation + elevation_offset).clamp(0., 1.);
 
       // Adjust noise based on distance from center using falloff map
@@ -83,6 +82,7 @@ fn generate_terrain_data(
       let falloff = (1. - distance_from_center).max(0.).powf(falloff_strength);
       let adjusted_noise = normalised_noise * falloff;
 
+      // Create debug data for troubleshooting
       let debug_data = DebugData {
         noise: normalised_noise,
         noise_elevation_offset: elevation_offset,
@@ -101,8 +101,6 @@ fn generate_terrain_data(
       noise_stats.1 = noise_stats.1.max(normalised_noise);
       noise_stats.2 = noise_stats.2.min(adjusted_noise);
       noise_stats.3 = noise_stats.3.max(adjusted_noise);
-      noise_stats.4 = noise_stats.4.min(elevation_offset);
-      noise_stats.5 = noise_stats.5.max(elevation_offset);
       trace!("{:?} => Noise: {}", &tile, adjusted_noise);
 
       tiles[ix as usize][iy as usize] = Some(tile);
@@ -111,17 +109,12 @@ fn generate_terrain_data(
     iy += 1;
     ix = 0;
   }
-  log(tg, &mut noise_stats, time, &mut tiles);
+  log(tg, &mut noise_stats, start_time, &mut tiles);
 
   tiles
 }
 
-fn log(
-  tg: &Point<TileGrid>,
-  noise_stats: &mut (f64, f64, f64, f64, f64, f64),
-  time: u128,
-  tiles: &mut Vec<Vec<Option<DraftTile>>>,
-) {
+fn log(tg: &Point<TileGrid>, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
   let mut str = "|".to_string();
   for y in 0..tiles.len() {
     for x in 0..tiles[y].len() {
@@ -137,10 +130,6 @@ fn log(
   }
   trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
   trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
-  debug!(
-    "Metadata elevation added ranges from {:.2} to {:.2} for {}",
-    noise_stats.4, noise_stats.5, tg
-  );
   trace!(
     "Generated draft chunk at {:?} in {} ms on [{}]",
     tg,

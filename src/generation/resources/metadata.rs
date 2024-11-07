@@ -33,8 +33,9 @@ pub struct ElevationMetadata {
 }
 
 impl ElevationMetadata {
-  pub fn calculate_for_point(&self, ig: Point<InternalGrid>, grid_size: i32) -> f64 {
-    self.calculate_x(ig.x as f64, grid_size as f64) + self.calculate_y(ig.y as f64, grid_size as f64)
+  pub fn calculate_for_point(&self, ig: Point<InternalGrid>, grid_size: i32, grid_buffer: i32) -> f64 {
+    self.calculate_x(ig.x as f64 + grid_buffer as f64, grid_size as f64)
+      + self.calculate_y(ig.y as f64 + grid_buffer as f64, grid_size as f64)
   }
 
   fn calculate_x(&self, axis: f64, grid_size: f64) -> f64 {

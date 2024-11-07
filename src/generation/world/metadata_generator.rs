@@ -1,4 +1,4 @@
-use crate::constants::ELEVATION_GRID_BUFFER_SIZE;
+use crate::constants::ELEVATION_GRID_APOTHEM;
 use crate::coords::Point;
 use crate::generation::resources::{ElevationMetadata, Metadata};
 use crate::generation::{async_utils, get_time};
@@ -20,8 +20,8 @@ impl Plugin for MetadataGeneratorPlugin {
 }
 
 fn generate_metadata(mut metadata: ResMut<Metadata>, settings: Res<Settings>, mut next_state: ResMut<NextState<AppState>>) {
-  (-ELEVATION_GRID_BUFFER_SIZE..=ELEVATION_GRID_BUFFER_SIZE).for_each(|x| {
-    (-ELEVATION_GRID_BUFFER_SIZE..=ELEVATION_GRID_BUFFER_SIZE).for_each(|y| {
+  (-ELEVATION_GRID_APOTHEM..=ELEVATION_GRID_APOTHEM).for_each(|x| {
+    (-ELEVATION_GRID_APOTHEM..=ELEVATION_GRID_APOTHEM).for_each(|y| {
       generate_elevation_metadata(&mut metadata, &settings, x, y);
     })
   });
@@ -32,8 +32,8 @@ fn generate_metadata(mut metadata: ResMut<Metadata>, settings: Res<Settings>, mu
 fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChunk>, settings: Res<Settings>) {
   let start_time = get_time();
   let cg = current_chunk.get_chunk_grid();
-  (cg.x - ELEVATION_GRID_BUFFER_SIZE..=cg.x + ELEVATION_GRID_BUFFER_SIZE).for_each(|x| {
-    (cg.y - ELEVATION_GRID_BUFFER_SIZE..=cg.y + ELEVATION_GRID_BUFFER_SIZE).for_each(|y| {
+  (cg.x - ELEVATION_GRID_APOTHEM..=cg.x + ELEVATION_GRID_APOTHEM).for_each(|x| {
+    (cg.y - ELEVATION_GRID_APOTHEM..=cg.y + ELEVATION_GRID_APOTHEM).for_each(|y| {
       if !metadata.elevation.contains_key(&Point::new_chunk_grid(x, y)) {
         generate_elevation_metadata(&mut metadata, &settings, x, y);
       }
@@ -56,7 +56,7 @@ fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, settings: &Res<S
     y_step: elevation_step_y,
   };
   metadata.elevation.insert(Point::new_chunk_grid(x, y), em.clone());
-  debug!("Generated metadata for ({}, {}): {:?}", x, y, em);
+  trace!("Generated metadata for ({}, {}): {:?}", x, y, em);
 }
 
 fn get_range(x_or_y: i32, elevation_step: f32) -> Range<f32> {
