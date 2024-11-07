@@ -1,9 +1,11 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
 use crate::coords::point::{InternalGrid, World};
 use crate::coords::{Coords, Point};
+use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::{DraftTile, TerrainType, TileType};
 use bevy::log::*;
 use bevy::reflect::Reflect;
+use std::fmt;
 
 /// A `Tile` represents a single tile of `TILE_SIZE` in the world. It contains information about its `Coords`,
 /// `TerrainType`, `TileType`, and layer. If created from a `DraftTile`, the `layer` of a `Tile` adds the y-coordinate
@@ -11,13 +13,14 @@ use bevy::reflect::Reflect;
 /// `InternalGrid` `Coords` to account for the buffer of a `DraftChunk` i.e. it shifts the `InternalGrid` `Coords` by the
 /// `BUFFER_SIZE` to towards the top-left, allowing for the outer tiles of a `DraftChunk` to be cut off in a way that
 /// the `Tile`s in the resulting `Chunk` have `InternalGrid` `Coords` ranging from 0 to `CHUNK_SIZE`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Reflect)]
 pub struct Tile {
   #[reflect(ignore)]
   pub coords: Coords,
   pub terrain: TerrainType,
   pub layer: i32,
   pub tile_type: TileType,
+  pub debug_data: DebugData,
 }
 
 impl Tile {
@@ -41,6 +44,7 @@ impl Tile {
       terrain: draft_tile.terrain,
       layer: draft_tile.layer + draft_tile.coords.internal_grid.y,
       tile_type,
+      debug_data: draft_tile.debug_data,
     }
   }
 
@@ -54,4 +58,14 @@ impl Tile {
 
 pub fn is_marked_for_deletion(ig: &Point<InternalGrid>) -> bool {
   ig.x < 0 || ig.y < 0 || ig.x > CHUNK_SIZE || ig.y > CHUNK_SIZE
+}
+
+impl fmt::Debug for Tile {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("Tile")
+      .field("coords", &self.coords)
+      .field("terrain", &self.terrain)
+      .field("tile_type", &self.tile_type)
+      .finish()
+  }
 }

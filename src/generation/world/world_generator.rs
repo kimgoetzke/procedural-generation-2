@@ -4,7 +4,7 @@ use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::async_utils::CommandQueueTask;
 use crate::generation::lib::{Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
-use crate::generation::resources::{AssetPack, GenerationResourcesCollection};
+use crate::generation::resources::{AssetPack, GenerationResourcesCollection, Metadata};
 use crate::generation::world::pre_render_processor;
 use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
@@ -37,12 +37,12 @@ impl CommandQueueTask for TileSpawnTask {
   }
 }
 
-pub fn generate_chunks(spawn_points: Vec<Point<World>>, settings: &Settings) -> Vec<Chunk> {
+pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
   let start_time = get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
   for chunk_w in spawn_points {
     let chunk_tg = Point::new_tile_grid_from_world(chunk_w.clone());
-    let draft_chunk = DraftChunk::new(chunk_tg, &settings);
+    let draft_chunk = DraftChunk::new(chunk_w.clone(), chunk_tg, &metadata, &settings);
     let mut chunk = Chunk::new(draft_chunk, &settings);
     chunk = pre_render_processor::process_single(chunk, &settings);
     chunks.push(chunk);
@@ -51,7 +51,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, settings: &Settings) -> 
   debug!(
     "Generated chunks in {} ms on [{}]",
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 
   chunks
@@ -125,7 +125,7 @@ pub fn schedule_tile_spawning_tasks(
   debug!(
     "Scheduled spawning all tiles in {} ms on [{}]",
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 }
 

@@ -116,18 +116,19 @@ fn on_left_mouse_click_trigger(
   }
   let event = trigger.event();
   if let Some(tc) = tile_index.get_entities(event.tg).iter().max_by_key(|tc| tc.tile.layer) {
-    debug!("You are debugging {:?} {:?}", event.tile_w, event.tg);
+    debug!("You are debugging {} {} {}", event.tile_w, event.cg, event.tg);
     let object_component = object_index.get(event.tg);
     commands.spawn(tile_info(&resources, &tc.tile, event.tile_w, &settings, &object_component));
     let parent_w = tc.tile.get_parent_chunk_w();
     if let Some(parent_chunk) = chunk_index.get(parent_w) {
-      debug!("Parent of {} is chunk {:?}", event.tg, parent_w);
+      debug!("Parent of {} is chunk {}/{}", event.tg, parent_w, event.cg);
       for plane in &parent_chunk.layered_plane.planes {
         if let Some(tile) = plane.get_tile(tc.tile.coords.internal_grid) {
           let neighbours = plane.get_neighbours(tile);
           neighbours.log(tile, neighbours.count_same());
         }
       }
+      debug!("{:?}", tc.tile.debug_data);
     } else {
       error!("Failed to find parent chunk at {} for tile at {:?}", parent_w, tc.tile.coords);
     }

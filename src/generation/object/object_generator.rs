@@ -64,7 +64,7 @@ pub fn generate_object_data(
     "Generated object data for {} objects in {} ms on {}",
     object_grid_len,
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 
   object_data
@@ -81,7 +81,7 @@ pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, 
     "Scheduled {} object spawn tasks in {} ms on {}",
     object_data_len,
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 }
 

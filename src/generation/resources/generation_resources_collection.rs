@@ -114,7 +114,7 @@ fn check_loading_state(
     }
   }
 
-  debug!("Transitioning to [{:?}] state", AppState::Initialising);
+  debug!("Transitioning [{}] to [{:?}] state", AppState::name(), AppState::Initialising);
   state.set(AppState::Initialising);
 }
 

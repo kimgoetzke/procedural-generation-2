@@ -193,28 +193,28 @@ impl<T: CoordType> NeighbourTiles<T> {
 
   pub fn log(&self, tile: &Tile, neighbour_count: usize) {
     debug!("{:?}", tile);
-    debug!("|-------|-------|-------|");
+    debug!("┌────────┬────────┬────────┐");
     debug!(
-      "| {:<5} | {:<5} | {:<5} |",
-      format!("{:?}", self.top_left.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", self.top.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", self.top_right.terrain).chars().take(5).collect::<String>()
+      "│ {:<6} │ {:<6} │ {:<6} │",
+      format!("{:?}", self.top_left.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", self.top.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", self.top_right.terrain).chars().take(6).collect::<String>()
     );
     debug!(
-      "| {:<5} | {:<5} | {:<5} | => '{:?}' with {} neighbours",
-      format!("{:?}", self.left.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", tile.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", self.right.terrain).chars().take(5).collect::<String>(),
+      "│ {:<6} │ {:<6} │ {:<6} │ => '{:?}' with {} neighbours",
+      format!("{:?}", self.left.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", tile.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", self.right.terrain).chars().take(6).collect::<String>(),
       tile.tile_type,
       neighbour_count
     );
     debug!(
-      "| {:<5} | {:<5} | {:<5} |",
-      format!("{:?}", self.bottom_left.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", self.bottom.terrain).chars().take(5).collect::<String>(),
-      format!("{:?}", self.bottom_right.terrain).chars().take(5).collect::<String>()
+      "│ {:<6} │ {:<6} │ {:<6} │",
+      format!("{:?}", self.bottom_left.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", self.bottom.terrain).chars().take(6).collect::<String>(),
+      format!("{:?}", self.bottom_right.terrain).chars().take(6).collect::<String>()
     );
-    debug!("|-------|-------|-------|");
+    debug!("└────────┴────────┴────────┘");
     debug!("");
   }
 }

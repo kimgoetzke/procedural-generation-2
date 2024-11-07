@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::point::{TileGrid, World};
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -32,6 +32,7 @@ impl Plugin for SharedResourcesPlugin {
 #[derive(Resource, Reflect, Clone, Copy)]
 pub struct Settings {
   pub general: GeneralGenerationSettings,
+  pub metadata: MetadataSettings,
   pub world: WorldGenerationSettings,
   pub object: ObjectGenerationSettings,
 }
@@ -40,6 +41,7 @@ impl Default for Settings {
   fn default() -> Self {
     Self {
       general: GeneralGenerationSettings::default(),
+      metadata: MetadataSettings::default(),
       world: WorldGenerationSettings::default(),
       object: ObjectGenerationSettings::default(),
     }
@@ -70,6 +72,28 @@ impl Default for GeneralGenerationSettings {
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
+    }
+  }
+}
+
+#[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
+#[reflect(Resource, InspectorOptions)]
+pub struct MetadataSettings {
+  /// The amount of elevation increase per step in the x direction. The higher the value, faster the terrain goes from
+  /// the lowest terrain layer (water) to the highest terrain layer (forest).
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub elevation_step_increase_x: f32,
+  /// The amount of elevation increase per step in the y direction. The higher the value, faster the terrain goes from
+  /// the lowest terrain layer (water) to the highest terrain layer (forest).
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub elevation_step_increase_y: f32,
+}
+
+impl Default for MetadataSettings {
+  fn default() -> Self {
+    Self {
+      elevation_step_increase_x: ELEVATION_STEP_INCREASE_X,
+      elevation_step_increase_y: ELEVATION_STEP_INCREASE_Y,
     }
   }
 }
@@ -138,10 +162,10 @@ impl Default for ObjectGenerationSettings {
 pub struct CurrentChunk {
   center_w: Point<World>,
   w: Point<World>,
+  cg: Point<ChunkGrid>,
   tg: Point<TileGrid>,
 }
 
-#[allow(dead_code)]
 impl CurrentChunk {
   pub fn get_world(&self) -> Point<World> {
     self.w
@@ -155,11 +179,8 @@ impl CurrentChunk {
     self.tg
   }
 
-  pub fn is_world_in_chunk(&self, world: Point<World>) -> bool {
-    world.x >= self.w.x
-      && world.x < (self.w.x + (CHUNK_SIZE * TILE_SIZE as i32))
-      && world.y >= self.w.y
-      && world.y < (self.w.y + (CHUNK_SIZE * TILE_SIZE as i32))
+  pub fn get_chunk_grid(&self) -> Point<ChunkGrid> {
+    self.cg
   }
 
   pub fn contains(&self, tg: Point<TileGrid>) -> bool {
@@ -167,26 +188,30 @@ impl CurrentChunk {
   }
 
   pub fn update(&mut self, w: Point<World>) {
-    let old_value = self.w;
+    let old_value = self.cg;
+    let cg = Point::new_chunk_grid_from_world(w);
     self.w = w;
+    self.cg = cg;
     self.tg = Point::new_tile_grid_from_world(w);
     self.center_w = Point::new_world(
       w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
     );
-    debug!("CurrentChunk updated from {} to {}", old_value, self.w);
+    debug!("CurrentChunk updated from {} to {}", old_value, cg);
   }
 }
 
 impl Default for CurrentChunk {
   fn default() -> Self {
     let w = Point::new_world_from_tile_grid(ORIGIN_TILE_GRID_SPAWN_POINT);
+    let cg = Point::new_chunk_grid_from_world(w);
     Self {
       center_w: Point::new_world(
         w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
         w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       ),
       w,
+      cg,
       tg: ORIGIN_TILE_GRID_SPAWN_POINT,
     }
   }

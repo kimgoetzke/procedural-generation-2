@@ -1,5 +1,6 @@
 use crate::coords::point::{InternalGrid, TileGrid};
 use crate::coords::{Coords, Point};
+use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::terrain_type::TerrainType;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
@@ -11,14 +12,16 @@ pub struct DraftTile {
   pub coords: Coords,
   pub terrain: TerrainType,
   pub layer: i32,
+  pub debug_data: DebugData,
 }
 
 impl DraftTile {
-  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType) -> Self {
+  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType, debug_data: DebugData) -> Self {
     Self {
       coords: Coords::new(ig, tg),
       terrain,
       layer: terrain as i32,
+      debug_data,
     }
   }
 
@@ -27,6 +30,7 @@ impl DraftTile {
       coords: self.coords.clone(),
       terrain,
       layer: terrain as i32,
+      debug_data: self.debug_data.clone(),
     }
   }
 }

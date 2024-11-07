@@ -6,7 +6,11 @@ pub struct AppStatePlugin;
 
 impl Plugin for AppStatePlugin {
   fn build(&self, app: &mut App) {
-    app.init_state::<AppState>().register_type::<AppState>();
+    app
+      .init_state::<AppState>()
+      .register_type::<AppState>()
+      .init_state::<GenerationState>()
+      .register_type::<GenerationState>();
   }
 }
 
@@ -17,4 +21,23 @@ pub enum AppState {
   Loading,
   Initialising,
   Running,
+}
+
+impl AppState {
+  pub fn name() -> &'static str {
+    "AppState"
+  }
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States, Reflect)]
+pub enum GenerationState {
+  #[default]
+  Done,
+  Generating,
+}
+
+impl GenerationState {
+  pub fn name() -> &'static str {
+    "GenerationState"
+  }
 }

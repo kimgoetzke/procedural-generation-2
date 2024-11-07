@@ -23,7 +23,7 @@ pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {
   trace!(
     "Pre-processed chunk in {} ms on [{}]",
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 
   chunk

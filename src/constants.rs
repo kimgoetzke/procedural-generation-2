@@ -15,6 +15,10 @@ pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
 // ------------------------------------------------------------------------------------------------------
+// Settings: Metadata
+pub const ELEVATION_STEP_INCREASE_X: f32 = 0.05;
+pub const ELEVATION_STEP_INCREASE_Y: f32 = 0.;
+// ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
 pub const NOISE_OCTAVES: usize = 4;
@@ -26,6 +30,9 @@ pub const FALLOFF_STRENGTH: f64 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
+// ------------------------------------------------------------------------------------------------------
+// Metadata
+pub const ELEVATION_GRID_BUFFER_SIZE: i32 = 3;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.

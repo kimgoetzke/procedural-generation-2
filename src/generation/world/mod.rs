@@ -1,3 +1,4 @@
+use crate::generation::world::metadata_generator::MetadataGeneratorPlugin;
 use crate::generation::world::pre_render_processor::PreRenderProcessorPlugin;
 use crate::generation::world::world_generator::WorldGeneratorPlugin;
 use bevy::app::{App, Plugin};
@@ -14,5 +15,4 @@ impl Plugin for WorldGenerationPlugin {
   }
 }
 
-pub use crate::generation::world::metadata_generator::*;
-pub use crate::generation::world::world_generator::*;
+pub use crate::generation::world::world_generator::{generate_chunks, schedule_tile_spawning_tasks, spawn_chunk};

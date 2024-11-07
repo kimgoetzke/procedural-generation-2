@@ -1,4 +1,4 @@
-use crate::coords::point::{TileGrid, World};
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
 use bevy::prelude::{App, Event, Plugin};
 
@@ -47,5 +47,6 @@ pub struct ToggleDebugInfo {}
 #[derive(Event)]
 pub struct MouseClickEvent {
   pub tile_w: Point<World>,
+  pub cg: Point<ChunkGrid>,
   pub tg: Point<TileGrid>,
 }

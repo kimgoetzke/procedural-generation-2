@@ -94,7 +94,7 @@ pub fn determine_objects_in_grid(
     total_error_count,
     snapshot_error_count,
     get_time() - start_time,
-    async_utils::get_thread_info()
+    async_utils::thread_name()
   );
 
   object_data
