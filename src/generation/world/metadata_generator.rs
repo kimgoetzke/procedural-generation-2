@@ -70,6 +70,7 @@ fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x_step: f32, y_s
   trace!("Generated metadata for {}: {:?}", cg, em);
 }
 
+/// Returns a range based on the given coordinate and step size. The range is rounded to 3 decimal places.
 fn get_range(coordinate: i32, elevation_step: f32) -> Range<f32> {
   Range {
     start: (((coordinate as f32 * elevation_step) - (elevation_step / 2.)) * 1000.0).round() / 1000.0,

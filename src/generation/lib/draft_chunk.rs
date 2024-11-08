@@ -41,7 +41,6 @@ fn generate_terrain_data(
   settings: &Settings,
 ) -> Vec<Vec<Option<DraftTile>>> {
   let start_time = get_time();
-  let mut noise_stats: (f64, f64, f64, f64) = (5., -5., 5., -5.);
   let elevation_metadata = metadata
     .elevation
     .get(cg)
@@ -97,43 +96,18 @@ fn generate_terrain_data(
         _ => DraftTile::new(ig, tg, TerrainType::Water, debug_data),
       };
 
-      noise_stats.0 = noise_stats.0.min(normalised_noise);
-      noise_stats.1 = noise_stats.1.max(normalised_noise);
-      noise_stats.2 = noise_stats.2.min(adjusted_noise);
-      noise_stats.3 = noise_stats.3.max(adjusted_noise);
-      trace!("{:?} => Noise: {}", &tile, adjusted_noise);
-
       tiles[ix as usize][iy as usize] = Some(tile);
       ix += 1;
     }
     iy += 1;
     ix = 0;
   }
-  log(tg, &mut noise_stats, start_time, &mut tiles);
-
-  tiles
-}
-
-fn log(tg: &Point<TileGrid>, noise_stats: &mut (f64, f64, f64, f64), time: u128, tiles: &mut Vec<Vec<Option<DraftTile>>>) {
-  let mut str = "|".to_string();
-  for y in 0..tiles.len() {
-    for x in 0..tiles[y].len() {
-      if let Some(tile) = &tiles[x][y] {
-        str.push_str(&format!(" {:?}", tile.terrain).chars().take(5).collect::<String>());
-        str.push_str(" |");
-      } else {
-        str.push_str("None |");
-      }
-    }
-    trace!("{}", str);
-    str = "|".to_string();
-  }
-  trace!("Noise ranges from {:.2} to {:.2}", noise_stats.0, noise_stats.1);
-  trace!("Adjusted noise ranges from {:.2} to {:.2}", noise_stats.2, noise_stats.3);
   trace!(
     "Generated draft chunk at {:?} in {} ms on [{}]",
     tg,
-    get_time() - time,
+    get_time() - start_time,
     async_utils::thread_name()
   );
+
+  tiles
 }

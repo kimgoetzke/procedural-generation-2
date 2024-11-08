@@ -2,6 +2,9 @@ use bevy::prelude::Reflect;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
+/// This struct is used to store generation data on `DraftTile`s which are then converted to `Tile`s. The idea is that,
+/// with this struct, we can still access stats from the terrain generation process after it is done and visualise it
+/// in the UI or log it to the console.
 #[derive(Copy, Clone, Reflect)]
 pub struct DebugData {
   pub noise: f64,

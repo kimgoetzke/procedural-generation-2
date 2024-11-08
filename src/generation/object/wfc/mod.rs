@@ -84,7 +84,7 @@ pub fn determine_objects_in_grid(
         grid
           .get_cell(&tile_data.flat_tile.coords.internal_grid)
           .filter(|cell| cell.index != 0)
-          .map(|cell| ObjectData::new(tile_data, cell))
+          .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
       })
       .collect::<Vec<ObjectData>>(),
   );
