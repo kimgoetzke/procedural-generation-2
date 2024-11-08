@@ -20,14 +20,22 @@ techniques.
 
 ## Features
 
-- Infinite world generation of a 2D pixel art world
-- Terrain generation using multi-fractal perlin noise
-- Supports a single biome with 5 terrain types: water, shore, sand, grass, forest
-- Each terrain type supports 16 different tile types, many with transparency allowing for smooth transitions/layering
-- Post-generation step places objects such as trees
-- Sprites are created 32x32px (or for a grid of that size) and were created by me
+- Generates an infinite and animated, 2D pixel art world
+- Executes generation processes asynchronously (excluding entity spawning, of course)
+- Terrain generation:
+    - Utilises multi-fractal Perlin noise to generate terrain layers
+    - Features a single biome with 5 terrain types: water, shore, sand, grass, forest
+    - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
+      transitions/layering
+    - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
+    - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual
+      elevation changes over great distances without reducing generation performance
+- Object generation:
+    - Uses the wave function collapse algorithm to generate objects such as trees, ruins, stones, etc.
+    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files
+- Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
-- `bevy-pancam` plugin to allow free camera movement
+- `bevy-pancam` plugin for free camera movement
 
 ## Attribution
 
