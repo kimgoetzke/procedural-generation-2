@@ -10,14 +10,14 @@
           Top,
           [
             Empty,
-            ForestPathTop,
-            ForestPathRight,
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalSandRight,
-            ForestPathHorizontalSandLeft,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinTop,
+            ForestRuinRight,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalSandRight,
+            ForestRuinHorizontalSandLeft,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalGrassLeft,
             GrassPathTop,
             GrassPathRight,
             GrassPathLeft,
@@ -57,14 +57,14 @@
           Left,
           [
             Empty,
-            ForestPathTop,
-            ForestPathBottom,
-            ForestPathLeft,
-            ForestPathVertical,
-            ForestPathVerticalSandTop,
-            ForestPathVerticalSandBottom,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalGrassBottom,
+            ForestRuinTop,
+            ForestRuinBottom,
+            ForestRuinLeft,
+            ForestRuinVertical,
+            ForestRuinVerticalSandTop,
+            ForestRuinVerticalSandBottom,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalGrassBottom,
             GrassPathTop,
             GrassPathBottom,
             GrassPathLeft,
@@ -104,14 +104,14 @@
           Right,
           [
             Empty,
-            ForestPathTop,
-            ForestPathRight,
-            ForestPathBottom,
-            ForestPathVertical,
-            ForestPathVerticalSandTop,
-            ForestPathVerticalSandBottom,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalGrassBottom,
+            ForestRuinTop,
+            ForestRuinRight,
+            ForestRuinBottom,
+            ForestRuinVertical,
+            ForestRuinVerticalSandTop,
+            ForestRuinVerticalSandBottom,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalGrassBottom,
             GrassPathTop,
             GrassPathRight,
             GrassPathBottom,
@@ -151,14 +151,14 @@
           Bottom,
           [
             Empty,
-            ForestPathRight,
-            ForestPathBottom,
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalSandRight,
-            ForestPathHorizontalSandLeft,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinRight,
+            ForestRuinBottom,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalSandRight,
+            ForestRuinHorizontalSandLeft,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalGrassLeft,
             GrassPathRight,
             GrassPathBottom,
             GrassPathLeft,
@@ -211,7 +211,7 @@
             GrassPathHorizontalForestRight,
             GrassPathHorizontalSandRight,
             SandPathHorizontalGrassLeft,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinHorizontalGrassLeft,
             GrassPathCross,
           ]
         ),
@@ -232,7 +232,7 @@
             GrassPathHorizontalForestLeft,
             GrassPathHorizontalSandLeft,
             SandPathHorizontalGrassRight,
-            ForestPathHorizontalGrassRight,
+            ForestRuinHorizontalGrassRight,
             GrassPathCross,
           ]
         ),
@@ -244,7 +244,7 @@
             GrassPathHorizontalForestRight,
             GrassPathHorizontalSandRight,
             SandPathHorizontalGrassLeft,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinHorizontalGrassLeft,
             GrassPathCross,
           ]
         ),
@@ -264,7 +264,7 @@
             GrassPathVerticalForestTop,
             GrassPathVerticalSandTop,
             SandPathVerticalGrassBottom,
-            ForestPathVerticalGrassBottom,
+            ForestRuinVerticalGrassBottom,
           ]
         ),
         (
@@ -275,7 +275,7 @@
             GrassPathHorizontalForestLeft,
             GrassPathHorizontalSandLeft,
             SandPathHorizontalGrassRight,
-            ForestPathHorizontalGrassRight,
+            ForestRuinHorizontalGrassRight,
           ]
         ),
         (
@@ -286,7 +286,7 @@
             GrassPathHorizontalForestRight,
             GrassPathHorizontalSandRight,
             SandPathHorizontalGrassLeft,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinHorizontalGrassLeft,
           ]
         ),
         (
@@ -297,7 +297,7 @@
             GrassPathVerticalForestBottom,
             GrassPathVerticalSandBottom,
             SandPathVerticalGrassTop,
-            ForestPathVerticalGrassTop,
+            ForestRuinVerticalGrassTop,
           ]
         ),
       ]
@@ -314,7 +314,7 @@
             GrassPathVerticalForestTop,
             GrassPathVerticalSandTop,
             SandPathVerticalGrassBottom,
-            ForestPathVerticalGrassBottom,
+            ForestRuinVerticalGrassBottom,
             GrassPathBottom,
             GrassPathCross,
           ]
@@ -328,7 +328,7 @@
             GrassPathVerticalForestBottom,
             GrassPathVerticalSandBottom,
             SandPathVerticalGrassTop,
-            ForestPathVerticalGrassTop,
+            ForestRuinVerticalGrassTop,
             GrassPathTop,
             GrassPathCross,
           ]
@@ -351,7 +351,7 @@
             GrassPathVerticalSandBottom,
             GrassPathVerticalForestBottom,
             SandPathVerticalGrassTop,
-            ForestPathVerticalGrassTop,
+            ForestRuinVerticalGrassTop,
             GrassPathTop,
           ]
         ),
@@ -370,7 +370,7 @@
             GrassPathVerticalSandTop,
             GrassPathVerticalForestTop,
             SandPathVerticalGrassBottom,
-            ForestPathVerticalGrassBottom,
+            ForestRuinVerticalGrassBottom,
             GrassPathBottom,
           ]
         ),
@@ -393,7 +393,7 @@
             GrassPathHorizontalSandLeft,
             GrassPathHorizontalForestLeft,
             SandPathHorizontalGrassRight,
-            ForestPathHorizontalGrassRight,
+            ForestRuinHorizontalGrassRight,
             GrassPathCross,
           ]
         ),
@@ -418,9 +418,9 @@
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -435,9 +435,9 @@
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         (
@@ -509,9 +509,9 @@
         (
           Top,
           [
-            ForestPathVertical,
-            ForestPathBottom,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinBottom,
+            ForestRuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -544,9 +544,9 @@
         (
           Bottom,
           [
-            ForestPathVertical,
-            ForestPathTop,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinTop,
+            ForestRuinCross,
           ]
         ),
       ]

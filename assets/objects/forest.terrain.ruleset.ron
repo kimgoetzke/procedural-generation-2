@@ -10,14 +10,14 @@
           Top,
           [
             Empty,
-            ForestPathTop,
-            ForestPathRight,
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalSandRight,
-            ForestPathHorizontalSandLeft,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinTop,
+            ForestRuinRight,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalSandRight,
+            ForestRuinHorizontalSandLeft,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalGrassLeft,
             GrassPathTop,
             GrassPathRight,
             GrassPathLeft,
@@ -57,14 +57,14 @@
           Left,
           [
             Empty,
-            ForestPathTop,
-            ForestPathBottom,
-            ForestPathLeft,
-            ForestPathVertical,
-            ForestPathVerticalSandTop,
-            ForestPathVerticalSandBottom,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalGrassBottom,
+            ForestRuinTop,
+            ForestRuinBottom,
+            ForestRuinLeft,
+            ForestRuinVertical,
+            ForestRuinVerticalSandTop,
+            ForestRuinVerticalSandBottom,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalGrassBottom,
             GrassPathTop,
             GrassPathBottom,
             GrassPathLeft,
@@ -104,15 +104,15 @@
           Right,
           [
             Empty,
-            ForestPathTop,
-            ForestPathRight,
-            ForestPathBottom,
-            ForestPathCross,
-            ForestPathVertical,
-            ForestPathVerticalSandTop,
-            ForestPathVerticalSandBottom,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalGrassBottom,
+            ForestRuinTop,
+            ForestRuinRight,
+            ForestRuinBottom,
+            ForestRuinCross,
+            ForestRuinVertical,
+            ForestRuinVerticalSandTop,
+            ForestRuinVerticalSandBottom,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalGrassBottom,
             GrassPathTop,
             GrassPathRight,
             GrassPathBottom,
@@ -152,14 +152,14 @@
           Bottom,
           [
             Empty,
-            ForestPathRight,
-            ForestPathBottom,
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalSandRight,
-            ForestPathHorizontalSandLeft,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinRight,
+            ForestRuinBottom,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalSandRight,
+            ForestRuinHorizontalSandLeft,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalGrassLeft,
             GrassPathRight,
             GrassPathBottom,
             GrassPathLeft,
@@ -199,7 +199,7 @@
     ),
     (
       index: 1,
-      name: ForestPathRight,
+      name: ForestRuinRight,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -207,13 +207,13 @@
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalSandRight,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalSandRight,
             SandPathHorizontalForestLeft,
             GrassPathHorizontalForestLeft,
-            ForestPathCross,
+            ForestRuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -221,32 +221,32 @@
     ),
     (
       index: 2,
-      name: ForestPathHorizontal,
+      name: ForestRuinHorizontal,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathHorizontalGrassLeft,
-            ForestPathHorizontalSandLeft,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalGrassLeft,
+            ForestRuinHorizontalSandLeft,
             SandPathHorizontalForestRight,
             GrassPathHorizontalForestRight,
-            ForestPathCross,
+            ForestRuinCross,
           ]
         ),
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalSandRight,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalSandRight,
             SandPathHorizontalForestLeft,
             GrassPathHorizontalForestLeft,
-            ForestPathCross,
+            ForestRuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -254,16 +254,16 @@
     ),
     (
       index: 3,
-      name: ForestPathCross,
+      name: ForestRuinCross,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestPathBottom,
-            ForestPathVertical,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalSandTop,
+            ForestRuinBottom,
+            ForestRuinVertical,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalSandTop,
             SandPathVerticalForestBottom,
             GrassPathVerticalForestBottom,
           ]
@@ -271,10 +271,10 @@
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathHorizontalGrassLeft,
-            ForestPathHorizontalSandLeft,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalGrassLeft,
+            ForestRuinHorizontalSandLeft,
             SandPathHorizontalForestRight,
             GrassPathHorizontalForestRight,
           ]
@@ -282,10 +282,10 @@
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathHorizontalGrassRight,
-            ForestPathHorizontalSandRight,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalGrassRight,
+            ForestRuinHorizontalSandRight,
             SandPathHorizontalForestLeft,
             GrassPathHorizontalForestLeft,
           ]
@@ -293,10 +293,10 @@
         (
           Bottom,
           [
-            ForestPathTop,
-            ForestPathVertical,
-            ForestPathVerticalGrassBottom,
-            ForestPathVerticalSandBottom,
+            ForestRuinTop,
+            ForestRuinVertical,
+            ForestRuinVerticalGrassBottom,
+            ForestRuinVerticalSandBottom,
             SandPathVerticalForestTop,
             GrassPathVerticalForestTop,
           ]
@@ -305,19 +305,19 @@
     ),
     (
       index: 4,
-      name: ForestPathVertical,
+      name: ForestRuinVertical,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestPathVertical,
-            ForestPathVerticalGrassTop,
-            ForestPathVerticalSandTop,
+            ForestRuinVertical,
+            ForestRuinVerticalGrassTop,
+            ForestRuinVerticalSandTop,
             GrassPathVerticalForestBottom,
             SandPathVerticalForestBottom,
-            ForestPathBottom,
-            ForestPathCross,
+            ForestRuinBottom,
+            ForestRuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -325,20 +325,20 @@
         (
           Bottom,
           [
-            ForestPathVertical,
-            ForestPathVerticalGrassBottom,
-            ForestPathVerticalSandBottom,
+            ForestRuinVertical,
+            ForestRuinVerticalGrassBottom,
+            ForestRuinVerticalSandBottom,
             GrassPathVerticalForestTop,
             SandPathVerticalForestTop,
-            ForestPathTop,
-            ForestPathCross,
+            ForestRuinTop,
+            ForestRuinCross,
           ]
         ),
       ]
     ),
     (
       index: 5,
-      name: ForestPathBottom,
+      name: ForestRuinBottom,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -347,32 +347,32 @@
         (
           Bottom,
           [
-            ForestPathCross,
-            ForestPathVertical,
-            ForestPathVerticalSandBottom,
-            ForestPathVerticalGrassBottom,
+            ForestRuinCross,
+            ForestRuinVertical,
+            ForestRuinVerticalSandBottom,
+            ForestRuinVerticalGrassBottom,
             SandPathVerticalForestTop,
             GrassPathVerticalForestTop,
-            ForestPathTop,
+            ForestRuinTop,
           ]
         ),
       ]
     ),
     (
       index: 6,
-      name: ForestPathTop,
+      name: ForestRuinTop,
       weight: 3,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestPathCross,
-            ForestPathVertical,
-            ForestPathVerticalSandTop,
-            ForestPathVerticalGrassTop,
+            ForestRuinCross,
+            ForestRuinVertical,
+            ForestRuinVerticalSandTop,
+            ForestRuinVerticalGrassTop,
             SandPathVerticalForestBottom,
             GrassPathVerticalForestBottom,
-            ForestPathBottom,
+            ForestRuinBottom,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -382,20 +382,20 @@
     ),
     (
       index: 7,
-      name: ForestPathLeft,
+      name: ForestRuinLeft,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathHorizontalSandLeft,
-            ForestPathHorizontalGrassLeft,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinHorizontalSandLeft,
+            ForestRuinHorizontalGrassLeft,
             SandPathHorizontalForestRight,
             GrassPathHorizontalForestRight,
-            ForestPathCross,
+            ForestRuinCross,
           ]
         ),
         ( Right, [ Empty ] ),
@@ -404,16 +404,16 @@
     ),
     (
       index: 8,
-      name: ForestPathHorizontalGrassRight,
+      name: ForestRuinHorizontalGrassRight,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         (
@@ -429,7 +429,7 @@
     ),
     (
       index: 9,
-      name: ForestPathHorizontalGrassLeft,
+      name: ForestRuinHorizontalGrassLeft,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ]  ),
@@ -444,9 +444,9 @@
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -454,16 +454,16 @@
     ),
     (
       index: 10,
-      name: ForestPathHorizontalSandRight,
+      name: ForestRuinHorizontalSandRight,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestPathRight,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinRight,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         (
@@ -479,7 +479,7 @@
     ),
     (
       index: 11,
-      name: ForestPathHorizontalSandLeft,
+      name: ForestRuinHorizontalSandLeft,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ]  ),
@@ -494,9 +494,9 @@
         (
           Right,
           [
-            ForestPathLeft,
-            ForestPathHorizontal,
-            ForestPathCross,
+            ForestRuinLeft,
+            ForestRuinHorizontal,
+            ForestRuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -504,7 +504,7 @@
     ),
     (
       index: 12,
-      name: ForestPathVerticalGrassTop,
+      name: ForestRuinVerticalGrassTop,
       weight: 10,
       permitted_neighbours: [
         (
@@ -520,24 +520,24 @@
         (
           Bottom,
           [
-            ForestPathVertical,
-            ForestPathTop,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinTop,
+            ForestRuinCross,
           ]
         ),
       ]
     ),
     (
       index: 13,
-      name: ForestPathVerticalGrassBottom,
+      name: ForestRuinVerticalGrassBottom,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestPathVertical,
-            ForestPathBottom,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinBottom,
+            ForestRuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -554,7 +554,7 @@
     ),
     (
       index: 14,
-      name: ForestPathVerticalSandTop,
+      name: ForestRuinVerticalSandTop,
       weight: 10,
       permitted_neighbours: [
         (
@@ -570,24 +570,24 @@
         (
           Bottom,
           [
-            ForestPathVertical,
-            ForestPathTop,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinTop,
+            ForestRuinCross,
           ]
         ),
       ]
     ),
     (
       index: 15,
-      name: ForestPathVerticalSandBottom,
+      name: ForestRuinVerticalSandBottom,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestPathVertical,
-            ForestPathBottom,
-            ForestPathCross,
+            ForestRuinVertical,
+            ForestRuinBottom,
+            ForestRuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
