@@ -48,7 +48,8 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     chunks.push(chunk);
   }
   debug!(
-    "Generated chunks in {} ms on [{}]",
+    "Generated {} chunks in {} ms on [{}]",
+    chunks.len(),
     get_time() - start_time,
     async_utils::thread_name()
   );
@@ -91,38 +92,34 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
   tile_data
 }
 
-pub fn schedule_tile_spawning_tasks(
-  commands: &mut Commands,
-  settings_ref: &Settings,
-  spawn_data: &[(Chunk, Vec<TileData>)],
-) {
+pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Vec<TileData>)) {
   let start_time = get_time();
   let task_pool = AsyncComputeTaskPool::get();
-  for (chunk, tile_data_vec) in spawn_data.iter() {
-    for tile_data in tile_data_vec {
-      let tile_data = tile_data.clone();
-      for layer in 0..TerrainType::length() {
-        if layer < settings_ref.general.spawn_from_layer || layer > settings_ref.general.spawn_up_to_layer {
-          trace!(
-            "Skipped spawning [{:?}] tiles because it's disabled",
-            TerrainType::from(layer)
-          );
-          continue;
-        }
-        if let Some(plane) = chunk.layered_plane.get(layer) {
-          if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.internal_grid) {
-            if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
-              tile_entity.with_children(|parent| {
-                attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());
-              });
-            }
+
+  for tile_data in spawn_data.1 {
+    let tile_data = tile_data.clone();
+    for layer in 0..TerrainType::length() {
+      if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+        trace!(
+          "Skipped spawning [{:?}] tiles because it's disabled",
+          TerrainType::from(layer)
+        );
+        continue;
+      }
+      if let Some(plane) = spawn_data.0.layered_plane.get(layer) {
+        if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.internal_grid) {
+          if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
+            tile_entity.with_children(|parent| {
+              attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());
+            });
           }
         }
       }
     }
   }
   debug!(
-    "Scheduled spawning all tiles in {} ms on [{}]",
+    "Scheduled spawning tiles for chunk {} in {} ms on [{}]",
+    spawn_data.0.coords.chunk_grid,
     get_time() - start_time,
     async_utils::thread_name()
   );

@@ -57,12 +57,14 @@ pub fn generate_object_data(
   );
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
   let object_grid_len = grid.grid.len();
+  let chunk_cg = spawn_data.0.coords.chunk_grid;
   let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
 
   debug!(
-    "Generated object data for {} objects in {} ms on {}",
+    "Generated object data for {} objects for chunk {} in {} ms on {}",
     object_grid_len,
+    chunk_cg,
     get_time() - start_time,
     async_utils::thread_name()
   );
@@ -74,12 +76,18 @@ pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, 
   let start_time = get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
+  let chunk_cg = if let Some(object_data) = object_data.first() {
+    object_data.tile_data.flat_tile.coords.chunk_grid.to_string()
+  } else {
+    "cg(unknown)".to_string()
+  };
   for object in object_data {
     attach_task_to_tile_entity(commands, &mut rng, task_pool, object);
   }
   debug!(
-    "Scheduled {} object spawn tasks in {} ms on {}",
+    "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
     object_data_len,
+    chunk_cg,
     get_time() - start_time,
     async_utils::thread_name()
   );

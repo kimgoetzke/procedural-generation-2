@@ -61,12 +61,12 @@ impl Plugin for GenerationPlugin {
 fn generation_system(mut commands: Commands) {
   let w = ORIGIN_WORLD_SPAWN_POINT;
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
+  debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
     Name::new(format!("Update World Component {}", w)),
     UpdateWorldComponent::new(w, cg, false, get_time()),
   ));
   commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
-  debug!("Generated world at origin spawn point {}", w);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
@@ -81,6 +81,7 @@ fn regenerate_world_event(
     let world = existing_world.get_single().expect("Failed to get existing world entity");
     let w = ORIGIN_WORLD_SPAWN_POINT;
     let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
+    debug!("Regenerating world with origin {} {}", w, cg);
     commands.entity(world).despawn_recursive();
     commands.spawn((
       Name::new(format!("Update World Component {}", cg)),
@@ -106,6 +107,7 @@ fn update_world_event(
     }
     let new_parent_w = calculate_new_current_chunk_w(&mut current_chunk, &event);
     let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
+    debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("Update World Component {}", new_parent_w)),
       UpdateWorldComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, get_time()),
@@ -164,7 +166,6 @@ fn calculate_chunk_spawn_points(
 }
 
 // TODO: Consider extracting each branch of the match statement into its own function
-// TODO: Fix bug where some chunks are generated twice
 /// Updates the world and all its objects. This is the core system that drives the generation of the world and all its
 /// objects once a `UpdateWorldComponent` has been spawned.
 fn update_world_system(
@@ -232,7 +233,7 @@ fn update_world_system(
         // Schedule the spawning of all the tile sprites in the new chunks
         if !component.stage_3_spawn_data.is_empty() {
           let spawn_data = component.stage_3_spawn_data.remove(0);
-          world::schedule_tile_spawning_tasks(&mut commands, &settings, &vec![spawn_data.clone()]);
+          world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
           component.stage_4_spawn_data.push(spawn_data);
         }
         if component.stage_3_spawn_data.is_empty() {

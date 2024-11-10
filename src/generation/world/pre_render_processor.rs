@@ -21,7 +21,8 @@ pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {
     clear_single_tiles_from_chunk_with_no_fill_below(layer, &mut chunk);
   }
   trace!(
-    "Pre-processed chunk in {} ms on [{}]",
+    "Pre-processed chunk {} in {} ms on [{}]",
+    chunk.coords.chunk_grid,
     get_time() - start_time,
     async_utils::thread_name()
   );
@@ -29,6 +30,7 @@ pub(crate) fn process_single(mut chunk: Chunk, settings: &Settings) -> Chunk {
   chunk
 }
 
+// TODO: Find out why this is happening and fix it, if required
 fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Chunk) {
   if let (Some(this_plane), Some(plane_below)) = chunk.layered_plane.get_and_below_mut(layer) {
     let tiles_to_clear: Vec<_> = this_plane
