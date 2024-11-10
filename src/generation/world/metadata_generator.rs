@@ -29,7 +29,6 @@ fn initialise_metadata(
   mut next_state: ResMut<NextState<AppState>>,
 ) {
   regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
-  debug!("Transitioning [{}] to [{:?}] state", AppState::name(), AppState::Running);
   next_state.set(AppState::Running);
 }
 

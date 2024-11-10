@@ -113,8 +113,6 @@ fn check_loading_state(
       return;
     }
   }
-
-  debug!("Transitioning [{}] to [{:?}] state", AppState::name(), AppState::Initialising);
   state.set(AppState::Initialising);
 }
 

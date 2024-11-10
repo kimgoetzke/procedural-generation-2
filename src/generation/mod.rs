@@ -10,14 +10,14 @@ use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection, Metadata};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
-use crate::states::AppState;
+use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin};
 use bevy::core::Name;
 use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, OnExit, Query, Res,
-  ResMut, SpatialBundle, Update, With,
+  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, NextState, OnExit,
+  OnRemove, Query, Res, ResMut, SpatialBundle, Trigger, Update, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool};
 use rand::prelude::StdRng;
@@ -53,12 +53,13 @@ impl Plugin for GenerationPlugin {
           update_world_system,
         )
           .run_if(in_state(AppState::Running)),
-      );
+      )
+      .observe(on_remove_update_world_component_trigger);
   }
 }
 
 /// Generates the world and all its objects. Called once before entering `AppState::Running`.
-fn generation_system(mut commands: Commands) {
+fn generation_system(mut commands: Commands, mut next_state: ResMut<NextState<GenerationState>>) {
   let w = ORIGIN_WORLD_SPAWN_POINT;
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
   debug!("Generating world with origin {} {}", w, cg);
@@ -67,14 +68,17 @@ fn generation_system(mut commands: Commands) {
     UpdateWorldComponent::new(w, cg, false, get_time()),
   ));
   commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
+  next_state.set(GenerationState::Generating);
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
-/// received. This is triggered by pressing a key or a button in the UI.
+/// received. This is triggered by pressing a key or a button in the UI and the camera within the bounds of the `Chunk`
+/// at the origin of the world.
 fn regenerate_world_event(
   mut commands: Commands,
   mut events: EventReader<RegenerateWorldEvent>,
   existing_world: Query<Entity, With<WorldComponent>>,
+  mut next_state: ResMut<NextState<GenerationState>>,
 ) {
   let event_count = events.read().count();
   if event_count > 0 {
@@ -88,16 +92,18 @@ fn regenerate_world_event(
       UpdateWorldComponent::new(w, cg, false, get_time()),
     ));
     commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
+    next_state.set(GenerationState::Generating);
   }
 }
 
 /// Updates the world and all its objects. Called when an `UpdateWorldEvent` is received. Triggered when the camera
-/// moves outside the `CurrentChunk` or when manually requesting a world re-generation while the camera is outside the
-/// bounds of the `Chunk` at `ORIGIN_SPAWN_POINT`.
+/// moves outside the bounds of the `CurrentChunk` or when manually requesting a world re-generation while the camera
+/// is outside the bounds of the `Chunk` at origin spawn point.
 fn update_world_event(
   mut commands: Commands,
   mut events: EventReader<UpdateWorldEvent>,
   mut current_chunk: ResMut<CurrentChunk>,
+  mut next_state: ResMut<NextState<GenerationState>>,
 ) {
   for event in events.read() {
     // Ignore the event if the current chunk contains the world grid of the event
@@ -113,6 +119,7 @@ fn update_world_event(
       UpdateWorldComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, get_time()),
     ));
     current_chunk.update(new_parent_w);
+    next_state.set(GenerationState::Generating);
   }
 }
 
@@ -135,34 +142,6 @@ fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &Updat
   );
 
   new_parent_chunk_w
-}
-
-fn calculate_chunk_spawn_points(
-  existing_chunks: &Res<ChunkComponentIndex>,
-  settings: &Settings,
-  new_parent_chunk_w: &Point<World>,
-) -> Vec<Point<World>> {
-  let mut spawn_points = Vec::new();
-  get_direction_points(&new_parent_chunk_w)
-    .iter()
-    .for_each(|(direction, chunk_w)| {
-      if let Some(_) = existing_chunks.get(*chunk_w) {
-        trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
-      } else {
-        if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
-          trace!(
-            "❎  [{:?}] chunk at {:?} skipped because generating neighbours is disabled",
-            direction,
-            chunk_w
-          );
-          return;
-        }
-        trace!("🚫 [{:?}] chunk at {:?} needs to be generated", direction, chunk_w);
-        spawn_points.push(chunk_w.clone());
-      }
-    });
-
-  spawn_points
 }
 
 // TODO: Consider extracting each branch of the match statement into its own function
@@ -258,7 +237,8 @@ fn update_world_system(
         // Schedule the spawning of all the objects in the new chunks
         if !component.stage_5_object_data.is_empty() {
           component.stage_5_object_data.retain_mut(|task| {
-            if let Some(object_data) = block_on(poll_once(task)) {
+            if task.is_finished() {
+              let object_data = block_on(poll_once(task)).expect("Failed to get object data");
               let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
               object::schedule_spawning_objects(&mut commands, &mut rng, object_data);
               false
@@ -288,6 +268,45 @@ fn update_world_system(
       }
     }
     trace!("{} which took {} ms", *component, get_time() - start_time);
+  }
+}
+
+fn calculate_chunk_spawn_points(
+  existing_chunks: &Res<ChunkComponentIndex>,
+  settings: &Settings,
+  new_parent_chunk_w: &Point<World>,
+) -> Vec<Point<World>> {
+  let mut spawn_points = Vec::new();
+  get_direction_points(&new_parent_chunk_w)
+    .iter()
+    .for_each(|(direction, chunk_w)| {
+      if let Some(_) = existing_chunks.get(*chunk_w) {
+        trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
+      } else {
+        if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
+          trace!(
+            "❎  [{:?}] chunk at {:?} skipped because generating neighbours is disabled",
+            direction,
+            chunk_w
+          );
+          return;
+        }
+        trace!("🚫 [{:?}] chunk at {:?} needs to be generated", direction, chunk_w);
+        spawn_points.push(chunk_w.clone());
+      }
+    });
+
+  spawn_points
+}
+
+/// Sets the `GenerationState` to `Idling` when the last `UpdateWorldComponent` has just been removed.
+fn on_remove_update_world_component_trigger(
+  _trigger: Trigger<OnRemove, UpdateWorldComponent>,
+  query: Query<&UpdateWorldComponent>,
+  mut next_state: ResMut<NextState<GenerationState>>,
+) {
+  if query.iter().len() == 1 {
+    next_state.set(GenerationState::Idling);
   }
 }
 
