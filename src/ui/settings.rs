@@ -4,6 +4,7 @@ use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
 };
+use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
 use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
@@ -62,6 +63,22 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     .anchor(Align2::LEFT_BOTTOM, [10.0, -10.0])
     .show(egui_context.get_mut(), |ui| {
       ScrollArea::both().show(ui, |ui| {
+        ui.push_id("states", |ui| {
+          ui.label(RichText::new("States").font(HEADING));
+          ui.columns(2, |columns| {
+            columns[0].label("app_state");
+            columns[1].push_id("app_state", |ui| {
+              bevy_inspector_egui::bevy_inspector::ui_for_state::<AppState>(world, ui)
+            });
+          });
+          ui.columns(2, |columns| {
+            columns[0].label("generation_state");
+            columns[1].push_id("generation_state", |ui| {
+              bevy_inspector_egui::bevy_inspector::ui_for_state::<GenerationState>(world, ui)
+            });
+          });
+        });
+        ui.add_space(20.0);
         ui.push_id("general_generation", |ui| {
           ui.label(RichText::new("General Generation").font(HEADING));
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<GeneralGenerationSettings>(world, ui);

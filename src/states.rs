@@ -1,5 +1,5 @@
 use bevy::app::{App, Plugin};
-use bevy::prelude::{AppExtStates, States};
+use bevy::prelude::{AppExtStates, State, States};
 use bevy::reflect::Reflect;
 
 pub struct AppStatePlugin;
@@ -8,13 +8,12 @@ impl Plugin for AppStatePlugin {
   fn build(&self, app: &mut App) {
     app
       .init_state::<AppState>()
-      .register_type::<AppState>()
+      .register_type::<State<AppState>>()
       .init_state::<GenerationState>()
-      .register_type::<GenerationState>();
+      .register_type::<State<GenerationState>>();
   }
 }
 
-// TODO: Display state in Bevy Inspector UI
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States, Reflect)]
 pub enum AppState {
   #[default]
@@ -36,6 +35,7 @@ pub enum GenerationState {
   Generating,
 }
 
+#[allow(dead_code)]
 impl GenerationState {
   pub fn name() -> &'static str {
     "GenerationState"

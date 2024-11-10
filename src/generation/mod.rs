@@ -163,6 +163,7 @@ fn calculate_chunk_spawn_points(
   spawn_points
 }
 
+// TODO: Consider extracting each branch of the match statement into its own function
 // TODO: Fix bug where some chunks are generated twice
 /// Updates the world and all its objects. This is the core system that drives the generation of the world and all its
 /// objects once a `UpdateWorldComponent` has been spawned.
@@ -280,7 +281,7 @@ fn update_world_system(
         component.status = UpdateWorldStatus::Done;
       }
       UpdateWorldStatus::Done => {
-        debug!("✅  {} which took {} ms", *component, get_time() - component.created_at);
+        info!("✅  {} which took {} ms", *component, get_time() - component.created_at);
         commands.entity(entity).despawn_recursive();
         return;
       }
@@ -354,7 +355,7 @@ fn calculate_chunks_to_despawn(
     if despawn_all_chunks {
       trace!(
         "Despawning chunk at {:?} because all chunks have to be despawned",
-        chunk_component.coords.world
+        chunk_component.coords.chunk_grid
       );
       chunks_to_despawn.push(entity);
       continue;
@@ -363,9 +364,9 @@ fn calculate_chunks_to_despawn(
     if distance > DESPAWN_DISTANCE {
       trace!(
         "Despawning chunk at {:?} because it's {}px away from current chunk at {:?}",
-        chunk_component.coords.world,
+        chunk_component.coords.chunk_grid,
         distance as i32,
-        current_chunk.get_world()
+        current_chunk.get_chunk_grid()
       );
       chunks_to_despawn.push(entity);
     }

@@ -26,6 +26,7 @@ struct FpsText;
 fn create_fps_counter_system(mut commands: Commands) {
   let root = commands
     .spawn((
+      Name::new("FPS Counter"),
       FpsUiRoot,
       NodeBundle {
         // background_color: BackgroundColor(VERY_DARK.with_alpha(0.5)),
@@ -45,6 +46,7 @@ fn create_fps_counter_system(mut commands: Commands) {
     .id();
   let text = commands
     .spawn((
+      Name::new("FPS Text"),
       FpsText,
       TextBundle {
         text: Text::from_sections([
