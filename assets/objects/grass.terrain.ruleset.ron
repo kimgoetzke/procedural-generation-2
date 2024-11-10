@@ -18,14 +18,14 @@
             ForestRuinHorizontalSandLeft,
             ForestRuinHorizontalGrassRight,
             ForestRuinHorizontalGrassLeft,
-            GrassPathTop,
-            GrassPathRight,
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathHorizontalSandRight,
-            GrassPathHorizontalSandLeft,
-            GrassPathHorizontalForestRight,
-            GrassPathHorizontalForestLeft,
+            GrassRubbleTop,
+            GrassRubbleRight,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalSandRight,
+            GrassRubbleHorizontalSandLeft,
+            GrassRubbleHorizontalForestRight,
+            GrassRubbleHorizontalForestLeft,
             SandPathTop,
             SandPathRight,
             SandPathLeft,
@@ -65,14 +65,14 @@
             ForestRuinVerticalSandBottom,
             ForestRuinVerticalGrassTop,
             ForestRuinVerticalGrassBottom,
-            GrassPathTop,
-            GrassPathBottom,
-            GrassPathLeft,
-            GrassPathVertical,
-            GrassPathVerticalSandTop,
-            GrassPathVerticalSandBottom,
-            GrassPathVerticalForestTop,
-            GrassPathVerticalForestBottom,
+            GrassRubbleTop,
+            GrassRubbleBottom,
+            GrassRubbleLeft,
+            GrassRubbleVertical,
+            GrassRubbleVerticalSandTop,
+            GrassRubbleVerticalSandBottom,
+            GrassRubbleVerticalForestTop,
+            GrassRubbleVerticalForestBottom,
             SandPathTop,
             SandPathBottom,
             SandPathLeft,
@@ -112,14 +112,14 @@
             ForestRuinVerticalSandBottom,
             ForestRuinVerticalGrassTop,
             ForestRuinVerticalGrassBottom,
-            GrassPathTop,
-            GrassPathRight,
-            GrassPathBottom,
-            GrassPathVertical,
-            GrassPathVerticalSandTop,
-            GrassPathVerticalSandBottom,
-            GrassPathVerticalForestTop,
-            GrassPathVerticalForestBottom,
+            GrassRubbleTop,
+            GrassRubbleRight,
+            GrassRubbleBottom,
+            GrassRubbleVertical,
+            GrassRubbleVerticalSandTop,
+            GrassRubbleVerticalSandBottom,
+            GrassRubbleVerticalForestTop,
+            GrassRubbleVerticalForestBottom,
             SandPathTop,
             SandPathRight,
             SandPathBottom,
@@ -159,14 +159,14 @@
             ForestRuinHorizontalSandLeft,
             ForestRuinHorizontalGrassRight,
             ForestRuinHorizontalGrassLeft,
-            GrassPathRight,
-            GrassPathBottom,
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathHorizontalSandRight,
-            GrassPathHorizontalSandLeft,
-            GrassPathHorizontalForestRight,
-            GrassPathHorizontalForestLeft,
+            GrassRubbleRight,
+            GrassRubbleBottom,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalSandRight,
+            GrassRubbleHorizontalSandLeft,
+            GrassRubbleHorizontalForestRight,
+            GrassRubbleHorizontalForestLeft,
             SandPathRight,
             SandPathBottom,
             SandPathLeft,
@@ -198,7 +198,7 @@
     ),
     (
       index: 1,
-      name: GrassPathRight,
+      name: GrassRubbleRight,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -206,13 +206,13 @@
         (
           Right,
           [
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathHorizontalForestRight,
-            GrassPathHorizontalSandRight,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalForestRight,
+            GrassRubbleHorizontalSandRight,
             SandPathHorizontalGrassLeft,
             ForestRuinHorizontalGrassLeft,
-            GrassPathCross,
+            GrassRubbleCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -220,32 +220,32 @@
     ),
     (
       index: 2,
-      name: GrassPathHorizontal,
+      name: GrassRubbleHorizontal,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            GrassPathRight,
-            GrassPathHorizontal,
-            GrassPathHorizontalForestLeft,
-            GrassPathHorizontalSandLeft,
+            GrassRubbleRight,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalForestLeft,
+            GrassRubbleHorizontalSandLeft,
             SandPathHorizontalGrassRight,
             ForestRuinHorizontalGrassRight,
-            GrassPathCross,
+            GrassRubbleCross,
           ]
         ),
         (
           Right,
           [
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathHorizontalForestRight,
-            GrassPathHorizontalSandRight,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalForestRight,
+            GrassRubbleHorizontalSandRight,
             SandPathHorizontalGrassLeft,
             ForestRuinHorizontalGrassLeft,
-            GrassPathCross,
+            GrassRubbleCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -253,16 +253,16 @@
     ),
     (
       index: 3,
-      name: GrassPathCross,
+      name: GrassRubbleCross,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassPathBottom,
-            GrassPathVertical,
-            GrassPathVerticalForestTop,
-            GrassPathVerticalSandTop,
+            GrassRubbleBottom,
+            GrassRubbleVertical,
+            GrassRubbleVerticalForestTop,
+            GrassRubbleVerticalSandTop,
             SandPathVerticalGrassBottom,
             ForestRuinVerticalGrassBottom,
           ]
@@ -270,10 +270,10 @@
         (
           Left,
           [
-            GrassPathRight,
-            GrassPathHorizontal,
-            GrassPathHorizontalForestLeft,
-            GrassPathHorizontalSandLeft,
+            GrassRubbleRight,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalForestLeft,
+            GrassRubbleHorizontalSandLeft,
             SandPathHorizontalGrassRight,
             ForestRuinHorizontalGrassRight,
           ]
@@ -281,10 +281,10 @@
         (
           Right,
           [
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathHorizontalForestRight,
-            GrassPathHorizontalSandRight,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalForestRight,
+            GrassRubbleHorizontalSandRight,
             SandPathHorizontalGrassLeft,
             ForestRuinHorizontalGrassLeft,
           ]
@@ -292,10 +292,10 @@
         (
           Bottom,
           [
-            GrassPathTop,
-            GrassPathVertical,
-            GrassPathVerticalForestBottom,
-            GrassPathVerticalSandBottom,
+            GrassRubbleTop,
+            GrassRubbleVertical,
+            GrassRubbleVerticalForestBottom,
+            GrassRubbleVerticalSandBottom,
             SandPathVerticalGrassTop,
             ForestRuinVerticalGrassTop,
           ]
@@ -304,19 +304,19 @@
     ),
     (
       index: 4,
-      name: GrassPathVertical,
+      name: GrassRubbleVertical,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassPathVertical,
-            GrassPathVerticalForestTop,
-            GrassPathVerticalSandTop,
+            GrassRubbleVertical,
+            GrassRubbleVerticalForestTop,
+            GrassRubbleVerticalSandTop,
             SandPathVerticalGrassBottom,
             ForestRuinVerticalGrassBottom,
-            GrassPathBottom,
-            GrassPathCross,
+            GrassRubbleBottom,
+            GrassRubbleCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -324,20 +324,20 @@
         (
           Bottom,
           [
-            GrassPathVertical,
-            GrassPathVerticalForestBottom,
-            GrassPathVerticalSandBottom,
+            GrassRubbleVertical,
+            GrassRubbleVerticalForestBottom,
+            GrassRubbleVerticalSandBottom,
             SandPathVerticalGrassTop,
             ForestRuinVerticalGrassTop,
-            GrassPathTop,
-            GrassPathCross,
+            GrassRubbleTop,
+            GrassRubbleCross,
           ]
         ),
       ]
     ),
     (
       index: 5,
-      name: GrassPathBottom,
+      name: GrassRubbleBottom,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -346,32 +346,32 @@
         (
           Bottom,
           [
-            GrassPathCross,
-            GrassPathVertical,
-            GrassPathVerticalSandBottom,
-            GrassPathVerticalForestBottom,
+            GrassRubbleCross,
+            GrassRubbleVertical,
+            GrassRubbleVerticalSandBottom,
+            GrassRubbleVerticalForestBottom,
             SandPathVerticalGrassTop,
             ForestRuinVerticalGrassTop,
-            GrassPathTop,
+            GrassRubbleTop,
           ]
         ),
       ]
     ),
     (
       index: 6,
-      name: GrassPathTop,
+      name: GrassRubbleTop,
       weight: 3,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassPathCross,
-            GrassPathVertical,
-            GrassPathVerticalSandTop,
-            GrassPathVerticalForestTop,
+            GrassRubbleCross,
+            GrassRubbleVertical,
+            GrassRubbleVerticalSandTop,
+            GrassRubbleVerticalForestTop,
             SandPathVerticalGrassBottom,
             ForestRuinVerticalGrassBottom,
-            GrassPathBottom,
+            GrassRubbleBottom,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -381,20 +381,20 @@
     ),
     (
       index: 7,
-      name: GrassPathLeft,
+      name: GrassRubbleLeft,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            GrassPathRight,
-            GrassPathHorizontal,
-            GrassPathHorizontalSandLeft,
-            GrassPathHorizontalForestLeft,
+            GrassRubbleRight,
+            GrassRubbleHorizontal,
+            GrassRubbleHorizontalSandLeft,
+            GrassRubbleHorizontalForestLeft,
             SandPathHorizontalGrassRight,
             ForestRuinHorizontalGrassRight,
-            GrassPathCross,
+            GrassRubbleCross,
           ]
         ),
         ( Right, [ Empty ] ),
@@ -403,16 +403,16 @@
     ),
     (
       index: 8,
-      name: GrassPathHorizontalForestRight,
+      name: GrassRubbleHorizontalForestRight,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            GrassPathRight,
-            GrassPathHorizontal,
-            GrassPathCross,
+            GrassRubbleRight,
+            GrassRubbleHorizontal,
+            GrassRubbleCross,
           ]
         ),
         (
@@ -428,7 +428,7 @@
     ),
     (
       index: 9,
-      name: GrassPathHorizontalForestLeft,
+      name: GrassRubbleHorizontalForestLeft,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ]  ),
@@ -443,9 +443,9 @@
         (
           Right,
           [
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathCross,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -453,16 +453,16 @@
     ),
     (
       index: 10,
-      name: GrassPathHorizontalSandRight,
+      name: GrassRubbleHorizontalSandRight,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            GrassPathRight,
-            GrassPathHorizontal,
-            GrassPathCross,
+            GrassRubbleRight,
+            GrassRubbleHorizontal,
+            GrassRubbleCross,
           ]
         ),
         (
@@ -478,7 +478,7 @@
     ),
     (
       index: 11,
-      name: GrassPathHorizontalSandLeft,
+      name: GrassRubbleHorizontalSandLeft,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ]  ),
@@ -493,9 +493,9 @@
         (
           Right,
           [
-            GrassPathLeft,
-            GrassPathHorizontal,
-            GrassPathCross,
+            GrassRubbleLeft,
+            GrassRubbleHorizontal,
+            GrassRubbleCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -503,7 +503,7 @@
     ),
     (
       index: 12,
-      name: GrassPathVerticalForestTop,
+      name: GrassRubbleVerticalForestTop,
       weight: 10,
       permitted_neighbours: [
         (
@@ -519,24 +519,24 @@
         (
           Bottom,
           [
-            GrassPathVertical,
-            GrassPathTop,
-            GrassPathCross,
+            GrassRubbleVertical,
+            GrassRubbleTop,
+            GrassRubbleCross,
           ]
         ),
       ]
     ),
     (
       index: 13,
-      name: GrassPathVerticalForestBottom,
+      name: GrassRubbleVerticalForestBottom,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassPathVertical,
-            GrassPathBottom,
-            GrassPathCross,
+            GrassRubbleVertical,
+            GrassRubbleBottom,
+            GrassRubbleCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -553,7 +553,7 @@
     ),
     (
       index: 14,
-      name: GrassPathVerticalSandTop,
+      name: GrassRubbleVerticalSandTop,
       weight: 10,
       permitted_neighbours: [
         (
@@ -569,24 +569,24 @@
         (
           Bottom,
           [
-            GrassPathVertical,
-            GrassPathTop,
-            GrassPathCross,
+            GrassRubbleVertical,
+            GrassRubbleTop,
+            GrassRubbleCross,
           ]
         ),
       ]
     ),
     (
       index: 15,
-      name: GrassPathVerticalSandBottom,
+      name: GrassRubbleVerticalSandBottom,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassPathVertical,
-            GrassPathBottom,
-            GrassPathCross,
+            GrassRubbleVertical,
+            GrassRubbleBottom,
+            GrassRubbleCross,
           ]
         ),
         ( Left, [ Empty ] ),
