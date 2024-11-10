@@ -44,15 +44,10 @@ impl Plugin for GenerationPlugin {
         DebugPlugin,
       ))
       .add_systems(OnExit(AppState::Initialising), generation_system)
+      .add_systems(Update, update_world_system.run_if(in_state(GenerationState::Generating)))
       .add_systems(
         Update,
-        (
-          regenerate_world_event,
-          update_world_event,
-          prune_world_event,
-          update_world_system,
-        )
-          .run_if(in_state(AppState::Running)),
+        (regenerate_world_event, update_world_event, prune_world_event).run_if(in_state(AppState::Running)),
       )
       .observe(on_remove_update_world_component_trigger);
   }
