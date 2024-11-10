@@ -18,7 +18,7 @@ pub struct DraftTile {
 impl DraftTile {
   pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType, debug_data: DebugData) -> Self {
     Self {
-      coords: Coords::new(ig, tg),
+      coords: Coords::new_for_tile(ig, tg),
       terrain,
       layer: terrain as i32,
       debug_data,

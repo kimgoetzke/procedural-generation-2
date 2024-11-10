@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::coords::Point;
+use crate::coords::{Coords, Point};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
@@ -166,38 +166,39 @@ impl Default for ObjectGenerationSettings {
 #[derive(Resource, Debug, Clone)]
 pub struct CurrentChunk {
   center_w: Point<World>,
-  w: Point<World>,
-  cg: Point<ChunkGrid>,
-  tg: Point<TileGrid>,
+  coords: Coords,
 }
 
 impl CurrentChunk {
-  pub fn get_world(&self) -> Point<World> {
-    self.w
-  }
-
   pub fn get_center_world(&self) -> Point<World> {
     self.center_w
   }
 
+  pub fn get_world(&self) -> Point<World> {
+    self.coords.world
+  }
+
   pub fn get_tile_grid(&self) -> Point<TileGrid> {
-    self.tg
+    self.coords.tile_grid
   }
 
   pub fn get_chunk_grid(&self) -> Point<ChunkGrid> {
-    self.cg
+    self.coords.chunk_grid
   }
 
   pub fn contains(&self, tg: Point<TileGrid>) -> bool {
-    tg.x >= self.tg.x && tg.x < (self.tg.x + CHUNK_SIZE) && tg.y >= self.tg.y && tg.y < (self.tg.y - CHUNK_SIZE)
+    tg.x >= self.coords.tile_grid.x
+      && tg.x < (self.coords.tile_grid.x + CHUNK_SIZE)
+      && tg.y >= self.coords.tile_grid.y
+      && tg.y < (self.coords.tile_grid.y - CHUNK_SIZE)
   }
 
   pub fn update(&mut self, w: Point<World>) {
-    let old_value = self.cg;
+    let old_value = self.coords.chunk_grid;
     let cg = Point::new_chunk_grid_from_world(w);
-    self.w = w;
-    self.cg = cg;
-    self.tg = Point::new_tile_grid_from_world(w);
+    self.coords.world = w;
+    self.coords.chunk_grid = cg;
+    self.coords.tile_grid = Point::new_tile_grid_from_world(w);
     self.center_w = Point::new_world(
       w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
@@ -208,16 +209,16 @@ impl CurrentChunk {
 
 impl Default for CurrentChunk {
   fn default() -> Self {
-    let w = Point::new_world_from_tile_grid(ORIGIN_TILE_GRID_SPAWN_POINT);
-    let cg = Point::new_chunk_grid_from_world(w);
     Self {
       center_w: Point::new_world(
-        w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-        w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+        ORIGIN_WORLD_SPAWN_POINT.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
+        ORIGIN_WORLD_SPAWN_POINT.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       ),
-      w,
-      cg,
-      tg: ORIGIN_TILE_GRID_SPAWN_POINT,
+      coords: Coords::new(
+        ORIGIN_WORLD_SPAWN_POINT,
+        ORIGIN_CHUNK_GRID_SPAWN_POINT,
+        ORIGIN_TILE_GRID_SPAWN_POINT,
+      ),
     }
   }
 }

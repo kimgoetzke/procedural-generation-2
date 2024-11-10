@@ -151,6 +151,10 @@ impl Point<World> {
     Self::new(w.x.round() as i32, w.y.round() as i32)
   }
 
+  pub fn new_world_from_chunk_grid(cg: Point<ChunkGrid>) -> Self {
+    Self::new(cg.x * CHUNK_SIZE * TILE_SIZE as i32, cg.y * CHUNK_SIZE * TILE_SIZE as i32)
+  }
+
   pub fn new_world_from_tile_grid(tg: Point<TileGrid>) -> Self {
     Self::new(tg.x * TILE_SIZE as i32, tg.y * TILE_SIZE as i32)
   }

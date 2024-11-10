@@ -1,5 +1,6 @@
 mod chunk;
 mod components;
+mod debug_data;
 mod direction;
 mod draft_chunk;
 mod draft_tile;
@@ -10,7 +11,6 @@ mod terrain_type;
 mod tile;
 mod tile_data;
 mod tile_type;
-mod debug_data;
 
 pub use crate::resources::Settings;
 pub use chunk::Chunk;

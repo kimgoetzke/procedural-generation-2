@@ -4,8 +4,8 @@ use crate::coords::Point;
 use crate::generation::resources::{ElevationMetadata, Metadata};
 use crate::generation::{async_utils, get_time};
 use crate::resources::{CurrentChunk, Settings};
-use crate::states::{AppState, GenerationState};
-use bevy::app::{App, Plugin};
+use crate::states::AppState;
+use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
 use bevy::prelude::{NextState, OnEnter, Res, ResMut};
 use std::ops::Range;
@@ -15,12 +15,14 @@ pub struct MetadataGeneratorPlugin;
 impl Plugin for MetadataGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_systems(OnEnter(AppState::Initialising), generate_metadata)
-      .add_systems(OnEnter(GenerationState::Generating), update_metadata);
+      .add_systems(OnEnter(AppState::Initialising), initialise_metadata)
+      .add_systems(Update, update_metadata);
   }
 }
 
-fn generate_metadata(
+/// This function is intended to be used to generate performance intensive metadata for the world prior to running the
+/// main loop.
+fn initialise_metadata(
   metadata: ResMut<Metadata>,
   current_chunk: Res<CurrentChunk>,
   settings: Res<Settings>,
@@ -31,12 +33,14 @@ fn generate_metadata(
   next_state.set(AppState::Running);
 }
 
-// TODO: Fix bug where metadata update be executed after the draft chunk generation, causing a panic that could be
-//  avoided by introducing another generation states.
 /// Currently we're always regenerating the metadata for the entire grid. This is to allow changing the step size in
 /// the UI without having visual artifacts due to already generated metadata that is then incorrect. If this becomes
 /// a performance issue, we can change it but as of now, it's never taken anywhere near 1 ms.
-fn update_metadata(metadata: ResMut<Metadata>, current_chunk: Res<CurrentChunk>, settings: Res<Settings>) {
+fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChunk>, settings: Res<Settings>) {
+  if metadata.current_chunk_cg == current_chunk.get_chunk_grid() {
+    return;
+  }
+  metadata.current_chunk_cg = current_chunk.get_chunk_grid();
   regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
 }
 
@@ -44,13 +48,17 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   let start_time = get_time();
   let x_step = settings.metadata.elevation_step_increase_x;
   let y_step = settings.metadata.elevation_step_increase_y;
+  metadata.index.clear();
   (cg.x - ELEVATION_GRID_APOTHEM..=cg.x + ELEVATION_GRID_APOTHEM).for_each(|x| {
     (cg.y - ELEVATION_GRID_APOTHEM..=cg.y + ELEVATION_GRID_APOTHEM).for_each(|y| {
+      let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x_step, y_step, x, y);
+      metadata.index.push(cg);
     })
   });
   debug!(
-    "Updated metadata based on new current chunk using [x_step={}, y_step={}] in {} ms on {}",
+    "Updated metadata based on current chunk {} using inputs [x_step={}, y_step={}] in {} ms on {}",
+    cg,
     x_step,
     y_step,
     get_time() - start_time,

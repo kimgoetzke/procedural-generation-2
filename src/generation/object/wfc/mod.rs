@@ -13,8 +13,6 @@ impl Plugin for WfcPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-// TODO: Consider simplifying the way snapshots are handled
-// TODO: Refactor function as it's long and unreadable
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn determine_objects_in_grid(
   mut rng: &mut StdRng,

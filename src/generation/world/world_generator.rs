@@ -47,7 +47,6 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     chunk = pre_render_processor::process_single(chunk, &settings);
     chunks.push(chunk);
   }
-
   debug!(
     "Generated chunks in {} ms on [{}]",
     get_time() - start_time,

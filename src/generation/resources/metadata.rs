@@ -27,6 +27,8 @@ impl Plugin for MetadataPlugin {
 /// to forests in the east.
 #[derive(Resource, Default, Clone)]
 pub struct Metadata {
+  pub current_chunk_cg: Point<ChunkGrid>,
+  pub index: Vec<Point<ChunkGrid>>,
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
 }
 

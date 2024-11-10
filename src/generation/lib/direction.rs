@@ -1,5 +1,5 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::point::{CoordType, InternalGrid, TileGrid, World};
+use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use crate::coords::Point;
 use cmp::Ordering;
 use std::cmp;
@@ -33,39 +33,23 @@ impl Direction {
     }
   }
 
-  pub fn from_chunk(chunk_world: &Point<World>, other_world: &Point<World>) -> Self {
+  pub fn from_chunk_w(chunk_world: &Point<World>, other_world: &Point<World>) -> Self {
     let chunk_len = CHUNK_SIZE * TILE_SIZE as i32;
     let chunk_left = chunk_world.x;
     let chunk_right = chunk_world.x + chunk_len - 1;
     let chunk_top = chunk_world.y;
     let chunk_bottom = chunk_world.y - chunk_len + 1;
-    let x = if other_world.x < chunk_left {
-      -1
-    } else if other_world.x > chunk_right {
-      1
-    } else {
-      0
-    };
-    let y = if other_world.y > chunk_top {
-      1
-    } else if other_world.y < chunk_bottom {
-      -1
-    } else {
-      0
-    };
 
-    match (x, y) {
-      (-1, 1) => Direction::TopLeft,
-      (0, 1) => Direction::Top,
-      (1, 1) => Direction::TopRight,
-      (-1, 0) => Direction::Left,
-      (0, 0) => Direction::Center,
-      (1, 0) => Direction::Right,
-      (-1, -1) => Direction::BottomLeft,
-      (0, -1) => Direction::Bottom,
-      (1, -1) => Direction::BottomRight,
-      _ => unreachable!("Reaching this was supposed to be impossible..."),
-    }
+    to_direction(other_world, chunk_left, chunk_right, chunk_top, chunk_bottom)
+  }
+
+  pub fn from_chunk_cg(chunk_world: &Point<ChunkGrid>, other_world: &Point<ChunkGrid>) -> Self {
+    let chunk_left = chunk_world.x;
+    let chunk_right = chunk_world.x - 1;
+    let chunk_top = chunk_world.y;
+    let chunk_bottom = chunk_world.y + 1;
+
+    to_direction(other_world, chunk_left, chunk_right, chunk_top, chunk_bottom)
   }
 }
 
@@ -94,4 +78,34 @@ pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direc
     (Direction::Bottom, Point::new(p.x, p.y - offset)),
     (Direction::BottomRight, Point::new(p.x + offset, p.y - offset)),
   ]
+}
+
+fn to_direction<T: CoordType>(other_world: &Point<T>, left: i32, right: i32, top: i32, bottom: i32) -> Direction {
+  let x = if other_world.x < left {
+    -1
+  } else if other_world.x > right {
+    1
+  } else {
+    0
+  };
+  let y = if other_world.y > top {
+    1
+  } else if other_world.y < bottom {
+    -1
+  } else {
+    0
+  };
+
+  match (x, y) {
+    (-1, 1) => Direction::TopLeft,
+    (0, 1) => Direction::Top,
+    (1, 1) => Direction::TopRight,
+    (-1, 0) => Direction::Left,
+    (0, 0) => Direction::Center,
+    (1, 0) => Direction::Right,
+    (-1, -1) => Direction::BottomLeft,
+    (0, -1) => Direction::Bottom,
+    (1, -1) => Direction::BottomRight,
+    _ => unreachable!("Reaching this was supposed to be impossible..."),
+  }
 }

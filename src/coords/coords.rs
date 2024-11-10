@@ -11,7 +11,16 @@ pub struct Coords {
 }
 
 impl Coords {
-  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>) -> Self {
+  pub fn new(w: Point<World>, cg: Point<ChunkGrid>, tg: Point<TileGrid>) -> Self {
+    Self {
+      world: w,
+      chunk_grid: cg,
+      tile_grid: tg,
+      internal_grid: Point::new(0, 0),
+    }
+  }
+
+  pub fn new_for_tile(ig: Point<InternalGrid>, tg: Point<TileGrid>) -> Self {
     let w = Point::new_world_from_tile_grid(tg.clone());
     Self {
       chunk_grid: Point::new_chunk_grid_from_world(w.clone()),

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::coords::point::{TileGrid, World};
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
 use bevy::color::Color;
 use bevy::math::UVec2;
@@ -16,7 +16,7 @@ pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
-pub const ELEVATION_STEP_INCREASE_X: f32 = 0.05;
+pub const ELEVATION_STEP_INCREASE_X: f32 = 0.1;
 pub const ELEVATION_STEP_INCREASE_Y: f32 = 0.;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
@@ -42,9 +42,10 @@ pub const BUFFER_SIZE: i32 = 1;
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The size of a chunk that is rendered on the screen.
 pub const CHUNK_SIZE: i32 = 16;
-pub const ORIGIN_TILE_GRID_SPAWN_POINT: Point<TileGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
+pub const ORIGIN_CHUNK_GRID_SPAWN_POINT: Point<ChunkGrid> = Point::new_const(0, 0);
 pub const ORIGIN_WORLD_SPAWN_POINT: Point<World> =
   Point::new_const(-(CHUNK_SIZE / 2) * TILE_SIZE as i32, (CHUNK_SIZE / 2) * TILE_SIZE as i32);
+pub const ORIGIN_TILE_GRID_SPAWN_POINT: Point<TileGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
 // Tiles

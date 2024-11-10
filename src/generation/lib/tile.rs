@@ -29,7 +29,7 @@ impl Tile {
       draft_tile.coords.internal_grid.x - BUFFER_SIZE,
       draft_tile.coords.internal_grid.y - BUFFER_SIZE,
     );
-    let adjusted_coords = Coords::new(adjusted_ig, draft_tile.coords.tile_grid);
+    let adjusted_coords = Coords::new_for_tile(adjusted_ig, draft_tile.coords.tile_grid);
     if !is_marked_for_deletion(&adjusted_ig) {
       trace!(
         "Converting: DraftTile {:?} => {:?} {:?} tile {:?}",

@@ -45,6 +45,7 @@ pub struct ObjectComponent {
 
 #[derive(Debug)]
 pub enum UpdateWorldStatus {
+  UpdateMetadata,
   GenerateChunks,
   SpawnEmptyEntities,
   ScheduleSpawningTiles,
@@ -62,6 +63,8 @@ pub struct UpdateWorldComponent {
   pub created_at: u128,
   pub status: UpdateWorldStatus,
   pub w: Point<World>,
+  pub cg: Point<ChunkGrid>,
+  pub stage_0_metadata: bool,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
   pub stage_3_spawn_data: Vec<(Chunk, Vec<TileData>)>,
@@ -71,12 +74,14 @@ pub struct UpdateWorldComponent {
 }
 
 impl UpdateWorldComponent {
-  pub fn new(w: Point<World>, task: Task<Vec<Chunk>>, prune_world_after: bool, created_at: u128) -> Self {
+  pub fn new(w: Point<World>, cg: Point<ChunkGrid>, prune_world_after: bool, created_at: u128) -> Self {
     Self {
       created_at,
-      status: UpdateWorldStatus::GenerateChunks,
+      status: UpdateWorldStatus::UpdateMetadata,
       w,
-      stage_1_gen_task: Some(task),
+      cg,
+      stage_0_metadata: false,
+      stage_1_gen_task: None,
       stage_2_chunks: vec![],
       stage_3_spawn_data: vec![],
       stage_4_spawn_data: vec![],
