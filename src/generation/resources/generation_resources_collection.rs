@@ -93,6 +93,8 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
   }
+  let any_handle = asset_server.load("objects/any.terrain.ruleset.ron");
+  rule_set_handles.push(any_handle);
   commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
   let handle = asset_server.load("objects/all.tile-type.ruleset.ron");
   commands.insert_resource(TileTypeRuleSetHandle(handle));
@@ -248,8 +250,8 @@ fn initialise_resources_system(
   asset_collection.objects.forest = object_assets_static(&asset_server, &mut layouts, FOREST_OBJ_PATH);
 
   // Objects: Rule sets for wave function collapse
-  asset_collection.objects.terrain_rules = terrain_rule_set(terrain_rule_set_handle, &mut terrain_rule_set_assets);
-  asset_collection.objects.tile_type_rules = tile_type_rule_set(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  asset_collection.objects.terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
+  asset_collection.objects.tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
 }
 
 fn tile_set_assets_static(
@@ -345,7 +347,7 @@ fn object_assets_static(
   }
 }
 
-fn terrain_rule_set(
+fn terrain_rules(
   terrain_rule_set_handle: Res<TerrainRuleSetHandle>,
   terrain_rule_set_assets: &mut ResMut<Assets<TerrainRuleSet>>,
 ) -> HashMap<TerrainType, Vec<TerrainState>> {
@@ -356,11 +358,26 @@ fn terrain_rule_set(
       rule_sets.insert(rule_set.terrain, rule_set.states);
     }
   }
+  if let Some(any_rule_set) = rule_sets.remove(&TerrainType::Any) {
+    debug!(
+      "Found and removed [Any] terrain rule set with {} state(s) and will extend each of the other rule sets accordingly",
+      any_rule_set.len()
+    );
+    for (terrain, states) in rule_sets.iter_mut() {
+      states.splice(0..0, any_rule_set.iter().cloned());
+      debug!(
+        "Extended [{}] rule set by {}, it now has {} states",
+        terrain,
+        any_rule_set.len(),
+        states.len()
+      );
+    }
+  }
 
   rule_sets
 }
 
-fn tile_type_rule_set(
+fn tile_type_rules(
   tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
   tile_type_rule_set_assets: &mut ResMut<Assets<TileTypeRuleSet>>,
 ) -> HashMap<TileType, Vec<ObjectName>> {
