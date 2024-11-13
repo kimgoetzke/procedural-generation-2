@@ -1,5 +1,5 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::point::InternalGrid;
+use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
 use crate::generation::lib::{TerrainType, TileData, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
@@ -15,24 +15,26 @@ use bevy::utils::HashMap;
 /// spawned as a child entity of the tile.
 #[derive(Debug, Clone, Reflect)]
 pub struct ObjectGrid {
+  pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
   pub grid: Vec<Vec<Cell>>,
 }
 
 impl ObjectGrid {
-  fn new_uninitialised() -> Self {
+  fn new_uninitialised(cg: Point<ChunkGrid>) -> Self {
     let grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
-    ObjectGrid { grid }
+    ObjectGrid { cg, grid }
   }
 
   pub fn new_initialised(
+    cg: Point<ChunkGrid>,
     terrain_rules: &HashMap<TerrainType, Vec<TerrainState>>,
     tile_type_rules: &HashMap<TileType, Vec<ObjectName>>,
     tile_data: &Vec<TileData>,
   ) -> Self {
-    let mut grid = ObjectGrid::new_uninitialised();
+    let mut grid = ObjectGrid::new_uninitialised(cg);
     let grid_size = grid.grid.len();
     for data in tile_data.iter() {
       let ig = data.flat_tile.coords.internal_grid;

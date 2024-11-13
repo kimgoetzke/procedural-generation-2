@@ -50,14 +50,15 @@ pub fn generate_object_data(
     return vec![];
   }
   let start_time = get_time();
+  let chunk_cg = spawn_data.0.coords.chunk_grid;
   let grid = ObjectGrid::new_initialised(
+    chunk_cg,
     &resources.objects.terrain_rules,
     &resources.objects.tile_type_rules,
     &spawn_data.1,
   );
   let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
   let object_grid_len = grid.grid.len();
-  let chunk_cg = spawn_data.0.coords.chunk_grid;
   let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
 

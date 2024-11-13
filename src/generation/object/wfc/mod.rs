@@ -38,16 +38,17 @@ pub fn determine_objects_in_grid(
         if let Some(snapshot) = snapshot {
           grid.restore_from_snapshot(snapshot);
           trace!(
-            "Failed (#{}) to reduce entropy in object grid during iteration {} - restored snapshot {} out of {}",
+            "Failed (#{}) to reduce entropy in object grid {} during iteration {} - restored snapshot {} out of {}",
             iteration_error_count,
+            grid.cg,
             iteration_count,
             snapshot_index,
             snapshots.len()
           );
         } else {
           error!(
-            "Failed (#{}) to reduce entropy in object grid during iteration {} - no snapshot available",
-            iteration_error_count, iteration_count
+            "Failed (#{}) to reduce entropy in object grid {} during iteration {} - no snapshot available",
+            iteration_error_count, grid.cg, iteration_count
           );
           snapshot_error_count += 1;
           continue;
@@ -57,7 +58,8 @@ pub fn determine_objects_in_grid(
       result => {
         let current_entropy = grid.calculate_total_entropy();
         trace!(
-          "Completed object grid iteration {} (encountering {} errors) and with a total entropy of {}",
+          "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
+          grid.cg,
           iteration_count,
           iteration_error_count,
           current_entropy
@@ -88,7 +90,8 @@ pub fn determine_objects_in_grid(
   );
 
   trace!(
-    "Completed wave function collapse (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
+    "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
+    grid.cg,
     total_error_count,
     snapshot_error_count,
     get_time() - start_time,
@@ -102,13 +105,15 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
   if lowest_entropy_cells.is_empty() {
-    trace!("No more cells to collapse in object grid");
+    trace!("No more cells to collapse in object grid {}", grid.cg);
     return IterationResult::Ok;
   }
 
   // Collapse: Collapse random cell from the cells with the lowest entropy
   let index = rng.gen_range(0..lowest_entropy_cells.len());
-  let random_cell: &Cell = lowest_entropy_cells.get(index).expect("Failed to get random cell");
+  let random_cell: &Cell = lowest_entropy_cells
+    .get(index)
+    .expect(format!("Failed to get random cell during processing of object grid {}", grid.cg).as_str());
   let mut random_cell_clone = random_cell.clone();
   random_cell_clone.collapse(&mut rng);
 
