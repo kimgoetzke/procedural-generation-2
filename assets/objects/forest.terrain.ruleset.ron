@@ -407,14 +407,58 @@
       ]
     ),
     (
+      index: 16,
+      name: ForestBush1,
+      weight: 10,
+      permitted_neighbours: [
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4 ] ),
+      ]
+    ),
+    (
+      index: 17,
+      name: ForestBush2,
+      weight: 10,
+      permitted_neighbours: [
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+      ]
+    ),
+    (
+      index: 18,
+      name: ForestBush3,
+      weight: 10,
+      permitted_neighbours: [
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree4, ForestBush4 ] ),
+      ]
+    ),
+    (
+      index: 19,
+      name: ForestBush4,
+      weight: 10,
+      permitted_neighbours: [
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3 ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3 ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3 ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3 ] ),
+      ]
+    ),
+    (
       index: 0,
       name: ForestTree1,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5 ] ),
+        ( Top, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
       ]
     ),
     (
@@ -422,10 +466,10 @@
       name: ForestTree2,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5 ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5 ] ),
+        ( Top, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
       ]
     ),
     (
@@ -433,10 +477,10 @@
       name: ForestTree3,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5 ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5 ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5 ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5 ] ),
+        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
       ]
     ),
     (
@@ -444,10 +488,10 @@
       name: ForestTree4,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5 ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5 ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5 ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5 ] ),
+        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4 ] ),
       ]
     ),
     (
@@ -455,10 +499,10 @@
       name: ForestTree5,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4 ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4 ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4 ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4 ] ),
+        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4 ] ),
+        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4 ] ),
       ]
     ),
   ]

@@ -65,6 +65,10 @@ pub enum ObjectName {
   ForestTree3,
   ForestTree4,
   ForestTree5,
+  ForestBush1,
+  ForestBush2,
+  ForestBush3,
+  ForestBush4,
 }
 
 impl ObjectName {
