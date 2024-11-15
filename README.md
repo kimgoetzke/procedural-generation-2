@@ -66,4 +66,15 @@ such as JetBrains RustRover, you'll have to set up the environment manually. You
 
 ### Reminders
 
+#### How to add object sprite assets
+
+1. Add the sprite to the relevant sprite sheet in `assets/objects/`
+2. Add a new option to the `ObjectName` enum
+3. Add the object name to the `any.terrain.ruleset.ron` file (top, right, bottom, left)
+4. Add the object name to the `all.tile-type.ruleset.ron` file (like just `Fill`)
+5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
+6. Optional: if this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
+
+#### Run configurations
+
 - Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs

@@ -34,6 +34,10 @@
         GrassRubbleVerticalSandBottom,
         GrassRubbleVerticalForestTop,
         GrassRubbleVerticalForestBottom,
+        GrassBush1,
+        GrassBush2,
+        GrassBush3,
+        GrassBush4,
         SandPathTop,
         SandPathRight,
         SandPathBottom,
@@ -186,7 +190,9 @@
     ),
     (
       tile_type: Single,
-      permitted_self: [ Empty, ]
+      permitted_self: [ 
+        Empty,
+      ]
     ),
   ]
 )

@@ -406,5 +406,49 @@
         ),
       ]
     ),
+    (
+      index: 16,
+      name: GrassBush1,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 17,
+      name: GrassBush2,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 18,
+      name: GrassBush3,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 19,
+      name: GrassBush4,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
   ]
 )
