@@ -148,7 +148,7 @@ fn tile_info(
   object_component_option: &Option<&ObjectComponent>,
 ) -> (Name, Text2dBundle, TileDebugInfoComponent) {
   let object = if let Some(oc) = object_component_option {
-    format!("\nObject: \n{:?}\nObject sprite {}", oc.object_name, oc.sprite_index)
+    format!("\nObject: \n{:?}\n(Sprite {})", oc.object_name, oc.sprite_index)
   } else {
     "\nNo object sprite".to_string()
   };
@@ -161,25 +161,32 @@ fn tile_info(
   (
     Name::new(format!("Tile {:?} Debug Info", tile.coords.tile_grid)),
     Text2dBundle {
-      text_anchor: Anchor::Center,
+      text_anchor: Anchor::TopLeft,
       text: Text::from_section(
         format!(
-          "{:?} {:?}\n{:?}\n{:?}\nTerrain sprite {:?}\nLayer {:?}{}",
-          tile.coords.tile_grid, tile.coords.internal_grid, tile.terrain, tile.tile_type, sprite_index, tile.layer, object
+          "{}\n{} {}\n{:?}\n{:?}\n(Sprite {:?}, layer {:?})\n{}",
+          tile.coords.chunk_grid,
+          tile.coords.tile_grid,
+          tile.coords.internal_grid,
+          tile.terrain,
+          tile.tile_type,
+          sprite_index,
+          tile.layer,
+          object
         ),
         TextStyle {
-          font_size: 30.,
+          font_size: 28.,
           color: LIGHT,
           ..default()
         },
       )
-      .with_justify(JustifyText::Center),
+      .with_justify(JustifyText::Left),
       visibility,
       transform: Transform {
         scale: Vec3::splat(0.1),
         translation: Vec3::new(
-          spawn_point.x as f32 + TILE_SIZE as f32 / 2.,
-          spawn_point.y as f32 - TILE_SIZE as f32 / 2.,
+          spawn_point.x as f32 + 2.,
+          spawn_point.y as f32 - 2.,
           tile.layer as f32 + 1000.,
         ),
         ..Default::default()

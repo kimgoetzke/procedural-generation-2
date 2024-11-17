@@ -89,14 +89,44 @@ pub fn determine_objects_in_grid(
       .collect::<Vec<ObjectData>>(),
   );
 
-  trace!(
-    "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
-    grid.cg,
-    total_error_count,
-    snapshot_error_count,
-    get_time() - start_time,
-    async_utils::thread_name()
-  );
+  match (total_error_count, snapshot_error_count) {
+    (0, 0) => {
+      trace!(
+        "Completed wave function collapse for {} in {} ms on [{}]",
+        grid.cg,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    (1..5, 0) => {
+      debug!(
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    (5.., 0) => {
+      warn!(
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    _ => {
+      error!(
+        "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        snapshot_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+  }
 
   object_data
 }
