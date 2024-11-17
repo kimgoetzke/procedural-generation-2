@@ -450,5 +450,38 @@
         ( Bottom, [ Empty ] ),
       ]
     ),
+    (
+      index: 20,
+      name: GrassFlower1,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 21,
+      name: GrassFlower2,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 22,
+      name: GrassFlower3,
+      weight: 1,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Left, [ Empty ] ),
+        ( Right, [ Empty ] ),
+        ( Bottom, [ Empty ] ),
+      ]
+    ),
   ]
 )

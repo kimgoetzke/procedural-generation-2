@@ -38,6 +38,9 @@
         GrassBush2,
         GrassBush3,
         GrassBush4,
+        GrassFlower1,
+        GrassFlower2,
+        GrassFlower3,
         SandPathTop,
         SandPathRight,
         SandPathBottom,
@@ -65,6 +68,7 @@
         SandPattern2,
         SandPattern3,
         SandPattern4,
+        SandPattern5,
         ForestTree1,
         ForestTree2,
         ForestTree3,
@@ -190,8 +194,11 @@
     ),
     (
       tile_type: Single,
-      permitted_self: [ 
+      permitted_self: [
         Empty,
+        GrassFlower1,
+        GrassFlower2,
+        GrassFlower3,
       ]
     ),
   ]

@@ -78,3 +78,5 @@ such as JetBrains RustRover, you'll have to set up the environment manually. You
 #### Run configurations
 
 - Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
+- Create a run configuration with environment variable
+  `RUST_LOG=procedural_generation_2=debug,procedural_generation_2::generation::object=trace` to add WFC trace logs too
