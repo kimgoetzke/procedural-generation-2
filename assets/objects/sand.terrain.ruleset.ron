@@ -13,8 +13,6 @@
           [
             SandPathLeft,
             SandPathHorizontal,
-            SandPathHorizontalForestRight,
-            SandPathHorizontalGrassRight,
             SandPathCross,
           ]
         ),
@@ -32,8 +30,6 @@
           [
             SandPathRight,
             SandPathHorizontal,
-            SandPathHorizontalForestLeft,
-            SandPathHorizontalGrassLeft,
             SandPathCross,
           ]
         ),
@@ -42,8 +38,6 @@
           [
             SandPathLeft,
             SandPathHorizontal,
-            SandPathHorizontalForestRight,
-            SandPathHorizontalGrassRight,
             SandPathCross,
           ]
         ),
@@ -60,8 +54,6 @@
           [
             SandPathBottom,
             SandPathVertical,
-            SandPathVerticalForestTop,
-            SandPathVerticalGrassTop,
           ]
         ),
         (
@@ -69,8 +61,6 @@
           [
             SandPathRight,
             SandPathHorizontal,
-            SandPathHorizontalForestLeft,
-            SandPathHorizontalGrassLeft,
           ]
         ),
         (
@@ -78,8 +68,6 @@
           [
             SandPathLeft,
             SandPathHorizontal,
-            SandPathHorizontalForestRight,
-            SandPathHorizontalGrassRight,
           ]
         ),
         (
@@ -87,8 +75,6 @@
           [
             SandPathTop,
             SandPathVertical,
-            SandPathVerticalForestBottom,
-            SandPathVerticalGrassBottom,
           ]
         ),
       ]
@@ -102,8 +88,6 @@
           Top,
           [
             SandPathVertical,
-            SandPathVerticalForestTop,
-            SandPathVerticalGrassTop,
             SandPathBottom,
             SandPathCross,
           ]
@@ -114,8 +98,6 @@
           Bottom,
           [
             SandPathVertical,
-            SandPathVerticalForestBottom,
-            SandPathVerticalGrassBottom,
             SandPathTop,
             SandPathCross,
           ]
@@ -135,8 +117,6 @@
           [
             SandPathCross,
             SandPathVertical,
-            SandPathVerticalForestBottom,
-            SandPathVerticalGrassBottom,
             SandPathTop,
           ]
         ),
@@ -152,8 +132,6 @@
           [
             SandPathCross,
             SandPathVertical,
-            SandPathVerticalForestTop,
-            SandPathVerticalGrassTop,
             SandPathBottom,
           ]
         ),
@@ -173,213 +151,11 @@
           [
             SandPathRight,
             SandPathHorizontal,
-            SandPathHorizontalForestLeft,
-            SandPathHorizontalGrassLeft,
             SandPathCross,
           ]
         ),
         ( Right, [ Empty ] ),
         ( Bottom, [ Empty ] ),
-      ]
-    ),
-    (
-      index: 8,
-      name: SandPathHorizontalGrassRight,
-      weight: 10,
-      permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        (
-          Left,
-          [
-            SandPathRight,
-            SandPathHorizontal,
-            SandPathCross,
-          ]
-        ),
-        (
-          Right,
-          [
-            GrassRubbleLeft,
-            GrassRubbleHorizontal,
-            GrassRubbleCross,
-          ]
-        ),
-        ( Bottom, [ Empty ] ),
-      ]
-    ),
-    (
-      index: 9,
-      name: SandPathHorizontalGrassLeft,
-      weight: 10,
-      permitted_neighbours: [
-        ( Top, [ Empty ]  ),
-        (
-          Left,
-          [
-            GrassRubbleRight,
-            GrassRubbleHorizontal,
-            GrassRubbleCross,
-          ]
-        ),
-        (
-          Right,
-          [
-            SandPathLeft,
-            SandPathHorizontal,
-            SandPathCross,
-          ]
-        ),
-        ( Bottom, [ Empty ] ),
-      ]
-    ),
-    (
-      index: 10,
-      name: SandPathHorizontalForestRight,
-      weight: 10,
-      permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        (
-          Left,
-          [
-            SandPathRight,
-            SandPathHorizontal,
-            SandPathCross,
-          ]
-        ),
-        (
-          Right,
-          [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinCross,
-          ]
-        ),
-        ( Bottom, [ Empty ] ),
-      ]
-    ),
-    (
-      index: 11,
-      name: SandPathHorizontalForestLeft,
-      weight: 10,
-      permitted_neighbours: [
-        ( Top, [ Empty ]  ),
-        (
-          Left,
-          [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinCross,
-          ]
-        ),
-        (
-          Right,
-          [
-            SandPathLeft,
-            SandPathHorizontal,
-            SandPathCross,
-          ]
-        ),
-        ( Bottom, [ Empty ] ),
-      ]
-    ),
-    (
-      index: 12,
-      name: SandPathVerticalGrassTop,
-      weight: 10,
-      permitted_neighbours: [
-        (
-          Top,
-          [
-            GrassRubbleVertical,
-            GrassRubbleBottom,
-            GrassRubbleCross,
-          ]
-        ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        (
-          Bottom,
-          [
-            SandPathVertical,
-            SandPathTop,
-            SandPathCross,
-          ]
-        ),
-      ]
-    ),
-    (
-      index: 13,
-      name: SandPathVerticalGrassBottom,
-      weight: 10,
-      permitted_neighbours: [
-        (
-          Top,
-          [
-            SandPathVertical,
-            SandPathBottom,
-            SandPathCross,
-          ]
-        ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        (
-          Bottom,
-          [
-            GrassRubbleVertical,
-            GrassRubbleTop,
-            GrassRubbleCross,
-          ]
-        ),
-      ]
-    ),
-    (
-      index: 14,
-      name: SandPathVerticalForestTop,
-      weight: 10,
-      permitted_neighbours: [
-        (
-          Top,
-          [
-            ForestRuinVertical,
-            ForestRuinBottom,
-            ForestRuinCross,
-          ]
-        ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        (
-          Bottom,
-          [
-            SandPathVertical,
-            SandPathTop,
-            SandPathCross,
-          ]
-        ),
-      ]
-    ),
-    (
-      index: 15,
-      name: SandPathVerticalForestBottom,
-      weight: 10,
-      permitted_neighbours: [
-        (
-          Top,
-          [
-            SandPathVertical,
-            SandPathBottom,
-            SandPathCross,
-          ]
-        ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        (
-          Bottom,
-          [
-            ForestRuinVertical,
-            ForestRuinTop,
-            ForestRuinCross,
-          ]
-        ),
       ]
     ),
     (
@@ -473,7 +249,7 @@
     (
       index: 24,
       name: SandPattern1,
-      weight: 2,
+      weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Right, [ SandPattern2, SandPattern3, ] ),
@@ -517,7 +293,7 @@
     (
       index: 28,
       name: SandPattern5,
-      weight: 2,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Right, [ Empty, SandPattern1, SandPattern2, SandPattern4, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
