@@ -233,7 +233,7 @@
       ]
     ),
     (
-      index: 12,
+      index: 10,
       name: GrassRubbleVerticalForestTop,
       weight: 10,
       permitted_neighbours: [
@@ -258,7 +258,7 @@
       ]
     ),
     (
-      index: 13,
+      index: 11,
       name: GrassRubbleVerticalForestBottom,
       weight: 10,
       permitted_neighbours: [
