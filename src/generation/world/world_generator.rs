@@ -5,7 +5,7 @@ use crate::coords::Point;
 use crate::generation::async_utils::CommandQueueTask;
 use crate::generation::lib::{Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
 use crate::generation::resources::{AssetPack, GenerationResourcesCollection, Metadata};
-use crate::generation::world::pre_render_processor;
+use crate::generation::world::post_processor;
 use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -44,7 +44,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     let chunk_tg = Point::new_tile_grid_from_world(chunk_w.clone());
     let draft_chunk = DraftChunk::new(chunk_w.clone(), chunk_tg, &metadata, &settings);
     let mut chunk = Chunk::new(draft_chunk, &settings);
-    chunk = pre_render_processor::process_single(chunk, &settings);
+    chunk = post_processor::process(chunk, &settings);
     chunks.push(chunk);
   }
   debug!(

@@ -31,7 +31,17 @@ impl Plane {
     }
   }
 
-  pub fn clear_tile(&mut self, point: Point<InternalGrid>) {
+  pub fn get_tile_mut(&mut self, point: &Point<InternalGrid>) -> Option<&mut Tile> {
+    let i = point.x as usize;
+    let j = point.y as usize;
+    if i < self.data.len() && j < self.data[0].len() {
+      Some(self.data[i][j].as_mut()?)
+    } else {
+      None
+    }
+  }
+
+  pub fn clear_tile(&mut self, point: &Point<InternalGrid>) {
     self.data[point.x as usize][point.y as usize] = None;
   }
 

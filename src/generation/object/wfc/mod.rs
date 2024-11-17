@@ -98,7 +98,7 @@ pub fn determine_objects_in_grid(
         async_utils::thread_name()
       );
     }
-    (1..5, 0) => {
+    (1..10, 0) => {
       debug!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
         grid.cg,

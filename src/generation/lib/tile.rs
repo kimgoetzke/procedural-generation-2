@@ -54,6 +54,11 @@ impl Tile {
       (self.coords.tile_grid.y + self.coords.internal_grid.y) * TILE_SIZE as i32,
     )
   }
+
+  pub fn lower_terrain_by_one(&mut self, tile_type: TileType) {
+    self.terrain = TerrainType::from(self.terrain as usize - 1);
+    self.tile_type = tile_type;
+  }
 }
 
 pub fn is_marked_for_deletion(ig: &Point<InternalGrid>) -> bool {
