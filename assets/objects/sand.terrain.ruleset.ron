@@ -159,6 +159,94 @@
       ]
     ),
     (
+      index: 8,
+      name: SandStoneTopFill1,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Bottom, [ Empty ] ),
+        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, SandStoneBottomRightFill, ] ),
+      ]
+    ),
+    (
+      index: 9,
+      name: SandStoneTopFill2,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Bottom, [ Empty ] ),
+        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, SandStoneBottomRightFill, ] ),
+      ]
+    ),
+    (
+      index: 10,
+      name: SandStoneTopRightFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty ] ),
+        ( Right, [ Empty, SandStoneTopLeftFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
+        ( Bottom, [ Empty ] ),
+        ( Left, [ Empty ] ),
+      ]
+    ),
+    (
+      index: 11,
+      name: SandStoneTopLeftFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty, SandStoneLeftFill, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty ] ),
+        ( Left, [ Empty, SandStoneTopRightFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
+      ]
+    ),
+    (
+      index: 12,
+      name: SandStoneLeftFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty, SandStoneLeftFill, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, SandStoneLeftFill, SandStoneTopLeftFill, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
+      index: 13,
+      name: SandStoneRightFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomLeftFill, SandStoneBottomRightFill, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, SandStoneBottomLeftFill, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
+      index: 14,
+      name: SandStoneBottomLeftFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, SandStoneLeftFill, SandStoneTopLeftFill, ] ),
+        ( Left, [ Empty, SandStoneBottomRightFill, ] ),
+      ]
+    ),
+    (
+      index: 15,
+      name: SandStoneBottomRightFill,
+      weight: 50,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Right, [ Empty, SandStoneBottomLeftFill, ] ),
+        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
       index: 16,
       name: SandStone1,
       weight: 2,

@@ -65,23 +65,23 @@
     ),
     (
       tile_type: InnerCornerTopRight,
-      permitted_self: [ Empty, ]
+      permitted_self: [ Empty, SandStoneTopRightFill, ]
     ),
     (
       tile_type: InnerCornerBottomRight,
-      permitted_self: [ Empty, ]
-    ),
-    (
-      tile_type: InnerCornerTopLeft,
-      permitted_self: [ Empty, ]
+      permitted_self: [ Empty, SandStoneBottomRightFill, ]
     ),
     (
       tile_type: InnerCornerBottomLeft,
-      permitted_self: [ Empty, ]
+      permitted_self: [ Empty, SandStoneBottomLeftFill, ]
+    ),
+    (
+      tile_type: InnerCornerTopLeft,
+      permitted_self: [ Empty, SandStoneTopLeftFill, ]
     ),
     (
       tile_type: OuterCornerTopRight,
-      permitted_self: [ Empty, ]
+      permitted_self: [ Empty, SandStoneBottomLeftFill, ]
     ),
     (
       tile_type: OuterCornerBottomRight,
@@ -89,7 +89,7 @@
     ),
     (
       tile_type: OuterCornerTopLeft,
-      permitted_self: [ Empty, ]
+      permitted_self: [ Empty, SandStoneBottomRightFill, ]
     ),
     (
       tile_type: OuterCornerBottomLeft,
@@ -111,6 +111,8 @@
         GrassRubbleVerticalForestBottom,
         ForestRuinVerticalGrassTop,
         ForestRuinVerticalGrassBottom,
+        SandStoneTopFill1,
+        SandStoneTopFill2,
       ]
     ),
     (
@@ -121,6 +123,7 @@
         GrassRubbleHorizontalForestLeft,
         ForestRuinHorizontalGrassRight,
         ForestRuinHorizontalGrassLeft,
+        SandStoneRightFill,
       ]
     ),
     (
@@ -141,6 +144,7 @@
         GrassRubbleHorizontalForestLeft,
         ForestRuinHorizontalGrassRight,
         ForestRuinHorizontalGrassLeft,
+        SandStoneLeftFill,
       ]
     ),
     (
