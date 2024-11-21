@@ -22,111 +22,35 @@ pub fn determine_objects_in_grid(
   let start_time = get_time();
   let grid = &mut object_generation_data.0;
   let mut snapshots = vec![];
-  let mut iteration_count = 1;
+  let mut iter_count = 1;
   let mut has_entropy = true;
   let mut snapshot_error_count: usize = 0;
-  let mut iteration_error_count: usize = 0;
+  let mut iter_error_count: usize = 0;
   let mut total_error_count = 0;
 
   while has_entropy {
     match iterate(&mut rng, grid) {
-      IterationResult::Failure => {
-        iteration_error_count += 1;
-        total_error_count += 1;
-        let snapshot_index = snapshots.len().saturating_sub(iteration_error_count);
-        let snapshot = snapshots.get(snapshot_index);
-        if let Some(snapshot) = snapshot {
-          grid.restore_from_snapshot(snapshot);
-          trace!(
-            "Failed (#{}) to reduce entropy in object grid {} during iteration {} - restored snapshot {} out of {}",
-            iteration_error_count,
-            grid.cg,
-            iteration_count,
-            snapshot_index,
-            snapshots.len()
-          );
-        } else {
-          error!(
-            "Failed (#{}) to reduce entropy in object grid {} during iteration {} - no snapshot available",
-            iteration_error_count, grid.cg, iteration_count
-          );
-          snapshot_error_count += 1;
-          continue;
-        }
-        snapshots.truncate(snapshot_index);
-      }
-      result => {
-        let current_entropy = grid.calculate_total_entropy();
-        trace!(
-          "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
-          grid.cg,
-          iteration_count,
-          iteration_error_count,
-          current_entropy
-        );
-        if iteration_count % 10 == 0 {
-          snapshots.push(grid.clone());
-        }
-        has_entropy = result == IterationResult::Incomplete;
-        iteration_count += 1;
-        iteration_error_count = 0;
-      }
+      IterationResult::Failure => handle_failure(
+        grid,
+        &mut snapshots,
+        &mut iter_count,
+        &mut snapshot_error_count,
+        &mut iter_error_count,
+        &mut total_error_count,
+      ),
+      result => handle_success(
+        grid,
+        &mut snapshots,
+        &mut iter_count,
+        &mut has_entropy,
+        &mut iter_error_count,
+        result,
+      ),
     }
   }
 
-  let grid = &object_generation_data.0;
-  let tile_data = &object_generation_data.1;
-  let mut object_data = vec![];
-  object_data.extend(
-    tile_data
-      .iter()
-      .filter_map(|tile_data| {
-        grid
-          .get_cell(&tile_data.flat_tile.coords.internal_grid)
-          .filter(|cell| cell.index != 0)
-          .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
-      })
-      .collect::<Vec<ObjectData>>(),
-  );
-
-  match (total_error_count, snapshot_error_count) {
-    (0, 0) => {
-      trace!(
-        "Completed wave function collapse for {} in {} ms on [{}]",
-        grid.cg,
-        get_time() - start_time,
-        async_utils::thread_name()
-      );
-    }
-    (1..10, 0) => {
-      debug!(
-        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
-        grid.cg,
-        total_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
-      );
-    }
-    (5.., 0) => {
-      warn!(
-        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
-        grid.cg,
-        total_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
-      );
-    }
-    _ => {
-      error!(
-        "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
-        grid.cg,
-        total_error_count,
-        snapshot_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
-      );
-    }
-  }
+  let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1);
+  log_summary(start_time, snapshot_error_count, total_error_count, grid);
 
   object_data
 }
@@ -169,4 +93,131 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   }
 
   IterationResult::Incomplete
+}
+
+fn handle_failure(
+  grid: &mut ObjectGrid,
+  mut snapshots: &mut Vec<ObjectGrid>,
+  iter_count: &mut i32,
+  snapshot_error_count: &mut usize,
+  iter_error_count: &mut usize,
+  total_error_count: &mut i32,
+) {
+  *iter_error_count += 1;
+  *total_error_count += 1;
+  let snapshot_index = snapshots.len().saturating_sub(*iter_error_count);
+  let snapshot = snapshots.get(snapshot_index);
+  if let Some(snapshot) = snapshot {
+    grid.restore_from_snapshot(snapshot);
+    log_failure(grid, &snapshots, iter_count, iter_error_count, snapshot_index);
+  } else {
+    error!(
+      "Failed (#{}) to reduce entropy in object grid {} during iteration {} - no snapshot available",
+      iter_error_count, grid.cg, iter_count
+    );
+    *snapshot_error_count += 1;
+  }
+  snapshots.truncate(snapshot_index);
+}
+
+fn handle_success(
+  grid: &mut ObjectGrid,
+  snapshots: &mut Vec<ObjectGrid>,
+  iter_count: &mut i32,
+  has_entropy: &mut bool,
+  iter_error_count: &mut usize,
+  result: IterationResult,
+) {
+  let current_entropy = grid.calculate_total_entropy();
+  log_completion(grid, iter_count, iter_error_count, current_entropy);
+  if *iter_count % 10 == 0 {
+    snapshots.push(grid.clone());
+  }
+  *has_entropy = result == IterationResult::Incomplete;
+  *iter_count += 1;
+  *iter_error_count = 0;
+}
+
+fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<ObjectData> {
+  let mut object_data = vec![];
+  object_data.extend(
+    tile_data
+      .iter()
+      .filter_map(|tile_data| {
+        grid
+          .get_cell(&tile_data.flat_tile.coords.internal_grid)
+          .filter(|cell| cell.index != 0)
+          .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
+      })
+      .collect::<Vec<ObjectData>>(),
+  );
+  object_data
+}
+
+fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mut usize, current_entropy: i32) {
+  trace!(
+    "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
+    grid.cg,
+    iter_count,
+    iter_error_count,
+    current_entropy
+  );
+}
+
+fn log_failure(
+  grid: &mut ObjectGrid,
+  snapshots: &Vec<ObjectGrid>,
+  iteration_count: &i32,
+  iteration_error_count: &usize,
+  snapshot_index: usize,
+) {
+  trace!(
+    "Failed (#{}) to reduce entropy in object grid {} during iteration {} - restored snapshot {} out of {}",
+    iteration_error_count,
+    grid.cg,
+    iteration_count,
+    snapshot_index,
+    snapshots.len()
+  );
+}
+
+fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count: i32, grid: &ObjectGrid) {
+  match (total_error_count, snapshot_error_count) {
+    (0, 0) => {
+      trace!(
+        "Completed wave function collapse for {} in {} ms on [{}]",
+        grid.cg,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    (1..10, 0) => {
+      debug!(
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    (5.., 0) => {
+      warn!(
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+    _ => {
+      error!(
+        "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
+        grid.cg,
+        total_error_count,
+        snapshot_error_count,
+        get_time() - start_time,
+        async_utils::thread_name()
+      );
+    }
+  }
 }
