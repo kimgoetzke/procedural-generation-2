@@ -4,7 +4,7 @@ use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::{
-  get_direction_points, ChunkComponent, Direction, UpdateWorldComponent, UpdateWorldStatus, WorldComponent,
+  get_direction_points, ChunkComponent, Direction, GenerationStage, WorldComponent, WorldGenerationComponent,
 };
 use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection, Metadata};
@@ -16,8 +16,8 @@ use bevy::core::Name;
 use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, NextState, OnExit,
-  OnRemove, Query, Res, ResMut, SpatialBundle, Trigger, Update, With,
+  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, Mut, NextState,
+  OnExit, OnRemove, Query, Res, ResMut, SpatialBundle, Trigger, Update, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool};
 use rand::prelude::StdRng;
@@ -43,8 +43,8 @@ impl Plugin for GenerationPlugin {
         ObjectGenerationPlugin,
         DebugPlugin,
       ))
-      .add_systems(OnExit(AppState::Initialising), generation_system)
-      .add_systems(Update, update_world_system.run_if(in_state(GenerationState::Generating)))
+      .add_systems(OnExit(AppState::Initialising), initiate_world_generation_system)
+      .add_systems(Update, world_generation_system.run_if(in_state(GenerationState::Generating)))
       .add_systems(
         Update,
         (regenerate_world_event, update_world_event, prune_world_event).run_if(in_state(AppState::Running)),
@@ -54,13 +54,13 @@ impl Plugin for GenerationPlugin {
 }
 
 /// Generates the world and all its objects. Called once before entering `AppState::Running`.
-fn generation_system(mut commands: Commands, mut next_state: ResMut<NextState<GenerationState>>) {
+fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResMut<NextState<GenerationState>>) {
   let w = ORIGIN_WORLD_SPAWN_POINT;
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
   debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
     Name::new(format!("Update World Component {}", w)),
-    UpdateWorldComponent::new(w, cg, false, get_time()),
+    WorldGenerationComponent::new(w, cg, false, get_time()),
   ));
   commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
   next_state.set(GenerationState::Generating);
@@ -84,7 +84,7 @@ fn regenerate_world_event(
     commands.entity(world).despawn_recursive();
     commands.spawn((
       Name::new(format!("Update World Component {}", cg)),
-      UpdateWorldComponent::new(w, cg, false, get_time()),
+      WorldGenerationComponent::new(w, cg, false, get_time()),
     ));
     commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
     next_state.set(GenerationState::Generating);
@@ -111,7 +111,7 @@ fn update_world_event(
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("Update World Component {}", new_parent_w)),
-      UpdateWorldComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, get_time()),
+      WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, get_time()),
     ));
     current_chunk.update(new_parent_w);
     next_state.set(GenerationState::Generating);
@@ -139,130 +139,60 @@ fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &Updat
   new_parent_chunk_w
 }
 
-// TODO: Consider extracting each branch of the match statement into its own function
 /// Updates the world and all its objects. This is the core system that drives the generation of the world and all its
-/// objects once a `UpdateWorldComponent` has been spawned.
-fn update_world_system(
+/// objects. It is triggered when a `WorldGenerationComponent` is spawned.
+fn world_generation_system(
   mut commands: Commands,
   existing_world: Query<Entity, With<WorldComponent>>,
-  mut update_world: Query<(Entity, &mut UpdateWorldComponent), With<UpdateWorldComponent>>,
+  mut world_generation_components: Query<(Entity, &mut WorldGenerationComponent), With<WorldGenerationComponent>>,
   settings: Res<Settings>,
   metadata: Res<Metadata>,
   resources: Res<GenerationResourcesCollection>,
   existing_chunks: Res<ChunkComponentIndex>,
   mut prune_world_event: EventWriter<PruneWorldEvent>,
 ) {
-  for (entity, mut component) in update_world.iter_mut() {
+  for (entity, mut component) in world_generation_components.iter_mut() {
     let start_time = get_time();
     let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
-    match component.status {
-      UpdateWorldStatus::UpdateMetadata => {
-        // Schedule the generation of the chunks if the relevant metadata exists
-        if !component.stage_0_metadata {
-          if metadata.index.contains(&component.cg) {
-            component.stage_0_metadata = true;
-          } else {
-            debug!("Awaiting metadata for {:?}", component.cg);
-          }
-        }
-        if component.stage_0_metadata {
-          let settings = settings.clone();
-          let metadata = metadata.clone();
-          let spawn_points = calculate_chunk_spawn_points(&existing_chunks, &settings, &component.w);
-          let task_pool = AsyncComputeTaskPool::get();
-          let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, metadata, &settings) });
-          component.stage_1_gen_task = Some(task);
-          component.status = UpdateWorldStatus::GenerateChunks;
-        }
-      }
-      UpdateWorldStatus::GenerateChunks => {
-        // Await the generation of the new chunks
-        if let Some(task) = component.stage_1_gen_task.as_mut() {
-          if task.is_finished() {
-            if let Some(object_data) = block_on(poll_once(task)) {
-              component.stage_2_chunks = object_data;
-              component.stage_1_gen_task = None;
-              component.status = UpdateWorldStatus::SpawnEmptyEntities;
-            }
-          }
-        }
-        if component.stage_1_gen_task.is_none() {
-          component.status = UpdateWorldStatus::SpawnEmptyEntities;
-        }
-      }
-      UpdateWorldStatus::SpawnEmptyEntities => {
-        // Spawn entities for the new chunks and all of its tiles
-        if !component.stage_2_chunks.is_empty() {
-          let chunk = component.stage_2_chunks.remove(0);
-          commands.entity(world_entity).with_children(|parent| {
-            let tile_data = world::spawn_chunk(parent, &chunk);
-            component.stage_3_spawn_data.push((chunk, tile_data));
-          });
-        }
-        if component.stage_2_chunks.is_empty() {
-          component.status = UpdateWorldStatus::ScheduleSpawningTiles;
-        }
-      }
-      UpdateWorldStatus::ScheduleSpawningTiles => {
-        // Schedule the spawning of all the tile sprites in the new chunks
-        if !component.stage_3_spawn_data.is_empty() {
-          let spawn_data = component.stage_3_spawn_data.remove(0);
-          world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
-          component.stage_4_spawn_data.push(spawn_data);
-        }
-        if component.stage_3_spawn_data.is_empty() {
-          component.status = UpdateWorldStatus::GenerateObjectData;
-        }
-      }
-      UpdateWorldStatus::GenerateObjectData => {
-        // Determine any objects to spawn
-        if !component.stage_4_spawn_data.is_empty() {
-          let spawn_data = component.stage_4_spawn_data.remove(0);
-          let resources = resources.clone();
-          let settings = settings.clone();
-          let task_pool = AsyncComputeTaskPool::get();
-          let task = task_pool.spawn(async move { object::generate_object_data(&resources, &settings, spawn_data) });
-          component.stage_5_object_data.push(task);
-        }
-        if component.stage_4_spawn_data.is_empty() {
-          component.status = UpdateWorldStatus::ScheduleSpawningObjects;
-        }
-      }
-      UpdateWorldStatus::ScheduleSpawningObjects => {
-        // Schedule the spawning of all the objects in the new chunks
-        if !component.stage_5_object_data.is_empty() {
-          component.stage_5_object_data.retain_mut(|task| {
-            if task.is_finished() {
-              let object_data = block_on(poll_once(task)).expect("Failed to get object data");
-              let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
-              object::schedule_spawning_objects(&mut commands, &mut rng, object_data);
-              false
-            } else {
-              true
-            }
-          });
-        }
-        if component.stage_5_object_data.is_empty() {
-          component.status = UpdateWorldStatus::ScheduleWorldPruning;
-        }
-      }
-      UpdateWorldStatus::ScheduleWorldPruning => {
-        // Clean up the world by despawning distant chunks, if necessary
-        if !component.prune_world_after {
-          prune_world_event.send(PruneWorldEvent {
-            despawn_all_chunks: false,
-            update_world_after: false,
-          });
-        }
-        component.status = UpdateWorldStatus::Done;
-      }
-      UpdateWorldStatus::Done => {
-        info!("✅  {} which took {} ms", *component, get_time() - component.created_at);
-        commands.entity(entity).despawn_recursive();
-        return;
-      }
+    match component.stage {
+      GenerationStage::Stage1 => stage_1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &mut component),
+      GenerationStage::Stage2 => stage_2_await_chunk_generation(&mut component),
+      GenerationStage::Stage3 => stage_3_spawn_chunks_and_empty_tiles(&mut commands, &mut component, world_entity),
+      GenerationStage::Stage4 => stage_4_schedule_spawning_tiles(&mut commands, &settings, &mut component),
+      GenerationStage::Stage5 => stage_5_schedule_generating_object_data(&settings, &resources, &mut component),
+      GenerationStage::Stage6 => stage_6_schedule_spawning_objects(&mut commands, &settings, &mut component),
+      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component),
     }
-    trace!("{} which took {} ms", *component, get_time() - start_time);
+    trace!(
+      "World generation component {} reached stage [{:?}] which took {} ms",
+      component.cg,
+      component.stage,
+      get_time() - start_time
+    );
+  }
+}
+
+fn stage_1_schedule_chunk_generation(
+  settings: &Settings,
+  metadata: &Metadata,
+  existing_chunks: &Res<ChunkComponentIndex>,
+  component: &mut Mut<WorldGenerationComponent>,
+) {
+  if !component.stage_0_metadata {
+    if metadata.index.contains(&component.cg) {
+      component.stage_0_metadata = true;
+    } else {
+      debug!("Awaiting metadata for {:?}", component.cg);
+    }
+  }
+  if component.stage_0_metadata {
+    let settings = settings.clone();
+    let metadata = metadata.clone();
+    let spawn_points = calculate_chunk_spawn_points(&existing_chunks, &settings, &component.w);
+    let task_pool = AsyncComputeTaskPool::get();
+    let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, metadata, &settings) });
+    component.stage_1_gen_task = Some(task);
+    component.stage = GenerationStage::Stage2;
   }
 }
 
@@ -294,10 +224,117 @@ fn calculate_chunk_spawn_points(
   spawn_points
 }
 
+fn stage_2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>) {
+  if let Some(task) = component.stage_1_gen_task.as_mut() {
+    if task.is_finished() {
+      if let Some(chunks) = block_on(poll_once(task)) {
+        component.stage_2_chunks = chunks;
+        component.stage_1_gen_task = None;
+        component.stage = GenerationStage::Stage3;
+      }
+    }
+  }
+  if component.stage_1_gen_task.is_none() {
+    component.stage = GenerationStage::Stage3;
+  }
+}
+
+fn stage_3_spawn_chunks_and_empty_tiles(
+  commands: &mut Commands,
+  component: &mut Mut<WorldGenerationComponent>,
+  world_entity: Entity,
+) {
+  if !component.stage_2_chunks.is_empty() {
+    let chunk = component.stage_2_chunks.remove(0);
+    commands.entity(world_entity).with_children(|parent| {
+      let tile_data = world::spawn_chunk(parent, &chunk);
+      component.stage_3_spawn_data.push((chunk, tile_data));
+    });
+  }
+  if component.stage_2_chunks.is_empty() {
+    component.stage = GenerationStage::Stage4;
+  }
+}
+
+fn stage_4_schedule_spawning_tiles(
+  mut commands: &mut Commands,
+  settings: &Res<Settings>,
+  component: &mut Mut<WorldGenerationComponent>,
+) {
+  if !component.stage_3_spawn_data.is_empty() {
+    let spawn_data = component.stage_3_spawn_data.remove(0);
+    world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
+    component.stage_4_spawn_data.push(spawn_data);
+  }
+  if component.stage_3_spawn_data.is_empty() {
+    component.stage = GenerationStage::Stage5;
+  }
+}
+
+fn stage_5_schedule_generating_object_data(
+  settings: &Settings,
+  resources: &GenerationResourcesCollection,
+  component: &mut Mut<WorldGenerationComponent>,
+) {
+  if !component.stage_4_spawn_data.is_empty() {
+    let spawn_data = component.stage_4_spawn_data.remove(0);
+    let resources = resources.clone();
+    let settings = settings.clone();
+    let task_pool = AsyncComputeTaskPool::get();
+    let task = task_pool.spawn(async move { object::generate_object_data(&resources, &settings, spawn_data) });
+    component.stage_5_object_data.push(task);
+  }
+  if component.stage_4_spawn_data.is_empty() {
+    component.stage = GenerationStage::Stage6;
+  }
+}
+
+fn stage_6_schedule_spawning_objects(
+  mut commands: &mut Commands,
+  settings: &Settings,
+  component: &mut Mut<WorldGenerationComponent>,
+) {
+  if !component.stage_5_object_data.is_empty() {
+    component.stage_5_object_data.retain_mut(|task| {
+      if task.is_finished() {
+        let object_data = block_on(poll_once(task)).expect("Failed to get object data");
+        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+        object::schedule_spawning_objects(&mut commands, &mut rng, object_data);
+        false
+      } else {
+        true
+      }
+    });
+  }
+  if component.stage_5_object_data.is_empty() {
+    component.stage = GenerationStage::Stage7;
+  }
+}
+
+fn stage_7_clean_up(
+  commands: &mut Commands,
+  prune_world_event: &mut EventWriter<PruneWorldEvent>,
+  entity: Entity,
+  component: &mut Mut<WorldGenerationComponent>,
+) {
+  if !component.prune_world_after {
+    prune_world_event.send(PruneWorldEvent {
+      despawn_all_chunks: false,
+      update_world_after: false,
+    });
+  }
+  info!(
+    "✅  World generation component {} successfully processed in {} ms",
+    component.cg,
+    get_time() - component.created_at
+  );
+  commands.entity(entity).despawn_recursive();
+}
+
 /// Sets the `GenerationState` to `Idling` when the last `UpdateWorldComponent` has just been removed.
 fn on_remove_update_world_component_trigger(
-  _trigger: Trigger<OnRemove, UpdateWorldComponent>,
-  query: Query<&UpdateWorldComponent>,
+  _trigger: Trigger<OnRemove, WorldGenerationComponent>,
+  query: Query<&WorldGenerationComponent>,
   mut next_state: ResMut<NextState<GenerationState>>,
 ) {
   if query.iter().len() == 1 {

@@ -50,7 +50,7 @@ pub fn determine_objects_in_grid(
   }
 
   let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1);
-  log_summary(start_time, snapshot_error_count, total_error_count, grid);
+  log_summary(start_time, snapshot_error_count, total_error_count, &object_generation_data.0);
 
   object_data
 }
@@ -97,7 +97,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
 
 fn handle_failure(
   grid: &mut ObjectGrid,
-  mut snapshots: &mut Vec<ObjectGrid>,
+  snapshots: &mut Vec<ObjectGrid>,
   iter_count: &mut i32,
   snapshot_error_count: &mut usize,
   iter_error_count: &mut usize,

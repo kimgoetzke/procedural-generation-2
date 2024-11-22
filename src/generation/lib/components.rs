@@ -4,7 +4,6 @@ use crate::generation::lib::{Chunk, LayeredPlane, Tile, TileData};
 use crate::generation::object::lib::{ObjectData, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
-use std::fmt::{Display, Formatter};
 
 /// A component that exists separate to the world and contains metadata about the world. This data influences the world
 /// generation process in various ways but does not represent any physical entity in the world.
@@ -44,59 +43,47 @@ pub struct ObjectComponent {
 }
 
 #[derive(Debug)]
-pub enum UpdateWorldStatus {
-  UpdateMetadata,
-  GenerateChunks,
-  SpawnEmptyEntities,
-  ScheduleSpawningTiles,
-  GenerateObjectData,
-  ScheduleSpawningObjects,
-  ScheduleWorldPruning,
-  Done,
+pub enum GenerationStage {
+  Stage1,
+  Stage2,
+  Stage3,
+  Stage4,
+  Stage5,
+  Stage6,
+  Stage7,
 }
 
-/// The core component for the world generation process. Used by the world generation system and stores
-/// the current state of the generation process. Is spawned to initiate the process and removed when the
-/// process is complete.
-#[derive(Component)]
-pub struct UpdateWorldComponent {
+/// The core component for the world generation process. Used by the world generation system. It is spawned to initiate
+/// process and is removed when the process is complete.
+#[derive(Component, Debug)]
+pub struct WorldGenerationComponent {
   pub created_at: u128,
-  pub status: UpdateWorldStatus,
+  pub stage: GenerationStage,
   pub w: Point<World>,
   pub cg: Point<ChunkGrid>,
+  pub prune_world_after: bool,
   pub stage_0_metadata: bool,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
   pub stage_3_spawn_data: Vec<(Chunk, Vec<TileData>)>,
   pub stage_4_spawn_data: Vec<(Chunk, Vec<TileData>)>,
   pub stage_5_object_data: Vec<Task<Vec<ObjectData>>>,
-  pub prune_world_after: bool,
 }
 
-impl UpdateWorldComponent {
+impl WorldGenerationComponent {
   pub fn new(w: Point<World>, cg: Point<ChunkGrid>, prune_world_after: bool, created_at: u128) -> Self {
     Self {
       created_at,
-      status: UpdateWorldStatus::UpdateMetadata,
+      stage: GenerationStage::Stage1,
       w,
       cg,
+      prune_world_after,
       stage_0_metadata: false,
       stage_1_gen_task: None,
       stage_2_chunks: vec![],
       stage_3_spawn_data: vec![],
       stage_4_spawn_data: vec![],
       stage_5_object_data: vec![],
-      prune_world_after,
     }
-  }
-}
-
-impl Display for UpdateWorldComponent {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(
-      f,
-      "Update world status is [{:?}] with [{}, prune_world_after={}]",
-      self.status, self.w, self.prune_world_after
-    )
   }
 }
