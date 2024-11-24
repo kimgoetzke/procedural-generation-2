@@ -36,7 +36,7 @@ impl fmt::Debug for DebugData {
     ├────────────────────────┼──────────────┤\n\
     │ Noise elevation offset │ {:12.5} │\n\
     └────────────────────────┴──────────────┘",
-      self.noise, self.noise_elevation_offset
+      self.noise, self.noise_elevation_offset,
     )
   }
 }

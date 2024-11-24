@@ -20,12 +20,11 @@ use bevy::prelude::{
   OnExit, OnRemove, Query, Res, ResMut, SpatialBundle, Trigger, Update, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool};
+use lib::shared;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
 use resources::GenerationResourcesPlugin;
-use std::time::SystemTime;
 
-mod async_utils;
 mod debug;
 pub(crate) mod lib;
 mod object;
@@ -60,7 +59,7 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
   debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
     Name::new(format!("Update World Component {}", w)),
-    WorldGenerationComponent::new(w, cg, false, get_time()),
+    WorldGenerationComponent::new(w, cg, false, shared::get_time()),
   ));
   commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
   next_state.set(GenerationState::Generating);
@@ -84,7 +83,7 @@ fn regenerate_world_event(
     commands.entity(world).despawn_recursive();
     commands.spawn((
       Name::new(format!("Update World Component {}", cg)),
-      WorldGenerationComponent::new(w, cg, false, get_time()),
+      WorldGenerationComponent::new(w, cg, false, shared::get_time()),
     ));
     commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
     next_state.set(GenerationState::Generating);
@@ -111,7 +110,7 @@ fn update_world_event(
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("Update World Component {}", new_parent_w)),
-      WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, get_time()),
+      WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);
     next_state.set(GenerationState::Generating);
@@ -152,7 +151,7 @@ fn world_generation_system(
   mut prune_world_event: EventWriter<PruneWorldEvent>,
 ) {
   for (entity, mut component) in world_generation_components.iter_mut() {
-    let start_time = get_time();
+    let start_time = shared::get_time();
     let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
     match component.stage {
       GenerationStage::Stage1 => stage_1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &mut component),
@@ -167,7 +166,7 @@ fn world_generation_system(
       "World generation component {} reached stage [{:?}] which took {} ms",
       component.cg,
       component.stage,
-      get_time() - start_time
+      shared::get_time() - start_time
     );
   }
 }
@@ -295,10 +294,11 @@ fn stage_6_schedule_spawning_objects(
   component: &mut Mut<WorldGenerationComponent>,
 ) {
   if !component.stage_5_object_data.is_empty() {
+    let cg = component.cg;
     component.stage_5_object_data.retain_mut(|task| {
       if task.is_finished() {
         let object_data = block_on(poll_once(task)).expect("Failed to get object data");
-        let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+        let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
         object::schedule_spawning_objects(&mut commands, &mut rng, object_data);
         false
       } else {
@@ -326,7 +326,7 @@ fn stage_7_clean_up(
   info!(
     "✅  World generation component {} successfully processed in {} ms",
     component.cg,
-    get_time() - component.created_at
+    shared::get_time() - component.created_at
   );
   commands.entity(entity).despawn_recursive();
 }
@@ -381,7 +381,7 @@ fn prune_world(
   despawn_all_chunks: bool,
   update_world_after: bool,
 ) {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let chunks_to_despawn = calculate_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks);
   for chunk_entity in chunks_to_despawn.iter() {
     if let Some(entity) = commands.get_entity(*chunk_entity) {
@@ -392,8 +392,8 @@ fn prune_world(
     "World pruning (despawn_all_chunks={}, update_world_after={}) took {} ms on [{}]",
     despawn_all_chunks,
     update_world_after,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 }
 
@@ -425,8 +425,4 @@ fn calculate_chunks_to_despawn(
   }
 
   chunks_to_despawn
-}
-
-fn get_time() -> u128 {
-  SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()
 }

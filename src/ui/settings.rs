@@ -58,7 +58,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     .clone();
 
   Window::new("Settings")
-    .default_size([325.0, 600.0])
+    .default_size([340.0, 600.0])
     .pivot(Align2::LEFT_BOTTOM)
     .anchor(Align2::LEFT_BOTTOM, [10.0, -10.0])
     .show(egui_context.get_mut(), |ui| {

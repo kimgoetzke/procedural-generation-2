@@ -5,13 +5,6 @@ use crate::generation::object::lib::{ObjectData, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
 
-/// A component that exists separate to the world and contains metadata about the world. This data influences the world
-/// generation process in various ways but does not represent any physical entity in the world.
-#[derive(Component, Debug, Clone, PartialEq)]
-pub struct MetadataComponent {
-  pub cg: Point<ChunkGrid>,
-}
-
 /// A simple tag component for the world entity. Used to identify the world entity in the ECS for
 /// easy removal (used when regenerating the world).
 #[derive(Component)]

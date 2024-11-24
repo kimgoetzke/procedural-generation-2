@@ -1,13 +1,16 @@
-use crate::constants::ELEVATION_GRID_APOTHEM;
+use crate::constants::*;
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
-use crate::generation::resources::{ElevationMetadata, Metadata};
-use crate::generation::{async_utils, get_time};
+use crate::generation::lib::{shared, TerrainType};
+use crate::generation::resources::{Biome, BiomeMetadata, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
 use bevy::prelude::{NextState, OnEnter, Res, ResMut};
+use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
+use rand::prelude::StdRng;
+use rand::{Rng, SeedableRng};
 use std::ops::Range;
 
 pub struct MetadataGeneratorPlugin;
@@ -44,14 +47,18 @@ fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChu
 }
 
 fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: Res<Settings>) {
-  let start_time = get_time();
+  let start_time = shared::get_time();
+  let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+    .set_octaves(1)
+    .set_frequency(settings.metadata.noise_frequency);
   let x_step = settings.metadata.elevation_step_increase_x;
   let y_step = settings.metadata.elevation_step_increase_y;
   metadata.index.clear();
-  (cg.x - ELEVATION_GRID_APOTHEM..=cg.x + ELEVATION_GRID_APOTHEM).for_each(|x| {
-    (cg.y - ELEVATION_GRID_APOTHEM..=cg.y + ELEVATION_GRID_APOTHEM).for_each(|y| {
+  (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
+    (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x_step, y_step, x, y);
+      generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
       metadata.index.push(cg);
     })
   });
@@ -60,8 +67,8 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
     cg,
     x_step,
     y_step,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 }
 
@@ -73,8 +80,8 @@ fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x_step: f32, y_s
     y_step,
   };
   let cg = Point::new_chunk_grid(x, y);
-  metadata.elevation.insert(cg, em.clone());
   trace!("Generated metadata for {}: {:?}", cg, em);
+  metadata.elevation.insert(cg, em);
 }
 
 /// Returns a range based on the given coordinate and step size. The range is rounded to 3 decimal places.
@@ -83,4 +90,25 @@ fn get_range(coordinate: i32, elevation_step: f32) -> Range<f32> {
     start: (((coordinate as f32 * elevation_step) - (elevation_step / 2.)) * 1000.0).round() / 1000.0,
     end: (((coordinate as f32 * elevation_step) + (elevation_step / 2.)) * 1000.0).round() / 1000.0,
   }
+}
+
+fn generate_biome_metadata(
+  metadata: &mut ResMut<Metadata>,
+  settings: &Settings,
+  perlin: &BasicMulti<Perlin>,
+  cg: Point<ChunkGrid>,
+) {
+  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
+  let humidity = perlin.get([cg.x as f64, cg.y as f64]) + 1. / 2.;
+  let biome = Biome::from(humidity);
+  let is_rocky = rng.gen_bool(METADATA_IS_ROCKY_PROBABILITY);
+  let max_layer = match humidity {
+    n if n > 0.75 => TerrainType::Forest,
+    n if n > 0.5 => TerrainType::Grass,
+    n if n > 0.25 => TerrainType::Sand,
+    _ => TerrainType::Shore,
+  };
+  let bm = BiomeMetadata::new(is_rocky, humidity as f32, max_layer as i32, biome);
+  debug!("Generated metadata for {}: {:?}", cg, bm);
+  metadata.biome.insert(cg, bm);
 }

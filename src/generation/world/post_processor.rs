@@ -1,7 +1,6 @@
 use crate::coords::point::InternalGrid;
 use crate::coords::Point;
-use crate::generation::lib::{Chunk, TerrainType, TileType};
-use crate::generation::{async_utils, get_time};
+use crate::generation::lib::{shared, Chunk, TerrainType, TileType};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -13,7 +12,7 @@ impl Plugin for PostProcessorPlugin {
 }
 
 pub(crate) fn process(mut chunk: Chunk, settings: &Settings) -> Chunk {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   for layer in 1..TerrainType::length() {
     let layer_name = TerrainType::from(layer);
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
@@ -25,8 +24,8 @@ pub(crate) fn process(mut chunk: Chunk, settings: &Settings) -> Chunk {
   trace!(
     "Pre-processed chunk {} in {} ms on [{}]",
     chunk.coords.chunk_grid,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 
   chunk

@@ -63,6 +63,9 @@ pub struct GeneralGenerationSettings {
   pub spawn_from_layer: usize,
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
+  // If true, the maximum layer of a chunk will be capped according to the value of a noise function. Introduces
+  // variety when the terrain doesn't change much over several chunks.
+  pub enable_occasional_max_layer_cap: bool,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -75,6 +78,7 @@ impl Default for GeneralGenerationSettings {
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
+      enable_occasional_max_layer_cap: ENABLE_OCCASIONAL_MAX_LAYER_CAP,
     }
   }
 }
@@ -92,6 +96,10 @@ pub struct GenerationMetadataSettings {
   /// direction.
   #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
   pub elevation_step_increase_y: f32,
+  /// The scale of the noise map generated for the biome metadata: the higher the frequency, the smaller the terrain
+  /// features. A parameter of `BasicMulti`.
+  #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
+  pub noise_frequency: f64,
 }
 
 impl Default for GenerationMetadataSettings {
@@ -99,6 +107,7 @@ impl Default for GenerationMetadataSettings {
     Self {
       elevation_step_increase_x: ELEVATION_STEP_INCREASE_X,
       elevation_step_increase_y: ELEVATION_STEP_INCREASE_Y,
+      noise_frequency: METADATA_NOISE_FREQUENCY,
     }
   }
 }
@@ -124,15 +133,16 @@ pub struct WorldGenerationSettings {
   /// The higher the amplitude, the more extreme the terrain. Similar to `noise_persistence` but applies to the entire
   /// output of the noise function equally. A custom parameter that is not part of `BasicMulti`.
   pub noise_amplitude: f64,
-  #[inspector(min = -1., max = 1., display = NumberDisplay::Slider)]
-  /// Shifts the entire terrain up or down.
-  pub elevation: f64,
-  /// Force the outside of the `Chunk` to become the lowest `TerrainType`. The higher the falloff strength, the closer
+  /// Used in combination with `` Force the outside of the `Chunk` to become the lowest `TerrainType`. The higher the falloff strength, the closer
   /// to the center of the `Chunk` the falloff begins. Basically turns `Chunk`s into an islands. Can generate unpleasant
   /// visual artifacts if set to a very low non-zero value. Don't use it if you want `Chunk`s to be connected at a
   /// higher `TerrainType`.
   #[inspector(min = 0.0, max = 2.5, display = NumberDisplay::Slider)]
   pub falloff_strength: f64,
+  // The strength of the noise function that determines the falloff. The higher the value, the more noise is added to
+  // the falloff. The lower the value, the more uniform the falloff will look.
+  #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
+  pub falloff_noise_strength: f64,
 }
 
 impl Default for WorldGenerationSettings {
@@ -143,8 +153,8 @@ impl Default for WorldGenerationSettings {
       noise_frequency: NOISE_FREQUENCY,
       noise_persistence: NOISE_PERSISTENCE,
       noise_amplitude: NOISE_AMPLITUDE,
-      elevation: NOISE_ELEVATION,
       falloff_strength: FALLOFF_STRENGTH,
+      falloff_noise_strength: FALLOFF_NOISE_STRENGTH,
     }
   }
 }

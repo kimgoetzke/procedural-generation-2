@@ -39,4 +39,13 @@ impl TerrainType {
       _ => TerrainType::Any,
     }
   }
+
+  pub fn new_clamped(proposed: TerrainType, max: i32, falloff: f64) -> Self {
+    let max_layer: i32 = if falloff > 0.5 { max } else { TerrainType::length() as i32 };
+    if proposed as i32 > max_layer {
+      TerrainType::from(max_layer as usize)
+    } else {
+      proposed
+    }
+  }
 }

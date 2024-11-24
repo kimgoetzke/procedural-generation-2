@@ -2,11 +2,10 @@ use crate::components::{AnimationComponent, AnimationTimer};
 use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TERRAIN_TYPE_ERROR};
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::async_utils::CommandQueueTask;
-use crate::generation::lib::{Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
+use crate::generation::lib::shared::CommandQueueTask;
+use crate::generation::lib::{shared, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
 use crate::generation::resources::{AssetPack, GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
-use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
@@ -38,7 +37,7 @@ impl CommandQueueTask for TileSpawnTask {
 }
 
 pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
   for chunk_w in spawn_points {
     let chunk_tg = Point::new_tile_grid_from_world(chunk_w.clone());
@@ -50,8 +49,8 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
   debug!(
     "Generated {} chunks in {} ms on [{}]",
     chunks.len(),
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 
   chunks
@@ -93,7 +92,7 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
 }
 
 pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Vec<TileData>)) {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
 
   for tile_data in spawn_data.1 {
@@ -120,8 +119,8 @@ pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings
   debug!(
     "Scheduled spawning tiles for chunk {} in {} ms on [{}]",
     spawn_data.0.coords.chunk_grid,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 }
 
@@ -129,7 +128,7 @@ fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut Chi
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (resources, settings) = async_utils::get_resources_and_settings(world);
+      let (resources, settings) = shared::get_resources_and_settings(world);
       if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
         tile_data_entity.with_children(|parent| {
           spawn_tile(tile_data, &tile, &resources, settings, parent);
@@ -285,5 +284,5 @@ fn animated_terrain_sprite(
 }
 
 fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
-  async_utils::process_tasks(commands, tile_spawn_tasks);
+  shared::process_tasks(commands, tile_spawn_tasks);
 }

@@ -1,6 +1,5 @@
-use crate::generation::lib::TileData;
+use crate::generation::lib::{shared, TileData};
 use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid};
-use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -19,7 +18,7 @@ pub fn determine_objects_in_grid(
   object_generation_data: &mut (ObjectGrid, Vec<TileData>),
   _settings: &Settings,
 ) -> Vec<ObjectData> {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let grid = &mut object_generation_data.0;
   let mut snapshots = vec![];
   let mut iter_count = 1;
@@ -187,8 +186,8 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
       trace!(
         "Completed wave function collapse for {} in {} ms on [{}]",
         grid.cg,
-        get_time() - start_time,
-        async_utils::thread_name()
+        shared::get_time() - start_time,
+        shared::thread_name()
       );
     }
     (1..10, 0) => {
@@ -196,8 +195,8 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
         grid.cg,
         total_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
+        shared::get_time() - start_time,
+        shared::thread_name()
       );
     }
     (5.., 0) => {
@@ -205,8 +204,8 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
         grid.cg,
         total_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
+        shared::get_time() - start_time,
+        shared::thread_name()
       );
     }
     _ => {
@@ -215,8 +214,8 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         grid.cg,
         total_error_count,
         snapshot_error_count,
-        get_time() - start_time,
-        async_utils::thread_name()
+        shared::get_time() - start_time,
+        shared::thread_name()
       );
     }
   }

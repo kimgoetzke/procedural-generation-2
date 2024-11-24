@@ -2,9 +2,8 @@ use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, CHUNK_SIZE_PLUS_BUFFER};
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
-use crate::generation::lib::{DraftTile, TerrainType};
+use crate::generation::lib::{shared, DraftTile, TerrainType};
 use crate::generation::resources::Metadata;
-use crate::generation::{async_utils, get_time};
 use crate::resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
@@ -40,11 +39,15 @@ fn generate_terrain_data(
   metadata: &Metadata,
   settings: &Settings,
 ) -> Vec<Vec<Option<DraftTile>>> {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let elevation_metadata = metadata
     .elevation
     .get(cg)
     .expect(format!("Failed to get elevation metadata for {}", cg).as_str());
+  let biome_metadata = metadata
+    .biome
+    .get(cg)
+    .expect(format!("Failed to get biome metadata for {}", cg).as_str());
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(settings.world.noise_octaves)
     .set_frequency(settings.world.noise_frequency)
@@ -54,8 +57,9 @@ fn generate_terrain_data(
   let end = Point::new_tile_grid(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y - CHUNK_SIZE_PLUS_BUFFER + 1);
   let center = Point::new_tile_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
-  let base_elevation = settings.world.elevation;
+  let use_max_layer_cap = settings.general.enable_occasional_max_layer_cap;
   let falloff_strength = settings.world.falloff_strength;
+  let falloff_noise_strength = settings.world.falloff_noise_strength;
   let mut tiles = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
   let mut ix = 0;
   let mut iy = 0;
@@ -72,14 +76,19 @@ fn generate_terrain_data(
 
       // Adjust noise based on elevation metadata
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
-      let normalised_noise = (normalised_noise + base_elevation + elevation_offset).clamp(0., 1.);
+      let normalised_noise = (normalised_noise + elevation_offset).clamp(0., 1.);
 
-      // Adjust noise based on distance from center using falloff map
-      let distance_x = (tx - center.x).abs() as f64 / max_distance;
-      let distance_y = (ty - center.y).abs() as f64 / max_distance;
-      let distance_from_center = distance_x.max(distance_y);
-      let falloff = (1. - distance_from_center).max(0.).powf(falloff_strength);
-      let adjusted_noise = normalised_noise * falloff;
+      // Calculate falloff map value
+      let falloff = calculate_terrain_falloff(
+        use_max_layer_cap,
+        center,
+        max_distance,
+        falloff_strength,
+        falloff_noise_strength,
+        ty,
+        tx,
+        clamped_noise,
+      );
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -88,14 +97,15 @@ fn generate_terrain_data(
       };
 
       // Determine terrain type based on noise
-      let tile = match adjusted_noise {
-        n if n > 0.75 => DraftTile::new(ig, tg, TerrainType::Forest, debug_data),
-        n if n > 0.6 => DraftTile::new(ig, tg, TerrainType::Grass, debug_data),
-        n if n > 0.45 => DraftTile::new(ig, tg, TerrainType::Sand, debug_data),
-        n if n > 0.3 => DraftTile::new(ig, tg, TerrainType::Shore, debug_data),
-        _ => DraftTile::new(ig, tg, TerrainType::Water, debug_data),
+      let terrain = match normalised_noise {
+        n if n > 0.75 => TerrainType::new_clamped(TerrainType::Forest, biome_metadata.max_layer, falloff),
+        n if n > 0.6 => TerrainType::new_clamped(TerrainType::Grass, biome_metadata.max_layer, falloff),
+        n if n > 0.45 => TerrainType::new_clamped(TerrainType::Sand, biome_metadata.max_layer, falloff),
+        n if n > 0.3 => TerrainType::new_clamped(TerrainType::Shore, biome_metadata.max_layer, falloff),
+        _ => TerrainType::Water,
       };
 
+      let tile = DraftTile::new(ig, tg, terrain, debug_data);
       tiles[ix as usize][iy as usize] = Some(tile);
       ix += 1;
     }
@@ -105,9 +115,31 @@ fn generate_terrain_data(
   trace!(
     "Generated draft chunk at {:?} in {} ms on [{}]",
     tg,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 
   tiles
+}
+
+fn calculate_terrain_falloff(
+  use_max_layer_cap: bool,
+  center: Point<TileGrid>,
+  max_distance: f64,
+  falloff_strength: f64,
+  falloff_noise_strength: f64,
+  ty: i32,
+  tx: i32,
+  clamped_noise: f64,
+) -> f64 {
+  if !use_max_layer_cap {
+    return 0.;
+  }
+  let distance_x = (tx - center.x).abs() as f64 / max_distance;
+  let distance_y = (ty - center.y).abs() as f64 / max_distance;
+  let distance_from_center = distance_x.max(distance_y);
+  let falloff_noise = clamped_noise * falloff_noise_strength;
+  let falloff = (1. - distance_from_center + falloff_noise).max(0.).powf(falloff_strength);
+
+  falloff
 }

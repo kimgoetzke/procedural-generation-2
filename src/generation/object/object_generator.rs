@@ -1,8 +1,6 @@
 use crate::constants::TILE_SIZE;
-use crate::generation;
-use crate::generation::async_utils::CommandQueueTask;
-use crate::generation::get_time;
-use crate::generation::lib::{Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::lib::shared::CommandQueueTask;
+use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::lib::ObjectName;
 use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::object::wfc;
@@ -19,7 +17,6 @@ use bevy::prelude::{Commands, Component, Entity, Query, Res, SpriteBundle, Textu
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
-use generation::async_utils;
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 
@@ -49,7 +46,7 @@ pub fn generate_object_data(
     debug!("Skipped object generation because it's disabled");
     return vec![];
   }
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let chunk_cg = spawn_data.0.coords.chunk_grid;
   let grid = ObjectGrid::new_initialised(
     chunk_cg,
@@ -57,7 +54,7 @@ pub fn generate_object_data(
     &resources.objects.tile_type_rules,
     &spawn_data.1,
   );
-  let mut rng = StdRng::seed_from_u64(settings.world.noise_seed as u64);
+  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let object_grid_len = grid.grid.len();
   let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
@@ -66,15 +63,15 @@ pub fn generate_object_data(
     "Generated object data for {} objects for chunk {} in {} ms on {}",
     object_grid_len,
     chunk_cg,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 
   object_data
 }
 
 pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, object_data: Vec<ObjectData>) {
-  let start_time = get_time();
+  let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
   let chunk_cg = if let Some(object_data) = object_data.first() {
@@ -89,8 +86,8 @@ pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, 
     "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
     object_data_len,
     chunk_cg,
-    get_time() - start_time,
-    async_utils::thread_name()
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 }
 
@@ -181,5 +178,5 @@ fn sprite(
 }
 
 fn process_async_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
-  async_utils::process_tasks(commands, object_spawn_tasks);
+  shared::process_tasks(commands, object_spawn_tasks);
 }

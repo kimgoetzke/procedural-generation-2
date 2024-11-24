@@ -1,3 +1,5 @@
+use crate::coords::point::ChunkGrid;
+use crate::coords::Point;
 use crate::generation::resources::GenerationResourcesCollection;
 use crate::resources::Settings;
 use bevy::ecs::system::SystemState;
@@ -5,6 +7,7 @@ use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{Commands, Component, Entity, Query, Res};
 use std::thread;
+use std::time::SystemTime;
 
 pub trait CommandQueueTask {
   fn poll_once(&mut self) -> Option<CommandQueue>;
@@ -33,4 +36,14 @@ pub fn get_resources_and_settings(world: &mut bevy::ecs::world::World) -> (Gener
     (resources.clone(), settings.clone())
   };
   (resources, settings)
+}
+
+pub fn get_time() -> u128 {
+  SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()
+}
+
+pub fn calculate_seed(cg: Point<ChunkGrid>, seed: u32) -> u64 {
+  let adjusted_x = cg.x as i64 + i32::MAX as i64;
+  let adjusted_y = cg.y as i64 + i32::MAX as i64;
+  ((adjusted_x as u64) << 32) ^ (adjusted_y as u64) + seed as u64
 }

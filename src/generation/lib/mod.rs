@@ -7,6 +7,7 @@ mod draft_tile;
 mod layered_plane;
 mod neighbours;
 mod plane;
+pub(crate) mod shared;
 mod terrain_type;
 mod tile;
 mod tile_data;
@@ -15,8 +16,7 @@ mod tile_type;
 pub use crate::resources::Settings;
 pub use chunk::Chunk;
 pub use components::{
-  ChunkComponent, GenerationStage, MetadataComponent, ObjectComponent, TileComponent, WorldComponent,
-  WorldGenerationComponent,
+  ChunkComponent, GenerationStage, ObjectComponent, TileComponent, WorldComponent, WorldGenerationComponent,
 };
 pub use direction::{get_direction_points, Direction};
 pub use draft_chunk::DraftChunk;
