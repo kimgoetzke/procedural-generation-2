@@ -129,7 +129,8 @@
                   export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                   export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
                   echo ""
-                  echo "Welcome to your (Bevy-ready) Rust development environment!" | ${pkgs.lolcat}/bin/lolcat
+                  echo "Welcome to your Rust game development environment!" | ${pkgs.lolcat}/bin/lolcat
+                  echo "It uses Rust ${version}, is Bevy-ready, and includes Audacity for audio editing." | ${pkgs.lolcat}/bin/lolcat
                   echo ""
                 '';
               };
