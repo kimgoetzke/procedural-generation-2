@@ -3,6 +3,7 @@ use crate::coords::point::{InternalGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::{DraftTile, TerrainType, TileType};
+use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::reflect::Reflect;
 use std::fmt;
@@ -19,6 +20,7 @@ pub struct Tile {
   pub coords: Coords,
   pub terrain: TerrainType,
   pub layer: i32,
+  pub climate: Climate,
   pub tile_type: TileType,
   pub debug_data: DebugData,
 }
@@ -43,6 +45,7 @@ impl Tile {
       coords: adjusted_coords,
       terrain: draft_tile.terrain,
       layer: draft_tile.layer + draft_tile.coords.internal_grid.y,
+      climate: draft_tile.climate,
       tile_type,
       debug_data: draft_tile.debug_data,
     }
@@ -70,6 +73,7 @@ impl fmt::Debug for Tile {
     f.debug_struct("Tile")
       .field("coords", &self.coords)
       .field("terrain", &self.terrain)
+      .field("climate", &self.climate)
       .field("tile_type", &self.tile_type)
       .finish()
   }

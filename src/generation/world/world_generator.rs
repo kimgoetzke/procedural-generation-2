@@ -4,7 +4,7 @@ use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{shared, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
-use crate::generation::resources::{AssetPack, GenerationResourcesCollection, Metadata};
+use crate::generation::resources::{AssetPack, Climate, GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -141,7 +141,7 @@ fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut Chi
 }
 
 fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
-  let asset_collection = resources.get_terrain_collection(tile.terrain);
+  let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
   if asset_collection.animated_tile_types.contains(&tile.tile_type) {
     (
       true,
@@ -217,27 +217,35 @@ fn static_terrain_sprite(
         anchor: Anchor::TopLeft,
         ..Default::default()
       },
-      texture: match tile.terrain {
-        TerrainType::DeepWater => resources.deep_water.stat.texture.clone(),
-        TerrainType::ShallowWater => resources.shallow_water.stat.texture.clone(),
-        TerrainType::Land1 => resources.sand.stat.texture.clone(),
-        TerrainType::Land2 => resources.grass.stat.texture.clone(),
-        TerrainType::Land3 => resources.forest.stat.texture.clone(),
-        TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
+      texture: match (tile.terrain, tile.climate) {
+        (TerrainType::DeepWater, _) => resources.deep_water.stat.texture.clone(),
+        (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture.clone(),
+        (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture.clone(),
+        (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture.clone(),
+        (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture.clone(),
+        (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture.clone(),
+        (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture.clone(),
+        (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture.clone(),
+        (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
       },
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
     },
     TextureAtlas {
-      layout: match tile.terrain {
-        TerrainType::DeepWater => resources.deep_water.stat.texture_atlas_layout.clone(),
-        TerrainType::ShallowWater => resources.shallow_water.stat.texture_atlas_layout.clone(),
-        TerrainType::Land1 => resources.sand.stat.texture_atlas_layout.clone(),
-        TerrainType::Land2 => resources.grass.stat.texture_atlas_layout.clone(),
-        TerrainType::Land3 => resources.forest.stat.texture_atlas_layout.clone(),
-        TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
+      layout: match (tile.terrain, tile.climate) {
+        (TerrainType::DeepWater, _) => resources.deep_water.stat.texture_atlas_layout.clone(),
+        (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture_atlas_layout.clone(),
+        (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture_atlas_layout.clone(),
+        (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
       },
-      index: tile.tile_type.calculate_sprite_index(&tile.terrain, &resources),
+      index: tile
+        .tile_type
+        .calculate_sprite_index(&tile.terrain, &tile.climate, &resources),
     },
     TileComponent {
       tile: tile.clone(),

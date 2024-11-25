@@ -157,7 +157,7 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
-  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
+  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, &tile.climate, resources);
   (
     Name::new(format!("Tile {:?} Debug Info", tile.coords.tile_grid)),
     Text2dBundle {

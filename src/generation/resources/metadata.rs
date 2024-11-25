@@ -1,7 +1,7 @@
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
 use bevy::app::{App, Plugin};
-use bevy::prelude::Resource;
+use bevy::prelude::{Reflect, Resource};
 use bevy::utils::HashMap;
 use std::ops::Range;
 
@@ -64,34 +64,33 @@ impl ElevationMetadata {
 #[derive(Clone, Debug)]
 pub struct BiomeMetadata {
   pub is_rocky: bool,
-  pub humidity: f32,
+  pub rainfall: f32,
   pub max_layer: i32,
-  pub biome: Biome,
+  pub climate: Climate,
 }
 
 impl BiomeMetadata {
-  pub fn new(is_rocky: bool, humidity: f32, max_layer: i32, biome: Biome) -> Self {
+  pub fn new(is_rocky: bool, rainfall: f32, max_layer: i32, climate: Climate) -> Self {
     Self {
       is_rocky,
-      humidity,
+      rainfall,
       max_layer,
-      biome,
+      climate,
     }
   }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum Biome {
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Reflect)]
+pub enum Climate {
   Dry,
-  Default,
-  Humid,
+  Moderate,
 }
 
-impl Biome {
-  pub fn from(humidity: f64) -> Self {
-    match humidity {
-      n if n < 0.5 => Biome::Default,
-      _ => Biome::Dry,
+impl Climate {
+  pub fn from(rainfall: f64) -> Self {
+    match rainfall {
+      n if n < 0.5 => Climate::Moderate,
+      _ => Climate::Dry,
     }
   }
 }

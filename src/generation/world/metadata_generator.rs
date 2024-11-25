@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::lib::{shared, TerrainType};
-use crate::generation::resources::{Biome, BiomeMetadata, ElevationMetadata, Metadata};
+use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
@@ -99,16 +99,16 @@ fn generate_biome_metadata(
   cg: Point<ChunkGrid>,
 ) {
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
-  let humidity = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
-  let biome = Biome::from(humidity);
+  let rainfall = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
+  let climate = Climate::from(rainfall);
   let is_rocky = rng.gen_bool(METADATA_IS_ROCKY_PROBABILITY);
-  let max_layer = match humidity {
+  let max_layer = match rainfall {
     n if n > 0.75 => TerrainType::Land3,
     n if n > 0.5 => TerrainType::Land2,
     n if n > 0.25 => TerrainType::Land1,
     _ => TerrainType::ShallowWater,
   };
-  let bm = BiomeMetadata::new(is_rocky, humidity as f32, max_layer as i32, biome);
+  let bm = BiomeMetadata::new(is_rocky, rainfall as f32, max_layer as i32, climate);
   debug!("Generated metadata for {}: {:?}", cg, bm);
   metadata.biome.insert(cg, bm);
 }

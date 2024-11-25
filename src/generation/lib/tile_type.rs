@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::generation::lib::TerrainType;
-use crate::generation::resources::GenerationResourcesCollection;
+use crate::generation::resources::{Climate, GenerationResourcesCollection};
 use bevy::reflect::Reflect;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect, serde::Deserialize)]
@@ -29,19 +29,32 @@ impl TileType {
     get_sprite_index(self, index_offset)
   }
 
-  pub fn calculate_sprite_index(&self, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
-    get_sprite_index_from(&self, terrain, resources)
+  pub fn calculate_sprite_index(
+    &self,
+    terrain: &TerrainType,
+    climate: &Climate,
+    resources: &GenerationResourcesCollection,
+  ) -> usize {
+    get_sprite_index_from(&self, terrain, climate, resources)
   }
 }
 
-fn get_sprite_index_from(tile_type: &TileType, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
-  match terrain {
-    TerrainType::DeepWater => get_sprite_index(&tile_type, resources.deep_water.index_offset()),
-    TerrainType::ShallowWater => get_sprite_index(&tile_type, resources.shallow_water.index_offset()),
-    TerrainType::Land1 => get_sprite_index(&tile_type, resources.sand.index_offset()),
-    TerrainType::Land2 => get_sprite_index(&tile_type, resources.grass.index_offset()),
-    TerrainType::Land3 => get_sprite_index(&tile_type, resources.forest.index_offset()),
-    TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
+fn get_sprite_index_from(
+  tile_type: &TileType,
+  terrain: &TerrainType,
+  climate: &Climate,
+  resources: &GenerationResourcesCollection,
+) -> usize {
+  match (terrain, climate) {
+    (TerrainType::DeepWater, _) => get_sprite_index(&tile_type, resources.deep_water.index_offset()),
+    (TerrainType::ShallowWater, _) => get_sprite_index(&tile_type, resources.shallow_water.index_offset()),
+    (TerrainType::Land1, Climate::Dry) => get_sprite_index(&tile_type, resources.land_dry_l1.index_offset()),
+    (TerrainType::Land1, Climate::Moderate) => get_sprite_index(&tile_type, resources.land_moderate_l1.index_offset()),
+    (TerrainType::Land2, Climate::Dry) => get_sprite_index(&tile_type, resources.land_dry_l2.index_offset()),
+    (TerrainType::Land2, Climate::Moderate) => get_sprite_index(&tile_type, resources.land_moderate_l2.index_offset()),
+    (TerrainType::Land3, Climate::Dry) => get_sprite_index(&tile_type, resources.land_dry_l3.index_offset()),
+    (TerrainType::Land3, Climate::Moderate) => get_sprite_index(&tile_type, resources.land_moderate_l3.index_offset()),
+    (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
   }
 }
 

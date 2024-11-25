@@ -78,6 +78,7 @@ fn generate_terrain_data(
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
       let normalised_noise = (normalised_noise + elevation_offset).clamp(0., 1.);
 
+      // TODO: Refactor to only use falloff value if the neighbour has a different max layer cap
       // Calculate falloff map value
       let falloff = calculate_terrain_falloff(
         use_max_layer_cap,
@@ -105,7 +106,10 @@ fn generate_terrain_data(
         _ => TerrainType::DeepWater,
       };
 
-      let tile = DraftTile::new(ig, tg, terrain, debug_data);
+      // TODO: Use fall off for chunk edges where the chunk has a different biome
+      let climate = biome_metadata.climate;
+
+      let tile = DraftTile::new(ig, tg, terrain, climate, debug_data);
       tiles[ix as usize][iy as usize] = Some(tile);
       ix += 1;
     }

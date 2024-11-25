@@ -2,6 +2,7 @@ use crate::coords::point::{InternalGrid, TileGrid};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::terrain_type::TerrainType;
+use crate::generation::resources::Climate;
 
 /// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
 /// representation. While the `Coords` and `TerrainType` of a tile will remain the same after the conversion, the
@@ -11,15 +12,23 @@ use crate::generation::lib::terrain_type::TerrainType;
 pub struct DraftTile {
   pub coords: Coords,
   pub terrain: TerrainType,
+  pub climate: Climate,
   pub layer: i32,
   pub debug_data: DebugData,
 }
 
 impl DraftTile {
-  pub fn new(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType, debug_data: DebugData) -> Self {
+  pub fn new(
+    ig: Point<InternalGrid>,
+    tg: Point<TileGrid>,
+    terrain: TerrainType,
+    climate: Climate,
+    debug_data: DebugData,
+  ) -> Self {
     Self {
       coords: Coords::new_for_tile(ig, tg),
       terrain,
+      climate,
       layer: terrain as i32,
       debug_data,
     }
@@ -29,6 +38,7 @@ impl DraftTile {
     Self {
       coords: self.coords.clone(),
       terrain,
+      climate: self.climate,
       layer: terrain as i32,
       debug_data: self.debug_data.clone(),
     }

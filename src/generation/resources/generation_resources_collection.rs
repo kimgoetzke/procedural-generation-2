@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName};
+use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle};
@@ -125,6 +126,12 @@ pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,
   pub deep_water: AssetCollection,
   pub shallow_water: AssetCollection,
+  pub land_moderate_l1: AssetCollection,
+  pub land_moderate_l2: AssetCollection,
+  pub land_moderate_l3: AssetCollection,
+  pub land_dry_l1: AssetCollection,
+  pub land_dry_l2: AssetCollection,
+  pub land_dry_l3: AssetCollection,
   pub sand: AssetCollection,
   pub grass: AssetCollection,
   pub forest: AssetCollection,
@@ -144,14 +151,17 @@ pub struct ObjectResources {
 }
 
 impl GenerationResourcesCollection {
-  pub fn get_terrain_collection(&self, terrain: TerrainType) -> &AssetCollection {
-    match terrain {
-      TerrainType::DeepWater => &self.deep_water,
-      TerrainType::ShallowWater => &self.shallow_water,
-      TerrainType::Land1 => &self.sand,
-      TerrainType::Land2 => &self.grass,
-      TerrainType::Land3 => &self.forest,
-      TerrainType::Any => panic!("You must not use TerrainType::Any when rendering tiles"),
+  pub fn get_terrain_collection(&self, terrain: TerrainType, climate: Climate) -> &AssetCollection {
+    match (terrain, climate) {
+      (TerrainType::DeepWater, _) => &self.deep_water,
+      (TerrainType::ShallowWater, _) => &self.shallow_water,
+      (TerrainType::Land1, Climate::Dry) => &self.land_dry_l1,
+      (TerrainType::Land1, Climate::Moderate) => &self.land_moderate_l1,
+      (TerrainType::Land2, Climate::Dry) => &self.land_dry_l2,
+      (TerrainType::Land2, Climate::Moderate) => &self.land_moderate_l2,
+      (TerrainType::Land3, Climate::Dry) => &self.land_dry_l3,
+      (TerrainType::Land3, Climate::Moderate) => &self.land_moderate_l3,
+      (TerrainType::Any, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
 
@@ -230,9 +240,19 @@ fn initialise_resources_system(
   let default_texture_atlas_layout = layouts.add(default_layout);
   asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
-  // Detailed tile sets
+  // Detailed new tile sets
   asset_collection.deep_water = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_WATER_PATH);
   asset_collection.shallow_water = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SHORE_PATH);
+  asset_collection.land_moderate_l1 =
+    tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L1_PATH);
+  asset_collection.land_moderate_l2 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L2_PATH);
+  asset_collection.land_moderate_l3 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L3_PATH);
+  asset_collection.land_dry_l1 =
+    tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L1_PATH);
+  asset_collection.land_dry_l2 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L2_PATH);
+  asset_collection.land_dry_l3 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L3_PATH);
+
+  // Detailed tile sets
   asset_collection.sand = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SAND_PATH);
   asset_collection.grass = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_GRASS_PATH);
   asset_collection.forest = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_FOREST_PATH);
