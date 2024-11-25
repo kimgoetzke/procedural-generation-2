@@ -99,14 +99,14 @@ fn generate_biome_metadata(
   cg: Point<ChunkGrid>,
 ) {
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
-  let humidity = perlin.get([cg.x as f64, cg.y as f64]) + 1. / 2.;
+  let humidity = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
   let biome = Biome::from(humidity);
   let is_rocky = rng.gen_bool(METADATA_IS_ROCKY_PROBABILITY);
   let max_layer = match humidity {
-    n if n > 0.75 => TerrainType::Forest,
-    n if n > 0.5 => TerrainType::Grass,
-    n if n > 0.25 => TerrainType::Sand,
-    _ => TerrainType::Shore,
+    n if n > 0.75 => TerrainType::Land3,
+    n if n > 0.5 => TerrainType::Land2,
+    n if n > 0.25 => TerrainType::Land1,
+    _ => TerrainType::ShallowWater,
   };
   let bm = BiomeMetadata::new(is_rocky, humidity as f32, max_layer as i32, biome);
   debug!("Generated metadata for {}: {:?}", cg, bm);

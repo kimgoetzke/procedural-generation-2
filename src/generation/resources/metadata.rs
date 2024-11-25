@@ -82,17 +82,16 @@ impl BiomeMetadata {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Biome {
-  Desert,
-  Grassland,
-  Jungle,
+  Dry,
+  Default,
+  Humid,
 }
 
 impl Biome {
   pub fn from(humidity: f64) -> Self {
     match humidity {
-      0.6..=1.0 => Biome::Jungle,
-      0.3..=0.6 => Biome::Grassland,
-      _ => Biome::Desert,
+      n if n < 0.5 => Biome::Default,
+      _ => Biome::Dry,
     }
   }
 }

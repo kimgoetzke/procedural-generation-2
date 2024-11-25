@@ -1,5 +1,5 @@
 (
-  terrain: Forest,
+  terrain: Land3,
   states: [
     (
       index: 1,

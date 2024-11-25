@@ -98,11 +98,11 @@ fn generate_terrain_data(
 
       // Determine terrain type based on noise
       let terrain = match normalised_noise {
-        n if n > 0.75 => TerrainType::new_clamped(TerrainType::Forest, biome_metadata.max_layer, falloff),
-        n if n > 0.6 => TerrainType::new_clamped(TerrainType::Grass, biome_metadata.max_layer, falloff),
-        n if n > 0.45 => TerrainType::new_clamped(TerrainType::Sand, biome_metadata.max_layer, falloff),
-        n if n > 0.3 => TerrainType::new_clamped(TerrainType::Shore, biome_metadata.max_layer, falloff),
-        _ => TerrainType::Water,
+        n if n > 0.75 => TerrainType::new_clamped(TerrainType::Land3, biome_metadata.max_layer, falloff),
+        n if n > 0.6 => TerrainType::new_clamped(TerrainType::Land2, biome_metadata.max_layer, falloff),
+        n if n > 0.45 => TerrainType::new_clamped(TerrainType::Land1, biome_metadata.max_layer, falloff),
+        n if n > 0.3 => TerrainType::new_clamped(TerrainType::ShallowWater, biome_metadata.max_layer, falloff),
+        _ => TerrainType::DeepWater,
       };
 
       let tile = DraftTile::new(ig, tg, terrain, debug_data);

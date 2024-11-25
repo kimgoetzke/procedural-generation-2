@@ -218,11 +218,11 @@ fn static_terrain_sprite(
         ..Default::default()
       },
       texture: match tile.terrain {
-        TerrainType::Water => resources.water.stat.texture.clone(),
-        TerrainType::Shore => resources.shore.stat.texture.clone(),
-        TerrainType::Sand => resources.sand.stat.texture.clone(),
-        TerrainType::Grass => resources.grass.stat.texture.clone(),
-        TerrainType::Forest => resources.forest.stat.texture.clone(),
+        TerrainType::DeepWater => resources.deep_water.stat.texture.clone(),
+        TerrainType::ShallowWater => resources.shallow_water.stat.texture.clone(),
+        TerrainType::Land1 => resources.sand.stat.texture.clone(),
+        TerrainType::Land2 => resources.grass.stat.texture.clone(),
+        TerrainType::Land3 => resources.forest.stat.texture.clone(),
         TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
       transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
@@ -230,11 +230,11 @@ fn static_terrain_sprite(
     },
     TextureAtlas {
       layout: match tile.terrain {
-        TerrainType::Water => resources.water.stat.texture_atlas_layout.clone(),
-        TerrainType::Shore => resources.shore.stat.texture_atlas_layout.clone(),
-        TerrainType::Sand => resources.sand.stat.texture_atlas_layout.clone(),
-        TerrainType::Grass => resources.grass.stat.texture_atlas_layout.clone(),
-        TerrainType::Forest => resources.forest.stat.texture_atlas_layout.clone(),
+        TerrainType::DeepWater => resources.deep_water.stat.texture_atlas_layout.clone(),
+        TerrainType::ShallowWater => resources.shallow_water.stat.texture_atlas_layout.clone(),
+        TerrainType::Land1 => resources.sand.stat.texture_atlas_layout.clone(),
+        TerrainType::Land2 => resources.grass.stat.texture_atlas_layout.clone(),
+        TerrainType::Land3 => resources.forest.stat.texture_atlas_layout.clone(),
         TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
       },
       index: tile.tile_type.calculate_sprite_index(&tile.terrain, &resources),
@@ -253,7 +253,7 @@ fn animated_terrain_sprite(
 ) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
   let index = tile.tile_type.get_sprite_index(asset_pack.index_offset);
   let frame_duration = match tile.terrain {
-    TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
+    TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
     _ => DEFAULT_ANIMATION_FRAME_DURATION,
   };
   (

@@ -123,8 +123,8 @@ fn check_loading_state(
 #[derive(Resource, Default, Debug, Clone)]
 pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,
-  pub water: AssetCollection,
-  pub shore: AssetCollection,
+  pub deep_water: AssetCollection,
+  pub shallow_water: AssetCollection,
   pub sand: AssetCollection,
   pub grass: AssetCollection,
   pub forest: AssetCollection,
@@ -146,25 +146,25 @@ pub struct ObjectResources {
 impl GenerationResourcesCollection {
   pub fn get_terrain_collection(&self, terrain: TerrainType) -> &AssetCollection {
     match terrain {
-      TerrainType::Water => &self.water,
-      TerrainType::Shore => &self.shore,
-      TerrainType::Sand => &self.sand,
-      TerrainType::Grass => &self.grass,
-      TerrainType::Forest => &self.forest,
+      TerrainType::DeepWater => &self.deep_water,
+      TerrainType::ShallowWater => &self.shallow_water,
+      TerrainType::Land1 => &self.sand,
+      TerrainType::Land2 => &self.grass,
+      TerrainType::Land3 => &self.forest,
       TerrainType::Any => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
 
   pub fn get_object_collection(&self, terrain: TerrainType, is_large_sprite: bool) -> &AssetCollection {
-    if terrain == TerrainType::Forest && is_large_sprite {
+    if terrain == TerrainType::Land3 && is_large_sprite {
       return &self.objects.trees;
     }
     match terrain {
-      TerrainType::Water => &self.objects.water,
-      TerrainType::Shore => &self.objects.shore,
-      TerrainType::Sand => &self.objects.sand,
-      TerrainType::Grass => &self.objects.grass,
-      TerrainType::Forest => &self.objects.forest,
+      TerrainType::DeepWater => &self.objects.water,
+      TerrainType::ShallowWater => &self.objects.shore,
+      TerrainType::Land1 => &self.objects.sand,
+      TerrainType::Land2 => &self.objects.grass,
+      TerrainType::Land3 => &self.objects.forest,
       TerrainType::Any => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
@@ -231,8 +231,8 @@ fn initialise_resources_system(
   asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  asset_collection.water = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_WATER_PATH);
-  asset_collection.shore = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SHORE_PATH);
+  asset_collection.deep_water = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_WATER_PATH);
+  asset_collection.shallow_water = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SHORE_PATH);
   asset_collection.sand = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SAND_PATH);
   asset_collection.grass = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_GRASS_PATH);
   asset_collection.forest = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_FOREST_PATH);

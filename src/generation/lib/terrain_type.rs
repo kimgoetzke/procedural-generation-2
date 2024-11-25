@@ -4,11 +4,11 @@ use std::fmt::{Display, Formatter};
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Reflect)]
 pub enum TerrainType {
-  Water,
-  Shore,
-  Sand,
-  Grass,
-  Forest,
+  DeepWater,
+  ShallowWater,
+  Land1,
+  Land2,
+  Land3,
   Any,
 }
 
@@ -31,11 +31,11 @@ impl TerrainType {
 
   pub fn from(i: usize) -> Self {
     match i {
-      0 => TerrainType::Water,
-      1 => TerrainType::Shore,
-      2 => TerrainType::Sand,
-      3 => TerrainType::Grass,
-      4 => TerrainType::Forest,
+      0 => TerrainType::DeepWater,
+      1 => TerrainType::ShallowWater,
+      2 => TerrainType::Land1,
+      3 => TerrainType::Land2,
+      4 => TerrainType::Land3,
       _ => TerrainType::Any,
     }
   }

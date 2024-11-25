@@ -36,11 +36,11 @@ impl TileType {
 
 fn get_sprite_index_from(tile_type: &TileType, terrain: &TerrainType, resources: &GenerationResourcesCollection) -> usize {
   match terrain {
-    TerrainType::Water => get_sprite_index(&tile_type, resources.water.index_offset()),
-    TerrainType::Shore => get_sprite_index(&tile_type, resources.shore.index_offset()),
-    TerrainType::Sand => get_sprite_index(&tile_type, resources.sand.index_offset()),
-    TerrainType::Grass => get_sprite_index(&tile_type, resources.grass.index_offset()),
-    TerrainType::Forest => get_sprite_index(&tile_type, resources.forest.index_offset()),
+    TerrainType::DeepWater => get_sprite_index(&tile_type, resources.deep_water.index_offset()),
+    TerrainType::ShallowWater => get_sprite_index(&tile_type, resources.shallow_water.index_offset()),
+    TerrainType::Land1 => get_sprite_index(&tile_type, resources.sand.index_offset()),
+    TerrainType::Land2 => get_sprite_index(&tile_type, resources.grass.index_offset()),
+    TerrainType::Land3 => get_sprite_index(&tile_type, resources.forest.index_offset()),
     TerrainType::Any => panic!("{}", TERRAIN_TYPE_ERROR),
   }
 }
