@@ -147,7 +147,8 @@ pub struct ObjectResources {
   pub sand: AssetCollection,
   pub grass: AssetCollection,
   pub forest: AssetCollection,
-  pub trees: AssetCollection,
+  pub trees_moderate: AssetCollection,
+  pub trees_dry: AssetCollection,
 }
 
 impl GenerationResourcesCollection {
@@ -165,17 +166,16 @@ impl GenerationResourcesCollection {
     }
   }
 
-  pub fn get_object_collection(&self, terrain: TerrainType, is_large_sprite: bool) -> &AssetCollection {
-    if terrain == TerrainType::Land3 && is_large_sprite {
-      return &self.objects.trees;
-    }
-    match terrain {
-      TerrainType::DeepWater => &self.objects.water,
-      TerrainType::ShallowWater => &self.objects.shore,
-      TerrainType::Land1 => &self.objects.sand,
-      TerrainType::Land2 => &self.objects.grass,
-      TerrainType::Land3 => &self.objects.forest,
-      TerrainType::Any => panic!("You must not use TerrainType::Any when rendering tiles"),
+  pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
+    match (terrain, climate, is_large_sprite) {
+      (TerrainType::DeepWater, _, _) => &self.objects.water,
+      (TerrainType::ShallowWater, _, _) => &self.objects.shore,
+      (TerrainType::Land1, _, _) => &self.objects.sand,
+      (TerrainType::Land2, _, _) => &self.objects.grass,
+      (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
+      (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
+      (TerrainType::Land3, _, _) => &self.objects.forest,
+      (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
 }
@@ -260,7 +260,10 @@ fn initialise_resources_system(
   // Objects: Trees
   let static_trees_layout = TextureAtlasLayout::from_grid(TREES_OBJ_SIZE, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  asset_collection.objects.trees.stat = AssetPack::new(asset_server.load(TREES_OBJ_PATH), static_trees_atlas_layout);
+  asset_collection.objects.trees_dry.stat =
+    AssetPack::new(asset_server.load(TREES_DRY_OBJ_PATH), static_trees_atlas_layout.clone());
+  asset_collection.objects.trees_moderate.stat =
+    AssetPack::new(asset_server.load(TREES_MODERATE_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);

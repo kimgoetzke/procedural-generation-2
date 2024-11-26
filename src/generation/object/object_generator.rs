@@ -108,7 +108,11 @@ fn attach_task_to_tile_entity(
         let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
         let resources = system_state.get_mut(world);
         resources
-          .get_object_collection(tile_data.flat_tile.terrain, object_data.is_large_sprite)
+          .get_object_collection(
+            tile_data.flat_tile.terrain,
+            tile_data.flat_tile.climate,
+            object_data.is_large_sprite,
+          )
           .clone()
       };
       if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
