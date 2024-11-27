@@ -126,15 +126,15 @@ pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,
   pub deep_water: AssetCollection,
   pub shallow_water: AssetCollection,
-  pub land_moderate_l1: AssetCollection,
-  pub land_moderate_l2: AssetCollection,
-  pub land_moderate_l3: AssetCollection,
   pub land_dry_l1: AssetCollection,
   pub land_dry_l2: AssetCollection,
   pub land_dry_l3: AssetCollection,
-  pub sand: AssetCollection,
-  pub grass: AssetCollection,
-  pub forest: AssetCollection,
+  pub land_moderate_l1: AssetCollection,
+  pub land_moderate_l2: AssetCollection,
+  pub land_moderate_l3: AssetCollection,
+  pub land_humid_l1: AssetCollection,
+  pub land_humid_l2: AssetCollection,
+  pub land_humid_l3: AssetCollection,
   pub objects: ObjectResources,
 }
 
@@ -144,9 +144,15 @@ pub struct ObjectResources {
   pub tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
   pub water: AssetCollection,
   pub shore: AssetCollection,
-  pub sand: AssetCollection,
-  pub grass: AssetCollection,
-  pub forest: AssetCollection,
+  pub l1_dry: AssetCollection,
+  pub l1_moderate: AssetCollection,
+  pub l1_humid: AssetCollection,
+  pub l2_dry: AssetCollection,
+  pub l2_moderate: AssetCollection,
+  pub l2_humid: AssetCollection,
+  pub l3_dry: AssetCollection,
+  pub l3_moderate: AssetCollection,
+  pub l3_humid: AssetCollection,
   pub trees_moderate: AssetCollection,
   pub trees_dry: AssetCollection,
 }
@@ -158,10 +164,13 @@ impl GenerationResourcesCollection {
       (TerrainType::ShallowWater, _) => &self.shallow_water,
       (TerrainType::Land1, Climate::Dry) => &self.land_dry_l1,
       (TerrainType::Land1, Climate::Moderate) => &self.land_moderate_l1,
+      (TerrainType::Land1, Climate::Humid) => &self.land_humid_l1,
       (TerrainType::Land2, Climate::Dry) => &self.land_dry_l2,
       (TerrainType::Land2, Climate::Moderate) => &self.land_moderate_l2,
+      (TerrainType::Land2, Climate::Humid) => &self.land_humid_l2,
       (TerrainType::Land3, Climate::Dry) => &self.land_dry_l3,
       (TerrainType::Land3, Climate::Moderate) => &self.land_moderate_l3,
+      (TerrainType::Land3, Climate::Humid) => &self.land_humid_l3,
       (TerrainType::Any, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
@@ -170,11 +179,18 @@ impl GenerationResourcesCollection {
     match (terrain, climate, is_large_sprite) {
       (TerrainType::DeepWater, _, _) => &self.objects.water,
       (TerrainType::ShallowWater, _, _) => &self.objects.shore,
-      (TerrainType::Land1, _, _) => &self.objects.sand,
-      (TerrainType::Land2, _, _) => &self.objects.grass,
+      (TerrainType::Land1, Climate::Dry, _) => &self.objects.l1_dry,
+      (TerrainType::Land1, Climate::Moderate, _) => &self.objects.l1_moderate,
+      (TerrainType::Land1, Climate::Humid, _) => &self.objects.l1_humid,
+      (TerrainType::Land2, Climate::Dry, _) => &self.objects.l2_dry,
+      (TerrainType::Land2, Climate::Moderate, _) => &self.objects.l2_moderate,
+      (TerrainType::Land2, Climate::Humid, _) => &self.objects.l2_humid,
       (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
       (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
-      (TerrainType::Land3, _, _) => &self.objects.forest,
+      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_moderate,
+      (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
+      (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
+      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l2_humid,
       (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
@@ -240,22 +256,18 @@ fn initialise_resources_system(
   let default_texture_atlas_layout = layouts.add(default_layout);
   asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
-  // Detailed new tile sets
-  asset_collection.deep_water = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_WATER_PATH);
-  asset_collection.shallow_water = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SHORE_PATH);
-  asset_collection.land_moderate_l1 =
-    tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L1_PATH);
-  asset_collection.land_moderate_l2 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L2_PATH);
-  asset_collection.land_moderate_l3 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_MODERATE_L3_PATH);
-  asset_collection.land_dry_l1 =
-    tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L1_PATH);
-  asset_collection.land_dry_l2 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L2_PATH);
-  asset_collection.land_dry_l3 = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_LAND_DRY_L3_PATH);
-
   // Detailed tile sets
-  asset_collection.sand = tile_set_assets_with_default_animations(&asset_server, &mut layouts, TILE_SET_SAND_PATH);
-  asset_collection.grass = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_GRASS_PATH);
-  asset_collection.forest = tile_set_assets_static(&asset_server, &mut layouts, TILE_SET_FOREST_PATH);
+  asset_collection.deep_water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
+  asset_collection.shallow_water = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH);
+  asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH);
+  asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
+  asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
+  asset_collection.land_moderate_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_MODERATE_L1_PATH);
+  asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
+  asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
+  asset_collection.land_humid_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_HUMID_L1_PATH);
+  asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
+  asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
 
   // Objects: Trees
   let static_trees_layout = TextureAtlasLayout::from_grid(TREES_OBJ_SIZE, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS, None, None);
@@ -266,18 +278,24 @@ fn initialise_resources_system(
     AssetPack::new(asset_server.load(TREES_MODERATE_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Terrain
-  asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
-  asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, SHORE_OBJ_PATH);
-  asset_collection.objects.sand = object_assets_static(&asset_server, &mut layouts, SAND_OBJ_PATH);
-  asset_collection.objects.grass = object_assets_static(&asset_server, &mut layouts, GRASS_OBJ_PATH);
-  asset_collection.objects.forest = object_assets_static(&asset_server, &mut layouts, FOREST_OBJ_PATH);
+  asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_DEEP_OBJ_PATH);
+  asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, WATER_SHALLOW_OBJ_PATH);
+  asset_collection.objects.l1_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L1_DRY_PATH);
+  asset_collection.objects.l1_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L1_MODERATE_PATH);
+  asset_collection.objects.l1_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L1_HUMID_PATH);
+  asset_collection.objects.l2_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L2_DRY_PATH);
+  asset_collection.objects.l2_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L2_MODERATE_PATH);
+  asset_collection.objects.l2_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L2_HUMID_PATH);
+  asset_collection.objects.l3_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L3_DRY_PATH);
+  asset_collection.objects.l3_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L3_MODERATE_PATH);
+  asset_collection.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
 
   // Objects: Rule sets for wave function collapse
   asset_collection.objects.terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
   asset_collection.objects.tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
 }
 
-fn tile_set_assets_static(
+fn tile_set_static(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
@@ -298,7 +316,7 @@ fn tile_set_assets_static(
   }
 }
 
-fn tile_set_assets_with_default_animations(
+fn tile_set_default_animations(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,

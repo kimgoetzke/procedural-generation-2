@@ -84,13 +84,15 @@ impl BiomeMetadata {
 pub enum Climate {
   Dry,
   Moderate,
+  Humid,
 }
 
 impl Climate {
   pub fn from(rainfall: f64) -> Self {
     match rainfall {
-      n if n < 0.5 => Climate::Moderate,
-      _ => Climate::Dry,
+      n if n < 0.33 => Climate::Dry,
+      n if n < 0.65 => Climate::Moderate,
+      _ => Climate::Humid,
     }
   }
 }
