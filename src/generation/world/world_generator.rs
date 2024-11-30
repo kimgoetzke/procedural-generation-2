@@ -3,7 +3,7 @@ use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DUR
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ChunkComponent, DraftChunk, TerrainType, Tile, TileComponent, TileData};
+use crate::generation::lib::{shared, Chunk, ChunkComponent, TerrainType, Tile, TileComponent, TileData};
 use crate::generation::resources::{AssetPack, Climate, GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
@@ -41,8 +41,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
   let mut chunks: Vec<Chunk> = Vec::new();
   for chunk_w in spawn_points {
     let chunk_tg = Point::new_tile_grid_from_world(chunk_w.clone());
-    let draft_chunk = DraftChunk::new(chunk_w.clone(), chunk_tg, &metadata, &settings);
-    let mut chunk = Chunk::new(draft_chunk, &settings);
+    let mut chunk = Chunk::new(chunk_w.clone(), chunk_tg, &metadata, &settings);
     chunk = post_processor::process(chunk, &settings);
     chunks.push(chunk);
   }
