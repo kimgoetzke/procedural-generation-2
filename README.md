@@ -64,6 +64,8 @@ Without `direnv`, you can use the Nix Flake by running `nix develop` in the proj
 such as JetBrains RustRover, you'll have to set up the environment manually. You'll most likely have to make
 `LD_LIBRARY_PATH` available to your IDE.
 
+Upgrade the flake by running `nix flake update` in the repository's base directory.
+
 ### Reminders
 
 #### How to add object sprite assets
