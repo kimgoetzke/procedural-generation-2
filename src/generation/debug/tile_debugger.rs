@@ -138,7 +138,10 @@ fn on_left_mouse_click_trigger(
     if let Some(oc) = object_index.get(event.tg) {
       debug!("{:?}", oc);
     } else {
-      debug!("No object(s) found at {:?} {:?}", event.tile_w, event.tg);
+      debug!(
+        "No object(s) found at {:?} {:?} which is inside {}",
+        event.tile_w, event.tg, event.cg
+      );
     }
   }
 }

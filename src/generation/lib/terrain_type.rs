@@ -40,8 +40,14 @@ impl TerrainType {
     }
   }
 
-  pub fn new_clamped(proposed: TerrainType, max: i32, falloff: f64) -> Self {
-    let max_layer: i32 = if falloff > 0.5 { max } else { TerrainType::length() as i32 };
+  pub fn new(proposed: TerrainType, max: i32, falloff: f64, is_biome_edge: bool) -> Self {
+    let max_layer: i32 = if is_biome_edge {
+      TerrainType::ShallowWater as i32
+    } else if falloff > 0.5 {
+      max
+    } else {
+      TerrainType::length() as i32
+    };
     if proposed as i32 > max_layer {
       TerrainType::from(max_layer as usize)
     } else {

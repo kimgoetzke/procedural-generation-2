@@ -108,7 +108,7 @@ fn generate_biome_metadata(
     n if n > 0.25 => TerrainType::Land1,
     _ => TerrainType::ShallowWater,
   };
-  let bm = BiomeMetadata::new(is_rocky, rainfall as f32, max_layer as i32, climate);
-  debug!("Generated metadata for {}: {:?}", cg, bm);
+  let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
+  debug!("Generated: {:?}", bm);
   metadata.biome.insert(cg, bm);
 }

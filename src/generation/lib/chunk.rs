@@ -1,12 +1,12 @@
-use bevy::log::trace;
-use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
-use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, CHUNK_SIZE_PLUS_BUFFER};
+use crate::constants::*;
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
-use crate::generation::lib::{shared, DraftTile, LayeredPlane, TerrainType};
 use crate::generation::lib::debug_data::DebugData;
-use crate::generation::resources::Metadata;
+use crate::generation::lib::{shared, Direction, DraftTile, LayeredPlane, TerrainType};
+use crate::generation::resources::{BiomeMetadataSet, Metadata};
 use crate::resources::Settings;
+use bevy::log::*;
+use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 
 /// A `Chunk` represents a single chunk of the world.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -32,7 +32,6 @@ impl Chunk {
   }
 }
 
-
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a `Point` of type
 /// `TileGrid` that describes the top-left corner of the grid.
 fn generate_terrain_data(
@@ -46,10 +45,7 @@ fn generate_terrain_data(
     .elevation
     .get(cg)
     .expect(format!("Failed to get elevation metadata for {}", cg).as_str());
-  let biome_metadata = metadata
-    .biome
-    .get(cg)
-    .expect(format!("Failed to get biome metadata for {}", cg).as_str());
+  let biome_metadata = metadata.get_biome_metadata_for(cg);
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(settings.world.noise_octaves)
     .set_frequency(settings.world.noise_frequency)
@@ -80,36 +76,37 @@ fn generate_terrain_data(
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
       let normalised_noise = (normalised_noise + elevation_offset).clamp(0., 1.);
 
+      // Calculate distance from center for falloff maps
+      let distance_from_center = calculate_distance_from_center(center, max_distance, tx, ty);
+
       // TODO: Refactor to only use falloff value if the neighbour has a different max layer cap
-      // Calculate falloff map value
-      let falloff = calculate_terrain_falloff(
+      // Calculate terrain falloff map value, if max layer cap is enabled
+      let terrain_falloff = calculate_terrain_falloff(
         use_max_layer_cap,
-        center,
-        max_distance,
         falloff_strength,
         falloff_noise_strength,
-        ty,
-        tx,
         clamped_noise,
+        distance_from_center,
       );
+
+      let is_biome_edge = calculate_biome_falloff(ix, iy, distance_from_center, &biome_metadata, cg);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
         noise: normalised_noise,
         noise_elevation_offset: elevation_offset,
+        is_biome_edge,
       };
-
       // Determine terrain type based on noise
+      let max_layer = biome_metadata.this.max_layer;
       let terrain = match normalised_noise {
-        n if n > 0.75 => TerrainType::new_clamped(TerrainType::Land3, biome_metadata.max_layer, falloff),
-        n if n > 0.6 => TerrainType::new_clamped(TerrainType::Land2, biome_metadata.max_layer, falloff),
-        n if n > 0.45 => TerrainType::new_clamped(TerrainType::Land1, biome_metadata.max_layer, falloff),
-        n if n > 0.3 => TerrainType::new_clamped(TerrainType::ShallowWater, biome_metadata.max_layer, falloff),
+        n if n > 0.75 => TerrainType::new(TerrainType::Land3, max_layer, terrain_falloff, is_biome_edge),
+        n if n > 0.6 => TerrainType::new(TerrainType::Land2, max_layer, terrain_falloff, is_biome_edge),
+        n if n > 0.45 => TerrainType::new(TerrainType::Land1, max_layer, terrain_falloff, is_biome_edge),
+        n if n > 0.3 => TerrainType::new(TerrainType::ShallowWater, max_layer, terrain_falloff, is_biome_edge),
         _ => TerrainType::DeepWater,
       };
-
-      // TODO: Use fall off for chunk edges where the chunk has a different biome
-      let climate = biome_metadata.climate;
+      let climate = biome_metadata.this.climate;
 
       let tile = DraftTile::new(ig, tg, terrain, climate, debug_data);
       tiles[ix as usize][iy as usize] = Some(tile);
@@ -128,24 +125,61 @@ fn generate_terrain_data(
   tiles
 }
 
+fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx: i32, ty: i32) -> f64 {
+  let distance_x = (tx - center.x).abs() as f64 / max_distance;
+  let distance_y = (ty - center.y).abs() as f64 / max_distance;
+  let distance_from_center = distance_x.max(distance_y);
+  // info!("tg({}, {}): Distance from center = {}", tx, ty, distance_from_center);
+
+  distance_from_center
+}
+
 fn calculate_terrain_falloff(
   use_max_layer_cap: bool,
-  center: Point<TileGrid>,
-  max_distance: f64,
   falloff_strength: f64,
   falloff_noise_strength: f64,
-  ty: i32,
-  tx: i32,
   clamped_noise: f64,
+  distance_from_center: f64,
 ) -> f64 {
   if !use_max_layer_cap {
     return 0.;
   }
-  let distance_x = (tx - center.x).abs() as f64 / max_distance;
-  let distance_y = (ty - center.y).abs() as f64 / max_distance;
-  let distance_from_center = distance_x.max(distance_y);
   let falloff_noise = clamped_noise * falloff_noise_strength;
   let falloff = (1. - distance_from_center + falloff_noise).max(0.).powf(falloff_strength);
 
   falloff
+}
+
+fn calculate_biome_falloff(
+  ix: i32,
+  iy: i32,
+  distance_from_center: f64,
+  biome_metadata: &BiomeMetadataSet,
+  cg: &Point<ChunkGrid>,
+) -> bool {
+  if distance_from_center > 0.5 {
+    let direction = match (ix, iy) {
+      (..2, ..2) => Direction::TopLeft,
+      (CHUNK_SIZE.., ..2) => Direction::TopRight,
+      (..2, CHUNK_SIZE..) => Direction::BottomLeft,
+      (CHUNK_SIZE.., CHUNK_SIZE..) => Direction::BottomRight,
+      (_, ..2) => Direction::Top,
+      (_, CHUNK_SIZE..) => Direction::Bottom,
+      (CHUNK_SIZE.., _) => Direction::Right,
+      (..2, _) => Direction::Left,
+      _ => Direction::Center,
+    };
+    if direction == Direction::Center {
+      return false;
+    }
+    if !biome_metadata.is_same_climate(&direction) {
+      info!(
+        "Adjusting tile ig({}, {}) because [{:?}] of {} is a different biome",
+        ix, iy, direction, cg
+      );
+      return true;
+    }
+  }
+
+  false
 }
