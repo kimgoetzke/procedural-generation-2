@@ -7,6 +7,8 @@ use crate::generation::resources::{BiomeMetadataSet, Metadata};
 use crate::resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 /// A `Chunk` represents a single chunk of the world.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -46,6 +48,7 @@ fn generate_terrain_data(
     .get(cg)
     .expect(format!("Failed to get elevation metadata for {}", cg).as_str());
   let biome_metadata = metadata.get_biome_metadata_for(cg);
+  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg.clone(), settings.world.noise_seed));
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(settings.world.noise_octaves)
     .set_frequency(settings.world.noise_frequency)
@@ -89,7 +92,8 @@ fn generate_terrain_data(
         distance_from_center,
       );
 
-      let is_biome_edge = calculate_biome_falloff(ix, iy, distance_from_center, &biome_metadata, cg);
+      // Calculate if this tile is a biome edge
+      let is_biome_edge = calculate_biome_falloff(ix, iy, distance_from_center, &biome_metadata, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -97,7 +101,8 @@ fn generate_terrain_data(
         noise_elevation_offset: elevation_offset,
         is_biome_edge,
       };
-      // Determine terrain type based on noise
+
+      // Determine terrain type based on the above
       let max_layer = biome_metadata.this.max_layer;
       let terrain = match normalised_noise {
         n if n > 0.75 => TerrainType::new(TerrainType::Land3, max_layer, terrain_falloff, is_biome_edge),
@@ -150,36 +155,45 @@ fn calculate_terrain_falloff(
   falloff
 }
 
+const INSIDE: i32 = 1;
+const OUTSIDE: i32 = CHUNK_SIZE + 1;
+const EXPANDED_INSIDE: i32 = 2;
+const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
+
+/// Calculates if a tile should be adjusted based on the biome falloff map by checking if:
+/// 1. The tile is "far enough" from the center
+/// 2. The tile is at any of the edges of the chunk
+/// 3. The tile is at the randomly determined, expanded edges of the chunk (for variety)
+///
+/// If all of the above checks are true, the tile is adjusted.
+#[allow(non_contiguous_range_endpoints)]
 fn calculate_biome_falloff(
   ix: i32,
   iy: i32,
   distance_from_center: f64,
   biome_metadata: &BiomeMetadataSet,
-  cg: &Point<ChunkGrid>,
+  rng: &mut StdRng,
 ) -> bool {
-  if distance_from_center > 0.5 {
-    let direction = match (ix, iy) {
-      (..2, ..2) => Direction::TopLeft,
-      (CHUNK_SIZE.., ..2) => Direction::TopRight,
-      (..2, CHUNK_SIZE..) => Direction::BottomLeft,
-      (CHUNK_SIZE.., CHUNK_SIZE..) => Direction::BottomRight,
-      (_, ..2) => Direction::Top,
-      (_, CHUNK_SIZE..) => Direction::Bottom,
-      (CHUNK_SIZE.., _) => Direction::Right,
-      (..2, _) => Direction::Left,
-      _ => Direction::Center,
-    };
-    if direction == Direction::Center {
-      return false;
-    }
-    if !biome_metadata.is_same_climate(&direction) {
-      info!(
-        "Adjusting tile ig({}, {}) because [{:?}] of {} is a different biome",
-        ix, iy, direction, cg
-      );
-      return true;
-    }
+  if distance_from_center <= 0.6 {
+    return false;
   }
 
-  false
+  let is_considered_edge = rng.gen_bool(0.3);
+  let direction = match (ix, iy, is_considered_edge) {
+    (..INSIDE, ..INSIDE, _) => Direction::TopLeft,
+    (OUTSIDE.., ..INSIDE, _) => Direction::TopRight,
+    (..INSIDE, OUTSIDE.., _) => Direction::BottomLeft,
+    (OUTSIDE.., OUTSIDE.., _) => Direction::BottomRight,
+    (_, ..INSIDE, _) => Direction::Top,
+    (_, OUTSIDE.., _) => Direction::Bottom,
+    (OUTSIDE.., _, _) => Direction::Right,
+    (..INSIDE, _, _) => Direction::Left,
+    (EXPANDED_INSIDE..EXPANDED_OUTSIDE, ..EXPANDED_INSIDE, true) => Direction::Top,
+    (EXPANDED_INSIDE..EXPANDED_OUTSIDE, EXPANDED_OUTSIDE.., true) => Direction::Bottom,
+    (EXPANDED_OUTSIDE.., EXPANDED_INSIDE..EXPANDED_OUTSIDE, true) => Direction::Right,
+    (..EXPANDED_INSIDE, EXPANDED_INSIDE..EXPANDED_OUTSIDE, true) => Direction::Left,
+    _ => Direction::Center,
+  };
+
+  direction != Direction::Center && !biome_metadata.is_same_climate(&direction)
 }
