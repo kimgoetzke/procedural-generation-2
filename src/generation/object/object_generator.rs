@@ -11,9 +11,9 @@ use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::BuildWorldChildren;
+use bevy::hierarchy::{BuildChildren, ChildBuild};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, Res, SpriteBundle, TextureAtlas, Transform};
+use bevy::prelude::{Commands, Component, Entity, Query, Res, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -115,7 +115,7 @@ fn attach_task_to_tile_entity(
           )
           .clone()
       };
-      if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
         tile_data_entity.with_children(|parent| {
           parent.spawn(sprite(
             &tile_data.flat_tile,
@@ -152,27 +152,24 @@ fn sprite(
   object_name: ObjectName,
   offset_x: f32,
   offset_y: f32,
-) -> (Name, SpriteBundle, TextureAtlas, ObjectComponent) {
+) -> (Name, Sprite, Transform, ObjectComponent) {
   (
     Name::new(format!("{:?} Object Sprite", object_name)),
-    SpriteBundle {
-      sprite: Sprite {
-        anchor: Anchor::BottomCenter,
-        ..Default::default()
-      },
-      texture: asset_collection.stat.texture.clone(),
-      transform: Transform::from_xyz(
-        TILE_SIZE as f32 / 2. + offset_x,
-        TILE_SIZE as f32 * -1. + offset_y,
-        // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
-        200. + tile.coords.internal_grid.y as f32,
-      ),
+    Sprite {
+      anchor: Anchor::BottomCenter,
+      texture_atlas: Option::from(TextureAtlas {
+        layout: asset_collection.stat.texture_atlas_layout.clone(),
+        index: index as usize,
+      }),
+      image: asset_collection.stat.texture.clone(),
       ..Default::default()
     },
-    TextureAtlas {
-      layout: asset_collection.stat.texture_atlas_layout.clone(),
-      index: index as usize,
-    },
+    Transform::from_xyz(
+      TILE_SIZE as f32 / 2. + offset_x,
+      TILE_SIZE as f32 * -1. + offset_y,
+      // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
+      200. + tile.coords.internal_grid.y as f32,
+    ),
     ObjectComponent {
       coords: tile.coords,
       sprite_index: index as usize,

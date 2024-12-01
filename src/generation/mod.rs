@@ -17,7 +17,7 @@ use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
   in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, Mut, NextState,
-  OnExit, OnRemove, Query, Res, ResMut, SpatialBundle, Trigger, Update, With,
+  OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool};
 use lib::shared;
@@ -48,7 +48,7 @@ impl Plugin for GenerationPlugin {
         Update,
         (regenerate_world_event, update_world_event, prune_world_event).run_if(in_state(AppState::Running)),
       )
-      .observe(on_remove_update_world_component_trigger);
+      .add_observer(on_remove_update_world_component_trigger);
   }
 }
 
@@ -61,7 +61,12 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
     Name::new(format!("Update World Component {}", w)),
     WorldGenerationComponent::new(w, cg, false, shared::get_time()),
   ));
-  commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
+  commands.spawn((
+    Name::new("World"),
+    Transform::default(),
+    Visibility::default(),
+    WorldComponent,
+  ));
   next_state.set(GenerationState::Generating);
 }
 
@@ -85,7 +90,12 @@ fn regenerate_world_event(
       Name::new(format!("Update World Component {}", cg)),
       WorldGenerationComponent::new(w, cg, false, shared::get_time()),
     ));
-    commands.spawn((Name::new("World"), SpatialBundle::default(), WorldComponent));
+    commands.spawn((
+      Name::new("World"),
+      Transform::default(),
+      Visibility::default(),
+      WorldComponent,
+    ));
     next_state.set(GenerationState::Generating);
   }
 }

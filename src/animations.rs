@@ -1,6 +1,6 @@
 use crate::components::AnimationComponent;
 use bevy::app::{App, Plugin};
-use bevy::prelude::{Query, Res, TextureAtlas, Time, Update};
+use bevy::prelude::{Query, Res, Sprite, Time, Update};
 
 pub struct AnimationsPlugin;
 
@@ -10,15 +10,17 @@ impl Plugin for AnimationsPlugin {
   }
 }
 
-fn sprite_animation_system(time: Res<Time>, mut query: Query<(&mut AnimationComponent, &mut TextureAtlas)>) {
-  for (mut ac, mut atlas) in &mut query {
+fn sprite_animation_system(time: Res<Time>, mut query: Query<(&mut AnimationComponent, &mut Sprite)>) {
+  for (mut ac, mut sprite) in &mut query {
     ac.timer.tick(time.delta());
     if ac.timer.just_finished() {
-      atlas.index = if atlas.index >= ac.index_last {
-        ac.index_first
-      } else {
-        atlas.index + 1
-      };
+      if let Some(atlas) = &mut sprite.texture_atlas {
+        atlas.index = if atlas.index >= ac.index_last {
+          ac.index_first
+        } else {
+          atlas.index + 1
+        };
+      }
     }
   }
 }

@@ -107,8 +107,8 @@ fn left_mouse_click_system(
     if let Some(vec2) = windows
       .single()
       .cursor_position()
-      .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-      .map(|ray| ray.origin.truncate())
+      .and_then(|cursor| Some(camera.viewport_to_world(camera_transform, cursor)))
+      .map(|ray| ray.expect("Failed to find ray").origin.truncate())
     {
       let tg = Point::new_tile_grid_from_world_vec2(vec2);
       let cg = Point::new_chunk_grid_from_world_vec2(vec2);

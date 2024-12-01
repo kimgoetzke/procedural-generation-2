@@ -10,11 +10,9 @@ use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildChildren, BuildWorldChildren, ChildBuilder, WorldChildBuilder};
+use bevy::hierarchy::{BuildChildren, ChildBuild, ChildBuilder, WorldChildBuilder};
 use bevy::log::*;
-use bevy::prelude::{
-  Commands, Component, Entity, Query, SpatialBundle, Sprite, SpriteBundle, TextureAtlas, Timer, TimerMode, Transform,
-};
+use bevy::prelude::{Commands, Component, Entity, Query, Sprite, TextureAtlas, Timer, TimerMode, Transform, Visibility};
 use bevy::sprite::Anchor;
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -64,7 +62,8 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
         "Chunk {} {} to {}",
         chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
       )),
-      SpatialBundle::default(),
+      Transform::default(),
+      Visibility::default(),
       ChunkComponent {
         layered_plane: chunk.layered_plane.clone(),
         coords: chunk.coords.clone(),
@@ -76,10 +75,8 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
           let tile_entity = parent
             .spawn((
               Name::new("Tile ".to_string() + &tile.coords.tile_grid.to_string()),
-              SpatialBundle {
-                transform: Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
-                ..Default::default()
-              },
+              Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
+              Visibility::default(),
             ))
             .id();
           tile_data.push(TileData::new(tile_entity, parent.parent_entity(), tile.clone()));
@@ -128,7 +125,7 @@ fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut Chi
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let (resources, settings) = shared::get_resources_and_settings(world);
-      if let Some(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
         tile_data_entity.with_children(|parent| {
           spawn_tile(tile_data, &tile, &resources, settings, parent);
         });
@@ -181,22 +178,19 @@ fn placeholder_sprite(
   tile: &Tile,
   chunk: Entity,
   resources: &GenerationResourcesCollection,
-) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
+) -> (Name, Sprite, Transform, TileComponent) {
   (
     Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
-    SpriteBundle {
-      sprite: Sprite {
-        anchor: Anchor::TopLeft,
-        ..Default::default()
-      },
-      texture: resources.placeholder.texture.clone(),
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Sprite {
+      anchor: Anchor::TopLeft,
+      texture_atlas: Some(TextureAtlas {
+        layout: resources.placeholder.texture_atlas_layout.clone(),
+        index: tile.terrain as usize,
+      }),
+      image: resources.placeholder.texture.clone(),
       ..Default::default()
     },
-    TextureAtlas {
-      layout: resources.placeholder.texture_atlas_layout.clone(),
-      index: tile.terrain as usize,
-    },
+    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
     TileComponent {
       tile: tile.clone(),
       parent_entity: chunk,
@@ -208,15 +202,32 @@ fn static_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
   resources: &GenerationResourcesCollection,
-) -> (Name, SpriteBundle, TextureAtlas, TileComponent) {
+) -> (Name, Transform, Sprite, TileComponent) {
   (
     Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
-    SpriteBundle {
-      sprite: Sprite {
-        anchor: Anchor::TopLeft,
-        ..Default::default()
-      },
-      texture: match (tile.terrain, tile.climate) {
+    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Sprite {
+      anchor: Anchor::TopLeft,
+      texture_atlas: Some(TextureAtlas {
+        layout: match (tile.terrain, tile.climate) {
+          (TerrainType::DeepWater, _) => resources.deep_water.stat.texture_atlas_layout.clone(),
+          (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land1, Climate::Humid) => resources.land_humid_l1.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land2, Climate::Humid) => resources.land_humid_l2.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture_atlas_layout.clone(),
+          (TerrainType::Land3, Climate::Humid) => resources.land_humid_l3.stat.texture_atlas_layout.clone(),
+          (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
+        },
+        index: tile
+          .tile_type
+          .calculate_sprite_index(&tile.terrain, &tile.climate, &resources),
+      }),
+      image: match (tile.terrain, tile.climate) {
         (TerrainType::DeepWater, _) => resources.deep_water.stat.texture.clone(),
         (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture.clone(),
         (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture.clone(),
@@ -230,27 +241,7 @@ fn static_terrain_sprite(
         (TerrainType::Land3, Climate::Humid) => resources.land_humid_l3.stat.texture.clone(),
         (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
       },
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
       ..Default::default()
-    },
-    TextureAtlas {
-      layout: match (tile.terrain, tile.climate) {
-        (TerrainType::DeepWater, _) => resources.deep_water.stat.texture_atlas_layout.clone(),
-        (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land1, Climate::Humid) => resources.land_humid_l1.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land2, Climate::Humid) => resources.land_humid_l2.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture_atlas_layout.clone(),
-        (TerrainType::Land3, Climate::Humid) => resources.land_humid_l3.stat.texture_atlas_layout.clone(),
-        (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
-      },
-      index: tile
-        .tile_type
-        .calculate_sprite_index(&tile.terrain, &tile.climate, &resources),
     },
     TileComponent {
       tile: tile.clone(),
@@ -263,7 +254,7 @@ fn animated_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
   asset_pack: &AssetPack,
-) -> (Name, SpriteBundle, TextureAtlas, TileComponent, AnimationComponent) {
+) -> (Name, Transform, Sprite, TileComponent, AnimationComponent) {
   let index = tile.tile_type.get_sprite_index(asset_pack.index_offset);
   let frame_duration = match tile.terrain {
     TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
@@ -271,18 +262,15 @@ fn animated_terrain_sprite(
   };
   (
     Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
-    SpriteBundle {
-      sprite: Sprite {
-        anchor: Anchor::TopLeft,
-        ..Default::default()
-      },
-      texture: asset_pack.texture.clone(),
-      transform: Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Sprite {
+      anchor: Anchor::TopLeft,
+      texture_atlas: Some(TextureAtlas {
+        layout: asset_pack.texture_atlas_layout.clone(),
+        index,
+      }),
+      image: asset_pack.texture.clone(),
       ..Default::default()
-    },
-    TextureAtlas {
-      layout: asset_pack.texture_atlas_layout.clone(),
-      index,
     },
     TileComponent {
       tile: tile.clone(),

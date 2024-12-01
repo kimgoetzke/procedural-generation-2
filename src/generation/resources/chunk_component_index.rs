@@ -12,8 +12,8 @@ impl Plugin for ChunkComponentIndexPlugin {
   fn build(&self, app: &mut App) {
     app
       .init_resource::<ChunkComponentIndex>()
-      .observe(on_add_chunk_component_trigger)
-      .observe(on_remove_chunk_component_trigger);
+      .add_observer(on_add_chunk_component_trigger)
+      .add_observer(on_remove_chunk_component_trigger);
   }
 }
 

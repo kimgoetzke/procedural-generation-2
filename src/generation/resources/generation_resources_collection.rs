@@ -4,8 +4,8 @@ use crate::generation::object::lib::{Connection, ObjectName};
 use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
-use bevy::asset::{Asset, AssetServer, Assets, Handle};
-use bevy::log::{debug, info_once};
+use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
+use bevy::log::*;
 use bevy::math::UVec2;
 use bevy::prelude::{
   in_state, Commands, Image, IntoSystemConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout,
@@ -107,16 +107,28 @@ fn check_loading_state(
   tile_type_handle: Res<TileTypeRuleSetHandle>,
   mut state: ResMut<NextState<AppState>>,
 ) {
-  let tile_type_handle = &tile_type_handle.0;
-  for terrain_handle in &terrain_handles.0 {
-    if asset_server.get_load_state(terrain_handle) != Some(bevy::asset::LoadState::Loaded)
-      || asset_server.get_load_state(tile_type_handle) != Some(bevy::asset::LoadState::Loaded)
-    {
+  for handle in &terrain_handles.0 {
+    if is_loading(asset_server.get_load_state(handle)) {
       info_once!("Waiting for assets to load...");
       return;
     }
   }
+  if is_loading(asset_server.get_load_state(&tile_type_handle.0)) {
+    info_once!("Waiting for assets to load...");
+    return;
+  }
   state.set(AppState::Initialising);
+}
+
+fn is_loading(loading_state: Option<LoadState>) -> bool {
+  if let Some(state) = loading_state {
+    return match state {
+      LoadState::NotLoaded | LoadState::Loading => true,
+      LoadState::Failed(e) => panic!("Failed to load assets: {:?}", e),
+      _ => false,
+    };
+  };
+  true
 }
 
 // --- Universal asset resources for the generation process ----------------------------------

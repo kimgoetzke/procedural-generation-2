@@ -24,73 +24,36 @@ struct FpsUiRoot;
 struct FpsText;
 
 fn create_fps_counter_system(mut commands: Commands) {
-  let root = commands
+  commands
     .spawn((
       Name::new("FPS Counter"),
       FpsUiRoot,
-      NodeBundle {
-        // background_color: BackgroundColor(VERY_DARK.with_alpha(0.5)),
-        z_index: ZIndex::Global(i32::MAX),
-        style: Style {
-          position_type: PositionType::Absolute,
-          right: Val::Percent(1.),
-          top: Val::Percent(1.),
-          bottom: Val::Auto,
-          left: Val::Auto,
-          padding: UiRect::all(Val::Px(4.0)),
-          ..Default::default()
-        },
+      Node {
+        position_type: PositionType::Absolute,
+        right: Val::Percent(1.),
+        top: Val::Percent(1.),
+        bottom: Val::Auto,
+        left: Val::Auto,
+        padding: UiRect::all(Val::Px(4.0)),
+        margin: UiRect::all(Val::Px(1.0)),
         ..Default::default()
       },
+      // BackgroundColor(VERY_DARK.with_alpha(0.5)),
+      Text::new("FPS: "),
+      TextColor(LIGHT),
     ))
-    .id();
-  let text = commands
-    .spawn((
-      Name::new("FPS Text"),
-      FpsText,
-      TextBundle {
-        text: Text::from_sections([
-          TextSection {
-            value: "FPS: ".into(),
-            style: TextStyle {
-              color: LIGHT,
-              ..default()
-            },
-          },
-          TextSection {
-            value: " N/A".into(),
-            style: TextStyle {
-              color: LIGHT,
-              ..default()
-            },
-          },
-        ]),
-        ..Default::default()
-      },
-    ))
-    .id();
-  commands.entity(root).push_children(&[text]);
+    .with_child((TextSpan::new("N/A"), FpsText, TextColor(LIGHT)));
 }
 
-fn update_fps_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut Text, With<FpsText>>) {
-  for mut text in &mut query {
+fn update_fps_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut TextSpan, With<FpsText>>) {
+  for mut span in &mut query {
     if let Some(value) = diagnostics
       .get(&FrameTimeDiagnosticsPlugin::FPS)
       .and_then(|fps| fps.smoothed())
     {
-      text.sections[1].value = format!("{value:>4.0}");
-      text.sections[1].style.color = if value >= 65.0 {
-        GREEN
-      } else if value >= 50.0 {
-        YELLOW
-      } else if value >= 40.0 {
-        ORANGE
-      } else {
-        RED
-      }
+      **span = format!("{value:>4.0}");
     } else {
-      text.sections[1].value = " N/A".into();
-      text.sections[1].style.color = LIGHT;
+      **span = " N/A".into();
     }
   }
 }
