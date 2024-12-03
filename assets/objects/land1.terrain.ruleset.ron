@@ -1,5 +1,5 @@
 (
-  terrain: Sand,
+  terrain: Land1,
   states: [
     (
       index: 1,

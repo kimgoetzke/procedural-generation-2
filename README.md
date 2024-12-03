@@ -14,26 +14,27 @@ techniques.
 
 ## Demo
 
+![Demo GIF 4](assets/ignore/demo4.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
 ![Demo GIF 3](assets/ignore/demo3.gif)
-![Demo GIF 4](assets/ignore/demo4.gif)
 
 ## Features
 
 - Generates an infinite and animated, 2D pixel art world
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
-    - Utilises multi-fractal Perlin noise to generate terrain layers
-    - Features a single biome with 5 terrain types: water, shore, sand, grass, forest
+    - Uses multi-fractal Perlin noise to generate terrain layers
+    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, sand, grass, forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions/layering
     - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
-    - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual
-      elevation changes over great distances without reducing generation performance
+    - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual elevation
+      changes over great distances or inter-chunk biome changes without reducing generation performance
 - Object generation:
     - Uses the wave function collapse algorithm to generate objects such as trees, ruins, stones, etc.
-    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files
+    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
+      for example, ruins can span multiple tiles and span over multiple terrain types
 - Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
 - `bevy-pancam` plugin for free camera movement
@@ -63,6 +64,8 @@ available to your IDE and you can run the project from there (vs `cargo build` a
 Without `direnv`, you can use the Nix Flake by running `nix develop` in the project directory. If you want to use an IDE
 such as JetBrains RustRover, you'll have to set up the environment manually. You'll most likely have to make
 `LD_LIBRARY_PATH` available to your IDE.
+
+Upgrade the flake by running `nix flake update` in the repository's base directory.
 
 ### Reminders
 

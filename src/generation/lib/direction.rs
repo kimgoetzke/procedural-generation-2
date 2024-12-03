@@ -60,12 +60,7 @@ impl PartialEq<Direction> for &Direction {
 }
 
 pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 9] {
-  let offset = match std::any::TypeId::of::<T>() {
-    id if id == std::any::TypeId::of::<TileGrid>() => CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<InternalGrid>() => 1,
-    id => panic!("Coord type {:?} not implemented for get_direction_points", id),
-  };
+  let offset = calculate_offset::<T>();
   let p = point;
   [
     (Direction::TopLeft, Point::new(p.x - offset, p.y + offset)),
@@ -78,6 +73,16 @@ pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direc
     (Direction::Bottom, Point::new(p.x, p.y - offset)),
     (Direction::BottomRight, Point::new(p.x + offset, p.y - offset)),
   ]
+}
+
+fn calculate_offset<T: CoordType + 'static>() -> i32 {
+  match std::any::TypeId::of::<T>() {
+    id if id == std::any::TypeId::of::<TileGrid>() => CHUNK_SIZE,
+    id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
+    id if id == std::any::TypeId::of::<InternalGrid>() => 1,
+    id if id == std::any::TypeId::of::<ChunkGrid>() => 1,
+    id => panic!("Coord type {:?} not implemented for calculate_offset", id),
+  }
 }
 
 fn to_direction<T: CoordType>(other_world: &Point<T>, left: i32, right: i32, top: i32, bottom: i32) -> Direction {

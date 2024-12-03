@@ -9,10 +9,11 @@ use bevy::app::{App, Plugin, Update};
 use bevy::core::Name;
 use bevy::log::*;
 use bevy::prelude::{
-  default, Commands, Component, Entity, EventReader, JustifyText, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text,
-  Text2dBundle, TextStyle, Transform, Trigger, Vec3, Visibility, With,
+  default, Commands, Component, Entity, EventReader, JustifyText, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text2d,
+  TextFont, Transform, Trigger, Vec3, Visibility, With,
 };
 use bevy::sprite::Anchor;
+use bevy::text::{LineBreak, TextBounds, TextColor, TextLayout};
 use bevy::utils::{HashMap, HashSet};
 
 pub struct TileDebuggerPlugin;
@@ -20,16 +21,18 @@ pub struct TileDebuggerPlugin;
 impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
-      .observe(on_add_object_component_trigger)
-      .observe(on_add_tile_component_trigger)
-      .observe(on_left_mouse_click_trigger)
-      .observe(on_remove_tile_component_trigger)
-      .observe(on_remove_object_component_trigger)
+      .add_observer(on_add_object_component_trigger)
+      .add_observer(on_add_tile_component_trigger)
+      .add_observer(on_left_mouse_click_trigger)
+      .add_observer(on_remove_tile_component_trigger)
+      .add_observer(on_remove_object_component_trigger)
       .add_systems(Update, (toggle_tile_info_event, regenerate_world_event))
       .init_resource::<TileComponentIndex>()
       .init_resource::<ObjectComponentIndex>();
   }
 }
+
+const MARGIN: f32 = 2.;
 
 #[derive(Component)]
 struct TileDebugInfoComponent;
@@ -135,7 +138,10 @@ fn on_left_mouse_click_trigger(
     if let Some(oc) = object_index.get(event.tg) {
       debug!("{:?}", oc);
     } else {
-      debug!("No object(s) found at {:?} {:?}", event.tile_w, event.tg);
+      debug!(
+        "No object(s) found at {:?} {:?} which is inside {}",
+        event.tile_w, event.tg, event.cg
+      );
     }
   }
 }
@@ -146,7 +152,18 @@ fn tile_info(
   spawn_point: Point<World>,
   settings: &Res<Settings>,
   object_component_option: &Option<&ObjectComponent>,
-) -> (Name, Text2dBundle, TileDebugInfoComponent) {
+) -> (
+  Name,
+  Anchor,
+  Text2d,
+  TextFont,
+  TextLayout,
+  TextBounds,
+  TextColor,
+  Visibility,
+  Transform,
+  TileDebugInfoComponent,
+) {
   let object = if let Some(oc) = object_component_option {
     format!("\nObject: \n{:?}\n(Sprite {})", oc.object_name, oc.sprite_index)
   } else {
@@ -157,41 +174,37 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
-  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, resources);
+  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, &tile.climate, resources);
   (
     Name::new(format!("Tile {:?} Debug Info", tile.coords.tile_grid)),
-    Text2dBundle {
-      text_anchor: Anchor::TopLeft,
-      text: Text::from_section(
-        format!(
-          "{}\n{} {}\n{:?}\n{:?}\n(Sprite {:?}, layer {:?})\n{}",
-          tile.coords.chunk_grid,
-          tile.coords.tile_grid,
-          tile.coords.internal_grid,
-          tile.terrain,
-          tile.tile_type,
-          sprite_index,
-          tile.layer,
-          object
-        ),
-        TextStyle {
-          font_size: 28.,
-          color: LIGHT,
-          ..default()
-        },
-      )
-      .with_justify(JustifyText::Left),
-      visibility,
-      transform: Transform {
-        scale: Vec3::splat(0.1),
-        translation: Vec3::new(
-          spawn_point.x as f32 + 2.,
-          spawn_point.y as f32 - 2.,
-          tile.layer as f32 + 1000.,
-        ),
-        ..Default::default()
-      },
+    Anchor::TopLeft,
+    Text2d::new(format!(
+      "{}\n{} {}\n{:?}\n{:?}\n(Sprite {:?}, layer {:?})\n{}",
+      tile.coords.chunk_grid,
+      tile.coords.tile_grid,
+      tile.coords.internal_grid,
+      tile.terrain,
+      tile.tile_type,
+      sprite_index,
+      tile.layer,
+      object
+    )),
+    TextFont {
+      font_size: 22.,
       ..default()
+    },
+    TextLayout::new(JustifyText::Left, LineBreak::AnyCharacter),
+    TextBounds::new((TILE_SIZE as f32 - MARGIN) * 10., (TILE_SIZE as f32 - MARGIN) * 10.),
+    TextColor(LIGHT),
+    visibility,
+    Transform {
+      scale: Vec3::splat(0.1),
+      translation: Vec3::new(
+        spawn_point.x as f32 + (MARGIN / 2.),
+        spawn_point.y as f32 - (MARGIN / 2.),
+        tile.layer as f32 + 1000.,
+      ),
+      ..Default::default()
     },
     TileDebugInfoComponent,
   )

@@ -1,5 +1,5 @@
 (
-  terrain: Grass,
+  terrain: Land2,
   states: [
     (
       index: 1,

@@ -2,7 +2,6 @@ mod chunk;
 mod components;
 mod debug_data;
 mod direction;
-mod draft_chunk;
 mod draft_tile;
 mod layered_plane;
 mod neighbours;
@@ -19,7 +18,6 @@ pub use components::{
   ChunkComponent, GenerationStage, ObjectComponent, TileComponent, WorldComponent, WorldGenerationComponent,
 };
 pub use direction::{get_direction_points, Direction};
-pub use draft_chunk::DraftChunk;
 pub use draft_tile::DraftTile;
 pub use layered_plane::LayeredPlane;
 pub use neighbours::{NeighbourTile, NeighbourTiles};

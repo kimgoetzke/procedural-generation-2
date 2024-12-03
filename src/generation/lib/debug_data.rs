@@ -9,6 +9,7 @@ use std::hash::{Hash, Hasher};
 pub struct DebugData {
   pub noise: f64,
   pub noise_elevation_offset: f64,
+  pub is_biome_edge: bool,
 }
 
 impl PartialEq for DebugData {
@@ -35,8 +36,10 @@ impl fmt::Debug for DebugData {
     │ Noise                  │ {:12.5} │\n\
     ├────────────────────────┼──────────────┤\n\
     │ Noise elevation offset │ {:12.5} │\n\
+    ├────────────────────────┼──────────────┤\n\
+    │ Is at edge of biome    │ {:12.5} │\n\
     └────────────────────────┴──────────────┘",
-      self.noise, self.noise_elevation_offset,
+      self.noise, self.noise_elevation_offset, self.is_biome_edge
     )
   }
 }

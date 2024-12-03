@@ -1,6 +1,6 @@
 use crate::constants::WATER_BLUE;
 use bevy::app::{App, Plugin, Startup};
-use bevy::core_pipeline::bloom::BloomSettings;
+use bevy::core_pipeline::bloom::Bloom;
 use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
 use bevy_pancam::PanCam;
@@ -13,7 +13,6 @@ impl Plugin for CameraPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_systems(Startup, setup_camera_system)
-      .insert_resource(Msaa::Off)
       .insert_resource(ClearColor(WATER_BLUE));
   }
 }
@@ -23,14 +22,13 @@ struct WorldCamera;
 
 fn setup_camera_system(mut commands: Commands) {
   commands.spawn((
-    Camera2dBundle {
-      camera: Camera { order: 2, ..default() },
-      transform: Transform::from_xyz(0., 0., 100.),
-      ..default()
-    },
+    Camera2d,
+    Camera { order: 2, ..default() },
+    Msaa::Off,
+    Transform::from_xyz(0., 0., 100.),
     WorldCamera,
     WORLD_LAYER,
-    BloomSettings::SCREEN_BLUR,
+    Bloom::SCREEN_BLUR,
     Name::new("Camera: In Game"),
     SpatialListener::new(10.),
     PanCam {
