@@ -12,8 +12,8 @@ use crate::generation::resources::Climate;
 pub struct DraftTile {
   pub coords: Coords,
   pub terrain: TerrainType,
-  pub climate: Climate,
   pub layer: i32,
+  pub climate: Climate,
   pub debug_data: DebugData,
 }
 

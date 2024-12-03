@@ -12,8 +12,8 @@ pub struct LayeredPlane {
 }
 
 impl LayeredPlane {
-  /// Creates a new `LayeredPlane` from the flat terrain data of a `DraftChunk` by converting the terrain data into a
-  /// `Plane` for each layer and converting the `DraftTile`s to `Tile`s which contain their `TileType`s.
+  /// Creates a new `LayeredPlane` from the flat terrain data of vector of draft tiles by converting the terrain data
+  /// into a `Plane` for each layer and converting the `DraftTile`s to `Tile`s which contain their `TileType`s.
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Settings) -> Self {
     let mut final_layers = Vec::new();
 

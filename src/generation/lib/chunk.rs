@@ -93,7 +93,7 @@ fn generate_terrain_data(
       );
 
       // Calculate if this tile is a biome edge
-      let is_biome_edge = calculate_biome_falloff(ix, iy, distance_from_center, &biome_metadata, &mut rng);
+      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, &biome_metadata, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -134,7 +134,7 @@ fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx
   let distance_x = (tx - center.x).abs() as f64 / max_distance;
   let distance_y = (ty - center.y).abs() as f64 / max_distance;
   let distance_from_center = distance_x.max(distance_y);
-  // info!("tg({}, {}): Distance from center = {}", tx, ty, distance_from_center);
+  trace!("tg({}, {}): Distance from center = {}", tx, ty, distance_from_center);
 
   distance_from_center
 }
@@ -160,14 +160,18 @@ const OUTSIDE: i32 = CHUNK_SIZE + 1;
 const EXPANDED_INSIDE: i32 = 2;
 const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
 
-/// Calculates if a tile should be adjusted based on the biome falloff map by checking if:
-/// 1. The tile is "far enough" from the center
-/// 2. The tile is at any of the edges of the chunk
-/// 3. The tile is at the randomly determined, expanded edges of the chunk (for variety)
+/// Calculates if a tile `TerrainType` should be adjusted by checking if:
+/// 1. The tile is "far enough" from the center (otherwise it cannot be an edge)
+/// 2. The tile is at any of the edges of the chunk (direction match statement arms using `INSIDE` and/or `OUTSIDE`)
+/// 3. The tile is at the randomly determined, expanded edges of the chunk (arms using `EXPANDED_INSIDE`,
+///    `EXPANDED_OUTSIDE`) - this introduces some randomness (vs having perfectly straight edges around chunks)
 ///
-/// If all of the above checks are true, the tile is adjusted.
+/// If all of the above checks are true, the tile is located at the edge of a biome, allowing the tile to be forcibly
+/// adjusted to a lower `TerrainType`. Without this, you'd need to have a lot of additional sprites to handle the
+/// transitions between each possible biome/terrain type/tile type combination (= 144 extra sprites at the time of
+/// writing this code).
 #[allow(non_contiguous_range_endpoints)]
-fn calculate_biome_falloff(
+fn is_tile_at_edge_of_biome(
   ix: i32,
   iy: i32,
   distance_from_center: f64,

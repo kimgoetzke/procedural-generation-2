@@ -151,21 +151,21 @@ impl Display for BiomeMetadataSet<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
-      "\nBiome metadata set:\n\
+      "\nBiome metadata set for {}: {:?}\n\
       ├─> Top left: {:?}\n\
       ├─> Top: {:?} \n\
       ├─> Top right: {:?} \n\
       ├─> Left: {:?} \n\
-      ├─> This: {:?} \n\
       ├─> Right: {:?} \n\
       ├─> Bottom left: {:?} \n\
       ├─> Bottom: {:?} \n\
       └─> Bottom right: {:?} \n",
+      self.this.cg,
+      self.this,
       self.top_left,
       self.top,
       self.top_right,
       self.left,
-      self.this,
       self.right,
       self.bottom_left,
       self.bottom,

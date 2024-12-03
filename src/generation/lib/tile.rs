@@ -11,8 +11,8 @@ use std::fmt;
 /// A `Tile` represents a single tile of `TILE_SIZE` in the world. It contains information about its `Coords`,
 /// `TerrainType`, `TileType`, and layer. If created from a `DraftTile`, the `layer` of a `Tile` adds the y-coordinate
 /// of the world grid `Coords` to the layer from the `DraftTile` from which it was created. It also adjusts the
-/// `InternalGrid` `Coords` to account for the buffer of a `DraftChunk` i.e. it shifts the `InternalGrid` `Coords` by the
-/// `BUFFER_SIZE` to towards the top-left, allowing for the outer tiles of a `DraftChunk` to be cut off in a way that
+/// `InternalGrid` `Coords` to account for the buffer of a "draft chunk" i.e. it shifts the `InternalGrid` `Coords` by the
+/// `BUFFER_SIZE` to towards the top-left, allowing for the outer tiles of the "draft chunk" to be cut off in a way that
 /// the `Tile`s in the resulting `Chunk` have `InternalGrid` `Coords` ranging from 0 to `CHUNK_SIZE`.
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Reflect)]
 pub struct Tile {
