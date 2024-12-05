@@ -33,7 +33,7 @@ fn setup_camera_system(mut commands: Commands) {
     SpatialListener::new(10.),
     PanCam {
       grab_buttons: vec![MouseButton::Right, MouseButton::Middle],
-      speed: 400.,
+      speed: 600.,
       zoom_to_cursor: false,
       min_scale: 0.15,
       max_scale: 5.,
