@@ -1,4 +1,4 @@
-use crate::constants::TILE_SIZE;
+use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile, TileData};
 use crate::generation::object::lib::ObjectName;
@@ -8,6 +8,7 @@ use crate::generation::object::wfc::WfcPlugin;
 use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
+use bevy::color::{Color, Luminance};
 use bevy::core::Name;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
@@ -100,6 +101,7 @@ fn attach_task_to_tile_entity(
   let tile_data = object_data.tile_data.clone();
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
+  let colour = get_adjust_colour(&mut rng, &object_data);
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -123,6 +125,7 @@ fn attach_task_to_tile_entity(
             object_name,
             offset_x,
             offset_y,
+            colour,
           ));
         });
       }
@@ -131,6 +134,23 @@ fn attach_task_to_tile_entity(
   });
 
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
+}
+
+fn get_adjust_colour(rng: &mut StdRng, object_data: &ObjectData) -> Color {
+  let base_color = Color::default();
+  if object_data.is_large_sprite {
+    let range = RGB_COLOUR_VARIATION;
+    let r = (base_color.to_srgba().red + rng.gen_range(-range..range)).clamp(0.0, 1.0);
+    let g = (base_color.to_srgba().green + rng.gen_range(-(range / 2.)..(range / 2.))).clamp(0.0, 1.0);
+    let b = (base_color.to_srgba().blue + rng.gen_range(-range..range)).clamp(0.0, 1.0);
+    let is_darker = rng.gen_bool(0.5);
+
+    Color::srgb(r, g, b)
+      .darker(if is_darker { rng.gen_range(DARKNESS_RANGE) } else { 0.0 })
+      .lighter(if !is_darker { rng.gen_range(BRIGHTNESS_RANGE) } else { 0.0 })
+  } else {
+    base_color
+  }
 }
 
 fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) {
@@ -151,6 +171,7 @@ fn sprite(
   object_name: ObjectName,
   offset_x: f32,
   offset_y: f32,
+  colour: Color,
 ) -> (Name, Sprite, Transform, ObjectComponent) {
   (
     Name::new(format!("{:?} Object Sprite", object_name)),
@@ -161,6 +182,7 @@ fn sprite(
         index: index as usize,
       }),
       image: asset_collection.stat.texture.clone(),
+      color: colour,
       ..Default::default()
     },
     Transform::from_xyz(

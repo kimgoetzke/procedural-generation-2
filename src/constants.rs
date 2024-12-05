@@ -4,6 +4,7 @@ use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
 use bevy::color::Color;
 use bevy::math::UVec2;
+use std::ops::Range;
 
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
@@ -136,6 +137,9 @@ pub const LIGHT: Color = Color::srgb(0.925, 0.937, 0.957);
 pub const MEDIUM: Color = Color::srgb(0.60, 0.639, 0.714);
 pub const DARK: Color = Color::srgb(0.298, 0.337, 0.416);
 pub const VERY_DARK: Color = Color::srgb(0.12, 0.14, 0.18);
+pub const RGB_COLOUR_VARIATION: f32 = 0.2;
+pub const DARKNESS_RANGE: Range<f32> = 0.0..0.2;
+pub const BRIGHTNESS_RANGE: Range<f32> = 0.0..0.4;
 // ------------------------------------------------------------------------------------------------------
 // Window
 pub const WINDOW_WIDTH: f32 = 1280.;
