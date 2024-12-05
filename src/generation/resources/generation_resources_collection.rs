@@ -165,8 +165,9 @@ pub struct ObjectResources {
   pub l3_dry: AssetCollection,
   pub l3_moderate: AssetCollection,
   pub l3_humid: AssetCollection,
-  pub trees_moderate: AssetCollection,
   pub trees_dry: AssetCollection,
+  pub trees_moderate: AssetCollection,
+  pub trees_humid: AssetCollection,
 }
 
 impl GenerationResourcesCollection {
@@ -199,7 +200,7 @@ impl GenerationResourcesCollection {
       (TerrainType::Land2, Climate::Humid, _) => &self.objects.l2_humid,
       (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
       (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
-      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_moderate,
+      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_humid,
       (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
       (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
       (TerrainType::Land3, Climate::Humid, _) => &self.objects.l2_humid,
@@ -287,7 +288,9 @@ fn initialise_resources_system(
   asset_collection.objects.trees_dry.stat =
     AssetPack::new(asset_server.load(TREES_DRY_OBJ_PATH), static_trees_atlas_layout.clone());
   asset_collection.objects.trees_moderate.stat =
-    AssetPack::new(asset_server.load(TREES_MODERATE_OBJ_PATH), static_trees_atlas_layout);
+    AssetPack::new(asset_server.load(TREES_MODERATE_OBJ_PATH), static_trees_atlas_layout.clone());
+  asset_collection.objects.trees_humid.stat =
+    AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_DEEP_OBJ_PATH);

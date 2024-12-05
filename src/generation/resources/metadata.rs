@@ -49,33 +49,20 @@ impl Metadata {
       })
       .collect();
 
-    let set = BiomeMetadataSet {
-      top: bm.get(&Direction::Top).expect(format!("No top metadata for {}", cg).as_str()),
-      top_right: bm
-        .get(&Direction::TopRight)
-        .expect(format!("No top right metadata for {}", cg).as_str()),
-      right: bm
-        .get(&Direction::Right)
-        .expect(format!("No right metadata for {}", cg).as_str()),
-      bottom_right: bm
-        .get(&Direction::BottomRight)
-        .expect(format!("No bottom right metadata for {}", cg).as_str()),
-      bottom: bm
-        .get(&Direction::Bottom)
-        .expect(format!("No bottom metadata for {}", cg).as_str()),
-      bottom_left: bm
-        .get(&Direction::BottomLeft)
-        .expect(format!("No bottom left metadata for {}", cg).as_str()),
-      left: bm
-        .get(&Direction::Left)
-        .expect(format!("No left metadata for {}", cg).as_str()),
-      this: bm.get(&Direction::Center).expect(format!("No metadata for {}", cg).as_str()),
-      top_left: bm
-        .get(&Direction::TopLeft)
-        .expect(format!("No top left metadata for {}", cg).as_str()),
+    let biome_metadata_set = BiomeMetadataSet {
+      top: bm[&Direction::Top],
+      top_right: bm[&Direction::TopRight],
+      right: bm[&Direction::Right],
+      bottom_right: bm[&Direction::BottomRight],
+      bottom: bm[&Direction::Bottom],
+      bottom_left: bm[&Direction::BottomLeft],
+      left: bm[&Direction::Left],
+      this: bm[&Direction::Center],
+      top_left: bm[&Direction::TopLeft],
     };
-    info!("Biome metadata for {}: {}", cg, set);
-    set
+    trace!("Biome metadata for {}: {}", cg, biome_metadata_set);
+
+    biome_metadata_set
   }
 }
 

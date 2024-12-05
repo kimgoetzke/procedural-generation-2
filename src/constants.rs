@@ -103,9 +103,10 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
+pub const TREES_HUMID_OBJ_PATH: &str = "objects/trees-conifer-humid.png";
 pub const TREES_MODERATE_OBJ_PATH: &str = "objects/trees-conifer-moderate.png";
 pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-conifer-dry.png";
-pub const TREES_OBJ_COLUMNS: u32 = 5;
+pub const TREES_OBJ_COLUMNS: u32 = 6;
 pub const TREES_OBJ_ROWS: u32 = 1;
 pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
 pub const WATER_DEEP_OBJ_PATH: &str = "objects/objects-water-deep.png";

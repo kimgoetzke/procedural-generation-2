@@ -58,7 +58,6 @@ pub fn generate_object_data(
   let object_grid_len = grid.grid.len();
   let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
-
   debug!(
     "Generated object data for {} objects for chunk {} in {} ms on {}",
     object_grid_len,
