@@ -190,7 +190,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (1..10, 0) => {
+    (1..15, 0) => {
       debug!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
         grid.cg,
@@ -199,7 +199,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (5.., 0) => {
+    (15.., 0) => {
       warn!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
         grid.cg,
