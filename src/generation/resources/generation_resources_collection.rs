@@ -203,7 +203,7 @@ impl GenerationResourcesCollection {
       (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_humid,
       (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
       (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
-      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l2_humid,
+      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l3_humid,
       (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
