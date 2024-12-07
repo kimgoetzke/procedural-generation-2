@@ -165,7 +165,10 @@ fn tile_info(
   TileDebugInfoComponent,
 ) {
   let object = if let Some(oc) = object_component_option {
-    format!("\nObject: \n{:?}\n(Sprite {})", oc.object_name, oc.sprite_index)
+    format!(
+      "\nObject: \n{:?}\n(Sprite {}, layer {})",
+      oc.object_name, oc.sprite_index, oc.layer
+    )
   } else {
     "\nNo object sprite".to_string()
   };
@@ -202,7 +205,7 @@ fn tile_info(
       translation: Vec3::new(
         spawn_point.x as f32 + (MARGIN / 2.),
         spawn_point.y as f32 - (MARGIN / 2.),
-        tile.layer as f32 + 1000.,
+        tile.layer as f32 + 20000.,
       ),
       ..Default::default()
     },

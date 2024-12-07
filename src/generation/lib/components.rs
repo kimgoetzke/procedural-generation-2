@@ -33,6 +33,7 @@ pub struct ObjectComponent {
   pub coords: Coords,
   pub sprite_index: usize,
   pub object_name: ObjectName,
+  pub layer: i32,
 }
 
 #[derive(Debug)]

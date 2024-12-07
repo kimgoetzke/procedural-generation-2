@@ -25,7 +25,12 @@ fn setup_camera_system(mut commands: Commands) {
     Camera2d,
     Camera { order: 2, ..default() },
     Msaa::Off,
-    Transform::from_xyz(0., 0., 100.),
+    Transform::from_xyz(0., 0., 100000.),
+    OrthographicProjection {
+      near: -10000.0,
+      far: 1000000.0,
+      ..OrthographicProjection::default_3d()
+    },
     WorldCamera,
     WORLD_LAYER,
     Bloom::SCREEN_BLUR,

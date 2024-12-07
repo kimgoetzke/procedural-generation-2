@@ -156,8 +156,8 @@ fn get_adjust_colour(rng: &mut StdRng, object_data: &ObjectData) -> Color {
 fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) {
   if object_data.is_large_sprite {
     (
-      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
-      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0),
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
+      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
     )
   } else {
     (0., 0.)
@@ -173,6 +173,9 @@ fn sprite(
   offset_y: f32,
   colour: Color,
 ) -> (Name, Sprite, Transform, ObjectComponent) {
+  let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
+  let internal_z = tile.coords.internal_grid.y as f32;
+  let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
   (
     Name::new(format!("{:?} Object Sprite", object_name)),
     Sprite {
@@ -185,16 +188,12 @@ fn sprite(
       color: colour,
       ..Default::default()
     },
-    Transform::from_xyz(
-      TILE_SIZE as f32 / 2. + offset_x,
-      TILE_SIZE as f32 * -1. + offset_y,
-      // TODO: Incorporate the chunk itself in the z-axis as it any chunk will render on top of the chunk below it
-      200. + tile.coords.internal_grid.y as f32,
-    ),
+    Transform::from_xyz(TILE_SIZE as f32 / 2. + offset_x, TILE_SIZE as f32 * -1. + offset_y, z),
     ObjectComponent {
       coords: tile.coords,
       sprite_index: index as usize,
       object_name: object_name.clone(),
+      layer: z as i32,
     },
   )
 }
