@@ -327,7 +327,7 @@
       ]
     ),
     (
-      index: 0,
+      index: 1,
       name: ForestTree1,
       weight: 100,
       permitted_neighbours: [
