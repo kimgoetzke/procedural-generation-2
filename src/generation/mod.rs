@@ -309,7 +309,7 @@ fn stage_6_schedule_spawning_objects(
       if task.is_finished() {
         let object_data = block_on(poll_once(task)).expect("Failed to get object data");
         let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
-        object::schedule_spawning_objects(&mut commands, &mut rng, object_data);
+        object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data);
         false
       } else {
         true

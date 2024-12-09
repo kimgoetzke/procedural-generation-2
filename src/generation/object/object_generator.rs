@@ -70,7 +70,12 @@ pub fn generate_object_data(
   object_data
 }
 
-pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, object_data: Vec<ObjectData>) {
+pub fn schedule_spawning_objects(
+  commands: &mut Commands,
+  settings: &Settings,
+  mut rng: &mut StdRng,
+  object_data: Vec<ObjectData>,
+) {
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
@@ -80,7 +85,7 @@ pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, 
     "cg(unknown)".to_string()
   };
   for object in object_data {
-    attach_task_to_tile_entity(commands, &mut rng, task_pool, object);
+    attach_task_to_tile_entity(commands, settings, &mut rng, task_pool, object);
   }
   debug!(
     "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
@@ -93,6 +98,7 @@ pub fn schedule_spawning_objects(commands: &mut Commands, mut rng: &mut StdRng, 
 
 fn attach_task_to_tile_entity(
   commands: &mut Commands,
+  settings: &Settings,
   mut rng: &mut StdRng,
   task_pool: &AsyncComputeTaskPool,
   object_data: ObjectData,
@@ -101,7 +107,7 @@ fn attach_task_to_tile_entity(
   let tile_data = object_data.tile_data.clone();
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
-  let colour = get_adjust_colour(&mut rng, &object_data);
+  let colour = get_adjust_colour(settings, &mut rng, &object_data);
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -136,9 +142,9 @@ fn attach_task_to_tile_entity(
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
-fn get_adjust_colour(rng: &mut StdRng, object_data: &ObjectData) -> Color {
+fn get_adjust_colour(settings: &Settings, rng: &mut StdRng, object_data: &ObjectData) -> Color {
   let base_color = Color::default();
-  if object_data.is_large_sprite {
+  if object_data.is_large_sprite && settings.object.enable_colour_variations {
     let range = RGB_COLOUR_VARIATION;
     let r = (base_color.to_srgba().red + rng.gen_range(-range..range)).clamp(0.0, 1.0);
     let g = (base_color.to_srgba().green + rng.gen_range(-(range / 2.)..(range / 2.))).clamp(0.0, 1.0);

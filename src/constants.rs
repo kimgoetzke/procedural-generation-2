@@ -32,6 +32,7 @@ pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
+pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Metadata
 pub const METADATA_GRID_APOTHEM: i32 = 3;

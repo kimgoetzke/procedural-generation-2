@@ -163,12 +163,14 @@ impl Default for WorldGenerationSettings {
 #[reflect(Resource, InspectorOptions)]
 pub struct ObjectGenerationSettings {
   pub generate_objects: bool,
+  pub enable_colour_variations: bool,
 }
 
 impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
       generate_objects: GENERATE_OBJECTS,
+      enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }
   }
 }
