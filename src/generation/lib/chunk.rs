@@ -34,6 +34,20 @@ impl Chunk {
   }
 }
 
+// TODO: Consider removing this struct
+#[derive(Debug, Clone, PartialEq)]
+struct Distances {
+  top_left: f64,
+  top: f64,
+  top_right: f64,
+  left: f64,
+  center: f64,
+  right: f64,
+  bottom_left: f64,
+  bottom: f64,
+  bottom_right: f64,
+}
+
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a `Point` of type
 /// `TileGrid` that describes the top-left corner of the grid.
 fn generate_terrain_data(
@@ -58,9 +72,6 @@ fn generate_terrain_data(
   let end = Point::new_tile_grid(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y - CHUNK_SIZE_PLUS_BUFFER + 1);
   let center = Point::new_tile_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
-  let use_max_layer_cap = settings.general.enable_occasional_max_layer_cap;
-  let falloff_strength = settings.world.falloff_strength;
-  let falloff_noise_strength = settings.world.falloff_noise_strength;
   let mut tiles = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
   let mut ix = 0;
   let mut iy = 0;
@@ -79,21 +90,11 @@ fn generate_terrain_data(
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
       let normalised_noise = (normalised_noise + elevation_offset).clamp(0., 1.);
 
-      // Calculate distance from center for falloff maps
-      let distance_from_center = calculate_distance_from_center(center, max_distance, tx, ty);
-
-      // TODO: Refactor to only use falloff value if the neighbour has a different max layer cap
-      // Calculate terrain falloff map value, if max layer cap is enabled
-      let terrain_falloff = calculate_terrain_falloff(
-        use_max_layer_cap,
-        falloff_strength,
-        falloff_noise_strength,
-        clamped_noise,
-        distance_from_center,
-      );
+      // Calculate distances to chunk edge in all directions
+      let distances = calculate_distances(start, end, center, max_distance, tx, ty);
 
       // Calculate if this tile is a biome edge
-      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, &biome_metadata, &mut rng);
+      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distances.center, &biome_metadata, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -103,12 +104,11 @@ fn generate_terrain_data(
       };
 
       // Determine terrain type based on the above
-      let max_layer = biome_metadata.this.max_layer;
       let terrain = match normalised_noise {
-        n if n > 0.75 => TerrainType::new(TerrainType::Land3, max_layer, terrain_falloff, is_biome_edge),
-        n if n > 0.6 => TerrainType::new(TerrainType::Land2, max_layer, terrain_falloff, is_biome_edge),
-        n if n > 0.45 => TerrainType::new(TerrainType::Land1, max_layer, terrain_falloff, is_biome_edge),
-        n if n > 0.3 => TerrainType::new(TerrainType::ShallowWater, max_layer, terrain_falloff, is_biome_edge),
+        n if n > 0.75 => TerrainType::new(TerrainType::Land3, is_biome_edge),
+        n if n > 0.6 => TerrainType::new(TerrainType::Land2, is_biome_edge),
+        n if n > 0.45 => TerrainType::new(TerrainType::Land1, is_biome_edge),
+        n if n > 0.3 => TerrainType::new(TerrainType::ShallowWater, is_biome_edge),
         _ => TerrainType::DeepWater,
       };
       let climate = biome_metadata.this.climate;
@@ -130,29 +130,31 @@ fn generate_terrain_data(
   tiles
 }
 
-fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx: i32, ty: i32) -> f64 {
+fn calculate_distances(
+  start: Point<TileGrid>,
+  end: Point<TileGrid>,
+  center: Point<TileGrid>,
+  max_distance: f64,
+  tx: i32,
+  ty: i32,
+) -> Distances {
   let distance_x = (tx - center.x).abs() as f64 / max_distance;
   let distance_y = (ty - center.y).abs() as f64 / max_distance;
   let distance_from_center = distance_x.max(distance_y);
-  trace!("tg({}, {}): Distance from center = {}", tx, ty, distance_from_center);
+  let distances = Distances {
+    top_left: (((tx - start.x).pow(2) + (ty - start.y).pow(2)) as f64).sqrt() / max_distance,
+    top: (ty - start.y).abs() as f64 / max_distance,
+    top_right: (((end.x - tx).pow(2) + (ty - start.y).pow(2)) as f64).sqrt() / max_distance,
+    left: (tx - start.x).abs() as f64 / max_distance,
+    center: distance_from_center,
+    right: (end.x - tx).abs() as f64 / max_distance,
+    bottom_left: (((tx - start.x).pow(2) + (end.y - ty).pow(2)) as f64).sqrt() / max_distance,
+    bottom: (end.y - ty).abs() as f64 / max_distance,
+    bottom_right: (((end.x - tx).pow(2) + (end.y - ty).pow(2)) as f64).sqrt() / max_distance,
+  };
+  trace!("tg({}, {}): Distances = {:?}", tx, ty, distances);
 
-  distance_from_center
-}
-
-fn calculate_terrain_falloff(
-  use_max_layer_cap: bool,
-  falloff_strength: f64,
-  falloff_noise_strength: f64,
-  clamped_noise: f64,
-  distance_from_center: f64,
-) -> f64 {
-  if !use_max_layer_cap {
-    return 0.;
-  }
-  let falloff_noise = clamped_noise * falloff_noise_strength;
-  let falloff = (1. - distance_from_center + falloff_noise).max(0.).powf(falloff_strength);
-
-  falloff
+  distances
 }
 
 const INSIDE: i32 = 1;

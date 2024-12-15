@@ -51,45 +51,47 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
     .set_frequency(settings.metadata.noise_frequency);
-  let x_step = settings.metadata.elevation_step_increase_x;
-  let y_step = settings.metadata.elevation_step_increase_y;
+  let elevation_frequency = settings.metadata.elevation_frequency;
   metadata.index.clear();
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
-      generate_elevation_metadata(&mut metadata, x_step, y_step, x, y);
+      generate_elevation_metadata(&mut metadata, x, y, elevation_frequency);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
       metadata.index.push(cg);
     })
   });
   debug!(
-    "Updated metadata based on current chunk {} using inputs [x_step={}, y_step={}] in {} ms on {}",
+    "Updated metadata based on current chunk {} using inputs [elevation_frequency={}, noise_frequency={}] in {} ms on {}",
     cg,
-    x_step,
-    y_step,
+    elevation_frequency,
+    settings.metadata.noise_frequency,
     shared::get_time() - start_time,
     shared::thread_name()
   );
 }
 
-fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x_step: f32, y_step: f32, x: i32, y: i32) {
+fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, frequency: f32) {
+  let grid_size = (CHUNK_SIZE - BUFFER_SIZE) as f32;
+  let x_range = get_range(x, frequency);
+  let y_range = get_range(y, frequency);
   let em = ElevationMetadata {
-    x: get_range(x, x_step),
-    y: get_range(y, y_step),
-    x_step,
-    y_step,
+    x_step: (x_range.end - x_range.start) / grid_size,
+    x_range,
+    y_step: (y_range.end - y_range.start) / grid_size,
+    y_range,
   };
   let cg = Point::new_chunk_grid(x, y);
-  trace!("Generated metadata for {}: {:?}", cg, em);
+  debug!("Generated elevation metadata for {}: {:?}", cg, em);
   metadata.elevation.insert(cg, em);
 }
 
 /// Returns a range based on the given coordinate and step size. The range is rounded to 3 decimal places.
-fn get_range(coordinate: i32, elevation_step: f32) -> Range<f32> {
-  Range {
-    start: (((coordinate as f32 * elevation_step) - (elevation_step / 2.)) * 1000.0).round() / 1000.0,
-    end: (((coordinate as f32 * elevation_step) + (elevation_step / 2.)) * 1000.0).round() / 1000.0,
-  }
+fn get_range(coordinate: i32, frequency: f32) -> Range<f32> {
+  let start = ((coordinate as f32 * frequency).sin() * 1000.0).round() / 1000.0;
+  let end = (((coordinate + 1) as f32 * frequency).sin() * 1000.0).round() / 1000.0;
+
+  Range { start, end }
 }
 
 fn generate_biome_metadata(

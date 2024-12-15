@@ -15,11 +15,13 @@ pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
-pub const ENABLE_OCCASIONAL_MAX_LAYER_CAP: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
-pub const ELEVATION_STEP_INCREASE_X: f32 = 0.1;
-pub const ELEVATION_STEP_INCREASE_Y: f32 = 0.;
+pub const ELEVATION_FREQUENCY: f32 = 0.2;
+pub const METADATA_GRID_APOTHEM: i32 = 3;
+pub const METADATA_NOISE_FREQUENCY: f64 = 0.1;
+pub const METADATA_LOWEST_MAX_LAYER: i32 = 2;
+pub const METADATA_IS_ROCKY_PROBABILITY: f64 = 0.3;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
@@ -33,12 +35,6 @@ pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
-// ------------------------------------------------------------------------------------------------------
-// Metadata
-pub const METADATA_GRID_APOTHEM: i32 = 3;
-pub const METADATA_NOISE_FREQUENCY: f64 = 0.1;
-pub const METADATA_LOWEST_MAX_LAYER: i32 = 2;
-pub const METADATA_IS_ROCKY_PROBABILITY: f64 = 0.3;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.

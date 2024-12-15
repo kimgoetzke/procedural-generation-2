@@ -63,9 +63,6 @@ pub struct GeneralGenerationSettings {
   pub spawn_from_layer: usize,
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
-  // If true, the maximum layer of a chunk will be capped according to the value of a noise function. Introduces
-  // variety when the terrain doesn't change much over several chunks.
-  pub enable_occasional_max_layer_cap: bool,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -78,7 +75,6 @@ impl Default for GeneralGenerationSettings {
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
-      enable_occasional_max_layer_cap: ENABLE_OCCASIONAL_MAX_LAYER_CAP,
     }
   }
 }
@@ -86,18 +82,12 @@ impl Default for GeneralGenerationSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GenerationMetadataSettings {
-  /// The increase in elevation for a given chunk's x-axis. The higher the value, faster the terrain goes from
-  /// the lowest terrain layer to the highest terrain layer from left to right. Negative values will reverse the
-  /// direction.
+  /// The higher the value, the faster (i.e. over a distance of fewer chunks) the terrain oscillates between the
+  /// highest and lowest terrain layers.
   #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
-  pub elevation_step_increase_x: f32,
-  /// The increase in elevation for a given chunk's y-axis. The higher the value, faster the terrain goes from
-  /// the lowest terrain layer to the highest terrain layer from top to bottom. Negative values will reverse the
-  /// direction.
-  #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
-  pub elevation_step_increase_y: f32,
+  pub elevation_frequency: f32,
   /// The scale of the noise map generated for the biome metadata: the higher the frequency, the smaller the terrain
-  /// features. A parameter of `BasicMulti`.
+  /// features. A parameter of `BasicMulti<Perlin>`.
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   pub noise_frequency: f64,
 }
@@ -105,8 +95,7 @@ pub struct GenerationMetadataSettings {
 impl Default for GenerationMetadataSettings {
   fn default() -> Self {
     Self {
-      elevation_step_increase_x: ELEVATION_STEP_INCREASE_X,
-      elevation_step_increase_y: ELEVATION_STEP_INCREASE_Y,
+      elevation_frequency: ELEVATION_FREQUENCY,
       noise_frequency: METADATA_NOISE_FREQUENCY,
     }
   }
@@ -133,16 +122,6 @@ pub struct WorldGenerationSettings {
   /// The higher the amplitude, the more extreme the terrain. Similar to `noise_persistence` but applies to the entire
   /// output of the noise function equally. A custom parameter that is not part of `BasicMulti`.
   pub noise_amplitude: f64,
-  /// Used in combination with `` Force the outside of the `Chunk` to become the lowest `TerrainType`. The higher the falloff strength, the closer
-  /// to the center of the `Chunk` the falloff begins. Basically turns `Chunk`s into an islands. Can generate unpleasant
-  /// visual artifacts if set to a very low non-zero value. Don't use it if you want `Chunk`s to be connected at a
-  /// higher `TerrainType`.
-  #[inspector(min = 0.0, max = 2.5, display = NumberDisplay::Slider)]
-  pub falloff_strength: f64,
-  // The strength of the noise function that determines the falloff. The higher the value, the more noise is added to
-  // the falloff. The lower the value, the more uniform the falloff will look.
-  #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
-  pub falloff_noise_strength: f64,
 }
 
 impl Default for WorldGenerationSettings {
@@ -153,8 +132,6 @@ impl Default for WorldGenerationSettings {
       noise_frequency: NOISE_FREQUENCY,
       noise_persistence: NOISE_PERSISTENCE,
       noise_amplitude: NOISE_AMPLITUDE,
-      falloff_strength: FALLOFF_STRENGTH,
-      falloff_noise_strength: FALLOFF_NOISE_STRENGTH,
     }
   }
 }

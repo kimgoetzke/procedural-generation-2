@@ -40,11 +40,9 @@ impl TerrainType {
     }
   }
 
-  pub fn new(proposed: TerrainType, max: i32, terrain_falloff: f64, is_biome_edge: bool) -> Self {
+  pub fn new(proposed: TerrainType, is_biome_edge: bool) -> Self {
     let max_layer: i32 = if is_biome_edge {
       TerrainType::ShallowWater as i32
-    } else if terrain_falloff > 0.5 {
-      max
     } else {
       TerrainType::length() as i32
     };
