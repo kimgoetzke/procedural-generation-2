@@ -41,6 +41,7 @@
             pkgs.libudev-zero
             pkgs.alsa-lib
             pkgs.vulkan-loader
+            pkgs.vulkan-tools
             pkgs.libxkbcommon
             pkgs.wayland
             pkgs.xorg.libX11
