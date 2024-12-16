@@ -17,8 +17,9 @@ pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
-pub const ELEVATION_FREQUENCY: f32 = 0.2;
-pub const METADATA_GRID_APOTHEM: i32 = 3;
+pub const ELEVATION_CHUNK_STEP_SIZE: f32 = 0.1;
+pub const ELEVATION_FREQUENCY: f32 = 20.;
+pub const METADATA_GRID_APOTHEM: i32 = 30;
 pub const METADATA_NOISE_FREQUENCY: f64 = 0.1;
 pub const METADATA_LOWEST_MAX_LAYER: i32 = 2;
 pub const METADATA_IS_ROCKY_PROBABILITY: f64 = 0.3;

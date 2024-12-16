@@ -1,3 +1,4 @@
+use crate::constants::CHUNK_SIZE;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
 use crate::generation::lib::{get_direction_points, Direction};
@@ -83,21 +84,19 @@ pub struct ElevationMetadata {
 impl ElevationMetadata {
   /// Give it a `Point<InternalGrid>` and it will calculate the elevation offset you need to apply for that point.
   pub fn calculate_for_point(&self, ig: Point<InternalGrid>, grid_size: i32, grid_buffer: i32) -> f64 {
-    let local_x = ig.x as f64 + grid_buffer as f64;
-    let local_y = ig.y as f64 + grid_buffer as f64;
-
-    self.calculate_x(local_x) + self.calculate_y(local_y)
+    self.calculate_x(ig.x as f64 + grid_buffer as f64, grid_size as f64)
+      + self.calculate_y(ig.y as f64 + grid_buffer as f64, grid_size as f64)
   }
 
-  /// Calculates the x-offset for the given coordinate.
-  fn calculate_x(&self, coordinate: f64) -> f64 {
-    self.x_range.start as f64 + self.x_step as f64 * coordinate
+  /// Calculates the x-offset for a given x-coordinate.
+  fn calculate_x(&self, coordinate: f64, grid_size: f64) -> f64 {
+    self.x_range.start as f64 + (coordinate / grid_size) * self.x_step as f64 - self.x_step as f64 / 2.0
   }
 
-  /// Calculates the y-offset for a given y-coordinate. The y-axis is inverted in this application, so we need to
+  /// Calculates the y-offset for a given y-coordinate value. The y-axis is inverted in this application, so we need to
   /// invert the calculation as well.
-  fn calculate_y(&self, coordinate: f64) -> f64 {
-    self.y_range.start as f64 - self.y_step as f64 * coordinate
+  fn calculate_y(&self, coordinate: f64, grid_size: f64) -> f64 {
+    self.y_range.end as f64 - (coordinate / grid_size) * self.y_step as f64 + self.y_step as f64 / 2.0
   }
 }
 

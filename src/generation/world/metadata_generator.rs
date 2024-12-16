@@ -51,12 +51,13 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
     .set_frequency(settings.metadata.noise_frequency);
+  let elevation_chunk_step_size = settings.metadata.elevation_chunk_step_size;
   let elevation_frequency = settings.metadata.elevation_frequency;
   metadata.index.clear();
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
-      generate_elevation_metadata(&mut metadata, x, y, elevation_frequency);
+      generate_elevation_metadata(&mut metadata, x, y, elevation_chunk_step_size, elevation_frequency);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
       metadata.index.push(cg);
     })
@@ -71,14 +72,14 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   );
 }
 
-fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, frequency: f32) {
+fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, chunk_step_size: f32, frequency: f32) {
   let grid_size = (CHUNK_SIZE - BUFFER_SIZE) as f32;
-  let x_range = get_range(x, frequency);
-  let y_range = get_range(y, frequency);
+  let (x_range, x_step) = get_range(x, chunk_step_size, frequency);
+  let (y_range, y_step) = get_range(y, chunk_step_size, frequency);
   let em = ElevationMetadata {
-    x_step: (x_range.end - x_range.start) / grid_size,
+    x_step: (((x_range.end - x_range.start) / grid_size) * 10000.).round() / 10000.,
     x_range,
-    y_step: (y_range.end - y_range.start) / grid_size,
+    y_step: (((y_range.end - y_range.start) / grid_size) * 10000.).round() / 10000.,
     y_range,
   };
   let cg = Point::new_chunk_grid(x, y);
@@ -87,12 +88,63 @@ fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, 
 }
 
 /// Returns a range based on the given coordinate and step size. The range is rounded to 3 decimal places.
-fn get_range(coordinate: i32, frequency: f32) -> Range<f32> {
-  let start = ((coordinate as f32 * frequency).sin() * 1000.0).round() / 1000.0;
-  let end = (((coordinate + 1) as f32 * frequency).sin() * 1000.0).round() / 1000.0;
+fn get_range(coordinate: i32, chunk_step_size: f32, frequency: f32) -> (Range<f32>, f32) {
+  let normalised_mod = (modulo(coordinate as f32, frequency)) / frequency;
+  let is_rising = normalised_mod <= 0.5;
+  let base = if is_rising {
+    2.0 * normalised_mod
+  } else {
+    (2.0 * (1.0 - normalised_mod)) - chunk_step_size
+  };
+  let start = ((base * 10000.).round()) / 10000.;
+  let end = (((base + chunk_step_size) * 10000.).round()) / 10000.;
+  let adjusted_end= if end > 1.0 {
+    (((base - chunk_step_size) * 10000.).round()) / 10000.
+  } else {
+    end
+  };
+  let step_size = if start > adjusted_end {
+    -chunk_step_size
+  } else {
+    chunk_step_size
+  };
 
-  Range { start, end }
+  if is_rising {
+    (Range { start, end: adjusted_end }, step_size)
+  } else {
+    (Range { start: end, end: start }, -step_size)
+  }
 }
+
+fn modulo(a: f32, b: f32) -> f32 {
+  ((a % b) + b) % b
+}
+
+// fn get_range(coordinate: i32, chunk_step_size: f32, frequency: f32) -> Range<f32> {
+//   let normalised_mod = if coordinate < 0 {
+//     (modulo(coordinate as f32, frequency)) / frequency
+//   } else {
+//     (modulo(coordinate as f32, frequency)) / frequency
+//   };
+//   let is_rising = normalised_mod <= 0.5;
+//   let base = if is_rising {
+//     2.0 * normalised_mod
+//   } else {
+//     2.0 * (1.0 - normalised_mod)
+//   };
+//   let start = ((((base - (chunk_step_size / 2.)).clamp(0., 1.0)) * 10000.).round()) / 10000.;
+//   let end = ((((base + (chunk_step_size / 2.)).clamp(0., 1.0)) * 10000.).round()) / 10000.;
+//
+//   if is_rising {
+//     Range { start, end }
+//   } else {
+//     Range { start: end, end: start }
+//   }
+// }
+//
+// fn modulo(a: f32, b: f32) -> f32 {
+//   ((a % b) + b) % b
+// }
 
 fn generate_biome_metadata(
   metadata: &mut ResMut<Metadata>,
