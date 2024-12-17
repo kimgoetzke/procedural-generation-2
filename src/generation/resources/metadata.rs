@@ -83,20 +83,23 @@ pub struct ElevationMetadata {
 
 impl ElevationMetadata {
   /// Give it a `Point<InternalGrid>` and it will calculate the elevation offset you need to apply for that point.
-  pub fn calculate_for_point(&self, ig: Point<InternalGrid>, grid_size: i32, grid_buffer: i32) -> f64 {
-    self.calculate_x(ig.x as f64 + grid_buffer as f64, grid_size as f64)
-      + self.calculate_y(ig.y as f64 + grid_buffer as f64, grid_size as f64)
+  pub fn calculate_for_point(&self, ig: Point<InternalGrid>, _grid_size: i32, _grid_buffer: i32) -> f64 {
+    self.calculate_x(ig.x as f64) + self.calculate_y(ig.y as f64)
   }
 
   /// Calculates the x-offset for a given x-coordinate.
-  fn calculate_x(&self, coordinate: f64, grid_size: f64) -> f64 {
-    self.x_range.start as f64 + (coordinate / grid_size) * self.x_step as f64 - self.x_step as f64 / 2.0
+  fn calculate_x(&self, coordinate: f64) -> f64 {
+    let min = self.x_range.start.min(self.x_range.end) as f64;
+    let max = self.x_range.start.max(self.x_range.end) as f64;
+    (self.x_range.start as f64 + (coordinate * self.x_step as f64) - self.x_step as f64).clamp(min, max)
   }
 
   /// Calculates the y-offset for a given y-coordinate value. The y-axis is inverted in this application, so we need to
   /// invert the calculation as well.
-  fn calculate_y(&self, coordinate: f64, grid_size: f64) -> f64 {
-    self.y_range.end as f64 - (coordinate / grid_size) * self.y_step as f64 + self.y_step as f64 / 2.0
+  fn calculate_y(&self, coordinate: f64) -> f64 {
+    let min = self.y_range.start.min(self.y_range.end) as f64;
+    let max = self.y_range.start.max(self.y_range.end) as f64;
+    (self.y_range.end as f64 - (coordinate * self.y_step as f64) + self.y_step as f64).clamp(min, max)
   }
 }
 

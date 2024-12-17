@@ -73,13 +73,13 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
 }
 
 fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, chunk_step_size: f32, frequency: f32) {
-  let grid_size = (CHUNK_SIZE - BUFFER_SIZE) as f32;
-  let (x_range, x_step) = get_range(x, chunk_step_size, frequency);
-  let (y_range, y_step) = get_range(y, chunk_step_size, frequency);
+  let grid_size = CHUNK_SIZE as f32 - 1.;
+  let (x_range, x_step) = calculate_range_and_step_size(x, chunk_step_size, frequency, grid_size);
+  let (y_range, y_step) = calculate_range_and_step_size(y, chunk_step_size, frequency, grid_size);
   let em = ElevationMetadata {
-    x_step: (((x_range.end - x_range.start) / grid_size) * 10000.).round() / 10000.,
+    x_step,
     x_range,
-    y_step: (((y_range.end - y_range.start) / grid_size) * 10000.).round() / 10000.,
+    y_step,
     y_range,
   };
   let cg = Point::new_chunk_grid(x, y);
@@ -87,8 +87,14 @@ fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, 
   metadata.elevation.insert(cg, em);
 }
 
-/// Returns a range based on the given coordinate and step size. The range is rounded to 3 decimal places.
-fn get_range(coordinate: i32, chunk_step_size: f32, frequency: f32) -> (Range<f32>, f32) {
+/// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
+/// the elevation offset. The step size is the amount of elevation change per `Tile` (not per `Chunk`).
+fn calculate_range_and_step_size(
+  coordinate: i32,
+  chunk_step_size: f32,
+  frequency: f32,
+  grid_size: f32,
+) -> (Range<f32>, f32) {
   let normalised_mod = (modulo(coordinate as f32, frequency)) / frequency;
   let is_rising = normalised_mod <= 0.5;
   let base = if is_rising {
@@ -98,21 +104,15 @@ fn get_range(coordinate: i32, chunk_step_size: f32, frequency: f32) -> (Range<f3
   };
   let start = ((base * 10000.).round()) / 10000.;
   let end = (((base + chunk_step_size) * 10000.).round()) / 10000.;
-  let adjusted_end= if end > 1.0 {
+  let end = if end > 1.0 {
     (((base - chunk_step_size) * 10000.).round()) / 10000.
   } else {
     end
   };
-  let step_size = if start > adjusted_end {
-    -chunk_step_size
-  } else {
-    chunk_step_size
-  };
-
   if is_rising {
-    (Range { start, end: adjusted_end }, step_size)
+    (Range { start, end }, step_size(start, end, grid_size, is_rising))
   } else {
-    (Range { start: end, end: start }, -step_size)
+    (Range { start: end, end: start }, step_size(start, end, grid_size, is_rising))
   }
 }
 
@@ -120,31 +120,10 @@ fn modulo(a: f32, b: f32) -> f32 {
   ((a % b) + b) % b
 }
 
-// fn get_range(coordinate: i32, chunk_step_size: f32, frequency: f32) -> Range<f32> {
-//   let normalised_mod = if coordinate < 0 {
-//     (modulo(coordinate as f32, frequency)) / frequency
-//   } else {
-//     (modulo(coordinate as f32, frequency)) / frequency
-//   };
-//   let is_rising = normalised_mod <= 0.5;
-//   let base = if is_rising {
-//     2.0 * normalised_mod
-//   } else {
-//     2.0 * (1.0 - normalised_mod)
-//   };
-//   let start = ((((base - (chunk_step_size / 2.)).clamp(0., 1.0)) * 10000.).round()) / 10000.;
-//   let end = ((((base + (chunk_step_size / 2.)).clamp(0., 1.0)) * 10000.).round()) / 10000.;
-//
-//   if is_rising {
-//     Range { start, end }
-//   } else {
-//     Range { start: end, end: start }
-//   }
-// }
-//
-// fn modulo(a: f32, b: f32) -> f32 {
-//   ((a % b) + b) % b
-// }
+fn step_size(range_start: f32, range_end: f32, grid_size: f32, is_positive: bool) -> f32 {
+  let modifier = if is_positive { 1.0 } else { -1.0 };
+  ((range_end - range_start) / grid_size) * modifier
+}
 
 fn generate_biome_metadata(
   metadata: &mut ResMut<Metadata>,
