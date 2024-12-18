@@ -71,8 +71,8 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
 }
 
 /// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
-/// received. This is triggered by pressing a key or a button in the UI and the camera within the bounds of the `Chunk`
-/// at the origin of the world.
+/// received. This is triggered by pressing a key or a button in the UI while the camera is within the bounds of the
+/// `Chunk` at the origin of the world.
 fn regenerate_world_event(
   mut commands: Commands,
   mut events: EventReader<RegenerateWorldEvent>,
@@ -110,7 +110,6 @@ fn update_world_event(
   mut next_state: ResMut<NextState<GenerationState>>,
 ) {
   for event in events.read() {
-    // Ignore the event if the current chunk contains the world grid of the event
     if current_chunk.contains(event.tg) && !event.is_forced_update {
       debug!("{} is inside current chunk, ignoring event...", event.tg);
       return;

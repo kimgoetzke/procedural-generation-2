@@ -170,13 +170,6 @@ impl Cell {
       Ok(())
     }
   }
-
-  pub fn is_border_cell(&self, grid_size: usize) -> bool {
-    let x = self.ig.x;
-    let y = self.ig.y;
-    let grid_size = grid_size as i32;
-    x == 0 || y == 0 || x == grid_size - 1 || y == grid_size - 1
-  }
 }
 
 fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: &Connection) -> Vec<ObjectName> {

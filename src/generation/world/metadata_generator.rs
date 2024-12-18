@@ -111,7 +111,7 @@ fn generate_elevation_metadata(
     y_range,
   };
   let cg = Point::new_chunk_grid(x, y);
-  debug!("Generated elevation metadata for {}: {}", cg, em);
+  trace!("Generated elevation metadata for {}: {}", cg, em);
   metadata.elevation.insert(cg, em);
 }
 
