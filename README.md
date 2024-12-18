@@ -14,11 +14,12 @@ techniques.
 
 ## Demo
 
+![Screenshot 1](assets/ignore/screenshot1.png)
+![Screenshot 2](assets/ignore/screenshot2.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
-![Screenshot 1](assets/ignore/screenshot1.png)
 
 ## Features
 
