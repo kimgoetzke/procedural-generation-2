@@ -25,8 +25,8 @@ pub struct ChunkComponentIndex {
 }
 
 impl ChunkComponentIndex {
-  pub fn get(&self, w: Point<World>) -> Option<&ChunkComponent> {
-    if let Some(entity) = self.map.get(&w) {
+  pub fn get(&self, w: &Point<World>) -> Option<&ChunkComponent> {
+    if let Some(entity) = self.map.get(w) {
       Some(entity)
     } else {
       None

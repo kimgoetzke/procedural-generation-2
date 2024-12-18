@@ -164,8 +164,10 @@ fn world_generation_system(
     let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
     match component.stage {
       GenerationStage::Stage1 => stage_1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &mut component),
-      GenerationStage::Stage2 => stage_2_await_chunk_generation(&mut component),
-      GenerationStage::Stage3 => stage_3_spawn_chunks_and_empty_tiles(&mut commands, &mut component, world_entity),
+      GenerationStage::Stage2 => stage_2_await_chunk_generation(&mut component, &existing_chunks),
+      GenerationStage::Stage3 => {
+        stage_3_spawn_chunks_and_empty_tiles(&mut commands, &mut component, world_entity, &existing_chunks)
+      }
       GenerationStage::Stage4 => stage_4_schedule_spawning_tiles(&mut commands, &settings, &mut component),
       GenerationStage::Stage5 => stage_5_schedule_generating_object_data(&settings, &resources, &mut component),
       GenerationStage::Stage6 => stage_6_schedule_spawning_objects(&mut commands, &settings, &mut component),
@@ -213,7 +215,7 @@ fn calculate_chunk_spawn_points(
   get_direction_points(&new_parent_chunk_w)
     .iter()
     .for_each(|(direction, chunk_w)| {
-      if let Some(_) = existing_chunks.get(*chunk_w) {
+      if let Some(_) = existing_chunks.get(&chunk_w) {
         trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
       } else {
         if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
@@ -232,10 +234,11 @@ fn calculate_chunk_spawn_points(
   spawn_points
 }
 
-fn stage_2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>) {
+fn stage_2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>, existing_chunks: &ChunkComponentIndex) {
   if let Some(task) = component.stage_1_gen_task.as_mut() {
     if task.is_finished() {
-      if let Some(chunks) = block_on(poll_once(task)) {
+      if let Some(mut chunks) = block_on(poll_once(task)) {
+        chunks.retain_mut(|chunk| existing_chunks.get(&chunk.coords.world).is_none());
         component.stage_2_chunks = chunks;
         component.stage_1_gen_task = None;
         component.stage = GenerationStage::Stage3;
@@ -251,13 +254,16 @@ fn stage_3_spawn_chunks_and_empty_tiles(
   commands: &mut Commands,
   component: &mut Mut<WorldGenerationComponent>,
   world_entity: Entity,
+  existing_chunks: &Res<ChunkComponentIndex>,
 ) {
   if !component.stage_2_chunks.is_empty() {
     let chunk = component.stage_2_chunks.remove(0);
-    commands.entity(world_entity).with_children(|parent| {
-      let tile_data = world::spawn_chunk(parent, &chunk);
-      component.stage_3_spawn_data.push((chunk, tile_data));
-    });
+    if existing_chunks.get(&chunk.coords.world).is_none() {
+      commands.entity(world_entity).with_children(|parent| {
+        let tile_data = world::spawn_chunk(parent, &chunk);
+        component.stage_3_spawn_data.push((chunk, tile_data));
+      });
+    }
   }
   if component.stage_2_chunks.is_empty() {
     component.stage = GenerationStage::Stage4;
