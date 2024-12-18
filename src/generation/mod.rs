@@ -171,7 +171,7 @@ fn world_generation_system(
       GenerationStage::Stage4 => stage_4_schedule_spawning_tiles(&mut commands, &settings, &mut component),
       GenerationStage::Stage5 => stage_5_schedule_generating_object_data(&settings, &resources, &mut component),
       GenerationStage::Stage6 => stage_6_schedule_spawning_objects(&mut commands, &settings, &mut component),
-      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component),
+      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component, &settings),
     }
     trace!(
       "World generation component {} reached stage [{:?}] which took {} ms",
@@ -331,8 +331,9 @@ fn stage_7_clean_up(
   prune_world_event: &mut EventWriter<PruneWorldEvent>,
   entity: Entity,
   component: &mut Mut<WorldGenerationComponent>,
+  settings: &Res<Settings>,
 ) {
-  if !component.prune_world_after {
+  if !component.suppress_pruning_world && settings.general.enable_world_pruning {
     prune_world_event.send(PruneWorldEvent {
       despawn_all_chunks: false,
       update_world_after: false,

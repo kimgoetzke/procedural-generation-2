@@ -15,6 +15,7 @@ pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
+pub const ENABLE_WORLD_PRUNING: bool = true;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
 pub const METADATA_GRID_APOTHEM: i32 = 3;

@@ -63,6 +63,7 @@ pub struct GeneralGenerationSettings {
   pub spawn_from_layer: usize,
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
+  pub enable_world_pruning: bool,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -75,6 +76,7 @@ impl Default for GeneralGenerationSettings {
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
+      enable_world_pruning: ENABLE_WORLD_PRUNING,
     }
   }
 }

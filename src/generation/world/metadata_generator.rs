@@ -32,7 +32,7 @@ fn initialise_metadata(
   settings: Res<Settings>,
   mut next_state: ResMut<NextState<AppState>>,
 ) {
-  regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
+  regenerate_metadata(metadata, current_chunk.get_chunk_grid(), &settings);
   next_state.set(AppState::Running);
 }
 
@@ -44,7 +44,7 @@ fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChu
     return;
   }
   metadata.current_chunk_cg = current_chunk.get_chunk_grid();
-  regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
+  regenerate_metadata(metadata, current_chunk.get_chunk_grid(), &settings);
 }
 
 /// Refreshes the metadata based on the current chunk and settings. Used when manually triggering a world regeneration
@@ -59,10 +59,10 @@ fn refresh_metadata_event(
   mut prune_world_event: EventWriter<PruneWorldEvent>,
 ) {
   if let Some(event) = refresh_metadata_event.read().last() {
-    regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
+    regenerate_metadata(metadata, current_chunk.get_chunk_grid(), &settings);
     if event.regenerate_world_after {
       regenerate_world_event.send(RegenerateWorldEvent {});
-    } else if event.prune_then_update_world_after {
+    } else if event.prune_then_update_world_after && settings.general.enable_world_pruning {
       prune_world_event.send(PruneWorldEvent {
         despawn_all_chunks: true,
         update_world_after: true,
@@ -71,7 +71,7 @@ fn refresh_metadata_event(
   }
 }
 
-fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: Res<Settings>) {
+fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: &Settings) {
   let start_time = shared::get_time();
   let metadata_settings = settings.metadata;
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)

@@ -55,7 +55,7 @@ pub struct WorldGenerationComponent {
   pub stage: GenerationStage,
   pub w: Point<World>,
   pub cg: Point<ChunkGrid>,
-  pub prune_world_after: bool,
+  pub suppress_pruning_world: bool,
   pub stage_0_metadata: bool,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
@@ -65,13 +65,13 @@ pub struct WorldGenerationComponent {
 }
 
 impl WorldGenerationComponent {
-  pub fn new(w: Point<World>, cg: Point<ChunkGrid>, prune_world_after: bool, created_at: u128) -> Self {
+  pub fn new(w: Point<World>, cg: Point<ChunkGrid>, suppress_pruning_world: bool, created_at: u128) -> Self {
     Self {
       created_at,
       stage: GenerationStage::Stage1,
       w,
       cg,
-      prune_world_after,
+      suppress_pruning_world,
       stage_0_metadata: false,
       stage_1_gen_task: None,
       stage_2_chunks: vec![],
