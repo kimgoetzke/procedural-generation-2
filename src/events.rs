@@ -7,12 +7,21 @@ pub struct SharedEventsPlugin;
 impl Plugin for SharedEventsPlugin {
   fn build(&self, app: &mut App) {
     app
+      .add_event::<RefreshMetadata>()
       .add_event::<RegenerateWorldEvent>()
       .add_event::<ToggleDebugInfo>()
       .add_event::<MouseClickEvent>()
       .add_event::<UpdateWorldEvent>()
       .add_event::<PruneWorldEvent>();
   }
+}
+
+#[derive(Event)]
+/// An event that triggers a refresh of the metadata and allows triggering either a regeneration or pruning and
+/// updating of the world after.
+pub struct RefreshMetadata {
+  pub regenerate_world_after: bool,
+  pub prune_then_update_world_after: bool,
 }
 
 #[derive(Event)]

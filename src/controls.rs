@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, ORIGIN_TILE_GRID_SPAWN_POINT, TILE_SIZE};
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, PruneWorldEvent, RegenerateWorldEvent, ToggleDebugInfo, UpdateWorldEvent};
+use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo, UpdateWorldEvent};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -24,20 +24,16 @@ impl Plugin for ControlPlugin {
 
 fn event_control_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
-  mut regenerate_event: EventWriter<RegenerateWorldEvent>,
-  mut prune_event: EventWriter<PruneWorldEvent>,
+  mut refresh_metadata_event: EventWriter<RefreshMetadata>,
   current_chunk: Res<CurrentChunk>,
 ) {
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
     info!("[F5]/[R] Triggered regeneration of the world");
-    if current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT {
-      regenerate_event.send(RegenerateWorldEvent {});
-    } else {
-      prune_event.send(PruneWorldEvent {
-        despawn_all_chunks: true,
-        update_world_after: true,
-      });
-    }
+    let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
+    refresh_metadata_event.send(RefreshMetadata {
+      regenerate_world_after: is_at_origin_spawn_point,
+      prune_then_update_world_after: !is_at_origin_spawn_point,
+    });
   }
 }
 

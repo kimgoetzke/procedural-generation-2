@@ -1,13 +1,14 @@
 use crate::constants::*;
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
+use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
 use crate::generation::lib::{shared, TerrainType};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
-use bevy::prelude::{NextState, OnEnter, Res, ResMut};
+use bevy::prelude::{EventReader, EventWriter, NextState, OnEnter, Res, ResMut};
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
@@ -19,7 +20,7 @@ impl Plugin for MetadataGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_systems(OnEnter(AppState::Initialising), initialise_metadata)
-      .add_systems(Update, update_metadata);
+      .add_systems(Update, (update_metadata, refresh_metadata_event));
   }
 }
 
@@ -46,11 +47,29 @@ fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChu
   regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
 }
 
-// TODO: Refresh metadata prior to regenerating/refreshing the world
-//  - Add new RefreshMetadata event and function to read it
-//  - Add two bools to RefreshMetadata trigger RegenerateWorldEvent or PruneWorldEvent after
-//  - Refactor event_control_system in controls.rs to send RefreshMetadata
-//  - Refactor send_regenerate_or_prune_event in settings.rs to send RefreshMetadata
+/// Refreshes the metadata based on the current chunk and settings. Used when manually triggering a world regeneration
+/// via the UI or using a keyboard shortcut. Triggers the action intended to be invoked by the user once the metadata
+/// has been refreshed.
+fn refresh_metadata_event(
+  metadata: ResMut<Metadata>,
+  current_chunk: Res<CurrentChunk>,
+  settings: Res<Settings>,
+  mut refresh_metadata_event: EventReader<RefreshMetadata>,
+  mut regenerate_world_event: EventWriter<RegenerateWorldEvent>,
+  mut prune_world_event: EventWriter<PruneWorldEvent>,
+) {
+  if let Some(event) = refresh_metadata_event.read().last() {
+    regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
+    if event.regenerate_world_after {
+      regenerate_world_event.send(RegenerateWorldEvent {});
+    } else if event.prune_then_update_world_after {
+      prune_world_event.send(PruneWorldEvent {
+        despawn_all_chunks: true,
+        update_world_after: true,
+      });
+    }
+  }
+}
 
 fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: Res<Settings>) {
   let start_time = shared::get_time();
@@ -96,7 +115,7 @@ fn generate_elevation_metadata(
   metadata.elevation.insert(cg, em);
 }
 
-// TODO: Fix the range calculation because it's only working for step sizes [0.0..0.2]
+// TODO: Consider improving this range calculation because it's too easy for a user to "break" it via the UI
 /// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
 /// the elevation offset. The step size is the amount of elevation change per `Tile` (not per `Chunk`).
 fn calculate_range_and_step_size(

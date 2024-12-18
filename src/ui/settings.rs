@@ -1,5 +1,5 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
-use crate::events::{PruneWorldEvent, RegenerateWorldEvent};
+use crate::events::RefreshMetadata;
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
@@ -118,8 +118,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
 }
 
 fn handle_ui_events_system(
-  mut regenerate_event: EventWriter<RegenerateWorldEvent>,
-  mut update_event: EventWriter<PruneWorldEvent>,
+  mut refresh_metadata_event: EventWriter<RefreshMetadata>,
   mut state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
   general: Res<GeneralGenerationSettings>,
@@ -136,30 +135,26 @@ fn handle_ui_events_system(
     settings.object = object.clone();
 
     if state.regenerate {
-      send_regenerate_or_prune_event(&mut regenerate_event, &mut update_event, &current_chunk);
+      send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
       state.regenerate = false;
     }
 
     if state.generate_next {
       settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
       world_gen.noise_seed = settings.world.noise_seed;
-      send_regenerate_or_prune_event(&mut regenerate_event, &mut update_event, &current_chunk);
+      send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
       state.generate_next = false;
     }
   }
 }
 
 fn send_regenerate_or_prune_event(
-  regenerate_event: &mut EventWriter<RegenerateWorldEvent>,
-  prune_event: &mut EventWriter<PruneWorldEvent>,
   current_chunk: &Res<CurrentChunk>,
+  refresh_metadata_event: &mut EventWriter<RefreshMetadata>,
 ) {
-  if current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT {
-    regenerate_event.send(RegenerateWorldEvent {});
-  } else {
-    prune_event.send(PruneWorldEvent {
-      despawn_all_chunks: true,
-      update_world_after: true,
-    });
-  }
+  let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
+  refresh_metadata_event.send(RefreshMetadata {
+    regenerate_world_after: is_at_origin_spawn_point,
+    prune_then_update_world_after: !is_at_origin_spawn_point,
+  });
 }
