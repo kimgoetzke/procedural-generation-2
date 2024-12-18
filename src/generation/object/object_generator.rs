@@ -56,12 +56,12 @@ pub fn generate_object_data(
     &spawn_data.1,
   );
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
-  let object_grid_len = grid.grid.len();
+  let objects_count = grid.grid.len();
   let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
     "Generated object data for {} objects for chunk {} in {} ms on {}",
-    object_grid_len,
+    objects_count,
     chunk_cg,
     shared::get_time() - start_time,
     shared::thread_name()
@@ -107,7 +107,7 @@ fn attach_task_to_tile_entity(
   let tile_data = object_data.tile_data.clone();
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
-  let colour = get_adjust_colour(settings, &mut rng, &object_data);
+  let colour = get_randomised_colour(settings, &mut rng, &object_data);
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -142,7 +142,7 @@ fn attach_task_to_tile_entity(
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
-fn get_adjust_colour(settings: &Settings, rng: &mut StdRng, object_data: &ObjectData) -> Color {
+fn get_randomised_colour(settings: &Settings, rng: &mut StdRng, object_data: &ObjectData) -> Color {
   let base_color = Color::default();
   if object_data.is_large_sprite && settings.object.enable_colour_variations {
     let range = RGB_COLOUR_VARIATION;
