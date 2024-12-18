@@ -82,11 +82,15 @@ impl Default for GeneralGenerationSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GenerationMetadataSettings {
-  /// The higher the value, the faster (i.e. over a distance of fewer chunks) the terrain oscillates between the
-  /// highest and lowest terrain layers.
-  #[inspector(min = -0.5, max = 0.5, display = NumberDisplay::Slider)]
-  pub elevation_chunk_step_size: f32,
-  pub elevation_frequency: f32,
+  /// The total elevation change within a chunk. The higher the value, the faster (i.e. over a distance of fewer
+  /// chunks) the terrain oscillates between the highest and lowest terrain layers.
+  #[inspector(min = 0.0, max = 0.2, display = NumberDisplay::Slider)]
+  pub elevation_chunk_step_size: f64,
+  /// Shifts the ranges generated for the elevation metadata up/down. The higher the value the more the ranges
+  /// will shift into negative values which causes lower terrain layers to be generated for chunks with the lowest
+  /// ranges and less high terrain layers for chunks with the higher ranges.
+  #[inspector(min = -1.0, max = 1.0, display = NumberDisplay::Slider)]
+  pub elevation_offset: f64,
   /// The scale of the noise map generated for the biome metadata: the higher the frequency, the smaller the terrain
   /// features. A parameter of `BasicMulti<Perlin>`.
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
@@ -97,7 +101,7 @@ impl Default for GenerationMetadataSettings {
   fn default() -> Self {
     Self {
       elevation_chunk_step_size: ELEVATION_CHUNK_STEP_SIZE,
-      elevation_frequency: ELEVATION_FREQUENCY,
+      elevation_offset: ELEVATION_OFFSET,
       noise_frequency: METADATA_NOISE_FREQUENCY,
     }
   }

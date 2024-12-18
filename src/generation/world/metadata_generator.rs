@@ -3,7 +3,7 @@ use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::lib::{shared, TerrainType};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
-use crate::resources::{CurrentChunk, Settings};
+use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
@@ -46,65 +46,77 @@ fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChu
   regenerate_metadata(metadata, current_chunk.get_chunk_grid(), settings);
 }
 
+// TODO: Refresh metadata prior to regenerating/refreshing the world
+//  - Add new RefreshMetadata event and function to read it
+//  - Add two bools to RefreshMetadata trigger RegenerateWorldEvent or PruneWorldEvent after
+//  - Refactor event_control_system in controls.rs to send RefreshMetadata
+//  - Refactor send_regenerate_or_prune_event in settings.rs to send RefreshMetadata
+
 fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: Res<Settings>) {
   let start_time = shared::get_time();
+  let metadata_settings = settings.metadata;
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
-    .set_frequency(settings.metadata.noise_frequency);
-  let elevation_chunk_step_size = settings.metadata.elevation_chunk_step_size;
-  let elevation_frequency = settings.metadata.elevation_frequency;
+    .set_frequency(metadata_settings.noise_frequency);
   metadata.index.clear();
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
-      generate_elevation_metadata(&mut metadata, x, y, elevation_chunk_step_size, elevation_frequency);
+      generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
       metadata.index.push(cg);
     })
   });
   debug!(
-    "Updated metadata based on current chunk {} using inputs [elevation_frequency={}, noise_frequency={}] in {} ms on {}",
+    "Updated metadata based on current chunk {} in {} ms on {}",
     cg,
-    elevation_frequency,
-    settings.metadata.noise_frequency,
     shared::get_time() - start_time,
     shared::thread_name()
   );
 }
 
-fn generate_elevation_metadata(metadata: &mut ResMut<Metadata>, x: i32, y: i32, chunk_step_size: f32, frequency: f32) {
-  let grid_size = CHUNK_SIZE as f32 - 1.;
-  let (x_range, x_step) = calculate_range_and_step_size(x, chunk_step_size, frequency, grid_size);
-  let (y_range, y_step) = calculate_range_and_step_size(y, chunk_step_size, frequency, grid_size);
+fn generate_elevation_metadata(
+  metadata: &mut ResMut<Metadata>,
+  x: i32,
+  y: i32,
+  metadata_settings: &GenerationMetadataSettings,
+) {
+  let grid_size = (CHUNK_SIZE as f32 - 1.) as f64;
+  let (x_range, x_step) = calculate_range_and_step_size(x, grid_size, metadata_settings);
+  let (y_range, y_step) = calculate_range_and_step_size(y, grid_size, metadata_settings);
   let em = ElevationMetadata {
+    is_enabled: !y_range.start.is_nan() || !y_range.end.is_nan() || !x_range.start.is_nan() || !x_range.end.is_nan(),
     x_step,
     x_range,
     y_step,
     y_range,
   };
   let cg = Point::new_chunk_grid(x, y);
-  debug!("Generated elevation metadata for {}: {:?}", cg, em);
+  debug!("Generated elevation metadata for {}: {}", cg, em);
   metadata.elevation.insert(cg, em);
 }
 
+// TODO: Fix the range calculation because it's only working for step sizes [0.0..0.2]
 /// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
 /// the elevation offset. The step size is the amount of elevation change per `Tile` (not per `Chunk`).
 fn calculate_range_and_step_size(
   coordinate: i32,
-  chunk_step_size: f32,
-  frequency: f32,
-  grid_size: f32,
-) -> (Range<f32>, f32) {
-  let normalised_mod = (modulo(coordinate as f32, frequency)) / frequency;
+  grid_size: f64,
+  metadata_settings: &GenerationMetadataSettings,
+) -> (Range<f64>, f64) {
+  let chunk_step_size = metadata_settings.elevation_chunk_step_size;
+  let offset = metadata_settings.elevation_offset;
+  let frequency = 2. / chunk_step_size;
+  let normalised_mod = (modulo(coordinate as f64, frequency)) / frequency;
   let is_rising = normalised_mod <= 0.5;
   let base = if is_rising {
-    2.0 * normalised_mod
+    2.0 * normalised_mod - offset
   } else {
-    (2.0 * (1.0 - normalised_mod)) - chunk_step_size
+    (2.0 * (1.0 - normalised_mod)) - chunk_step_size - offset
   };
   let start = ((base * 10000.).round()) / 10000.;
-  let end = (((base + chunk_step_size) * 10000.).round()) / 10000.;
-  let end = if end > 1.0 {
+  let mut end = (((base + chunk_step_size) * 10000.).round()) / 10000.;
+  end = if end > 1. {
     (((base - chunk_step_size) * 10000.).round()) / 10000.
   } else {
     end
@@ -116,11 +128,11 @@ fn calculate_range_and_step_size(
   }
 }
 
-fn modulo(a: f32, b: f32) -> f32 {
+fn modulo(a: f64, b: f64) -> f64 {
   ((a % b) + b) % b
 }
 
-fn step_size(range_start: f32, range_end: f32, grid_size: f32, is_positive: bool) -> f32 {
+fn step_size(range_start: f64, range_end: f64, grid_size: f64, is_positive: bool) -> f64 {
   let modifier = if is_positive { 1.0 } else { -1.0 };
   ((range_end - range_start) / grid_size) * modifier
 }
