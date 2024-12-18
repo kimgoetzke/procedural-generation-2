@@ -18,6 +18,7 @@ techniques.
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
+![Screenshot 1](assets/ignore/screenshot1.png)
 
 ## Features
 
@@ -30,7 +31,7 @@ techniques.
       transitions/layering
     - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
     - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual elevation
-      changes over great distances or inter-chunk biome changes without reducing generation performance
+      changes over great distances and inter-chunk biome changes without reducing generation performance
 - Object generation:
     - Uses the wave function collapse algorithm to generate objects such as trees, ruins, stones, etc.
     - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
