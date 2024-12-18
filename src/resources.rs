@@ -94,7 +94,7 @@ pub struct GenerationMetadataSettings {
   /// The scale of the noise map generated for the biome metadata: the higher the frequency, the smaller the terrain
   /// features. A parameter of `BasicMulti<Perlin>`.
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
-  pub noise_frequency: f64,
+  pub biome_noise_frequency: f64,
 }
 
 impl Default for GenerationMetadataSettings {
@@ -102,7 +102,7 @@ impl Default for GenerationMetadataSettings {
     Self {
       elevation_chunk_step_size: ELEVATION_CHUNK_STEP_SIZE,
       elevation_offset: ELEVATION_OFFSET,
-      noise_frequency: METADATA_NOISE_FREQUENCY,
+      biome_noise_frequency: BIOME_NOISE_FREQUENCY,
     }
   }
 }
@@ -114,6 +114,11 @@ pub struct WorldGenerationSettings {
   /// the same seed will always generate the exact same terrain.
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
   pub noise_seed: u32,
+  /// The overall impact of the noise function on the terrain generation. A simple multiplier for the final output of
+  /// the Perlin noise function. The lower the value, the higher the impact of other parameters such as the elevation
+  /// offset from the `ElevationMetadata`.
+  #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
+  pub noise_strength: f64,
   /// The amount of detail: The higher the octaves, the more detailed the terrain. A parameter of `BasicMulti`.
   #[inspector(min = 0, max = 12, display = NumberDisplay::Slider)]
   pub noise_octaves: usize,
@@ -134,6 +139,7 @@ impl Default for WorldGenerationSettings {
   fn default() -> Self {
     Self {
       noise_seed: NOISE_SEED,
+      noise_strength: NOISE_STRENGTH,
       noise_octaves: NOISE_OCTAVES,
       noise_frequency: NOISE_FREQUENCY,
       noise_persistence: NOISE_PERSISTENCE,

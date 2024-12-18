@@ -68,6 +68,7 @@ fn generate_terrain_data(
     .set_frequency(settings.world.noise_frequency)
     .set_persistence(settings.world.noise_persistence);
   let amplitude = settings.world.noise_amplitude;
+  let strength = settings.world.noise_strength;
   let start = Point::new_tile_grid(tg.x - BUFFER_SIZE, tg.y + BUFFER_SIZE);
   let end = Point::new_tile_grid(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y - CHUNK_SIZE_PLUS_BUFFER + 1);
   let center = Point::new_tile_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
@@ -88,7 +89,7 @@ fn generate_terrain_data(
 
       // Adjust noise based on elevation metadata
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
-      let normalised_noise = (normalised_noise + elevation_offset).clamp(0., 1.);
+      let normalised_noise = ((normalised_noise * strength) + elevation_offset).clamp(0., 1.);
 
       // Calculate distances to chunk edge in all directions
       let distances = calculate_distances(start, end, center, max_distance, tx, ty);

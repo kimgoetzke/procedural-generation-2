@@ -17,15 +17,15 @@ pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
-pub const ELEVATION_CHUNK_STEP_SIZE: f64 = 0.1;
-pub const ELEVATION_OFFSET: f64 = 0.5;
 pub const METADATA_GRID_APOTHEM: i32 = 3;
-pub const METADATA_NOISE_FREQUENCY: f64 = 0.1;
-pub const METADATA_LOWEST_MAX_LAYER: i32 = 2;
-pub const METADATA_IS_ROCKY_PROBABILITY: f64 = 0.3;
+pub const ELEVATION_CHUNK_STEP_SIZE: f64 = 0.2;
+pub const ELEVATION_OFFSET: f64 = 0.6;
+pub const BIOME_NOISE_FREQUENCY: f64 = 0.1;
+pub const BIOME_IS_ROCKY_PROBABILITY: f64 = 0.3;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;
+pub const NOISE_STRENGTH: f64 = 0.75;
 pub const NOISE_OCTAVES: usize = 3;
 pub const NOISE_FREQUENCY: f64 = 0.07;
 pub const NOISE_PERSISTENCE: f64 = 0.7;
