@@ -8,10 +8,6 @@ project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedu
 You will neither find advanced concepts of Rust being applied (correctly) here nor advanced procedural generation
 techniques.
 
-> [!NOTE]
-> I'm still actively working on this. Parts of what I want to do is still missing and, at times, I may even leave
-> it in a broken state.
-
 ## Demo
 
 ![Screenshot 1](assets/ignore/screenshot1.png)
