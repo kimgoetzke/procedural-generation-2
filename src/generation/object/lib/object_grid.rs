@@ -35,18 +35,13 @@ impl ObjectGrid {
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
-    let grid_size = grid.grid.len();
     for data in tile_data.iter() {
       let ig = data.flat_tile.coords.internal_grid;
       let terrain = data.flat_tile.terrain;
       let tile_type = data.flat_tile.tile_type;
       if let Some(cell) = grid.get_cell_mut(&ig) {
         let relevant_rules = resolve_rules(tile_type, terrain_rules, tile_type_rules, terrain);
-        if cell.is_border_cell(grid_size) {
-          cell.initialise(terrain, tile_type, &vec![relevant_rules[0].clone()]);
-        } else {
-          cell.initialise(terrain, tile_type, &relevant_rules);
-        }
+        cell.initialise(terrain, tile_type, &relevant_rules);
         trace!(
           "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           ig,
