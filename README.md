@@ -24,7 +24,7 @@ techniques.
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
     - Uses multi-fractal Perlin noise to generate terrain layers
-    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, sand, grass, forest)
+    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g. sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions/layering
     - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
