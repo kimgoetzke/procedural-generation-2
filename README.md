@@ -24,7 +24,8 @@ techniques.
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
     - Uses multi-fractal Perlin noise to generate terrain layers
-    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g. sand/grass/forest)
+    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g.
+      sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions/layering
     - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
@@ -77,8 +78,25 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
 6. Optional: if this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
 
+#### How to use cargo-flamegraph
+
+- Run the command below to generate a flame graph
+    - Linux:
+      ```shell
+      CARGO_PROFILE_RELEASE_DEBUG=true RUSTFLAGS='-C force-frame-pointers=y' cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
+      ```
+    - Windows:
+      ```pwsh
+      $env:CARGO_PROFILE_RELEASE_DEBUG = "true"; $env:RUSTFLAGS = "-C force-frame-pointers=y"; cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
+      ````
+- This should run the application - once you close it, a `flamegraph.svg` will be generated at the root of the
+  repository
+- Open it in your browser to see the flame graph
+
 #### Run configurations
 
 - Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
 - Create a run configuration with environment variable
   `RUST_LOG=procedural_generation_2=debug,procedural_generation_2::generation::object=trace` to add WFC trace logs too
+- Create a run configuration with environment variable `RUST_LOG=bevy_ecs=debug` to see Bevy ECS logs (e.g. which system
+  caused an `error[B0003]`)
