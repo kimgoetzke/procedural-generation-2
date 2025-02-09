@@ -165,7 +165,7 @@ fn generate_biome_metadata(
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
   let rainfall = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
   let climate = Climate::from(rainfall);
-  let is_rocky = rng.gen_bool(BIOME_IS_ROCKY_PROBABILITY);
+  let is_rocky = rng.random_bool(BIOME_IS_ROCKY_PROBABILITY);
   let max_layer = match rainfall {
     n if n > 0.75 => TerrainType::Land3,
     n if n > 0.5 => TerrainType::Land2,

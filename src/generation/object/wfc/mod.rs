@@ -63,7 +63,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   }
 
   // Collapse: Collapse random cell from the cells with the lowest entropy
-  let index = rng.gen_range(0..lowest_entropy_cells.len());
+  let index = rng.random_range(0..lowest_entropy_cells.len());
   let random_cell: &Cell = lowest_entropy_cells
     .get(index)
     .expect(format!("Failed to get random cell during processing of object grid {}", grid.cg).as_str());

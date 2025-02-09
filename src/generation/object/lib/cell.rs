@@ -107,7 +107,7 @@ impl Cell {
       &self.possible_states[0]
     } else {
       let total_weight: i32 = self.possible_states.iter().map(|state| state.weight).sum();
-      let mut target = rng.gen_range(0..total_weight);
+      let mut target = rng.random_range(0..total_weight);
       let mut selected_state = None;
       let mut states_logs = vec![];
       let initial_target = target;

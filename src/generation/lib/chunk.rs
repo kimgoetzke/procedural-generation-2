@@ -185,7 +185,7 @@ fn is_tile_at_edge_of_biome(
     return false;
   }
 
-  let is_considered_edge = rng.gen_bool(0.3);
+  let is_considered_edge = rng.random_bool(0.3);
   let direction = match (ix, iy, is_considered_edge) {
     (..INSIDE, ..INSIDE, _) => Direction::TopLeft,
     (OUTSIDE.., ..INSIDE, _) => Direction::TopRight,

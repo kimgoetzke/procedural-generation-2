@@ -146,14 +146,14 @@ fn get_randomised_colour(settings: &Settings, rng: &mut StdRng, object_data: &Ob
   let base_color = Color::default();
   if object_data.is_large_sprite && settings.object.enable_colour_variations {
     let range = RGB_COLOUR_VARIATION;
-    let r = (base_color.to_srgba().red + rng.gen_range(-range..range)).clamp(0.0, 1.0);
-    let g = (base_color.to_srgba().green + rng.gen_range(-(range / 2.)..(range / 2.))).clamp(0.0, 1.0);
-    let b = (base_color.to_srgba().blue + rng.gen_range(-range..range)).clamp(0.0, 1.0);
-    let is_darker = rng.gen_bool(0.5);
+    let r = (base_color.to_srgba().red + rng.random_range(-range..range)).clamp(0.0, 1.0);
+    let g = (base_color.to_srgba().green + rng.random_range(-(range / 2.)..(range / 2.))).clamp(0.0, 1.0);
+    let b = (base_color.to_srgba().blue + rng.random_range(-range..range)).clamp(0.0, 1.0);
+    let is_darker = rng.random_bool(0.5);
 
     Color::srgb(r, g, b)
-      .darker(if is_darker { rng.gen_range(DARKNESS_RANGE) } else { 0.0 })
-      .lighter(if !is_darker { rng.gen_range(BRIGHTNESS_RANGE) } else { 0.0 })
+      .darker(if is_darker { rng.random_range(DARKNESS_RANGE) } else { 0.0 })
+      .lighter(if !is_darker { rng.random_range(BRIGHTNESS_RANGE) } else { 0.0 })
   } else {
     base_color
   }
@@ -162,8 +162,8 @@ fn get_randomised_colour(settings: &Settings, rng: &mut StdRng, object_data: &Ob
 fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) {
   if object_data.is_large_sprite {
     (
-      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
-      rng.gen_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
+      rng.random_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
+      rng.random_range(-(TILE_SIZE as f32) / 3.0..=(TILE_SIZE as f32) / 3.0).round(),
     )
   } else {
     (0., 0.)
