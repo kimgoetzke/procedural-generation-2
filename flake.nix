@@ -51,6 +51,8 @@
             pkgs.glibc.dev
             pkgs.libGL
             pkgs.audacity
+            pkgs.cargo-flamegraph
+            pkgs.clippy
           ];
         };
 
