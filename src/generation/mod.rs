@@ -401,7 +401,7 @@ fn prune_world(
   let chunks_to_despawn = calculate_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks);
   for chunk_entity in chunks_to_despawn.iter() {
     if let Some(entity) = commands.get_entity(*chunk_entity) {
-      entity.despawn_recursive();
+      entity.try_despawn_recursive();
     }
   }
   info!(
