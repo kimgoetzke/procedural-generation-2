@@ -71,10 +71,9 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Ent
     .id()
 }
 
-pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Entity)) {
+pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, chunk: Chunk, chunk_entity: Entity) {
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
-  let (chunk, chunk_entity) = spawn_data;
 
   for layer in 0..TerrainType::length() {
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {

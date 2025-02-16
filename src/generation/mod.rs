@@ -262,7 +262,7 @@ fn s3_spawn_chunks_and_empty_tiles(
     if existing_chunks.get(&chunk.coords.world).is_none() {
       commands.entity(world_entity).with_children(|parent| {
         let chunk_entity = world::spawn_chunk(parent, &chunk);
-        component.stage_3_spawn_data.push((chunk, chunk_entity));
+        component.stage_3_chunks_info.push((chunk, chunk_entity));
       });
     }
   }
@@ -276,19 +276,19 @@ fn s4_schedule_spawning_tiles(
   settings: &Res<Settings>,
   component: &mut Mut<WorldGenerationComponent>,
 ) {
-  if !component.stage_3_spawn_data.is_empty() {
-    let spawn_data = component.stage_3_spawn_data.remove(0);
-    if commands.get_entity(spawn_data.1).is_some() {
-      world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
-      component.stage_4_spawn_data.push(spawn_data);
+  if !component.stage_3_chunks_info.is_empty() {
+    let (chunk, chunk_entity) = component.stage_3_chunks_info.remove(0);
+    if commands.get_entity(chunk_entity).is_some() {
+      world::schedule_tile_spawning_tasks(&mut commands, &settings, chunk.clone(), chunk_entity);
+      component.stage_4_chunks_info.push((chunk, chunk_entity));
     } else {
       warn!(
         "Chunk entity {:?} at {} no longer exists (it probably has been pruned already) - skipped scheduling of tile spawning tasks...", 
-        spawn_data.1, spawn_data.0.coords.chunk_grid
+        chunk_entity, chunk.coords.chunk_grid
       );
     }
   }
-  if component.stage_3_spawn_data.is_empty() {
+  if component.stage_3_chunks_info.is_empty() {
     component.stage = GenerationStage::Stage5;
   }
 }
@@ -299,8 +299,8 @@ fn s5_schedule_generating_object_data(
   resources: &GenerationResourcesCollection,
   component: &mut Mut<WorldGenerationComponent>,
 ) {
-  if !component.stage_4_spawn_data.is_empty() {
-    let (chunk, chunk_entity) = component.stage_4_spawn_data.remove(0);
+  if !component.stage_4_chunks_info.is_empty() {
+    let (chunk, chunk_entity) = component.stage_4_chunks_info.remove(0);
     if commands.get_entity(chunk_entity).is_some() {
       let resources = resources.clone();
       let settings = settings.clone();
@@ -314,7 +314,7 @@ fn s5_schedule_generating_object_data(
       );
     }
   }
-  if component.stage_4_spawn_data.is_empty() {
+  if component.stage_4_chunks_info.is_empty() {
     component.stage = GenerationStage::Stage6;
   }
 }

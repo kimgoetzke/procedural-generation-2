@@ -1,6 +1,6 @@
 use crate::coords::point::{ChunkGrid, World};
 use crate::coords::{Coords, Point};
-use crate::generation::lib::{Chunk, LayeredPlane, Tile, TileData};
+use crate::generation::lib::{Chunk, LayeredPlane, Tile};
 use crate::generation::object::lib::{ObjectData, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
@@ -59,8 +59,8 @@ pub struct WorldGenerationComponent {
   pub stage_0_metadata: bool,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
-  pub stage_3_spawn_data: Vec<(Chunk, Entity)>,
-  pub stage_4_spawn_data: Vec<(Chunk, Entity)>,
+  pub stage_3_chunks_info: Vec<(Chunk, Entity)>,
+  pub stage_4_chunks_info: Vec<(Chunk, Entity)>,
   pub stage_5_object_data: Vec<Task<Vec<ObjectData>>>,
 }
 
@@ -75,8 +75,8 @@ impl WorldGenerationComponent {
       stage_0_metadata: false,
       stage_1_gen_task: None,
       stage_2_chunks: vec![],
-      stage_3_spawn_data: vec![],
-      stage_4_spawn_data: vec![],
+      stage_3_chunks_info: vec![],
+      stage_4_chunks_info: vec![],
       stage_5_object_data: vec![],
     }
   }
