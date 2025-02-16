@@ -169,7 +169,7 @@ fn placeholder_sprite(
   resources: &GenerationResourcesCollection,
 ) -> (Name, Sprite, Transform, TileComponent, Visibility) {
   (
-    Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
+    Name::new(format!("{} Placeholder {:?} Sprite", tile.coords.tile_grid, tile.terrain)),
     Sprite {
       anchor: Anchor::TopLeft,
       texture_atlas: Some(TextureAtlas {
@@ -194,7 +194,10 @@ fn static_terrain_sprite(
   resources: &GenerationResourcesCollection,
 ) -> (Name, Transform, Sprite, TileComponent, Visibility) {
   (
-    Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
+    Name::new(format!(
+      "{} {:?} {:?} Sprite",
+      tile.coords.tile_grid, tile.tile_type, tile.terrain
+    )),
     Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, tile.layer as f32),
     Sprite {
       anchor: Anchor::TopLeft,
@@ -252,7 +255,10 @@ fn animated_terrain_sprite(
     _ => DEFAULT_ANIMATION_FRAME_DURATION,
   };
   (
-    Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
+    Name::new(format!(
+      "{} {:?} {:?} Sprite (Animated)",
+      tile.coords.tile_grid, tile.tile_type, tile.terrain
+    )),
     Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, tile.layer as f32),
     Sprite {
       anchor: Anchor::TopLeft,
