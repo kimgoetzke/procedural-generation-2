@@ -41,7 +41,7 @@ impl CommandQueueTask for ObjectSpawnTask {
 pub fn generate_object_data(
   resources: &GenerationResourcesCollection,
   settings: &Settings,
-  spawn_data: (Chunk, Vec<TileData>),
+  spawn_data: (Chunk, Entity),
 ) -> Vec<ObjectData> {
   if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
@@ -49,19 +49,28 @@ pub fn generate_object_data(
   }
   let start_time = shared::get_time();
   let chunk_cg = spawn_data.0.coords.chunk_grid;
+  let mut tile_data = Vec::new();
+  for t in spawn_data.0.layered_plane.flat.data.iter().flatten() {
+    if let Some(tile) = t {
+      tile_data.push(TileData::new(spawn_data.1, tile.clone()));
+    }
+  }
+
   let grid = ObjectGrid::new_initialised(
     chunk_cg,
     &resources.objects.terrain_rules,
     &resources.objects.tile_type_rules,
-    &spawn_data.1,
+    &tile_data,
   );
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let objects_count = grid.grid.len();
-  let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
+  let tile_data_len = tile_data.len();
+  let mut object_generation_data = (grid.clone(), tile_data);
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
-    "Generated object data for {} objects for chunk {} in {} ms on {}",
+    "Generated object data for {} objects (for {} tiles) for chunk {} in {} ms on {}",
     objects_count,
+    tile_data_len,
     chunk_cg,
     shared::get_time() - start_time,
     shared::thread_name()
@@ -179,7 +188,7 @@ fn sprite(
   offset_y: f32,
   colour: Color,
 ) -> (Name, Sprite, Transform, ObjectComponent) {
-  let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
+  let base_z = tile.layer as f32 + (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
   let internal_z = tile.coords.internal_grid.y as f32;
   let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
   (
@@ -194,7 +203,11 @@ fn sprite(
       color: colour,
       ..Default::default()
     },
-    Transform::from_xyz(TILE_SIZE as f32 / 2. + offset_x, TILE_SIZE as f32 * -1. + offset_y, z),
+    Transform::from_xyz(
+      tile.coords.world.x as f32 + TILE_SIZE as f32 / 2. + offset_x,
+      tile.coords.world.y as f32 + TILE_SIZE as f32 * -1. + offset_y,
+      z,
+    ),
     ObjectComponent {
       coords: tile.coords,
       sprite_index: index as usize,

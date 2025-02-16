@@ -3,7 +3,7 @@ use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DUR
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ChunkComponent, TerrainType, Tile, TileComponent, TileData};
+use crate::generation::lib::{shared, Chunk, ChunkComponent, TerrainType, Tile, TileComponent};
 use crate::generation::resources::{AssetPack, Climate, GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;

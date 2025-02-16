@@ -163,15 +163,15 @@ fn world_generation_system(
     let start_time = shared::get_time();
     let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
     match component.stage {
-      GenerationStage::Stage1 => stage_1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &mut component),
-      GenerationStage::Stage2 => stage_2_await_chunk_generation(&mut component, &existing_chunks),
+      GenerationStage::Stage1 => s1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &mut component),
+      GenerationStage::Stage2 => s2_await_chunk_generation(&mut component, &existing_chunks),
       GenerationStage::Stage3 => {
-        stage_3_spawn_chunks_and_empty_tiles(&mut commands, &mut component, world_entity, &existing_chunks)
+        s3_spawn_chunks_and_empty_tiles(&mut commands, &mut component, world_entity, &existing_chunks)
       }
-      GenerationStage::Stage4 => stage_4_schedule_spawning_tiles(&mut commands, &settings, &mut component),
-      GenerationStage::Stage5 => stage_5_schedule_generating_object_data(&settings, &resources, &mut component),
-      GenerationStage::Stage6 => stage_6_schedule_spawning_objects(&mut commands, &settings, &mut component),
-      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component, &settings),
+      GenerationStage::Stage4 => s4_schedule_spawning_tiles(&mut commands, &settings, &mut component),
+      GenerationStage::Stage5 => s5_schedule_generating_object_data(&mut commands, &settings, &resources, &mut component),
+      GenerationStage::Stage6 => s6_schedule_spawning_objects(&mut commands, &settings, &mut component),
+      GenerationStage::Stage7 => s7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component, &settings),
     }
     debug!(
       "World generation component {} ({}) reached stage [{:?}] which took {} ms",
@@ -183,7 +183,7 @@ fn world_generation_system(
   }
 }
 
-fn stage_1_schedule_chunk_generation(
+fn s1_schedule_chunk_generation(
   settings: &Settings,
   metadata: &Metadata,
   existing_chunks: &Res<ChunkComponentIndex>,
@@ -235,7 +235,7 @@ fn calculate_chunk_spawn_points(
   spawn_points
 }
 
-fn stage_2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>, existing_chunks: &ChunkComponentIndex) {
+fn s2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>, existing_chunks: &ChunkComponentIndex) {
   if let Some(task) = component.stage_1_gen_task.as_mut() {
     if task.is_finished() {
       if let Some(mut chunks) = block_on(poll_once(task)) {
@@ -251,7 +251,7 @@ fn stage_2_await_chunk_generation(component: &mut Mut<WorldGenerationComponent>,
   }
 }
 
-fn stage_3_spawn_chunks_and_empty_tiles(
+fn s3_spawn_chunks_and_empty_tiles(
   commands: &mut Commands,
   component: &mut Mut<WorldGenerationComponent>,
   world_entity: Entity,
@@ -271,7 +271,7 @@ fn stage_3_spawn_chunks_and_empty_tiles(
   }
 }
 
-fn stage_4_schedule_spawning_tiles(
+fn s4_schedule_spawning_tiles(
   mut commands: &mut Commands,
   settings: &Res<Settings>,
   component: &mut Mut<WorldGenerationComponent>,
@@ -293,25 +293,33 @@ fn stage_4_schedule_spawning_tiles(
   }
 }
 
-fn stage_5_schedule_generating_object_data(
+fn s5_schedule_generating_object_data(
+  commands: &mut Commands,
   settings: &Settings,
   resources: &GenerationResourcesCollection,
   component: &mut Mut<WorldGenerationComponent>,
 ) {
   if !component.stage_4_spawn_data.is_empty() {
-    let spawn_data = component.stage_4_spawn_data.remove(0);
-    let resources = resources.clone();
-    let settings = settings.clone();
-    let task_pool = AsyncComputeTaskPool::get();
-    let task = task_pool.spawn(async move { object::generate_object_data(&resources, &settings, spawn_data) });
-    component.stage_5_object_data.push(task);
+    let (chunk, chunk_entity) = component.stage_4_spawn_data.remove(0);
+    if commands.get_entity(chunk_entity).is_some() {
+      let resources = resources.clone();
+      let settings = settings.clone();
+      let task_pool = AsyncComputeTaskPool::get();
+      let task = task_pool.spawn(async move { object::generate_object_data(&resources, &settings, (chunk, chunk_entity)) });
+      component.stage_5_object_data.push(task);
+    } else {
+      warn!(
+        "Chunk entity {:?} at {} no longer exists (it probably has been pruned already) - skipped scheduling object data generation...", 
+        chunk_entity, chunk.coords.chunk_grid
+      );
+    }
   }
   if component.stage_4_spawn_data.is_empty() {
     component.stage = GenerationStage::Stage6;
   }
 }
 
-fn stage_6_schedule_spawning_objects(
+fn s6_schedule_spawning_objects(
   mut commands: &mut Commands,
   settings: &Settings,
   component: &mut Mut<WorldGenerationComponent>,
@@ -334,7 +342,7 @@ fn stage_6_schedule_spawning_objects(
   }
 }
 
-fn stage_7_clean_up(
+fn s7_clean_up(
   commands: &mut Commands,
   prune_world_event: &mut EventWriter<PruneWorldEvent>,
   entity: Entity,
