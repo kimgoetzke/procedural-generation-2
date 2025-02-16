@@ -173,9 +173,10 @@ fn world_generation_system(
       GenerationStage::Stage6 => stage_6_schedule_spawning_objects(&mut commands, &settings, &mut component),
       GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component, &settings),
     }
-    trace!(
-      "World generation component {} reached stage [{:?}] which took {} ms",
+    debug!(
+      "World generation component {} ({}) reached stage [{:?}] which took {} ms",
       component.cg,
+      entity,
       component.stage,
       shared::get_time() - start_time
     );
@@ -260,8 +261,8 @@ fn stage_3_spawn_chunks_and_empty_tiles(
     let chunk = component.stage_2_chunks.remove(0);
     if existing_chunks.get(&chunk.coords.world).is_none() {
       commands.entity(world_entity).with_children(|parent| {
-        let tile_data = world::spawn_chunk(parent, &chunk);
-        component.stage_3_spawn_data.push((chunk, tile_data));
+        let chunk_entity = world::spawn_chunk(parent, &chunk);
+        component.stage_3_spawn_data.push((chunk, chunk_entity));
       });
     }
   }
@@ -277,13 +278,13 @@ fn stage_4_schedule_spawning_tiles(
 ) {
   if !component.stage_3_spawn_data.is_empty() {
     let spawn_data = component.stage_3_spawn_data.remove(0);
-    if commands.get_entity(spawn_data.1[0].chunk_entity).is_some() {
+    if commands.get_entity(spawn_data.1).is_some() {
       world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
       component.stage_4_spawn_data.push(spawn_data);
     } else {
       warn!(
         "Chunk entity {:?} at {} no longer exists (it probably has been pruned already) - skipped scheduling of tile spawning tasks...", 
-        spawn_data.1[0].chunk_entity, spawn_data.0.coords.chunk_grid
+        spawn_data.1, spawn_data.0.coords.chunk_grid
       );
     }
   }

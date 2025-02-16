@@ -53,14 +53,13 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
   chunks
 }
 
-pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
-  let mut tile_data = Vec::new();
+pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Entity {
   let chunk_end_tg = chunk.coords.tile_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
     .spawn((
       Name::new(format!(
-        "Chunk {} {} to {}",
-        chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
+        "Chunk {} {} {} to {}",
+        chunk.coords.chunk_grid, chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
       )),
       Transform::default(),
       Visibility::default(),
@@ -69,65 +68,56 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
         coords: chunk.coords.clone(),
       },
     ))
-    .with_children(|parent| {
-      for cell in chunk.layered_plane.flat.data.iter().flatten() {
-        if let Some(tile) = cell {
-          let tile_entity = parent
-            .spawn((
-              Name::new("Tile ".to_string() + &tile.coords.tile_grid.to_string()),
-              Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
-              Visibility::default(),
-            ))
-            .id();
-          tile_data.push(TileData::new(tile_entity, parent.parent_entity(), tile.clone()));
-        }
-      }
-    });
-
-  tile_data
+    .id()
 }
 
-pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Vec<TileData>)) {
+pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Entity)) {
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
+  let (chunk, chunk_entity) = spawn_data;
 
-  for tile_data in spawn_data.1 {
-    let tile_data = tile_data.clone();
-    for layer in 0..TerrainType::length() {
-      if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
-        trace!(
-          "Skipped spawning [{:?}] tiles because it's disabled",
-          TerrainType::from(layer)
-        );
-        continue;
-      }
-      if let Some(plane) = spawn_data.0.layered_plane.get(layer) {
-        if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.internal_grid) {
-          if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
-            tile_entity.with_children(|parent| {
-              attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());
+  for layer in 0..TerrainType::length() {
+    if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+      trace!(
+        "Skipped spawning [{:?}] tiles because it's disabled",
+        TerrainType::from(layer)
+      );
+      continue;
+    }
+    if let Some(mut parent_chunk_entity) = commands.get_entity(chunk_entity) {
+      if let Some(plane) = chunk.layered_plane.get(layer) {
+        plane.data.iter().flatten().for_each(|tile| {
+          if let Some(tile) = tile {
+            let parent_chunk_entity_id = parent_chunk_entity.id();
+            parent_chunk_entity.with_children(|parent| {
+              attach_task_to_tile_entity(task_pool, parent, parent_chunk_entity_id, tile.clone());
             });
           }
-        }
+        });
       }
     }
   }
   debug!(
     "Scheduled spawning tiles for chunk {} in {} ms on [{}]",
-    spawn_data.0.coords.chunk_grid,
+    chunk.coords.chunk_grid,
     shared::get_time() - start_time,
     shared::thread_name()
   );
 }
 
-fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut ChildBuilder, tile_data: TileData, tile: Tile) {
+fn attach_task_to_tile_entity(
+  task_pool: &AsyncComputeTaskPool,
+  parent: &mut ChildBuilder,
+  chunk_entity: Entity,
+  tile: Tile,
+) {
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let (resources, settings) = shared::get_resources_and_settings(world);
-      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
-        tile_data_entity.with_children(|parent| {
-          spawn_tile(tile_data, &tile, &resources, settings, parent);
+      if let Ok(mut parent_chunk_entity) = world.get_entity_mut(chunk_entity) {
+        parent_chunk_entity.with_children(|parent| {
+          spawn_tile(chunk_entity, &tile, &resources, settings, parent);
         });
       }
     });
@@ -152,25 +142,25 @@ fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollect
 }
 
 fn spawn_tile(
-  tile_data: TileData,
+  parent_entity: Entity,
   tile: &Tile,
   resources: &GenerationResourcesCollection,
   settings: Settings,
   parent: &mut WorldChildBuilder,
 ) {
   if !settings.general.draw_terrain_sprites {
-    parent.spawn(placeholder_sprite(&tile, tile_data.chunk_entity, &resources));
+    parent.spawn(placeholder_sprite(&tile, parent_entity, &resources));
     return;
   }
   if settings.general.animate_terrain_sprites {
     let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &resources);
     if is_animated_tile {
-      parent.spawn(animated_terrain_sprite(&tile, tile_data.chunk_entity, &anim_asset_pack));
+      parent.spawn(animated_terrain_sprite(&tile, parent_entity, &anim_asset_pack));
     } else {
-      parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
+      parent.spawn(static_terrain_sprite(&tile, parent_entity, &resources));
     }
   } else {
-    parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
+    parent.spawn(static_terrain_sprite(&tile, parent_entity, &resources));
   }
 }
 
@@ -178,7 +168,7 @@ fn placeholder_sprite(
   tile: &Tile,
   chunk: Entity,
   resources: &GenerationResourcesCollection,
-) -> (Name, Sprite, Transform, TileComponent) {
+) -> (Name, Sprite, Transform, TileComponent, Visibility) {
   (
     Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
     Sprite {
@@ -190,11 +180,12 @@ fn placeholder_sprite(
       image: resources.placeholder.texture.clone(),
       ..Default::default()
     },
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, tile.layer as f32),
     TileComponent {
       tile: tile.clone(),
       parent_entity: chunk,
     },
+    Visibility::default(),
   )
 }
 
@@ -202,10 +193,10 @@ fn static_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
   resources: &GenerationResourcesCollection,
-) -> (Name, Transform, Sprite, TileComponent) {
+) -> (Name, Transform, Sprite, TileComponent, Visibility) {
   (
     Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, tile.layer as f32),
     Sprite {
       anchor: Anchor::TopLeft,
       texture_atlas: Some(TextureAtlas {
@@ -247,6 +238,7 @@ fn static_terrain_sprite(
       tile: tile.clone(),
       parent_entity: chunk,
     },
+    Visibility::default(),
   )
 }
 
@@ -254,7 +246,7 @@ fn animated_terrain_sprite(
   tile: &Tile,
   chunk: Entity,
   asset_pack: &AssetPack,
-) -> (Name, Transform, Sprite, TileComponent, AnimationComponent) {
+) -> (Name, Transform, Sprite, TileComponent, AnimationComponent, Visibility) {
   let index = tile.tile_type.get_sprite_index(asset_pack.index_offset);
   let frame_duration = match tile.terrain {
     TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
@@ -262,7 +254,7 @@ fn animated_terrain_sprite(
   };
   (
     Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
+    Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, tile.layer as f32),
     Sprite {
       anchor: Anchor::TopLeft,
       texture_atlas: Some(TextureAtlas {
@@ -281,6 +273,7 @@ fn animated_terrain_sprite(
       index_last: index + ANIMATION_LENGTH - 1,
       timer: AnimationTimer(Timer::from_seconds(frame_duration, TimerMode::Repeating)),
     },
+    Visibility::default(),
   )
 }
 

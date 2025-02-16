@@ -59,8 +59,8 @@ pub struct WorldGenerationComponent {
   pub stage_0_metadata: bool,
   pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
   pub stage_2_chunks: Vec<Chunk>,
-  pub stage_3_spawn_data: Vec<(Chunk, Vec<TileData>)>,
-  pub stage_4_spawn_data: Vec<(Chunk, Vec<TileData>)>,
+  pub stage_3_spawn_data: Vec<(Chunk, Entity)>,
+  pub stage_4_spawn_data: Vec<(Chunk, Entity)>,
   pub stage_5_object_data: Vec<Task<Vec<ObjectData>>>,
 }
 

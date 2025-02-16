@@ -122,7 +122,7 @@ fn attach_task_to_tile_entity(
           )
           .clone()
       };
-      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
+      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.chunk_entity) {
         tile_data_entity.with_children(|parent| {
           parent.spawn(sprite(
             &tile_data.flat_tile,
