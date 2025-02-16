@@ -1,4 +1,4 @@
-use crate::generation::lib::TileData;
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{Cell, ObjectName};
 use bevy::log::*;
 

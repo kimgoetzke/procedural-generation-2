@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile};
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::ObjectName;
 use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::object::wfc;

@@ -1,8 +1,9 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
-use crate::generation::lib::{TerrainType, TileData, TileType};
+use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{Cell, Connection, ObjectName};
 use crate::generation::resources::TerrainState;
 use bevy::log::*;

@@ -3,6 +3,7 @@ mod connection_type;
 mod object_data;
 mod object_grid;
 mod object_name;
+pub mod tile_data;
 mod wfc_status;
 
 pub use cell::Cell;
