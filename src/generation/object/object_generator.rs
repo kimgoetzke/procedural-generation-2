@@ -192,6 +192,7 @@ fn sprite(
   let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
   let internal_z = tile.coords.internal_grid.y as f32;
   let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
+
   (
     Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {

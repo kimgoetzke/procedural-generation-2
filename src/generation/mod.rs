@@ -173,7 +173,7 @@ fn world_generation_system(
       GenerationStage::Stage6 => s6_schedule_spawning_objects(&mut commands, &settings, &mut component),
       GenerationStage::Stage7 => s7_clean_up(&mut commands, &mut prune_world_event, entity, &mut component, &settings),
     }
-    debug!(
+    trace!(
       "World generation component {} ({}) reached stage [{:?}] which took {} ms",
       component.cg,
       entity,

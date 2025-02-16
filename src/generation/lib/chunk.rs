@@ -122,7 +122,7 @@ fn generate_terrain_data(
     ix = 0;
   }
   trace!(
-    "Generated draft chunk at {:?} in {} ms on [{}]",
+    "Generated draft chunk at {:?} in {} ms on {}",
     tg,
     shared::get_time() - start_time,
     shared::thread_name()

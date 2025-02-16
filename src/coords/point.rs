@@ -117,7 +117,7 @@ impl<T: CoordType> Point<T> {
     }
   }
 
-  // TODO: Consider changing implementation for InternalGrid point
+  // TODO: Consider changing implementation for InternalGrid point because top/bottom directions are flipped when used
   pub fn from_direction(direction: &Direction) -> Self {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),

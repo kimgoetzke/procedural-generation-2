@@ -44,7 +44,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     chunks.push(chunk);
   }
   debug!(
-    "Generated {} chunks in {} ms on [{}]",
+    "Generated {} chunks in {} ms on {}",
     chunks.len(),
     shared::get_time() - start_time,
     shared::thread_name()
@@ -97,7 +97,7 @@ pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings
     }
   }
   debug!(
-    "Scheduled spawning tiles for chunk {} in {} ms on [{}]",
+    "Scheduled spawning tiles for chunk {} in {} ms on {}",
     chunk.coords.chunk_grid,
     shared::get_time() - start_time,
     shared::thread_name()
