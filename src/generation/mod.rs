@@ -277,8 +277,15 @@ fn stage_4_schedule_spawning_tiles(
 ) {
   if !component.stage_3_spawn_data.is_empty() {
     let spawn_data = component.stage_3_spawn_data.remove(0);
-    world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
-    component.stage_4_spawn_data.push(spawn_data);
+    if commands.get_entity(spawn_data.1[0].chunk_entity).is_some() {
+      world::schedule_tile_spawning_tasks(&mut commands, &settings, spawn_data.clone());
+      component.stage_4_spawn_data.push(spawn_data);
+    } else {
+      warn!(
+        "Chunk entity {:?} at {} no longer exists (it probably has been pruned already) - skipped scheduling of tile spawning tasks...", 
+        spawn_data.1[0].chunk_entity, spawn_data.0.coords.chunk_grid
+      );
+    }
   }
   if component.stage_3_spawn_data.is_empty() {
     component.stage = GenerationStage::Stage5;
