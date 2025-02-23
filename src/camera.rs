@@ -41,7 +41,7 @@ fn setup_camera_system(mut commands: Commands) {
       speed: 600.,
       zoom_to_cursor: false,
       min_scale: 0.15,
-      max_scale: 5.,
+      max_scale: 10.,
       ..default()
     },
   ));
