@@ -132,8 +132,8 @@ fn attach_task_to_tile_entity(
           )
           .clone()
       };
-      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.chunk_entity) {
-        tile_data_entity.with_children(|parent| {
+      if let Ok(mut chunk_entity) = world.get_entity_mut(tile_data.chunk_entity) {
+        chunk_entity.with_children(|parent| {
           parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
@@ -146,6 +146,7 @@ fn attach_task_to_tile_entity(
         });
       }
     });
+
     command_queue
   });
 
