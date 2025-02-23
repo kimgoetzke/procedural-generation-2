@@ -11,11 +11,10 @@ use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
 use bevy::core::Name;
-use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, ChildBuild};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, Res, TextureAtlas, Transform};
+use bevy::prelude::{Commands, Component, Entity, Query, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -122,8 +121,8 @@ fn attach_task_to_tile_entity(
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let asset_collection = {
-        let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
-        let resources = system_state.get_mut(world);
+        let resources = shared::get_resources_from_world(world);
+
         resources
           .get_object_collection(
             tile_data.flat_tile.terrain,

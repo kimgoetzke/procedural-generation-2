@@ -89,7 +89,7 @@ pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings
           if let Some(tile) = tile {
             let parent_chunk_entity_id = parent_chunk_entity.id();
             parent_chunk_entity.with_children(|parent| {
-              attach_task_to_tile_entity(task_pool, parent, parent_chunk_entity_id, tile.clone());
+              attach_sprite_spawning_task_to_chunk_entity(task_pool, parent, parent_chunk_entity_id, tile.clone());
             });
           }
         });
@@ -104,7 +104,7 @@ pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings
   );
 }
 
-fn attach_task_to_tile_entity(
+fn attach_sprite_spawning_task_to_chunk_entity(
   task_pool: &AsyncComputeTaskPool,
   parent: &mut ChildBuilder,
   chunk_entity: Entity,
@@ -113,14 +113,15 @@ fn attach_task_to_tile_entity(
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (resources, settings) = shared::get_resources_and_settings(world);
+      let resources = shared::get_resources_from_world(world);
+      let settings = shared::get_settings_from_world(world);
       if let Ok(mut parent_chunk_entity) = world.get_entity_mut(chunk_entity) {
         parent_chunk_entity.with_children(|parent| {
           spawn_tile(chunk_entity, &tile, &resources, settings, parent);
         });
       }
     });
-    
+
     command_queue
   });
   parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));

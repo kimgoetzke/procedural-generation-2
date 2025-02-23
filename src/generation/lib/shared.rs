@@ -2,10 +2,9 @@ use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::resources::GenerationResourcesCollection;
 use crate::resources::Settings;
-use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::DespawnRecursiveExt;
-use bevy::prelude::{Commands, Component, Entity, Query, Res};
+use bevy::prelude::{Commands, Component, Entity, Query};
 use std::thread;
 use std::time::SystemTime;
 
@@ -17,7 +16,7 @@ pub fn thread_name() -> String {
   let thread = thread::current();
   let thread_name = thread.name().unwrap_or("Unnamed");
   let thread_id = thread.id();
-  
+
   format!("[{} {:?}]", thread_name, thread_id)
 }
 
@@ -30,14 +29,15 @@ pub fn process_tasks<T: CommandQueueTask + Component>(mut commands: Commands, mu
   }
 }
 
-pub fn get_resources_and_settings(world: &mut bevy::ecs::world::World) -> (GenerationResourcesCollection, Settings) {
-  let (resources, settings) = {
-    let mut system_state = SystemState::<(Res<GenerationResourcesCollection>, Res<Settings>)>::new(world);
-    let (resources, settings) = system_state.get_mut(world);
-    (resources.clone(), settings.clone())
-  };
-  
-  (resources, settings)
+pub fn get_resources_from_world(world: &mut bevy::ecs::world::World) -> GenerationResourcesCollection {
+  world
+    .get_resource::<GenerationResourcesCollection>()
+    .expect("Failed to fetch GenerationResourcesCollection")
+    .clone()
+}
+
+pub fn get_settings_from_world(world: &mut bevy::ecs::world::World) -> Settings {
+  world.get_resource::<Settings>().expect("Failed to fetch Settings").clone()
 }
 
 pub fn get_time() -> u128 {
@@ -47,6 +47,6 @@ pub fn get_time() -> u128 {
 pub fn calculate_seed(cg: Point<ChunkGrid>, seed: u32) -> u64 {
   let adjusted_x = cg.x as i64 + i32::MAX as i64;
   let adjusted_y = cg.y as i64 + i32::MAX as i64;
-  
+
   ((adjusted_x as u64) << 32) ^ (adjusted_y as u64) + seed as u64
 }

@@ -190,7 +190,7 @@ fn world_generation_system(
         stage_6_schedule_spawning_objects(&mut commands, &settings, generation_tasks, component_cg)
       }
       GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, &mut component, entity, &settings),
-      GenerationStage::Stage8 => GenerationStage::Stage8,
+      GenerationStage::Done => GenerationStage::Done,
     };
     trace!(
       "World generation component {} ({}) reached stage [{}] which took {} ms",
@@ -415,7 +415,7 @@ fn stage_7_clean_up(
   );
   commands.entity(entity).despawn_recursive();
 
-  GenerationStage::Stage8
+  GenerationStage::Done
 }
 
 /// Sets the `GenerationState` to `Idling` when the last `UpdateWorldComponent` has just been removed.

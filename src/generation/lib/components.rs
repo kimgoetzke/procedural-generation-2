@@ -59,7 +59,7 @@ pub enum GenerationStage {
   /// If not, do nothing. Return all remaining `Task`s until all are finished, then proceed to next stage.
   Stage6(Vec<Task<Vec<ObjectData>>>),
   Stage7,
-  Stage8,
+  Done,
 }
 
 impl PartialEq for GenerationStage {
@@ -72,7 +72,7 @@ impl PartialEq for GenerationStage {
       (GenerationStage::Stage5(_), GenerationStage::Stage5(_)) => true,
       (GenerationStage::Stage6(_), GenerationStage::Stage6(_)) => true,
       (GenerationStage::Stage7, GenerationStage::Stage7) => true,
-      (GenerationStage::Stage8, GenerationStage::Stage8) => true,
+      (GenerationStage::Done, GenerationStage::Done) => true,
       _ => false,
     }
   }
@@ -88,7 +88,7 @@ impl Display for GenerationStage {
       GenerationStage::Stage5(_) => write!(f, "Stage 5"),
       GenerationStage::Stage6(_) => write!(f, "Stage 6"),
       GenerationStage::Stage7 => write!(f, "Stage 7"),
-      GenerationStage::Stage8 => write!(f, "Stage 8"),
+      GenerationStage::Done => write!(f, "Done"),
     }
   }
 }
