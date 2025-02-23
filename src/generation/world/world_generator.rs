@@ -120,6 +120,7 @@ fn attach_task_to_tile_entity(
         });
       }
     });
+    
     command_queue
   });
   parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));

@@ -17,6 +17,7 @@ pub fn thread_name() -> String {
   let thread = thread::current();
   let thread_name = thread.name().unwrap_or("Unnamed");
   let thread_id = thread.id();
+  
   format!("[{} {:?}]", thread_name, thread_id)
 }
 
@@ -35,6 +36,7 @@ pub fn get_resources_and_settings(world: &mut bevy::ecs::world::World) -> (Gener
     let (resources, settings) = system_state.get_mut(world);
     (resources.clone(), settings.clone())
   };
+  
   (resources, settings)
 }
 
@@ -45,5 +47,6 @@ pub fn get_time() -> u128 {
 pub fn calculate_seed(cg: Point<ChunkGrid>, seed: u32) -> u64 {
   let adjusted_x = cg.x as i64 + i32::MAX as i64;
   let adjusted_y = cg.y as i64 + i32::MAX as i64;
+  
   ((adjusted_x as u64) << 32) ^ (adjusted_y as u64) + seed as u64
 }

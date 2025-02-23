@@ -45,8 +45,8 @@ pub enum GenerationStage {
   Stage1(bool),
   /// Stage 2: Await completion of chunk generation task, then use `ChunkComponentIndex` to check if any of the chunks
   /// already exists. Return all `Chunk`s that don't exist yet, so they can be spawned.
-  Stage2(Option<Task<Vec<Chunk>>>),
   /// Stage 3: If `Chunk`s are provided and no chunk at "proposed" location exists, spawn the chunk(s) and return
+  Stage2(Task<Vec<Chunk>>),
   /// `Chunk`-`Entity` pairs. If no `Chunk`s provided, set `GenerationStage` to clean-up stage.
   Stage3(Vec<Chunk>),
   /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tile spawning tasks and
