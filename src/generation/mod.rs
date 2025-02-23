@@ -47,7 +47,12 @@ impl Plugin for GenerationPlugin {
       .add_systems(Update, world_generation_system.run_if(in_state(GenerationState::Generating)))
       .add_systems(
         Update,
-        (regenerate_world_event, update_world_event, prune_world_event).run_if(in_state(AppState::Running)),
+        (
+          regenerate_world_event,
+          update_world_event,
+          prune_world_event.after(world_generation_system),
+        )
+          .run_if(in_state(AppState::Running)),
       )
       .add_observer(on_remove_update_world_component_trigger);
   }
