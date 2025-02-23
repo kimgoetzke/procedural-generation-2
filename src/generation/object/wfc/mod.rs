@@ -144,7 +144,7 @@ fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<Objec
       .filter_map(|tile_data| {
         grid
           .get_cell(&tile_data.flat_tile.coords.internal_grid)
-          .filter(|cell| cell.index != 0)
+          .filter(|cell| cell.index != 0) // Sprite index 0 is always transparent
           .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
       })
       .collect::<Vec<ObjectData>>(),

@@ -64,7 +64,7 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
   debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
-    Name::new(format!("Update World Component {}", w)),
+    Name::new(format!("World Generation Component {}", w)),
     WorldGenerationComponent::new(w, cg, false, shared::get_time()),
   ));
   commands.spawn((
@@ -93,7 +93,7 @@ fn regenerate_world_event(
     debug!("Regenerating world with origin {} {}", w, cg);
     commands.entity(world).despawn_recursive();
     commands.spawn((
-      Name::new(format!("Update World Component {}", cg)),
+      Name::new(format!("World Generation Component {}", cg)),
       WorldGenerationComponent::new(w, cg, false, shared::get_time()),
     ));
     commands.spawn((
@@ -124,7 +124,7 @@ fn update_world_event(
     let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
-      Name::new(format!("Update World Component {}", new_parent_w)),
+      Name::new(format!("World Generation Component {}", new_parent_w)),
       WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);
@@ -469,12 +469,13 @@ fn prune_world(
   update_world_after: bool,
 ) {
   let start_time = shared::get_time();
-  let chunks_to_despawn = calculate_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks);
-  for chunk_entity in chunks_to_despawn.iter() {
-    if let Some(entity) = commands.get_entity(*chunk_entity) {
-      entity.try_despawn_recursive();
-    }
-  }
+  calculate_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks)
+    .iter()
+    .for_each(|chunk_entity| {
+      if let Some(entity) = commands.get_entity(*chunk_entity) {
+        entity.try_despawn_recursive();
+      }
+    });
   info!(
     "World pruning (despawn_all_chunks={}, update_world_after={}) took {} ms on [{}]",
     despawn_all_chunks,
