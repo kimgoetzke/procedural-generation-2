@@ -1,7 +1,7 @@
 use crate::events::ToggleDebugInfo;
 use bevy::app::{App, Plugin};
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
+use iyes_perf_ui::PerfUiPlugin;
 use iyes_perf_ui::prelude::{
   PerfUiEntryCpuUsage, PerfUiEntryEntityCount, PerfUiEntryFPS, PerfUiEntryFPSWorst, PerfUiEntryFrameTime,
   PerfUiEntryFrameTimeWorst, PerfUiEntryMemUsage, PerfUiEntryRenderCpuTime, PerfUiEntryRenderGpuTime, PerfUiRoot,
@@ -13,7 +13,8 @@ pub struct DiagnosticsUiPlugin;
 impl Plugin for DiagnosticsUiPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_plugins(FrameTimeDiagnosticsPlugin::default())
+      .add_plugins(PerfUiPlugin)
+      .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
       .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
       .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
       .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)

@@ -27,7 +27,6 @@ use bevy::window::{PresentMode, WindowResolution};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_pancam::PanCamPlugin;
-use iyes_perf_ui::PerfUiPlugin;
 
 fn main() {
   App::new()
@@ -56,7 +55,6 @@ fn main() {
         .build(),
     )
     .add_plugins(PanCamPlugin::default())
-    .add_plugins(PerfUiPlugin)
     .add_plugins((
       CameraPlugin,
       AppStatePlugin,
