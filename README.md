@@ -59,6 +59,13 @@ This way, you'll just need to `direnv allow` in the project directory after whic
 all Bevy dependencies, etc.) will be available to you. The JetBrains plugin will ensure that the environment is
 available to your IDE and you can run the project from there (vs `cargo build` and `cargo run` in the terminal).
 
+##### How to deal with RustRover making problems again
+
+RustRover forgetting where the Rust standard library is?
+```
+find /nix/store -type d -name rust_lib_src
+```
+
 ### Using Nix Flakes
 
 Without `direnv`, you can use the Nix Flake by running `nix develop` in the project directory. If you want to use an IDE
