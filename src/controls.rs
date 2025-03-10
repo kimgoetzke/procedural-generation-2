@@ -84,6 +84,12 @@ fn settings_controls_system(
     );
   }
 
+  if keyboard_input.just_pressed(KeyCode::KeyB) {
+    settings.general.enable_world_pruning = !settings.general.enable_world_pruning;
+    general_settings.enable_world_pruning = settings.general.enable_world_pruning;
+    info!("[B] Set world pruning to [{}]", settings.general.enable_world_pruning);
+  }
+
   if keyboard_input.just_pressed(KeyCode::KeyF) {
     settings.object.generate_objects = !settings.object.generate_objects;
     object_settings.generate_objects = settings.object.generate_objects;

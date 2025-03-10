@@ -395,6 +395,7 @@ fn stage_6_schedule_spawning_objects(
   }
 }
 
+// TODO: Test pruning world before generating new chunks
 fn stage_7_clean_up(
   commands: &mut Commands,
   prune_world_event: &mut EventWriter<PruneWorldEvent>,
