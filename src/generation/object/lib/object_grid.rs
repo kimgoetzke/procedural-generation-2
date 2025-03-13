@@ -165,8 +165,8 @@ fn resolve_rules(
     }
   }
 
-  debug!(
-    "Resolved {} rules for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
+  trace!(
+    "Resolved {} rule(s) for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
     resolved_rules.len(),
     tile_type,
     terrain_rules.len(),
