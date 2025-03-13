@@ -19,6 +19,10 @@ pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
   pub grid: Vec<Vec<Cell>>,
+  // TODO: Consider solving the below differently
+  /// This `Cell` is used to represent out of bounds neighbours in the grid. It only allows `ObjectName::Empty` as
+  /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
+  pub no_neighbours_tile: Cell,
 }
 
 impl ObjectGrid {
@@ -26,7 +30,23 @@ impl ObjectGrid {
     let grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
-    ObjectGrid { cg, grid }
+    let mut no_neighbours_tile = Cell::new(-1, -1);
+    no_neighbours_tile.possible_states = vec![TerrainState {
+      name: ObjectName::Empty,
+      index: 0,
+      weight: 1,
+      permitted_neighbours: vec![
+        (Connection::Top, vec![ObjectName::Empty]),
+        (Connection::Right, vec![ObjectName::Empty]),
+        (Connection::Bottom, vec![ObjectName::Empty]),
+        (Connection::Left, vec![ObjectName::Empty]),
+      ],
+    }];
+    ObjectGrid {
+      cg,
+      grid,
+      no_neighbours_tile,
+    }
   }
 
   pub fn new_initialised(
@@ -65,6 +85,8 @@ impl ObjectGrid {
     for (direction, point) in points {
       if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.ig == point).next() {
         neighbours.push((direction, cell));
+      } else {
+        neighbours.push((direction, &self.no_neighbours_tile));
       }
     }
     trace!("Found {} neighbours for {:?}", neighbours.len(), point);
@@ -143,7 +165,7 @@ fn resolve_rules(
     }
   }
 
-  trace!(
+  debug!(
     "Resolved {} rules for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
     resolved_rules.len(),
     tile_type,
