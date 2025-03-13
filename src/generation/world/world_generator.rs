@@ -21,7 +21,7 @@ pub struct WorldGeneratorPlugin;
 
 impl Plugin for WorldGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app.add_systems(Update, process_async_tasks_system);
+    app.add_systems(Update, process_tile_spawn_tasks_system);
   }
 }
 
@@ -127,21 +127,6 @@ fn attach_sprite_spawning_task_to_chunk_entity(
   parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));
 }
 
-fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
-  let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
-  if asset_collection.animated_tile_types.contains(&tile.tile_type) {
-    (
-      true,
-      &asset_collection
-        .anim
-        .as_ref()
-        .expect("Failed to get animated asset pack from resource collection"),
-    )
-  } else {
-    (false, &asset_collection.stat)
-  }
-}
-
 fn spawn_tile(
   parent_entity: Entity,
   tile: &Tile,
@@ -162,6 +147,21 @@ fn spawn_tile(
     }
   } else {
     parent.spawn(static_terrain_sprite(&tile, parent_entity, &resources));
+  }
+}
+
+fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
+  let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
+  if asset_collection.animated_tile_types.contains(&tile.tile_type) {
+    (
+      true,
+      &asset_collection
+        .anim
+        .as_ref()
+        .expect("Failed to get animated asset pack from resource collection"),
+    )
+  } else {
+    (false, &asset_collection.stat)
   }
 }
 
@@ -284,6 +284,6 @@ fn animated_terrain_sprite(
   )
 }
 
-fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
+fn process_tile_spawn_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
   shared::process_tasks(commands, tile_spawn_tasks);
 }

@@ -25,7 +25,9 @@ pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app.add_plugins(WfcPlugin).add_systems(Update, process_async_tasks_system);
+    app
+      .add_plugins(WfcPlugin)
+      .add_systems(Update, process_object_spawn_tasks_system);
   }
 }
 
@@ -219,6 +221,6 @@ fn sprite(
   )
 }
 
-fn process_async_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+fn process_object_spawn_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
   shared::process_tasks(commands, object_spawn_tasks);
 }

@@ -19,14 +19,14 @@ pub struct MetadataGeneratorPlugin;
 impl Plugin for MetadataGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_systems(OnEnter(AppState::Initialising), initialise_metadata)
-      .add_systems(Update, (update_metadata, refresh_metadata_event));
+      .add_systems(OnEnter(AppState::Initialising), initialise_metadata_system)
+      .add_systems(Update, (update_metadata_system, refresh_metadata_event));
   }
 }
 
 /// This function is intended to be used to generate performance intensive metadata for the world prior to running the
 /// main loop.
-fn initialise_metadata(
+fn initialise_metadata_system(
   metadata: ResMut<Metadata>,
   current_chunk: Res<CurrentChunk>,
   settings: Res<Settings>,
@@ -39,7 +39,7 @@ fn initialise_metadata(
 /// Currently we're always regenerating the metadata for the entire grid. This is to allow changing the step size in
 /// the UI without having visual artifacts due to already generated metadata that is then incorrect. If this becomes
 /// a performance issue, we can change it but as of now, it's never taken anywhere near 1 ms.
-fn update_metadata(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChunk>, settings: Res<Settings>) {
+fn update_metadata_system(mut metadata: ResMut<Metadata>, current_chunk: Res<CurrentChunk>, settings: Res<Settings>) {
   if metadata.current_chunk_cg == current_chunk.get_chunk_grid() {
     return;
   }
