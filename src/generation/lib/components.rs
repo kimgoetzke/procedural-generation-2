@@ -49,6 +49,7 @@ pub enum GenerationStage {
   Stage2(Task<Vec<Chunk>>),
   /// `Chunk`-`Entity` pairs. If no `Chunk`s provided, set `GenerationStage` to clean-up stage.
   Stage3(Vec<Chunk>),
+  // TODO: Update the below once refactored
   /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tile spawning tasks and
   /// return `Chunk`-`Entity` pairs again.
   Stage4(Vec<(Chunk, Entity)>),

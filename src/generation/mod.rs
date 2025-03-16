@@ -188,7 +188,7 @@ fn world_generation_system(
       GenerationStage::Stage3(chunks) => {
         stage_3_spawn_chunks(&mut commands, world_entity, &existing_chunks, chunks, component_cg)
       }
-      GenerationStage::Stage4(chunk_entity_pairs) => stage_4_schedule_spawning_tiles(
+      GenerationStage::Stage4(chunk_entity_pairs) => stage_4_spawn_tile_meshes(
         &mut commands,
         &settings,
         &resources,
@@ -328,7 +328,8 @@ fn stage_3_spawn_chunks(
   GenerationStage::Stage7
 }
 
-fn stage_4_schedule_spawning_tiles(
+// TODO: Fix bug that duplicates generating and spawning objects
+fn stage_4_spawn_tile_meshes(
   mut commands: &mut Commands,
   settings: &Res<Settings>,
   resources: &GenerationResourcesCollection,
@@ -341,8 +342,7 @@ fn stage_4_schedule_spawning_tiles(
     let mut new_chunk_entity_pairs = Vec::new();
     for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
       if commands.get_entity(chunk_entity).is_some() {
-        // world::schedule_tile_spawning_tasks(&mut commands, &settings, chunk.clone(), chunk_entity);
-        world::spawn_layer_meshes(
+        world::spawn_tile_layer_meshes(
           &mut commands,
           &settings,
           chunk.clone(),
