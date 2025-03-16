@@ -96,7 +96,7 @@ pub fn schedule_spawning_objects(
     "cg(unknown)".to_string()
   };
   for object in object_data {
-    attach_task_to_tile_entity(commands, settings, &mut rng, task_pool, object);
+    attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }
   debug!(
     "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
@@ -107,7 +107,7 @@ pub fn schedule_spawning_objects(
   );
 }
 
-fn attach_task_to_tile_entity(
+fn attach_object_spawn_task(
   commands: &mut Commands,
   settings: &Settings,
   mut rng: &mut StdRng,
@@ -154,6 +154,7 @@ fn attach_task_to_tile_entity(
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
+// TODO: Remove or make colour randomisation look better/more visible
 fn get_randomised_colour(settings: &Settings, rng: &mut StdRng, object_data: &ObjectData) -> Color {
   let base_color = Color::default();
   if object_data.is_large_sprite && settings.object.enable_colour_variations {
