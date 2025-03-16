@@ -171,9 +171,14 @@ fn world_generation_system(
     let current_stage = std::mem::replace(&mut component.stage, GenerationStage::Stage7);
     let component_cg = &component.cg;
     component.stage = match current_stage {
-      GenerationStage::Stage1(has_metadata) => {
-        stage_1_schedule_chunk_generation(&settings, &metadata, &existing_chunks, &component, has_metadata)
-      }
+      GenerationStage::Stage1(has_metadata) => stage_1_prune_world_and_schedule_chunk_generation(
+        &settings,
+        &metadata,
+        &existing_chunks,
+        &component,
+        has_metadata,
+        &mut prune_world_event,
+      ),
       GenerationStage::Stage2(chunk_generation_task) => {
         stage_2_await_chunk_generation_task_completion(&existing_chunks, chunk_generation_task, component_cg)
       }
@@ -189,7 +194,7 @@ fn world_generation_system(
       GenerationStage::Stage6(generation_tasks) => {
         stage_6_schedule_spawning_objects(&mut commands, &settings, generation_tasks, component_cg)
       }
-      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut prune_world_event, &mut component, entity, &settings),
+      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut component, entity),
       GenerationStage::Done => GenerationStage::Done,
     };
     trace!(
@@ -202,12 +207,13 @@ fn world_generation_system(
   }
 }
 
-fn stage_1_schedule_chunk_generation(
+fn stage_1_prune_world_and_schedule_chunk_generation(
   settings: &Settings,
   metadata: &Metadata,
   existing_chunks: &Res<ChunkComponentIndex>,
   component: &WorldGenerationComponent,
   mut has_metadata: bool,
+  prune_event: &mut EventWriter<PruneWorldEvent>,
 ) -> GenerationStage {
   if !has_metadata && metadata.index.contains(&component.cg) {
     has_metadata = true;
@@ -215,6 +221,13 @@ fn stage_1_schedule_chunk_generation(
     trace!("World generation component {} - Stage 1 | Awaiting metadata...", component.cg);
   }
   if has_metadata {
+    if !component.suppress_pruning_world && settings.general.enable_world_pruning {
+      prune_event.send(PruneWorldEvent {
+        despawn_all_chunks: false,
+        update_world_after: false,
+      });
+    }
+
     let settings = settings.clone();
     let metadata = metadata.clone();
     let spawn_points = calculate_chunk_spawn_points(&existing_chunks, &settings, &component.w);
@@ -395,20 +408,11 @@ fn stage_6_schedule_spawning_objects(
   }
 }
 
-// TODO: Test pruning world before generating new chunks
 fn stage_7_clean_up(
   commands: &mut Commands,
-  prune_world_event: &mut EventWriter<PruneWorldEvent>,
   component: &mut Mut<WorldGenerationComponent>,
   entity: Entity,
-  settings: &Res<Settings>,
 ) -> GenerationStage {
-  if !component.suppress_pruning_world && settings.general.enable_world_pruning {
-    prune_world_event.send(PruneWorldEvent {
-      despawn_all_chunks: false,
-      update_world_after: false,
-    });
-  }
   info!(
     "✅  World generation component {} successfully processed in {} ms",
     component.cg,
