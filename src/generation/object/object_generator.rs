@@ -1,4 +1,6 @@
 use crate::constants::*;
+use crate::coords::point::ChunkGrid;
+use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile};
 use crate::generation::object::lib::tile_data::TileData;
@@ -86,15 +88,11 @@ pub fn schedule_spawning_objects(
   settings: &Settings,
   mut rng: &mut StdRng,
   object_data: Vec<ObjectData>,
+  chunk_cg: &Point<ChunkGrid>,
 ) {
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
-  let chunk_cg = if let Some(object_data) = object_data.first() {
-    object_data.tile_data.flat_tile.coords.chunk_grid.to_string()
-  } else {
-    "cg(unknown)".to_string()
-  };
   for object in object_data {
     attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }

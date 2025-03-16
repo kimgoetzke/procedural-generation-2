@@ -328,6 +328,7 @@ fn stage_3_spawn_chunks(
   GenerationStage::Stage7
 }
 
+// TODO: Make sure that all chunks are pruned properly using this mesh rendering method
 // TODO: Fix bug that duplicates generating and spawning objects
 fn stage_4_spawn_tile_meshes(
   mut commands: &mut Commands,
@@ -412,7 +413,7 @@ fn stage_6_schedule_spawning_objects(
       if task.is_finished() {
         let object_data = block_on(poll_once(task)).expect("Failed to get object data");
         let mut rng = StdRng::seed_from_u64(shared::calculate_seed(*cg, settings.world.noise_seed));
-        object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data);
+        object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data, cg);
         false
       } else {
         true
