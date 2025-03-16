@@ -1,5 +1,5 @@
 use crate::components::{AnimationComponent, AnimationTimer};
-use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TERRAIN_TYPE_ERROR};
+use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TERRAIN_TYPE_ERROR, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
@@ -8,14 +8,17 @@ use crate::generation::resources::{AssetPack, Climate, GenerationResourcesCollec
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
+use bevy::asset::RenderAssetUsages;
 use bevy::core::Name;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, ChildBuild, ChildBuilder, WorldChildBuilder};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, Sprite, TextureAtlas, Timer, TimerMode, Transform, Visibility};
-use bevy::sprite::Anchor;
+use bevy::prelude::*;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
+use bevy::sprite::{AlphaMode2d, Anchor};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use std::collections::HashMap;
 
 pub struct WorldGeneratorPlugin;
 
@@ -32,6 +35,13 @@ impl CommandQueueTask for TileSpawnTask {
   fn poll_once(&mut self) -> Option<CommandQueue> {
     block_on(tasks::poll_once(&mut self.0))
   }
+}
+
+// TODO: Add tiles and use this struct for debugging
+#[derive(Component)]
+struct TileMeshComponent {
+  parent_entity: Entity,
+  is_animated: bool,
 }
 
 pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
@@ -71,10 +81,51 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Ent
     .id()
 }
 
-pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, chunk: Chunk, chunk_entity: Entity) {
-  let start_time = shared::get_time();
-  let task_pool = AsyncComputeTaskPool::get();
+// pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, chunk: Chunk, chunk_entity: Entity) {
+//   let start_time = shared::get_time();
+//   let task_pool = AsyncComputeTaskPool::get();
+//
+//   for layer in 0..TerrainType::length() {
+//     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+//       trace!(
+//         "Skipped spawning [{:?}] tiles because it's disabled",
+//         TerrainType::from(layer)
+//       );
+//       continue;
+//     }
+//     if let Some(mut parent_chunk_entity) = commands.get_entity(chunk_entity) {
+//       if let Some(plane) = chunk.layered_plane.get(layer) {
+//         plane.data.iter().flatten().for_each(|tile| {
+//           if let Some(tile) = tile {
+//             let parent_chunk_entity_id = parent_chunk_entity.id();
+//             parent_chunk_entity.with_children(|parent| {
+//               attach_sprite_spawning_task_to_chunk_entity(task_pool, parent, parent_chunk_entity_id, tile.clone());
+//             });
+//           }
+//         });
+//       }
+//     }
+//   }
+//   debug!(
+//     "Scheduled spawning tiles for chunk {} in {} ms on {}",
+//     chunk.coords.chunk_grid,
+//     shared::get_time() - start_time,
+//     shared::thread_name()
+//   );
+// }
 
+pub fn spawn_layer_meshes(
+  commands: &mut Commands,
+  settings: &Settings,
+  chunk: Chunk,
+  chunk_entity: Entity,
+  meshes: &mut ResMut<Assets<Mesh>>,
+  materials: &mut ResMut<Assets<ColorMaterial>>,
+  resources: &GenerationResourcesCollection,
+) {
+  let start_time = shared::get_time();
+
+  // Process each terrain layer separately
   for layer in 0..TerrainType::length() {
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
       trace!(
@@ -83,25 +134,140 @@ pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings
       );
       continue;
     }
-    if let Some(mut parent_chunk_entity) = commands.get_entity(chunk_entity) {
-      if let Some(plane) = chunk.layered_plane.get(layer) {
-        plane.data.iter().flatten().for_each(|tile| {
-          if let Some(tile) = tile {
-            let parent_chunk_entity_id = parent_chunk_entity.id();
-            parent_chunk_entity.with_children(|parent| {
-              attach_sprite_spawning_task_to_chunk_entity(task_pool, parent, parent_chunk_entity_id, tile.clone());
-            });
-          }
-        });
+
+    if let Some(plane) = chunk.layered_plane.get(layer) {
+      // Group tiles by their texture/material to minimize draw calls
+      let mut texture_groups: HashMap<(Handle<Image>, Handle<TextureAtlasLayout>, bool), Vec<&Tile>> = HashMap::new();
+
+      // Collect and group tiles by texture and animation status
+      for row in plane.data.iter() {
+        for tile in row.iter().flatten() {
+          let (is_animated, asset_pack) = resolve_asset_pack(tile, resources);
+          let texture = asset_pack.texture.clone();
+          let layout = asset_pack.texture_atlas_layout.clone();
+          texture_groups.entry((texture, layout, is_animated)).or_default().push(tile);
+        }
+      }
+
+      for ((texture, layout, is_animated), tiles) in texture_groups {
+        // if is_animated && settings.general.animate_terrain_sprites {
+        // For animated tiles, create an animated mesh
+        // spawn_animated_mesh(
+        //   commands,
+        //   meshes,
+        //   materials,
+        //   tiles,
+        //   texture,
+        //   layout,
+        //   layer as f32,
+        //   chunk_entity,
+        // );
+        // } else {
+        // For static tiles, create a static mesh
+        spawn_static_mesh(
+          commands,
+          resources,
+          meshes,
+          materials,
+          tiles,
+          texture,
+          layout,
+          layer as f32,
+          chunk_entity,
+        );
+        // }
       }
     }
   }
+
   debug!(
-    "Scheduled spawning tiles for chunk {} in {} ms on {}",
+    "Created mesh(es) for chunk {} in {} ms on {}",
     chunk.coords.chunk_grid,
     shared::get_time() - start_time,
     shared::thread_name()
   );
+}
+
+fn spawn_static_mesh(
+  commands: &mut Commands,
+  resources: &GenerationResourcesCollection,
+  meshes: &mut ResMut<Assets<Mesh>>,
+  materials: &mut ResMut<Assets<ColorMaterial>>,
+  tiles: Vec<&Tile>,
+  texture: Handle<Image>,
+  layout: Handle<TextureAtlasLayout>,
+  z_layer: f32,
+  parent_entity: Entity,
+) {
+  // Create mesh
+  let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+  let mut vertices = Vec::new();
+  let mut indices = Vec::new();
+  let mut uvs = Vec::new();
+  let tile_size = TILE_SIZE as f32;
+  let columns = 4.0;
+  let rows = 16.0;
+
+  // Create a vertex buffer for all tiles
+  for &tile in tiles {
+    let sprite_index = tile
+      .tile_type
+      .calculate_sprite_index(&tile.terrain, &tile.climate, &resources);
+
+    // Calculate UV coordinates based on sprite index and atlas layout
+    let sprite_col = sprite_index as f32 % columns;
+    let sprite_row = (sprite_index as f32 / columns).floor();
+
+    // Calculate normalized UV coordinates (0.0 to 1.0)
+    let u_start = sprite_col / columns;
+    let u_end = (sprite_col + 1.0) / columns;
+    let v_start = sprite_row / rows;
+    let v_end = (sprite_row + 1.0) / rows;
+
+    // Calculate base index for this tile
+    let base_idx = vertices.len() as u32;
+
+    // Add vertices
+    let tile_x = tile.coords.world.x as f32;
+    let tile_y = tile.coords.world.y as f32;
+    vertices.push([tile_x, tile_y, z_layer]);                         // Top-left
+    vertices.push([tile_x + tile_size, tile_y, z_layer]);             // Top-right
+    vertices.push([tile_x + tile_size, tile_y - tile_size, z_layer]); // Bottom-right
+    vertices.push([tile_x, tile_y - tile_size, z_layer]);             // Bottom-left
+
+    // Add UVs for each vertex
+    uvs.push([u_start, v_start]); // Top-left
+    uvs.push([u_end, v_start]);   // Top-right
+    uvs.push([u_end, v_end]);     // Bottom-right
+    uvs.push([u_start, v_end]);   // Bottom-left
+
+    indices.extend_from_slice(&[
+      base_idx, base_idx + 1, base_idx + 2,
+      base_idx, base_idx + 2, base_idx + 3
+    ]);
+  }
+
+  mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+  mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+  // mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+  mesh.insert_indices(Indices::U32(indices));
+
+  commands.entity(parent_entity).with_children(|parent| {
+    parent.spawn((
+      Mesh2d(meshes.add(mesh)),
+      MeshMaterial2d(materials.add(ColorMaterial {
+        color: Color::WHITE,
+        alpha_mode: AlphaMode2d::Blend,
+        texture: Some(texture),
+      })),
+      Transform::from_xyz(0.0, 0.0, z_layer),
+      Name::new(format!("Layer {} Mesh", z_layer)),
+      TileMeshComponent {
+        parent_entity,
+        is_animated: false,
+      },
+    ));
+  });
 }
 
 fn attach_sprite_spawning_task_to_chunk_entity(

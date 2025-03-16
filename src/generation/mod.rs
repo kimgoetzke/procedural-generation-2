@@ -13,12 +13,13 @@ use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin};
+use bevy::asset::Assets;
 use bevy::core::Name;
 use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  in_state, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, Mut, NextState,
-  OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With,
+  in_state, ColorMaterial, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, Mesh,
+  Mut, NextState, OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With,
 };
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
 use lib::shared;
@@ -164,6 +165,8 @@ fn world_generation_system(
   resources: Res<GenerationResourcesCollection>,
   existing_chunks: Res<ChunkComponentIndex>,
   mut prune_world_event: EventWriter<PruneWorldEvent>,
+  mut meshes: ResMut<Assets<Mesh>>,
+  mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
   for (entity, mut component) in world_generation_components.iter_mut() {
     let start_time = shared::get_time();
@@ -185,9 +188,15 @@ fn world_generation_system(
       GenerationStage::Stage3(chunks) => {
         stage_3_spawn_chunks(&mut commands, world_entity, &existing_chunks, chunks, component_cg)
       }
-      GenerationStage::Stage4(chunk_entity_pairs) => {
-        stage_4_schedule_spawning_tiles(&mut commands, &settings, chunk_entity_pairs, component_cg)
-      }
+      GenerationStage::Stage4(chunk_entity_pairs) => stage_4_schedule_spawning_tiles(
+        &mut commands,
+        &settings,
+        &resources,
+        chunk_entity_pairs,
+        &mut meshes,
+        &mut materials,
+        component_cg,
+      ),
       GenerationStage::Stage5(chunk_entity_pairs) => {
         stage_5_schedule_generating_object_data(&mut commands, &settings, &resources, chunk_entity_pairs, component_cg)
       }
@@ -322,14 +331,26 @@ fn stage_3_spawn_chunks(
 fn stage_4_schedule_spawning_tiles(
   mut commands: &mut Commands,
   settings: &Res<Settings>,
+  resources: &GenerationResourcesCollection,
   mut chunk_entity_pairs: Vec<(Chunk, Entity)>,
+  meshes: &mut ResMut<Assets<Mesh>>,
+  materials: &mut ResMut<Assets<ColorMaterial>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
   if !chunk_entity_pairs.is_empty() {
     let mut new_chunk_entity_pairs = Vec::new();
     for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
       if commands.get_entity(chunk_entity).is_some() {
-        world::schedule_tile_spawning_tasks(&mut commands, &settings, chunk.clone(), chunk_entity);
+        // world::schedule_tile_spawning_tasks(&mut commands, &settings, chunk.clone(), chunk_entity);
+        world::spawn_layer_meshes(
+          &mut commands,
+          &settings,
+          chunk.clone(),
+          chunk_entity,
+          meshes,
+          materials,
+          &resources,
+        );
         new_chunk_entity_pairs.push((chunk, chunk_entity));
       } else {
         trace!(
