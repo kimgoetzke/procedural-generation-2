@@ -49,8 +49,7 @@ pub enum GenerationStage {
   Stage2(Task<Vec<Chunk>>),
   /// `Chunk`-`Entity` pairs. If no `Chunk`s provided, set `GenerationStage` to clean-up stage.
   Stage3(Vec<Chunk>),
-  // TODO: Update the below once refactored
-  /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tile spawning tasks and
+  /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, spawn tiles for each `Chunk` and
   /// return `Chunk`-`Entity` pairs again.
   Stage4(Vec<(Chunk, Entity)>),
   /// Stage 5: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tasks to generate object
@@ -59,7 +58,8 @@ pub enum GenerationStage {
   /// Stage 6: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
   /// If not, do nothing. Return all remaining `Task`s until all are finished, then proceed to next stage.
   Stage6(Vec<Task<Vec<ObjectData>>>),
-  /// Stage 7: Despawn the `WorldGenerationComponent`.
+  /// Stage 7: Despawn the `WorldGenerationComponent` and, if necessary, fire a (second) send event to clean up
+  /// not-needed chunks.
   Stage7,
   Done,
 }

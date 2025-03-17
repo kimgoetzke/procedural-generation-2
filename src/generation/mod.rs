@@ -1,4 +1,6 @@
-use crate::constants::{CHUNK_SIZE, DESPAWN_DISTANCE, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE};
+use crate::constants::{
+  CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
+};
 use crate::coords::point::{ChunkGrid, World};
 use crate::coords::Point;
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
@@ -203,7 +205,14 @@ fn world_generation_system(
       GenerationStage::Stage6(generation_tasks) => {
         stage_6_schedule_spawning_objects(&mut commands, &settings, generation_tasks, component_cg)
       }
-      GenerationStage::Stage7 => stage_7_clean_up(&mut commands, &mut component, entity),
+      GenerationStage::Stage7 => stage_7_clean_up(
+        &mut commands,
+        &mut component,
+        &settings,
+        entity,
+        &existing_chunks,
+        &mut prune_world_event,
+      ),
       GenerationStage::Done => GenerationStage::Done,
     };
     trace!(
@@ -328,8 +337,6 @@ fn stage_3_spawn_chunks(
   GenerationStage::Stage7
 }
 
-// TODO: Make sure that all chunks are pruned properly using this mesh rendering method
-// TODO: Fix bug that duplicates generating and spawning objects
 fn stage_4_spawn_tile_meshes(
   mut commands: &mut Commands,
   settings: &Res<Settings>,
@@ -433,13 +440,22 @@ fn stage_6_schedule_spawning_objects(
 fn stage_7_clean_up(
   commands: &mut Commands,
   component: &mut Mut<WorldGenerationComponent>,
+  settings: &Res<Settings>,
   entity: Entity,
+  existing_chunks: &Res<ChunkComponentIndex>,
+  prune_world_event: &mut EventWriter<PruneWorldEvent>,
 ) -> GenerationStage {
   info!(
     "✅  World generation component {} successfully processed in {} ms",
     component.cg,
     shared::get_time() - component.created_at
   );
+  if existing_chunks.size() > MAX_CHUNKS && !component.suppress_pruning_world && settings.general.enable_world_pruning {
+    prune_world_event.send(PruneWorldEvent {
+      despawn_all_chunks: false,
+      update_world_after: false,
+    });
+  }
   commands.entity(entity).despawn_recursive();
 
   GenerationStage::Done
@@ -496,7 +512,7 @@ fn prune_world(
   update_world_after: bool,
 ) {
   let start_time = shared::get_time();
-  calculate_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks)
+  identify_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks)
     .iter()
     .for_each(|chunk_entity| {
       if let Some(entity) = commands.get_entity(*chunk_entity) {
@@ -512,13 +528,14 @@ fn prune_world(
   );
 }
 
-fn calculate_chunks_to_despawn(
+fn identify_chunks_to_despawn(
   existing_chunks: &Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
   current_chunk: &Res<CurrentChunk>,
   despawn_all_chunks: bool,
 ) -> Vec<Entity> {
   let mut chunks_to_despawn = Vec::new();
   for (entity, chunk_component) in existing_chunks.iter() {
+    // Case 1: Add chunk if despawn_all_chunks is true
     if despawn_all_chunks {
       trace!(
         "Despawning chunk at {:?} because all chunks have to be despawned",
@@ -527,6 +544,8 @@ fn calculate_chunks_to_despawn(
       chunks_to_despawn.push(entity);
       continue;
     }
+
+    // Case 2: Add chunk if it's further away than DESPAWN_DISTANCE
     let distance = current_chunk.get_world().distance_to(&chunk_component.coords.world);
     if distance > DESPAWN_DISTANCE {
       trace!(
@@ -536,6 +555,24 @@ fn calculate_chunks_to_despawn(
         current_chunk.get_chunk_grid()
       );
       chunks_to_despawn.push(entity);
+    }
+
+    // Case 3: Add chunk if it's a duplicate
+    let chunks_with_same_cg: Vec<(Entity, &ChunkComponent)> = existing_chunks
+      .iter()
+      .filter(|(_, c)| c.coords.chunk_grid == chunk_component.coords.chunk_grid)
+      .collect();
+    if chunks_with_same_cg.len() > 1 {
+      for (duplicate_entity, duplicate_component) in chunks_with_same_cg {
+        if chunks_to_despawn.contains(&entity) || duplicate_entity == entity {
+          continue;
+        }
+        chunks_to_despawn.push(duplicate_entity);
+        info!(
+          "Despawning chunk at {:?} (entity {duplicate_entity}) because it's a duplicate",
+          duplicate_component.coords.chunk_grid
+        );
+      }
     }
   }
 

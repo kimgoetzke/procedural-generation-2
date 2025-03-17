@@ -39,6 +39,7 @@ pub const GENERATE_OBJECTS: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
+pub const MAX_CHUNKS: usize = 9;
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
