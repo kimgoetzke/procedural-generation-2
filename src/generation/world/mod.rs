@@ -15,4 +15,4 @@ impl Plugin for WorldGenerationPlugin {
   }
 }
 
-pub use crate::generation::world::world_generator::{generate_chunks, spawn_tile_layer_meshes, spawn_chunk};
+pub use crate::generation::world::world_generator::{generate_chunks, spawn_tiles, spawn_chunk};

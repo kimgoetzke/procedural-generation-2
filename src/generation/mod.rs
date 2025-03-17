@@ -343,14 +343,14 @@ fn stage_4_spawn_tile_meshes(
     let mut new_chunk_entity_pairs = Vec::new();
     for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
       if commands.get_entity(chunk_entity).is_some() {
-        world::spawn_tile_layer_meshes(
+        world::spawn_tiles(
           &mut commands,
-          &settings,
-          chunk.clone(),
           chunk_entity,
+          chunk.clone(),
+          &settings,
+          &resources,
           meshes,
           materials,
-          &resources,
         );
         new_chunk_entity_pairs.push((chunk, chunk_entity));
       } else {

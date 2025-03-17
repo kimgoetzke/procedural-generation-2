@@ -1,7 +1,6 @@
 use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
 use crate::generation::resources::GenerationResourcesCollection;
-use crate::resources::Settings;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{Commands, Component, Entity, Query};
