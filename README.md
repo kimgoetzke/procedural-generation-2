@@ -10,13 +10,13 @@ techniques.
 
 ## Demo
 
+[![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 ![Screenshot 1](assets/ignore/screenshot1.png)
 ![Screenshot 2](assets/ignore/screenshot2.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
-![Screenshot 3](assets/ignore/screenshot3.png)
 
 ## Features
 
@@ -62,6 +62,7 @@ available to your IDE and you can run the project from there (vs `cargo build` a
 ##### How to deal with RustRover making problems again
 
 RustRover forgetting where the Rust standard library is?
+
 ```
 find /nix/store -type d -name rust_lib_src
 ```
