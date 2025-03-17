@@ -1,4 +1,5 @@
-use crate::constants::{CHUNK_SIZE, TILE_SIZE};
+use crate::components::{AnimationMeshComponent, AnimationTimer};
+use crate::constants::{CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TILE_SIZE};
 use crate::coords::point::World;
 use crate::coords::Point;
 use crate::generation::lib::{shared, Chunk, ChunkComponent, TerrainType, Tile};
@@ -19,13 +20,6 @@ pub struct WorldGeneratorPlugin;
 
 impl Plugin for WorldGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
-}
-
-// TODO: Add tiles and use this struct for debugging
-#[derive(Component)]
-struct TileMeshComponent {
-  parent_entity: Entity,
-  is_animated: bool,
 }
 
 pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
@@ -86,12 +80,13 @@ pub fn spawn_tile_layer_meshes(
     }
 
     if let Some(plane) = chunk.layered_plane.get(layer) {
-      let mut texture_groups: HashMap<(Handle<Image>, bool), Vec<&Tile>> = HashMap::new();
+      let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
       for row in plane.data.iter() {
         for tile in row.iter().flatten() {
           let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
-          let is_animated = asset_collection.anim.is_some();
-          let texture = match is_animated {
+          let is_animated_tile_set = asset_collection.anim.is_some();
+          let is_animated_tile = asset_collection.animated_tile_types.contains(&tile.tile_type);
+          let texture = match is_animated_tile_set {
             true => {
               &asset_collection
                 .anim
@@ -101,11 +96,14 @@ pub fn spawn_tile_layer_meshes(
             }
             false => &asset_collection.stat.texture,
           };
-          texture_groups.entry((texture.clone(), is_animated)).or_default().push(tile);
+          texture_groups
+            .entry((texture.clone(), is_animated_tile_set, is_animated_tile))
+            .or_default()
+            .push(tile);
         }
       }
 
-      for ((texture, is_animated), tiles) in texture_groups {
+      for ((texture, is_animated_tile_set, is_animated_tile), tiles) in texture_groups {
         spawn_tile_mesh(
           commands,
           resources,
@@ -115,7 +113,8 @@ pub fn spawn_tile_layer_meshes(
           texture,
           layer as f32,
           chunk_entity,
-          if is_animated { (4.0, 17.0) } else { (1.0, 17.0) },
+          if is_animated_tile_set { (4.0, 17.0) } else { (1.0, 17.0) },
+          is_animated_tile,
         );
       }
     }
@@ -139,11 +138,13 @@ fn spawn_tile_mesh(
   layer: f32,
   parent_entity: Entity,
   atlas_layout_dimensions: (f32, f32),
+  is_animated_tile: bool,
 ) {
   let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
   let mut vertices = Vec::new();
   let mut indices = Vec::new();
   let mut uvs = Vec::new();
+  let mut tile_indices = Vec::new();
   let tile_size = TILE_SIZE as f32;
   let (columns, rows) = atlas_layout_dimensions;
 
@@ -152,6 +153,9 @@ fn spawn_tile_mesh(
     let sprite_index = tile
       .tile_type
       .calculate_sprite_index(&tile.terrain, &tile.climate, &resources);
+
+    // Store the tile index for animation
+    tile_indices.push(sprite_index);
 
     // Calculate vertices
     let base_idx = vertices.len() as u32;
@@ -182,20 +186,33 @@ fn spawn_tile_mesh(
   mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
   mesh.insert_indices(Indices::U32(indices));
 
+  let frame_duration = match TerrainType::from(layer as usize) {
+    TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
+    _ => DEFAULT_ANIMATION_FRAME_DURATION,
+  };
+
   commands.entity(parent_entity).with_children(|parent| {
-    parent.spawn((
-      Mesh2d(meshes.add(mesh)),
-      MeshMaterial2d(materials.add(ColorMaterial {
-        alpha_mode: AlphaMode2d::Blend,
-        texture: Some(texture),
-        ..default()
-      })),
-      Transform::from_xyz(0.0, 0.0, layer),
-      Name::new(format!("{:?} Tile Mesh", TerrainType::from(layer as usize))),
-      TileMeshComponent {
-        parent_entity,
-        is_animated: false,
-      },
-    ));
+    parent
+      .spawn((
+        Mesh2d(meshes.add(mesh)),
+        MeshMaterial2d(materials.add(ColorMaterial {
+          alpha_mode: AlphaMode2d::Blend,
+          texture: Some(texture),
+          ..default()
+        })),
+        Transform::from_xyz(0.0, 0.0, layer),
+        Name::new(format!("{:?} Animated Mesh", TerrainType::from(layer as usize))),
+      ))
+      .insert_if(
+        AnimationMeshComponent {
+          timer: AnimationTimer(Timer::from_seconds(frame_duration, TimerMode::Repeating)),
+          frame_count: 4,
+          current_frame: 0,
+          columns,
+          rows,
+          tile_indices,
+        },
+        || is_animated_tile,
+      );
   });
 }

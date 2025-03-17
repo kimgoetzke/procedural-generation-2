@@ -25,10 +25,6 @@ pub enum TileType {
 }
 
 impl TileType {
-  pub fn get_sprite_index(&self, index_offset: usize) -> usize {
-    get_sprite_index(self, index_offset)
-  }
-
   pub fn calculate_sprite_index(
     &self,
     terrain: &TerrainType,

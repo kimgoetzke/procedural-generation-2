@@ -36,10 +36,6 @@ pub fn get_resources_from_world(world: &mut bevy::ecs::world::World) -> Generati
     .clone()
 }
 
-pub fn get_settings_from_world(world: &mut bevy::ecs::world::World) -> Settings {
-  world.get_resource::<Settings>().expect("Failed to fetch Settings").clone()
-}
-
 pub fn get_time() -> u128 {
   SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()
 }
