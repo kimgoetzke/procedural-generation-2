@@ -74,15 +74,15 @@ fn settings_controls_system(
     settings.general.animate_terrain_sprites = !settings.general.animate_terrain_sprites;
     general_settings.animate_terrain_sprites = settings.general.animate_terrain_sprites;
     info!(
-      "[V] Set animating terrain sprites to [{}]",
+      "[B] Set animating terrain sprites to [{}]",
       settings.general.animate_terrain_sprites
     );
   }
 
-  if keyboard_input.just_pressed(KeyCode::KeyB) {
+  if keyboard_input.just_pressed(KeyCode::KeyN) {
     settings.general.enable_world_pruning = !settings.general.enable_world_pruning;
     general_settings.enable_world_pruning = settings.general.enable_world_pruning;
-    info!("[B] Set world pruning to [{}]", settings.general.enable_world_pruning);
+    info!("[N] Set world pruning to [{}]", settings.general.enable_world_pruning);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyF) {
