@@ -2,7 +2,7 @@ use crate::components::{AnimationMeshComponent, AnimationTimer};
 use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::lib::{shared, Chunk, ChunkComponent, Plane, TerrainType, Tile};
+use crate::generation::lib::{shared, Chunk, ChunkComponent, Plane, TerrainType, Tile, TileMeshComponent};
 use crate::generation::resources::{GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
@@ -152,6 +152,8 @@ fn spawn_tile_mesh(
   is_animated: bool,
 ) {
   let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+  let tiles_cloned = tiles.clone();
+  let cg = tiles[0].coords.chunk_grid;
   let (vertices, indices, uvs, tile_sprite_indices, sprite_sheet_columns, sprite_sheet_rows) =
     calculate_mesh_attributes(&resources, tiles, layer, has_animated_sprites);
 
@@ -170,6 +172,7 @@ fn spawn_tile_mesh(
         })),
         Transform::from_xyz(0.0, 0.0, layer),
         Name::new(format!("{:?} Animated Mesh", TerrainType::from(layer as usize))),
+        TileMeshComponent::new(parent_entity, cg, tiles_cloned.into_iter().copied().collect()),
       ))
       .insert_if(
         AnimationMeshComponent {

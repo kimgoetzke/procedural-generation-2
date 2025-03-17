@@ -1,8 +1,8 @@
 use crate::constants::*;
-use crate::coords::point::{TileGrid, World};
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::{ObjectComponent, Tile, TileComponent};
+use crate::generation::lib::{ObjectComponent, Tile, TileMeshComponent};
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -22,12 +22,12 @@ impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_observer(on_add_object_component_trigger)
-      .add_observer(on_add_tile_component_trigger)
-      .add_observer(on_left_mouse_click_trigger)
-      .add_observer(on_remove_tile_component_trigger)
       .add_observer(on_remove_object_component_trigger)
+      .add_observer(on_add_tile_mesh_component_trigger)
+      .add_observer(on_remove_tile_mesh_component_trigger)
+      .add_observer(on_left_mouse_click_trigger)
       .add_systems(Update, (toggle_tile_info_event, regenerate_world_event))
-      .init_resource::<TileComponentIndex>()
+      .init_resource::<TileMeshComponentIndex>()
       .init_resource::<ObjectComponentIndex>();
   }
 }
@@ -38,17 +38,24 @@ const MARGIN: f32 = 2.;
 struct TileDebugInfoComponent;
 
 #[derive(Resource, Default)]
-struct TileComponentIndex {
-  map: HashMap<Point<TileGrid>, HashSet<TileComponent>>,
+struct TileMeshComponentIndex {
+  map: HashMap<Point<ChunkGrid>, HashSet<TileMeshComponent>>,
 }
 
-impl TileComponentIndex {
-  pub fn get_entities(&self, point: Point<TileGrid>) -> Vec<&TileComponent> {
-    let mut tile_components = Vec::new();
-    if let Some(t) = self.map.get(&point) {
-      tile_components.extend(t.iter());
+impl TileMeshComponentIndex {
+  pub fn get_entities(&self, cg: Point<ChunkGrid>, tg: Point<TileGrid>) -> Vec<&Tile> {
+    let mut tiles: Vec<&Tile> = Vec::new();
+    if let Some(tile_mesh_component_set) = self.map.get(&cg) {
+      tile_mesh_component_set.iter().for_each(|m| {
+        m.find_all(&tg).iter().for_each(|t| {
+          if t.coords.tile_grid == tg {
+            tiles.push(t);
+          }
+        })
+      });
     }
-    tile_components
+
+    tiles
   }
 }
 
@@ -85,30 +92,30 @@ fn on_remove_object_component_trigger(
   index.map.remove(&oc.coords.tile_grid);
 }
 
-fn on_add_tile_component_trigger(
-  trigger: Trigger<OnAdd, TileComponent>,
-  query: Query<&TileComponent>,
-  mut index: ResMut<TileComponentIndex>,
+fn on_add_tile_mesh_component_trigger(
+  trigger: Trigger<OnAdd, TileMeshComponent>,
+  query: Query<&TileMeshComponent>,
+  mut index: ResMut<TileMeshComponentIndex>,
 ) {
-  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
-  index.map.entry(tc.tile.coords.tile_grid).or_default().insert(tc.clone());
+  let tmc = query.get(trigger.entity()).expect("Failed to get TileMeshComponent");
+  index.map.entry(tmc.cg()).or_default().insert(tmc.clone());
 }
 
-fn on_remove_tile_component_trigger(
-  trigger: Trigger<OnRemove, TileComponent>,
-  query: Query<&TileComponent>,
-  mut index: ResMut<TileComponentIndex>,
+fn on_remove_tile_mesh_component_trigger(
+  trigger: Trigger<OnRemove, TileMeshComponent>,
+  query: Query<&TileMeshComponent>,
+  mut index: ResMut<TileMeshComponentIndex>,
 ) {
-  let tc = query.get(trigger.entity()).expect("Failed to get TileComponent");
-  index.map.entry(tc.tile.coords.tile_grid).and_modify(|set| {
-    set.remove(&tc.clone());
+  let tmc = query.get(trigger.entity()).expect("Failed to get TileMeshComponent");
+  index.map.entry(tmc.cg()).and_modify(|set| {
+    set.remove(&tmc.clone());
   });
 }
 
 fn on_left_mouse_click_trigger(
   trigger: Trigger<MouseClickEvent>,
   object_index: Res<ObjectComponentIndex>,
-  tile_index: Res<TileComponentIndex>,
+  tile_index: Res<TileMeshComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
   resources: Res<GenerationResourcesCollection>,
   settings: Res<Settings>,
@@ -118,22 +125,22 @@ fn on_left_mouse_click_trigger(
     return;
   }
   let event = trigger.event();
-  if let Some(tc) = tile_index.get_entities(event.tg).iter().max_by_key(|tc| tc.tile.layer) {
+  if let Some(tile) = tile_index.get_entities(event.cg, event.tg).iter().max_by_key(|t| t.layer) {
     debug!("You are debugging {} {} {}", event.tile_w, event.cg, event.tg);
     let object_component = object_index.get(event.tg);
-    commands.spawn(tile_info(&resources, &tc.tile, event.tile_w, &settings, &object_component));
-    let parent_w = tc.tile.get_parent_chunk_w();
+    commands.spawn(tile_info(&resources, &tile, event.tile_w, &settings, &object_component));
+    let parent_w = tile.get_parent_chunk_w();
     if let Some(parent_chunk) = chunk_index.get(&parent_w) {
       debug!("Parent of {} is chunk {}/{}", event.tg, parent_w, event.cg);
       for plane in &parent_chunk.layered_plane.planes {
-        if let Some(tile) = plane.get_tile(tc.tile.coords.internal_grid) {
+        if let Some(tile) = plane.get_tile(tile.coords.internal_grid) {
           let neighbours = plane.get_neighbours(tile);
           neighbours.log(tile, neighbours.count_same());
         }
       }
-      debug!("{:?}", tc.tile.debug_data);
+      debug!("{:?}", tile.debug_data);
     } else {
-      error!("Failed to find parent chunk at {} for tile at {:?}", parent_w, tc.tile.coords);
+      error!("Failed to find parent chunk at {} for tile at {:?}", parent_w, tile.coords);
     }
     if let Some(oc) = object_index.get(event.tg) {
       debug!("{:?}", oc);

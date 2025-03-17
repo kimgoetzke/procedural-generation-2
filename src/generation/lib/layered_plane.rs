@@ -62,13 +62,13 @@ impl LayeredPlane {
 
   /// Returns a tuple of mutable references with the `Plane` at the specified layer and the `Plane` below it.
   pub fn get_and_below_mut(&mut self, layer: usize) -> (Option<&mut Plane>, Option<&mut Plane>) {
-    if layer == 0 {
-      return (self.planes.get_mut(layer), None);
+    match layer {
+      0 => (self.planes.get_mut(layer), None),
+      _ if layer >= self.planes.len() => (None, None),
+      _ => {
+        let (below, this_and_above) = self.planes.split_at_mut(layer);
+        (this_and_above.get_mut(0), below.get_mut(layer - 1))
+      }
     }
-    if layer >= self.planes.len() {
-      return (None, None);
-    }
-    let (below, this_and_above) = self.planes.split_at_mut(layer);
-    (this_and_above.get_mut(0), below.get_mut(layer - 1))
   }
 }
