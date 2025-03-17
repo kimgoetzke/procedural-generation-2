@@ -1,6 +1,9 @@
 use crate::constants::*;
+use crate::coords::point::ChunkGrid;
+use crate::coords::Point;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile, TileData};
+use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile};
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::ObjectName;
 use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::object::wfc;
@@ -10,11 +13,10 @@ use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
 use bevy::core::Name;
-use bevy::ecs::system::SystemState;
 use bevy::ecs::world::CommandQueue;
 use bevy::hierarchy::{BuildChildren, ChildBuild};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, Res, TextureAtlas, Transform};
+use bevy::prelude::{Commands, Component, Entity, Query, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
@@ -25,7 +27,9 @@ pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app.add_plugins(WfcPlugin).add_systems(Update, process_async_tasks_system);
+    app
+      .add_plugins(WfcPlugin)
+      .add_systems(Update, process_object_spawn_tasks_system);
   }
 }
 
@@ -41,7 +45,7 @@ impl CommandQueueTask for ObjectSpawnTask {
 pub fn generate_object_data(
   resources: &GenerationResourcesCollection,
   settings: &Settings,
-  spawn_data: (Chunk, Vec<TileData>),
+  spawn_data: (Chunk, Entity),
 ) -> Vec<ObjectData> {
   if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
@@ -49,19 +53,28 @@ pub fn generate_object_data(
   }
   let start_time = shared::get_time();
   let chunk_cg = spawn_data.0.coords.chunk_grid;
+  let mut tile_data = Vec::new();
+  for t in spawn_data.0.layered_plane.flat.data.iter().flatten() {
+    if let Some(tile) = t {
+      tile_data.push(TileData::new(spawn_data.1, tile.clone()));
+    }
+  }
+
   let grid = ObjectGrid::new_initialised(
     chunk_cg,
     &resources.objects.terrain_rules,
     &resources.objects.tile_type_rules,
-    &spawn_data.1,
+    &tile_data,
   );
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let objects_count = grid.grid.len();
-  let mut object_generation_data = (grid.clone(), spawn_data.1.clone());
+  let tile_data_len = tile_data.len();
+  let mut object_generation_data = (grid.clone(), tile_data);
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
-    "Generated object data for {} objects for chunk {} in {} ms on {}",
+    "Generated object data for {} objects (for {} tiles) for chunk {} in {} ms on {}",
     objects_count,
+    tile_data_len,
     chunk_cg,
     shared::get_time() - start_time,
     shared::thread_name()
@@ -75,17 +88,13 @@ pub fn schedule_spawning_objects(
   settings: &Settings,
   mut rng: &mut StdRng,
   object_data: Vec<ObjectData>,
+  chunk_cg: &Point<ChunkGrid>,
 ) {
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
-  let chunk_cg = if let Some(object_data) = object_data.first() {
-    object_data.tile_data.flat_tile.coords.chunk_grid.to_string()
-  } else {
-    "cg(unknown)".to_string()
-  };
   for object in object_data {
-    attach_task_to_tile_entity(commands, settings, &mut rng, task_pool, object);
+    attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }
   debug!(
     "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
@@ -96,7 +105,7 @@ pub fn schedule_spawning_objects(
   );
 }
 
-fn attach_task_to_tile_entity(
+fn attach_object_spawn_task(
   commands: &mut Commands,
   settings: &Settings,
   mut rng: &mut StdRng,
@@ -112,8 +121,8 @@ fn attach_task_to_tile_entity(
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let asset_collection = {
-        let mut system_state = SystemState::<Res<GenerationResourcesCollection>>::new(world);
-        let resources = system_state.get_mut(world);
+        let resources = shared::get_resources_from_world(world);
+
         resources
           .get_object_collection(
             tile_data.flat_tile.terrain,
@@ -122,8 +131,8 @@ fn attach_task_to_tile_entity(
           )
           .clone()
       };
-      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
-        tile_data_entity.with_children(|parent| {
+      if let Ok(mut chunk_entity) = world.get_entity_mut(tile_data.chunk_entity) {
+        chunk_entity.with_children(|parent| {
           parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
@@ -136,12 +145,14 @@ fn attach_task_to_tile_entity(
         });
       }
     });
+
     command_queue
   });
 
   commands.spawn((Name::new("Object Spawn Task"), ObjectSpawnTask(task)));
 }
 
+// TODO: Remove or make colour randomisation look better/more visible
 fn get_randomised_colour(settings: &Settings, rng: &mut StdRng, object_data: &ObjectData) -> Color {
   let base_color = Color::default();
   if object_data.is_large_sprite && settings.object.enable_colour_variations {
@@ -182,8 +193,9 @@ fn sprite(
   let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
   let internal_z = tile.coords.internal_grid.y as f32;
   let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
+
   (
-    Name::new(format!("{:?} Object Sprite", object_name)),
+    Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {
       anchor: Anchor::BottomCenter,
       texture_atlas: Option::from(TextureAtlas {
@@ -194,7 +206,11 @@ fn sprite(
       color: colour,
       ..Default::default()
     },
-    Transform::from_xyz(TILE_SIZE as f32 / 2. + offset_x, TILE_SIZE as f32 * -1. + offset_y, z),
+    Transform::from_xyz(
+      tile.coords.world.x as f32 + TILE_SIZE as f32 / 2. + offset_x,
+      tile.coords.world.y as f32 + TILE_SIZE as f32 * -1. + offset_y,
+      z,
+    ),
     ObjectComponent {
       coords: tile.coords,
       sprite_index: index as usize,
@@ -204,6 +220,6 @@ fn sprite(
   )
 }
 
-fn process_async_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+fn process_object_spawn_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
   shared::process_tasks(commands, object_spawn_tasks);
 }

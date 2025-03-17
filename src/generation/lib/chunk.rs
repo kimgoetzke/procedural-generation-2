@@ -10,6 +10,11 @@ use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
+const INSIDE: i32 = 1;
+const OUTSIDE: i32 = CHUNK_SIZE + 1;
+const EXPANDED_INSIDE: i32 = 2;
+const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
+
 /// A `Chunk` represents a single chunk of the world.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
@@ -32,20 +37,6 @@ impl Chunk {
       layered_plane,
     }
   }
-}
-
-// TODO: Consider removing this struct
-#[derive(Debug, Clone, PartialEq)]
-struct Distances {
-  top_left: f64,
-  top: f64,
-  top_right: f64,
-  left: f64,
-  center: f64,
-  right: f64,
-  bottom_left: f64,
-  bottom: f64,
-  bottom_right: f64,
 }
 
 /// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a `Point` of type
@@ -91,11 +82,9 @@ fn generate_terrain_data(
       let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
       let normalised_noise = ((normalised_noise * strength) + elevation_offset).clamp(0., 1.);
 
-      // Calculate distances to chunk edge in all directions
-      let distances = calculate_distances(start, end, center, max_distance, tx, ty);
-
       // Calculate if this tile is a biome edge
-      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distances.center, &biome_metadata, &mut rng);
+      let distance_from_center = calculate_distance_from_center(center, max_distance, tx, ty);
+      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, &biome_metadata, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -122,7 +111,7 @@ fn generate_terrain_data(
     ix = 0;
   }
   trace!(
-    "Generated draft chunk at {:?} in {} ms on [{}]",
+    "Generated draft chunk at {:?} in {} ms on {}",
     tg,
     shared::get_time() - start_time,
     shared::thread_name()
@@ -131,37 +120,12 @@ fn generate_terrain_data(
   tiles
 }
 
-fn calculate_distances(
-  start: Point<TileGrid>,
-  end: Point<TileGrid>,
-  center: Point<TileGrid>,
-  max_distance: f64,
-  tx: i32,
-  ty: i32,
-) -> Distances {
+fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx: i32, ty: i32) -> f64 {
   let distance_x = (tx - center.x).abs() as f64 / max_distance;
   let distance_y = (ty - center.y).abs() as f64 / max_distance;
-  let distance_from_center = distance_x.max(distance_y);
-  let distances = Distances {
-    top_left: (((tx - start.x).pow(2) + (ty - start.y).pow(2)) as f64).sqrt() / max_distance,
-    top: (ty - start.y).abs() as f64 / max_distance,
-    top_right: (((end.x - tx).pow(2) + (ty - start.y).pow(2)) as f64).sqrt() / max_distance,
-    left: (tx - start.x).abs() as f64 / max_distance,
-    center: distance_from_center,
-    right: (end.x - tx).abs() as f64 / max_distance,
-    bottom_left: (((tx - start.x).pow(2) + (end.y - ty).pow(2)) as f64).sqrt() / max_distance,
-    bottom: (end.y - ty).abs() as f64 / max_distance,
-    bottom_right: (((end.x - tx).pow(2) + (end.y - ty).pow(2)) as f64).sqrt() / max_distance,
-  };
-  trace!("tg({}, {}): Distances = {:?}", tx, ty, distances);
 
-  distances
+  distance_x.max(distance_y)
 }
-
-const INSIDE: i32 = 1;
-const OUTSIDE: i32 = CHUNK_SIZE + 1;
-const EXPANDED_INSIDE: i32 = 2;
-const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
 
 /// Calculates if a tile `TerrainType` should be adjusted by checking if:
 /// 1. The tile is "far enough" from the center (otherwise it cannot be an edge)

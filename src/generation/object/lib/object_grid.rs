@@ -1,8 +1,9 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
-use crate::generation::lib::{TerrainType, TileData, TileType};
+use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{Cell, Connection, ObjectName};
 use crate::generation::resources::TerrainState;
 use bevy::log::*;
@@ -18,6 +19,10 @@ pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
   pub grid: Vec<Vec<Cell>>,
+  // TODO: Consider solving the below differently
+  /// This `Cell` is used to represent out of bounds neighbours in the grid. It only allows `ObjectName::Empty` as
+  /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
+  pub no_neighbours_tile: Cell,
 }
 
 impl ObjectGrid {
@@ -25,7 +30,23 @@ impl ObjectGrid {
     let grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
-    ObjectGrid { cg, grid }
+    let mut no_neighbours_tile = Cell::new(-1, -1);
+    no_neighbours_tile.possible_states = vec![TerrainState {
+      name: ObjectName::Empty,
+      index: 0,
+      weight: 1,
+      permitted_neighbours: vec![
+        (Connection::Top, vec![ObjectName::Empty]),
+        (Connection::Right, vec![ObjectName::Empty]),
+        (Connection::Bottom, vec![ObjectName::Empty]),
+        (Connection::Left, vec![ObjectName::Empty]),
+      ],
+    }];
+    ObjectGrid {
+      cg,
+      grid,
+      no_neighbours_tile,
+    }
   }
 
   pub fn new_initialised(
@@ -64,6 +85,8 @@ impl ObjectGrid {
     for (direction, point) in points {
       if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.ig == point).next() {
         neighbours.push((direction, cell));
+      } else {
+        neighbours.push((direction, &self.no_neighbours_tile));
       }
     }
     trace!("Found {} neighbours for {:?}", neighbours.len(), point);
@@ -143,7 +166,7 @@ fn resolve_rules(
   }
 
   trace!(
-    "Resolved {} rules for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
+    "Resolved {} rule(s) for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
     resolved_rules.len(),
     tile_type,
     terrain_rules.len(),

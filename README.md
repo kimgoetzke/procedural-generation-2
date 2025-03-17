@@ -10,13 +10,13 @@ techniques.
 
 ## Demo
 
+[![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 ![Screenshot 1](assets/ignore/screenshot1.png)
 ![Screenshot 2](assets/ignore/screenshot2.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
-![Screenshot 3](assets/ignore/screenshot3.png)
 
 ## Features
 
@@ -24,7 +24,8 @@ techniques.
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
     - Uses multi-fractal Perlin noise to generate terrain layers
-    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g. sand/grass/forest)
+    - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g.
+      sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions/layering
     - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
@@ -58,6 +59,14 @@ This way, you'll just need to `direnv allow` in the project directory after whic
 all Bevy dependencies, etc.) will be available to you. The JetBrains plugin will ensure that the environment is
 available to your IDE and you can run the project from there (vs `cargo build` and `cargo run` in the terminal).
 
+##### How to deal with RustRover making problems again
+
+RustRover forgetting where the Rust standard library is?
+
+```
+find /nix/store -type d -name rust_lib_src
+```
+
 ### Using Nix Flakes
 
 Without `direnv`, you can use the Nix Flake by running `nix develop` in the project directory. If you want to use an IDE
@@ -77,8 +86,25 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
 6. Optional: if this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
 
+#### How to use cargo-flamegraph
+
+- Run the command below to generate a flame graph
+    - Linux:
+      ```shell
+      CARGO_PROFILE_RELEASE_DEBUG=true RUSTFLAGS='-C force-frame-pointers=y' cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
+      ```
+    - Windows:
+      ```pwsh
+      $env:CARGO_PROFILE_RELEASE_DEBUG = "true"; $env:RUSTFLAGS = "-C force-frame-pointers=y"; cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
+      ````
+- This should run the application - once you close it, a `flamegraph.svg` will be generated at the root of the
+  repository
+- Open it in your browser to see the flame graph
+
 #### Run configurations
 
 - Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
 - Create a run configuration with environment variable
   `RUST_LOG=procedural_generation_2=debug,procedural_generation_2::generation::object=trace` to add WFC trace logs too
+- Create a run configuration with environment variable `RUST_LOG=bevy_ecs=debug` to see Bevy ECS logs (e.g. which system
+  caused an `error[B0003]`)

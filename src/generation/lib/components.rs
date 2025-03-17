@@ -1,9 +1,11 @@
-use crate::coords::point::{ChunkGrid, World};
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
-use crate::generation::lib::{Chunk, LayeredPlane, Tile, TileData};
+use crate::generation::lib::{Chunk, LayeredPlane, Tile};
 use crate::generation::object::lib::{ObjectData, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 /// A simple tag component for the world entity. Used to identify the world entity in the ECS for
 /// easy removal (used when regenerating the world).
@@ -18,12 +20,32 @@ pub struct ChunkComponent {
   pub layered_plane: LayeredPlane,
 }
 
-/// A component that is attached to every tile sprite that is spawned in the world. Contains the tile data
-/// and the parent entity that the tile is attached to. There's a `TileComponent` for every terrain layer.
+/// A component that is attached to every tile layer mesh that is spawned in the world. Contains the tile data
+/// and the parent entity which is a chunk. There's a `TileMeshComponent` for every terrain layer and even two if
+/// the tiles for that layer can be both animated or not (one component for each).
 #[derive(Component, Debug, Clone, Eq, Hash, PartialEq)]
-pub struct TileComponent {
-  pub tile: Tile,
-  pub parent_entity: Entity,
+pub struct TileMeshComponent {
+  parent_chunk_entity: Entity,
+  cg: Point<ChunkGrid>,
+  tiles: Vec<Tile>,
+}
+
+impl TileMeshComponent {
+  pub fn new(parent_chunk_entity: Entity, cg: Point<ChunkGrid>, tiles: Vec<Tile>) -> Self {
+    Self {
+      parent_chunk_entity,
+      cg,
+      tiles,
+    }
+  }
+
+  pub fn cg(&self) -> Point<ChunkGrid> {
+    self.cg
+  }
+
+  pub fn find_all(&self, tg: &Point<TileGrid>) -> Vec<&Tile> {
+    self.tiles.iter().filter(|t| t.coords.tile_grid == *tg).collect()
+  }
 }
 
 /// A component that is attached to every object sprite that is spawned in the world. Use for, for example,
@@ -38,13 +60,59 @@ pub struct ObjectComponent {
 
 #[derive(Debug)]
 pub enum GenerationStage {
-  Stage1,
-  Stage2,
-  Stage3,
-  Stage4,
-  Stage5,
-  Stage6,
+  /// Stage 1: Check if required metadata this `WorldGenerationComponent` exists. If no, return current stage.
+  /// Otherwise, send event to clean up not-needed chunks and schedule chunk generation and return the `Task`.
+  Stage1(bool),
+  /// Stage 2: Await completion of chunk generation task, then use `ChunkComponentIndex` to check if any of the chunks
+  /// already exists. Return all `Chunk`s that don't exist yet, so they can be spawned.
+  /// Stage 3: If `Chunk`s are provided and no chunk at "proposed" location exists, spawn the chunk(s) and return
+  Stage2(Task<Vec<Chunk>>),
+  /// `Chunk`-`Entity` pairs. If no `Chunk`s provided, set `GenerationStage` to clean-up stage.
+  Stage3(Vec<Chunk>),
+  /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, spawn tiles for each `Chunk` and
+  /// return `Chunk`-`Entity` pairs again.
+  Stage4(Vec<(Chunk, Entity)>),
+  /// Stage 5: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tasks to generate object
+  /// data and return the `Task`s.
+  Stage5(Vec<(Chunk, Entity)>),
+  /// Stage 6: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
+  /// If not, do nothing. Return all remaining `Task`s until all are finished, then proceed to next stage.
+  Stage6(Vec<Task<Vec<ObjectData>>>),
+  /// Stage 7: Despawn the `WorldGenerationComponent` and, if necessary, fire a (second) send event to clean up
+  /// not-needed chunks.
   Stage7,
+  Done,
+}
+
+impl PartialEq for GenerationStage {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (GenerationStage::Stage1(_), GenerationStage::Stage1(_)) => true,
+      (GenerationStage::Stage2(_), GenerationStage::Stage2(_)) => true,
+      (GenerationStage::Stage3(_), GenerationStage::Stage3(_)) => true,
+      (GenerationStage::Stage4(_), GenerationStage::Stage4(_)) => true,
+      (GenerationStage::Stage5(_), GenerationStage::Stage5(_)) => true,
+      (GenerationStage::Stage6(_), GenerationStage::Stage6(_)) => true,
+      (GenerationStage::Stage7, GenerationStage::Stage7) => true,
+      (GenerationStage::Done, GenerationStage::Done) => true,
+      _ => false,
+    }
+  }
+}
+
+impl Display for GenerationStage {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    match self {
+      GenerationStage::Stage1(_) => write!(f, "Stage 1"),
+      GenerationStage::Stage2(_) => write!(f, "Stage 2"),
+      GenerationStage::Stage3(_) => write!(f, "Stage 3"),
+      GenerationStage::Stage4(_) => write!(f, "Stage 4"),
+      GenerationStage::Stage5(_) => write!(f, "Stage 5"),
+      GenerationStage::Stage6(_) => write!(f, "Stage 6"),
+      GenerationStage::Stage7 => write!(f, "Stage 7"),
+      GenerationStage::Done => write!(f, "Done"),
+    }
+  }
 }
 
 /// The core component for the world generation process. Used by the world generation system. It is spawned to initiate
@@ -56,28 +124,16 @@ pub struct WorldGenerationComponent {
   pub w: Point<World>,
   pub cg: Point<ChunkGrid>,
   pub suppress_pruning_world: bool,
-  pub stage_0_metadata: bool,
-  pub stage_1_gen_task: Option<Task<Vec<Chunk>>>,
-  pub stage_2_chunks: Vec<Chunk>,
-  pub stage_3_spawn_data: Vec<(Chunk, Vec<TileData>)>,
-  pub stage_4_spawn_data: Vec<(Chunk, Vec<TileData>)>,
-  pub stage_5_object_data: Vec<Task<Vec<ObjectData>>>,
 }
 
 impl WorldGenerationComponent {
   pub fn new(w: Point<World>, cg: Point<ChunkGrid>, suppress_pruning_world: bool, created_at: u128) -> Self {
     Self {
       created_at,
-      stage: GenerationStage::Stage1,
+      stage: GenerationStage::Stage1(false),
       w,
       cg,
       suppress_pruning_world,
-      stage_0_metadata: false,
-      stage_1_gen_task: None,
-      stage_2_chunks: vec![],
-      stage_3_spawn_data: vec![],
-      stage_4_spawn_data: vec![],
-      stage_5_object_data: vec![],
     }
   }
 }

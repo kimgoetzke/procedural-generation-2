@@ -117,6 +117,7 @@ impl<T: CoordType> Point<T> {
     }
   }
 
+  // TODO: Consider changing implementation for InternalGrid point because top/bottom directions are flipped when used
   pub fn from_direction(direction: &Direction) -> Self {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),
@@ -209,5 +210,87 @@ impl Point<ChunkGrid> {
       ((w.x as f32 + 1.) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
       ((w.y as f32 - 1.) / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
     )
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use bevy::prelude::Vec2;
+
+  #[test]
+  fn internal_grid_point_creation() {
+    let p = Point::new_internal_grid(5, 6);
+    assert_eq!(p.x, 5);
+    assert_eq!(p.y, 6);
+    assert_eq!(p._marker, std::marker::PhantomData::<InternalGrid>);
+  }
+
+  #[test]
+  fn world_point_creation() {
+    let p = Point::new_world(10, 20);
+    assert_eq!(p.x, 10);
+    assert_eq!(p.y, 20);
+    assert_eq!(p._marker, std::marker::PhantomData::<World>);
+  }
+
+  #[test]
+  fn tile_grid_point_creation() {
+    let p = Point::new_tile_grid(2, 13);
+    assert_eq!(p.x, 2);
+    assert_eq!(p.y, 13);
+    assert_eq!(p._marker, std::marker::PhantomData::<TileGrid>);
+  }
+
+  #[test]
+  fn point_creation_from_direction_1() {
+    let direction = Direction::TopLeft;
+    let point: Point<World> = Point::from_direction(&direction);
+    assert_eq!(point, Point::new(-1, 1));
+  }
+
+  #[test]
+  fn point_creation_from_direction_2() {
+    let direction = Direction::TopLeft;
+    let point: Point<InternalGrid> = Point::from_direction(&direction);
+    assert_eq!(point, Point::new(-1, 1));
+  }
+
+  #[test]
+  fn tile_grid_point_creation_from_world() {
+    let w = Point::new_world(TILE_SIZE as i32, TILE_SIZE as i32);
+    let tg = Point::new_tile_grid_from_world(w);
+    assert_eq!(tg, Point::new_tile_grid(1, 1));
+  }
+
+  #[test]
+  fn chunk_grid_point_creation_from_world() {
+    let w = Point::new_world(TILE_SIZE as i32 * CHUNK_SIZE * 2, TILE_SIZE as i32 * CHUNK_SIZE * 2);
+    let cg = Point::new_chunk_grid_from_world(w);
+    assert_eq!(cg, Point::new_chunk_grid(2, 2));
+  }
+
+  #[test]
+  fn point_addition() {
+    let p1: Point<InternalGrid> = Point::new(1, 2);
+    let p2 = Point::new(3, 4);
+    let result = p1 + p2;
+    assert_eq!(result, Point::new(4, 6));
+    assert_eq!(result._marker, std::marker::PhantomData::<InternalGrid>);
+  }
+
+  #[test]
+  fn point_distance() {
+    let p1: Point<TileGrid> = Point::new(0, 0);
+    let p2 = Point::new(3, 4);
+    let distance = p1.distance_to(&p2);
+    assert_eq!(distance, 5.0);
+  }
+
+  #[test]
+  fn point_to_vec2() {
+    let p: Point<ChunkGrid> = Point::new(1, 2);
+    let vec = p.to_vec2();
+    assert_eq!(vec, Vec2::new(1.0, 2.0));
   }
 }

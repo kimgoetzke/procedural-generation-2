@@ -7,6 +7,7 @@ use crate::resources::{
 use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
+use bevy::log::*;
 use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
 use bevy::window::PrimaryWindow;
 use bevy_inspector_egui::bevy_egui::EguiContext;
@@ -52,10 +53,15 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     return;
   }
 
-  let mut egui_context = world
+  let mut egui_context = if let Ok(context) = world
     .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-    .single(world)
-    .clone();
+    .get_single(world)
+  {
+    context.clone()
+  } else {
+    warn_once!("No egui context found");
+    return;
+  };
 
   Window::new("Settings")
     .default_size([340.0, 600.0])

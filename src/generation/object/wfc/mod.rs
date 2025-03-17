@@ -1,4 +1,5 @@
-use crate::generation::lib::{shared, TileData};
+use crate::generation::lib::shared;
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -23,9 +24,7 @@ pub fn determine_objects_in_grid(
   let mut snapshots = vec![];
   let mut iter_count = 1;
   let mut has_entropy = true;
-  let mut snapshot_error_count: usize = 0;
-  let mut iter_error_count: usize = 0;
-  let mut total_error_count = 0;
+  let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
 
   while has_entropy {
     match iterate(&mut rng, grid) {
@@ -145,7 +144,7 @@ fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<Objec
       .filter_map(|tile_data| {
         grid
           .get_cell(&tile_data.flat_tile.coords.internal_grid)
-          .filter(|cell| cell.index != 0)
+          .filter(|cell| cell.index != 0) // Sprite index 0 is always transparent
           .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
       })
       .collect::<Vec<ObjectData>>(),
@@ -184,7 +183,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
   match (total_error_count, snapshot_error_count) {
     (0, 0) => {
       trace!(
-        "Completed wave function collapse for {} in {} ms on [{}]",
+        "Completed wave function collapse for {} in {} ms on {}",
         grid.cg,
         shared::get_time() - start_time,
         shared::thread_name()
@@ -192,7 +191,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
     }
     (1..15, 0) => {
       debug!(
-        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,
         total_error_count,
         shared::get_time() - start_time,
@@ -201,7 +200,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
     }
     (15.., 0) => {
       warn!(
-        "Completed wave function collapse for {} (resolving {} errors) in {} ms on [{}]",
+        "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,
         total_error_count,
         shared::get_time() - start_time,
@@ -210,7 +209,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
     }
     _ => {
       error!(
-        "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on [{}]",
+        "Completed wave function collapse for {} (resolving {} errors and leaving {} unresolved) in {} ms on {}",
         grid.cg,
         total_error_count,
         snapshot_error_count,

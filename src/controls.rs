@@ -1,6 +1,6 @@
-use crate::constants::{CHUNK_SIZE, ORIGIN_TILE_GRID_SPAWN_POINT, TILE_SIZE};
+use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo, UpdateWorldEvent};
+use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -12,12 +12,7 @@ impl Plugin for ControlPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(
       Update,
-      (
-        event_control_system,
-        settings_controls_system,
-        left_mouse_click_system,
-        camera_movement_system,
-      ),
+      (event_control_system, settings_controls_system, left_mouse_click_system),
     );
   }
 }
@@ -79,9 +74,15 @@ fn settings_controls_system(
     settings.general.animate_terrain_sprites = !settings.general.animate_terrain_sprites;
     general_settings.animate_terrain_sprites = settings.general.animate_terrain_sprites;
     info!(
-      "[V] Set animating terrain sprites to [{}]",
+      "[B] Set animating terrain sprites to [{}]",
       settings.general.animate_terrain_sprites
     );
+  }
+
+  if keyboard_input.just_pressed(KeyCode::KeyN) {
+    settings.general.enable_world_pruning = !settings.general.enable_world_pruning;
+    general_settings.enable_world_pruning = settings.general.enable_world_pruning;
+    info!("[N] Set world pruning to [{}]", settings.general.enable_world_pruning);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyF) {
@@ -113,32 +114,4 @@ fn left_mouse_click_system(
       commands.trigger(MouseClickEvent { tile_w, cg, tg });
     }
   }
-}
-
-fn camera_movement_system(
-  camera: Query<(&Camera, &GlobalTransform)>,
-  current_chunk: Res<CurrentChunk>,
-  mut event: EventWriter<UpdateWorldEvent>,
-) {
-  let translation = camera.single().1.translation();
-  let current_world = Point::new_world_from_world_vec2(translation.truncate());
-  let chunk_center_world = current_chunk.get_center_world();
-  let distance_x = (current_world.x - chunk_center_world.x).abs();
-  let distance_y = (current_world.y - chunk_center_world.y).abs();
-  let trigger_distance = ((CHUNK_SIZE * TILE_SIZE as i32) / 2) + 1;
-  trace!(
-    "Camera moved to {:?} with distance x={:?}, y={:?} (trigger distance {})",
-    current_world,
-    distance_x,
-    distance_y,
-    trigger_distance
-  );
-
-  if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
-    event.send(UpdateWorldEvent {
-      is_forced_update: false,
-      tg: Point::new_tile_grid_from_world(current_world),
-      w: current_world,
-    });
-  };
 }

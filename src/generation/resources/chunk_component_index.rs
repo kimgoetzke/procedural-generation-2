@@ -32,6 +32,10 @@ impl ChunkComponentIndex {
       None
     }
   }
+
+  pub fn size(&self) -> usize {
+    self.map.len()
+  }
 }
 
 fn on_add_chunk_component_trigger(

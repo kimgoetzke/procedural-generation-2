@@ -1,37 +1,25 @@
-use crate::components::{AnimationComponent, AnimationTimer};
-use crate::constants::{ANIMATION_LENGTH, CHUNK_SIZE, DEFAULT_ANIMATION_FRAME_DURATION, TERRAIN_TYPE_ERROR};
+use crate::components::{AnimationMeshComponent, AnimationTimer};
+use crate::constants::*;
 use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ChunkComponent, TerrainType, Tile, TileComponent, TileData};
-use crate::generation::resources::{AssetPack, Climate, GenerationResourcesCollection, Metadata};
+use crate::generation::lib::{shared, Chunk, ChunkComponent, Plane, TerrainType, Tile, TileMeshComponent};
+use crate::generation::resources::{GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
-use bevy::app::{App, Plugin, Update};
+use bevy::app::{App, Plugin};
+use bevy::asset::RenderAssetUsages;
 use bevy::core::Name;
-use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildChildren, ChildBuild, ChildBuilder, WorldChildBuilder};
+use bevy::hierarchy::{BuildChildren, ChildBuild, ChildBuilder};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, Sprite, TextureAtlas, Timer, TimerMode, Transform, Visibility};
-use bevy::sprite::Anchor;
-use bevy::tasks;
-use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use bevy::prelude::*;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
+use bevy::sprite::AlphaMode2d;
+use std::collections::HashMap;
 
 pub struct WorldGeneratorPlugin;
 
 impl Plugin for WorldGeneratorPlugin {
-  fn build(&self, app: &mut App) {
-    app.add_systems(Update, process_async_tasks_system);
-  }
-}
-
-#[derive(Component)]
-struct TileSpawnTask(Task<CommandQueue>);
-
-impl CommandQueueTask for TileSpawnTask {
-  fn poll_once(&mut self) -> Option<CommandQueue> {
-    block_on(tasks::poll_once(&mut self.0))
-  }
+  fn build(&self, _app: &mut App) {}
 }
 
 pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
@@ -44,7 +32,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     chunks.push(chunk);
   }
   debug!(
-    "Generated {} chunks in {} ms on [{}]",
+    "Generated {} chunks in {} ms on {}",
     chunks.len(),
     shared::get_time() - start_time,
     shared::thread_name()
@@ -53,14 +41,13 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
   chunks
 }
 
-pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec<TileData> {
-  let mut tile_data = Vec::new();
+pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Entity {
   let chunk_end_tg = chunk.coords.tile_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
     .spawn((
       Name::new(format!(
-        "Chunk {} {} to {}",
-        chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
+        "Chunk {} {} {} to {}",
+        chunk.coords.chunk_grid, chunk.coords.world, chunk.coords.tile_grid, chunk_end_tg
       )),
       Transform::default(),
       Visibility::default(),
@@ -69,221 +56,194 @@ pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Vec
         coords: chunk.coords.clone(),
       },
     ))
-    .with_children(|parent| {
-      for cell in chunk.layered_plane.flat.data.iter().flatten() {
-        if let Some(tile) = cell {
-          let tile_entity = parent
-            .spawn((
-              Name::new("Tile ".to_string() + &tile.coords.tile_grid.to_string()),
-              Transform::from_xyz(tile.coords.world.x as f32, tile.coords.world.y as f32, 0.),
-              Visibility::default(),
-            ))
-            .id();
-          tile_data.push(TileData::new(tile_entity, parent.parent_entity(), tile.clone()));
-        }
-      }
-    });
-
-  tile_data
+    .id()
 }
 
-pub fn schedule_tile_spawning_tasks(commands: &mut Commands, settings: &Settings, spawn_data: (Chunk, Vec<TileData>)) {
+pub fn spawn_tiles(
+  commands: &mut Commands,
+  chunk_entity: Entity,
+  chunk: Chunk,
+  settings: &Settings,
+  resources: &GenerationResourcesCollection,
+  meshes: &mut ResMut<Assets<Mesh>>,
+  materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
   let start_time = shared::get_time();
-  let task_pool = AsyncComputeTaskPool::get();
+  let is_sprite_animation_disabled = !settings.general.animate_terrain_sprites;
+  for layer in 0..TerrainType::length() {
+    if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
+      trace!(
+        "Skipped spawning [{:?}] tiles because it's disabled",
+        TerrainType::from(layer)
+      );
+      continue;
+    }
 
-  for tile_data in spawn_data.1 {
-    let tile_data = tile_data.clone();
-    for layer in 0..TerrainType::length() {
-      if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
-        trace!(
-          "Skipped spawning [{:?}] tiles because it's disabled",
-          TerrainType::from(layer)
+    if let Some(plane) = chunk.layered_plane.get(layer) {
+      let texture_groups = prepare_texture_groups(resources, plane);
+      for ((texture, has_animated_sprites, is_animated), tiles) in texture_groups {
+        spawn_tile_mesh(
+          commands,
+          resources,
+          meshes,
+          materials,
+          tiles,
+          texture,
+          layer as f32,
+          chunk_entity,
+          has_animated_sprites,
+          if is_sprite_animation_disabled { false } else { is_animated },
         );
-        continue;
-      }
-      if let Some(plane) = spawn_data.0.layered_plane.get(layer) {
-        if let Some(tile) = plane.get_tile(tile_data.flat_tile.coords.internal_grid) {
-          if let Some(mut tile_entity) = commands.get_entity(tile_data.entity) {
-            tile_entity.with_children(|parent| {
-              attach_task_to_tile_entity(task_pool, parent, tile_data, tile.clone());
-            });
-          }
-        }
       }
     }
   }
+
   debug!(
-    "Scheduled spawning tiles for chunk {} in {} ms on [{}]",
-    spawn_data.0.coords.chunk_grid,
+    "Created mesh(es) for chunk {} in {} ms on {}",
+    chunk.coords.chunk_grid,
     shared::get_time() - start_time,
     shared::thread_name()
   );
 }
 
-fn attach_task_to_tile_entity(task_pool: &AsyncComputeTaskPool, parent: &mut ChildBuilder, tile_data: TileData, tile: Tile) {
-  let task = task_pool.spawn(async move {
-    let mut command_queue = CommandQueue::default();
-    command_queue.push(move |world: &mut bevy::prelude::World| {
-      let (resources, settings) = shared::get_resources_and_settings(world);
-      if let Ok(mut tile_data_entity) = world.get_entity_mut(tile_data.entity) {
-        tile_data_entity.with_children(|parent| {
-          spawn_tile(tile_data, &tile, &resources, settings, parent);
-        });
-      }
-    });
-    command_queue
-  });
-  parent.spawn((Name::new("Tile Spawn Task"), TileSpawnTask(task)));
-}
-
-fn resolve_asset_pack<'a>(tile: &Tile, resources: &'a GenerationResourcesCollection) -> (bool, &'a AssetPack) {
-  let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
-  if asset_collection.animated_tile_types.contains(&tile.tile_type) {
-    (
-      true,
-      &asset_collection
-        .anim
-        .as_ref()
-        .expect("Failed to get animated asset pack from resource collection"),
-    )
-  } else {
-    (false, &asset_collection.stat)
-  }
-}
-
-fn spawn_tile(
-  tile_data: TileData,
-  tile: &Tile,
+/// The purpose of this function is to group tiles by their texture and whether they will be animated so that we can
+/// spawn a single mesh for each texture.
+fn prepare_texture_groups<'a>(
   resources: &GenerationResourcesCollection,
-  settings: Settings,
-  parent: &mut WorldChildBuilder,
-) {
-  if !settings.general.draw_terrain_sprites {
-    parent.spawn(placeholder_sprite(&tile, tile_data.chunk_entity, &resources));
-    return;
-  }
-  if settings.general.animate_terrain_sprites {
-    let (is_animated_tile, anim_asset_pack) = resolve_asset_pack(&tile, &resources);
-    if is_animated_tile {
-      parent.spawn(animated_terrain_sprite(&tile, tile_data.chunk_entity, &anim_asset_pack));
-    } else {
-      parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
+  plane: &'a Plane,
+) -> HashMap<(Handle<Image>, bool, bool), Vec<&'a Tile>> {
+  let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
+  for row in plane.data.iter() {
+    for tile in row.iter().flatten() {
+      let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
+      let has_animated_sprites = asset_collection.anim.is_some();
+      let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
+      let texture = match has_animated_sprites {
+        true => {
+          &asset_collection
+            .anim
+            .as_ref()
+            .expect("Failed to get animated asset pack from resource collection")
+            .texture
+        }
+        false => &asset_collection.stat.texture,
+      };
+
+      texture_groups
+        .entry((texture.clone(), has_animated_sprites, is_animated))
+        .or_default()
+        .push(tile);
     }
-  } else {
-    parent.spawn(static_terrain_sprite(&tile, tile_data.chunk_entity, &resources));
   }
+
+  texture_groups
 }
 
-fn placeholder_sprite(
-  tile: &Tile,
-  chunk: Entity,
+fn spawn_tile_mesh(
+  commands: &mut Commands,
   resources: &GenerationResourcesCollection,
-) -> (Name, Sprite, Transform, TileComponent) {
-  (
-    Name::new(format!("Placeholder {:?} Sprite", tile.terrain)),
-    Sprite {
-      anchor: Anchor::TopLeft,
-      texture_atlas: Some(TextureAtlas {
-        layout: resources.placeholder.texture_atlas_layout.clone(),
-        index: tile.terrain as usize,
-      }),
-      image: resources.placeholder.texture.clone(),
-      ..Default::default()
-    },
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-    TileComponent {
-      tile: tile.clone(),
-      parent_entity: chunk,
-    },
-  )
-}
+  meshes: &mut ResMut<Assets<Mesh>>,
+  materials: &mut ResMut<Assets<ColorMaterial>>,
+  tiles: Vec<&Tile>,
+  texture: Handle<Image>,
+  layer: f32,
+  parent_entity: Entity,
+  has_animated_sprites: bool,
+  is_animated: bool,
+) {
+  let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+  let tiles_cloned = tiles.clone();
+  let cg = tiles[0].coords.chunk_grid;
+  let (vertices, indices, uvs, tile_sprite_indices, sprite_sheet_columns, sprite_sheet_rows) =
+    calculate_mesh_attributes(&resources, tiles, layer, has_animated_sprites);
 
-fn static_terrain_sprite(
-  tile: &Tile,
-  chunk: Entity,
-  resources: &GenerationResourcesCollection,
-) -> (Name, Transform, Sprite, TileComponent) {
-  (
-    Name::new(format!("{:?} {:?} Sprite", tile.tile_type, tile.terrain)),
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-    Sprite {
-      anchor: Anchor::TopLeft,
-      texture_atlas: Some(TextureAtlas {
-        layout: match (tile.terrain, tile.climate) {
-          (TerrainType::DeepWater, _) => resources.deep_water.stat.texture_atlas_layout.clone(),
-          (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land1, Climate::Humid) => resources.land_humid_l1.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land2, Climate::Humid) => resources.land_humid_l2.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture_atlas_layout.clone(),
-          (TerrainType::Land3, Climate::Humid) => resources.land_humid_l3.stat.texture_atlas_layout.clone(),
-          (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
+  mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+  mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+  mesh.insert_indices(Indices::U32(indices));
+
+  commands.entity(parent_entity).with_children(|parent| {
+    parent
+      .spawn((
+        Mesh2d(meshes.add(mesh)),
+        MeshMaterial2d(materials.add(ColorMaterial {
+          alpha_mode: AlphaMode2d::Blend,
+          texture: Some(texture),
+          ..default()
+        })),
+        Transform::from_xyz(0.0, 0.0, layer),
+        Name::new(format!("{:?} Animated Mesh", TerrainType::from(layer as usize))),
+        TileMeshComponent::new(parent_entity, cg, tiles_cloned.into_iter().copied().collect()),
+      ))
+      .insert_if(
+        AnimationMeshComponent {
+          timer: AnimationTimer(Timer::from_seconds(
+            match TerrainType::from(layer as usize) {
+              TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
+              _ => DEFAULT_ANIMATION_FRAME_DURATION,
+            },
+            TimerMode::Repeating,
+          )),
+          frame_count: 4,
+          current_frame: 0,
+          columns: sprite_sheet_columns,
+          rows: sprite_sheet_rows,
+          tile_indices: tile_sprite_indices,
         },
-        index: tile
-          .tile_type
-          .calculate_sprite_index(&tile.terrain, &tile.climate, &resources),
-      }),
-      image: match (tile.terrain, tile.climate) {
-        (TerrainType::DeepWater, _) => resources.deep_water.stat.texture.clone(),
-        (TerrainType::ShallowWater, _) => resources.shallow_water.stat.texture.clone(),
-        (TerrainType::Land1, Climate::Dry) => resources.land_dry_l1.stat.texture.clone(),
-        (TerrainType::Land1, Climate::Moderate) => resources.land_moderate_l1.stat.texture.clone(),
-        (TerrainType::Land1, Climate::Humid) => resources.land_humid_l1.stat.texture.clone(),
-        (TerrainType::Land2, Climate::Dry) => resources.land_dry_l2.stat.texture.clone(),
-        (TerrainType::Land2, Climate::Moderate) => resources.land_moderate_l2.stat.texture.clone(),
-        (TerrainType::Land2, Climate::Humid) => resources.land_humid_l2.stat.texture.clone(),
-        (TerrainType::Land3, Climate::Dry) => resources.land_dry_l3.stat.texture.clone(),
-        (TerrainType::Land3, Climate::Moderate) => resources.land_moderate_l3.stat.texture.clone(),
-        (TerrainType::Land3, Climate::Humid) => resources.land_humid_l3.stat.texture.clone(),
-        (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
-      },
-      ..Default::default()
-    },
-    TileComponent {
-      tile: tile.clone(),
-      parent_entity: chunk,
-    },
-  )
+        || is_animated,
+      );
+  });
 }
 
-fn animated_terrain_sprite(
-  tile: &Tile,
-  chunk: Entity,
-  asset_pack: &AssetPack,
-) -> (Name, Transform, Sprite, TileComponent, AnimationComponent) {
-  let index = tile.tile_type.get_sprite_index(asset_pack.index_offset);
-  let frame_duration = match tile.terrain {
-    TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
-    _ => DEFAULT_ANIMATION_FRAME_DURATION,
+fn calculate_mesh_attributes(
+  resources: &&GenerationResourcesCollection,
+  tiles: Vec<&Tile>,
+  layer: f32,
+  has_animated_sprites: bool,
+) -> (Vec<[f32; 3]>, Vec<u32>, Vec<[f32; 2]>, Vec<usize>, f32, f32) {
+  let mut vertices = Vec::new();
+  let mut indices = Vec::new();
+  let mut uvs = Vec::new();
+  let mut tile_indices = Vec::new();
+  let tile_size = TILE_SIZE as f32;
+  let columns = if has_animated_sprites {
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32
+  } else {
+    DEFAULT_STATIC_TILE_SET_COLUMNS as f32
   };
-  (
-    Name::new(format!("{:?} {:?} Sprite (Animated)", tile.tile_type, tile.terrain)),
-    Transform::from_xyz(0.0, 0.0, tile.layer as f32),
-    Sprite {
-      anchor: Anchor::TopLeft,
-      texture_atlas: Some(TextureAtlas {
-        layout: asset_pack.texture_atlas_layout.clone(),
-        index,
-      }),
-      image: asset_pack.texture.clone(),
-      ..Default::default()
-    },
-    TileComponent {
-      tile: tile.clone(),
-      parent_entity: chunk,
-    },
-    AnimationComponent {
-      index_first: index,
-      index_last: index + ANIMATION_LENGTH - 1,
-      timer: AnimationTimer(Timer::from_seconds(frame_duration, TimerMode::Repeating)),
-    },
-  )
-}
+  let rows = TILE_SET_ROWS as f32;
 
-fn process_async_tasks_system(commands: Commands, tile_spawn_tasks: Query<(Entity, &mut TileSpawnTask)>) {
-  shared::process_tasks(commands, tile_spawn_tasks);
+  for &tile in tiles {
+    let sprite_index = tile
+      .tile_type
+      .calculate_sprite_index(&tile.terrain, &tile.climate, &resources);
+    let base_idx = vertices.len() as u32;
+
+    // Tile index for animation (ignored if not animated)
+    tile_indices.push(sprite_index);
+
+    // Calculate vertices
+    let tile_x = tile.coords.world.x as f32;
+    let tile_y = tile.coords.world.y as f32;
+    vertices.push([tile_x, tile_y, layer]); // Top-left
+    vertices.push([tile_x + tile_size, tile_y, layer]); // Top-right
+    vertices.push([tile_x + tile_size, tile_y - tile_size, layer]); // Bottom-right
+    vertices.push([tile_x, tile_y - tile_size, layer]); // Bottom-left
+
+    // Calculate UVs
+    let sprite_col = sprite_index as f32 % columns;
+    let sprite_row = (sprite_index as f32 / columns).floor();
+    let u_start = sprite_col / columns;
+    let u_end = (sprite_col + 1.0) / columns;
+    let v_start = sprite_row / rows;
+    let v_end = (sprite_row + 1.0) / rows;
+    uvs.push([u_start, v_start]); // Top-left
+    uvs.push([u_end, v_start]); // Top-right
+    uvs.push([u_end, v_end]); // Bottom-right
+    uvs.push([u_start, v_end]); // Bottom-left
+
+    // Add indices for both triangles
+    indices.extend_from_slice(&[base_idx, base_idx + 1, base_idx + 2, base_idx, base_idx + 2, base_idx + 3]);
+  }
+
+  (vertices, indices, uvs, tile_indices, columns, rows)
 }
