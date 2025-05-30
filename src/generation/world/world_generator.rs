@@ -1,15 +1,14 @@
 use crate::components::{AnimationMeshComponent, AnimationTimer};
 use crate::constants::*;
-use crate::coords::point::World;
 use crate::coords::Point;
-use crate::generation::lib::{shared, Chunk, ChunkComponent, Plane, TerrainType, Tile, TileMeshComponent};
+use crate::coords::point::World;
+use crate::generation::lib::{Chunk, ChunkComponent, Plane, TerrainType, Tile, TileMeshComponent, shared};
 use crate::generation::resources::{GenerationResourcesCollection, Metadata};
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::asset::RenderAssetUsages;
-use bevy::core::Name;
-use bevy::hierarchy::{BuildChildren, ChildBuild, ChildBuilder};
+use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::log::*;
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -41,7 +40,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
   chunks
 }
 
-pub fn spawn_chunk(world_child_builder: &mut ChildBuilder, chunk: &Chunk) -> Entity {
+pub fn spawn_chunk(world_child_builder: &mut RelatedSpawnerCommands<ChildOf>, chunk: &Chunk) -> Entity {
   let chunk_end_tg = chunk.coords.tile_grid + Point::new(CHUNK_SIZE - 1, -CHUNK_SIZE + 1);
   world_child_builder
     .spawn((

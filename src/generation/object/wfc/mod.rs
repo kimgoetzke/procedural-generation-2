@@ -4,8 +4,8 @@ use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGr
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use rand::prelude::StdRng;
 use rand::Rng;
+use rand::prelude::StdRng;
 
 pub struct WfcPlugin;
 
@@ -155,10 +155,7 @@ fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<Objec
 fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mut usize, current_entropy: i32) {
   trace!(
     "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
-    grid.cg,
-    iter_count,
-    iter_error_count,
-    current_entropy
+    grid.cg, iter_count, iter_error_count, current_entropy
   );
 }
 

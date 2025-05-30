@@ -1,20 +1,19 @@
 use crate::constants::*;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::lib::{ObjectComponent, Tile, TileMeshComponent};
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
-use bevy::core::Name;
 use bevy::log::*;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
-  default, Commands, Component, Entity, EventReader, JustifyText, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text2d,
-  TextFont, Transform, Trigger, Vec3, Visibility, With,
+  Commands, Component, Entity, EventReader, JustifyText, Name, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text2d,
+  TextFont, Transform, Trigger, Vec3, Visibility, With, default,
 };
 use bevy::sprite::Anchor;
 use bevy::text::{LineBreak, TextBounds, TextColor, TextLayout};
-use bevy::utils::{HashMap, HashSet};
 
 pub struct TileDebuggerPlugin;
 
@@ -66,11 +65,7 @@ struct ObjectComponentIndex {
 
 impl ObjectComponentIndex {
   pub fn get(&self, point: Point<TileGrid>) -> Option<&ObjectComponent> {
-    if let Some(t) = self.map.get(&point) {
-      Some(t)
-    } else {
-      None
-    }
+    if let Some(t) = self.map.get(&point) { Some(t) } else { None }
   }
 }
 
@@ -79,7 +74,7 @@ fn on_add_object_component_trigger(
   query: Query<&ObjectComponent>,
   mut index: ResMut<ObjectComponentIndex>,
 ) {
-  let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
+  let oc = query.get(trigger.target()).expect("Failed to get ObjectComponent");
   index.map.insert(oc.coords.tile_grid, oc.clone());
 }
 
@@ -88,7 +83,7 @@ fn on_remove_object_component_trigger(
   query: Query<&ObjectComponent>,
   mut index: ResMut<ObjectComponentIndex>,
 ) {
-  let oc = query.get(trigger.entity()).expect("Failed to get ObjectComponent");
+  let oc = query.get(trigger.target()).expect("Failed to get ObjectComponent");
   index.map.remove(&oc.coords.tile_grid);
 }
 
@@ -97,7 +92,7 @@ fn on_add_tile_mesh_component_trigger(
   query: Query<&TileMeshComponent>,
   mut index: ResMut<TileMeshComponentIndex>,
 ) {
-  let tmc = query.get(trigger.entity()).expect("Failed to get TileMeshComponent");
+  let tmc = query.get(trigger.target()).expect("Failed to get TileMeshComponent");
   index.map.entry(tmc.cg()).or_default().insert(tmc.clone());
 }
 
@@ -106,7 +101,7 @@ fn on_remove_tile_mesh_component_trigger(
   query: Query<&TileMeshComponent>,
   mut index: ResMut<TileMeshComponentIndex>,
 ) {
-  let tmc = query.get(trigger.entity()).expect("Failed to get TileMeshComponent");
+  let tmc = query.get(trigger.target()).expect("Failed to get TileMeshComponent");
   index.map.entry(tmc.cg()).and_modify(|set| {
     set.remove(&tmc.clone());
   });

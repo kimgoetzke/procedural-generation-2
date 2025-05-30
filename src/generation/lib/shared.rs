@@ -1,8 +1,8 @@
-use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
+use crate::coords::point::ChunkGrid;
 use crate::generation::resources::GenerationResourcesCollection;
+use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::prelude::{Commands, Component, Entity, Query};
 use std::thread;
 use std::time::SystemTime;
@@ -19,11 +19,14 @@ pub fn thread_name() -> String {
   format!("[{} {:?}]", thread_name, thread_id)
 }
 
-pub fn process_tasks<T: CommandQueueTask + Component>(mut commands: Commands, mut query: Query<(Entity, &mut T)>) {
+pub fn process_tasks<T: CommandQueueTask + Component<Mutability = Mutable>>(
+  mut commands: Commands,
+  mut query: Query<(Entity, &mut T)>,
+) {
   for (entity, mut task) in &mut query {
     if let Some(mut commands_queue) = task.poll_once() {
       commands.append(&mut commands_queue);
-      commands.entity(entity).despawn_recursive();
+      commands.entity(entity).despawn();
     }
   }
 }

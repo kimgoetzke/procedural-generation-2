@@ -1,5 +1,5 @@
-use crate::coords::point::CoordType;
 use crate::coords::Point;
+use crate::coords::point::CoordType;
 use crate::generation::lib::{TerrainType, Tile};
 use bevy::log::*;
 

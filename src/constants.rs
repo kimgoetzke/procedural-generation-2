@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use bevy::color::Color;
 use bevy::math::UVec2;
 use std::ops::Range;

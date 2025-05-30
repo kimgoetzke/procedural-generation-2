@@ -40,8 +40,8 @@ fn add_perf_ui(mut commands: Commands) {
 fn toggle_ui(mut events: EventReader<ToggleDebugInfo>, q_root: Query<Entity, With<PerfUiRoot>>, mut commands: Commands) {
   let event_count = events.read().count();
   if event_count > 0 {
-    if let Ok(e) = q_root.get_single() {
-      commands.entity(e).despawn_recursive();
+    if let Ok(e) = q_root.single() {
+      commands.entity(e).despawn();
     } else {
       add_perf_ui(commands);
     }

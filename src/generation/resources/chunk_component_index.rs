@@ -1,10 +1,10 @@
-use crate::coords::point::World;
 use crate::coords::Point;
+use crate::coords::point::World;
 use crate::generation::lib::ChunkComponent;
 use bevy::app::{App, Plugin};
 use bevy::log::trace;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::{OnAdd, OnRemove, Query, ResMut, Resource, Trigger};
-use bevy::utils::HashMap;
 
 pub struct ChunkComponentIndexPlugin;
 
@@ -43,7 +43,7 @@ fn on_add_chunk_component_trigger(
   query: Query<&ChunkComponent>,
   mut index: ResMut<ChunkComponentIndex>,
 ) {
-  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
+  let cc = query.get(trigger.target()).expect("Failed to get ChunkComponent");
   index.map.insert(cc.coords.world, cc.clone());
   trace!("ChunkComponentIndex <- Added ChunkComponent key {:?}", cc.coords.world);
 }
@@ -53,7 +53,7 @@ fn on_remove_chunk_component_trigger(
   query: Query<&ChunkComponent>,
   mut index: ResMut<ChunkComponentIndex>,
 ) {
-  let cc = query.get(trigger.entity()).expect("Failed to get ChunkComponent");
+  let cc = query.get(trigger.target()).expect("Failed to get ChunkComponent");
   index.map.remove(&cc.coords.world);
   trace!("ChunkComponentIndex -> Removed ChunkComponent with key {:?}", cc.coords.world);
 }

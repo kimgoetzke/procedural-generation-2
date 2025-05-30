@@ -25,7 +25,7 @@ fn event_control_system(
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
     info!("[F5]/[R] Triggered regeneration of the world");
     let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
-    refresh_metadata_event.send(RefreshMetadata {
+    refresh_metadata_event.write(RefreshMetadata {
       regenerate_world_after: is_at_origin_spawn_point,
       prune_then_update_world_after: !is_at_origin_spawn_point,
     });
@@ -58,7 +58,7 @@ fn settings_controls_system(
     settings.general.enable_tile_debugging = !settings.general.enable_tile_debugging;
     general_settings.enable_tile_debugging = settings.general.enable_tile_debugging;
     info!("[C] Set tile debugging to [{}]", settings.general.enable_tile_debugging);
-    toggle_debug_info_event.send(ToggleDebugInfo {});
+    toggle_debug_info_event.write(ToggleDebugInfo {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyV) {
@@ -100,9 +100,10 @@ fn left_mouse_click_system(
   mut egui_contexts: EguiContexts,
 ) {
   if mouse_button_input.just_pressed(MouseButton::Left) && !egui_contexts.ctx_mut().wants_pointer_input() {
-    let (camera, camera_transform) = camera.single();
+    let (camera, camera_transform) = camera.single().expect("Failed to find camera");
     if let Some(vec2) = windows
       .single()
+      .expect("Failed to find window")
       .cursor_position()
       .and_then(|cursor| Some(camera.viewport_to_world(camera_transform, cursor)))
       .map(|ray| ray.expect("Failed to find ray").origin.truncate())

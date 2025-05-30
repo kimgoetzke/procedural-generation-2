@@ -35,10 +35,7 @@ impl Tile {
     if !is_marked_for_deletion(&adjusted_ig) {
       trace!(
         "Converting: DraftTile {:?} => {:?} {:?} tile {:?}",
-        draft_tile.coords,
-        tile_type,
-        draft_tile.terrain,
-        adjusted_coords,
+        draft_tile.coords, tile_type, draft_tile.terrain, adjusted_coords,
       );
     }
     Self {

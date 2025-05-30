@@ -24,8 +24,9 @@ use bevy::audio::{AudioPlugin, SpatialScale};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
+use bevy_inspector_egui::bevy_egui::EguiPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 
 fn main() {
@@ -66,6 +67,9 @@ fn main() {
       UiPlugin,
     ))
     .add_plugins(DefaultInspectorConfigPlugin)
+    .add_plugins(EguiPlugin {
+      enable_multipass_for_primary_context: false,
+    })
     .add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)))
     .run();
 }

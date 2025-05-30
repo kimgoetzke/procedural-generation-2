@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use cmp::Ordering;
 use std::cmp;
 

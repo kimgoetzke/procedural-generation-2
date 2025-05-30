@@ -30,7 +30,7 @@ fn draw_gizmos_system(
   let current_chunk_center_world = current_chunk.get_center_world();
   let current_chunk_world = current_chunk.get_world();
   let chunk_size = TILE_SIZE as f32 * CHUNK_SIZE as f32;
-  let cam_position = camera.single().1.translation();
+  let cam_position = camera.single().expect("Camera not found").1.translation();
   let camera_world = Point::new_world_from_world_vec2(cam_position.truncate());
 
   // Tile grid

@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
-use crate::generation::lib::{shared, Direction, DraftTile, LayeredPlane, TerrainType};
+use crate::generation::lib::{Direction, DraftTile, LayeredPlane, TerrainType, shared};
 use crate::generation::resources::{BiomeMetadataSet, Metadata};
 use crate::resources::Settings;
 use bevy::log::*;

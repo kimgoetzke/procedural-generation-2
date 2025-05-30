@@ -1,10 +1,10 @@
 use crate::constants::*;
-use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
+use crate::coords::point::ChunkGrid;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{shared, Chunk, ObjectComponent, Tile};
-use crate::generation::object::lib::tile_data::TileData;
+use crate::generation::lib::{Chunk, ObjectComponent, Tile, shared};
 use crate::generation::object::lib::ObjectName;
+use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::object::wfc;
 use crate::generation::object::wfc::WfcPlugin;
@@ -12,14 +12,12 @@ use crate::generation::resources::{AssetCollection, GenerationResourcesCollectio
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
-use bevy::core::Name;
 use bevy::ecs::world::CommandQueue;
-use bevy::hierarchy::{BuildChildren, ChildBuild};
 use bevy::log::*;
-use bevy::prelude::{Commands, Component, Entity, Query, TextureAtlas, Transform};
+use bevy::prelude::{Commands, Component, Entity, Name, Query, TextureAtlas, Transform};
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
-use bevy::tasks::{block_on, AsyncComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, Task, block_on};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
 

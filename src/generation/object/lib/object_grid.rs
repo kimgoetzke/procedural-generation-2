@@ -1,14 +1,14 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::connection_type::get_connection_points;
 use crate::generation::object::lib::tile_data::TileData;
 use crate::generation::object::lib::{Cell, Connection, ObjectName};
 use crate::generation::resources::TerrainState;
 use bevy::log::*;
+use bevy::platform::collections::HashMap;
 use bevy::reflect::Reflect;
-use bevy::utils::HashMap;
 
 /// An `ObjectGrid` is a 2D grid of `Cell`s, each of which representing the possible states of objects that may be
 /// spawned for the corresponding tile. The `ObjectGrid` is used to keep track of the state of each tile during the

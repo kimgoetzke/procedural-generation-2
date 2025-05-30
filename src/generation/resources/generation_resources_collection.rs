@@ -7,11 +7,11 @@ use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
 use bevy::log::*;
 use bevy::math::UVec2;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
-  in_state, Commands, Image, IntoSystemConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout,
-  TypePath,
+  Commands, Image, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath,
+  in_state,
 };
-use bevy::utils::{HashMap, HashSet};
 use bevy_common_assets::ron::RonAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};

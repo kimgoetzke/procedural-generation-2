@@ -1,5 +1,5 @@
-use crate::coords::point::InternalGrid;
 use crate::coords::Point;
+use crate::coords::point::InternalGrid;
 use bevy::reflect::Reflect;
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Reflect)]

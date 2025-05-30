@@ -53,10 +53,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     return;
   }
 
-  let mut egui_context = if let Ok(context) = world
-    .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-    .get_single(world)
-  {
+  let mut egui_context = if let Ok(context) = world.query_filtered::<&mut EguiContext, With<PrimaryWindow>>().single(world) {
     context.clone()
   } else {
     warn_once!("No egui context found");
@@ -159,7 +156,7 @@ fn send_regenerate_or_prune_event(
   refresh_metadata_event: &mut EventWriter<RefreshMetadata>,
 ) {
   let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
-  refresh_metadata_event.send(RefreshMetadata {
+  refresh_metadata_event.write(RefreshMetadata {
     regenerate_world_after: is_at_origin_spawn_point,
     prune_then_update_world_after: !is_at_origin_spawn_point,
   });

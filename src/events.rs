@@ -1,5 +1,5 @@
-use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, TileGrid, World};
 use bevy::prelude::{App, Event, Plugin};
 
 pub struct SharedEventsPlugin;

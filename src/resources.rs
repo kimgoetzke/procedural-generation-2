@@ -4,9 +4,9 @@ use crate::coords::{Coords, Point};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
+use bevy_inspector_egui::InspectorOptions;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
-use bevy_inspector_egui::InspectorOptions;
 
 pub struct SharedResourcesPlugin;
 

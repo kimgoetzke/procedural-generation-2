@@ -1,6 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
-use crate::coords::point::{CoordType, InternalGrid};
 use crate::coords::Point;
+use crate::coords::point::{CoordType, InternalGrid};
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
 
 /// A 2D grid of `Tile`s that is created using `DraftTile`s. During it's creation, it determines the `TileType` of each

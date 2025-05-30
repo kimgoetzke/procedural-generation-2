@@ -1,7 +1,7 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::generation::lib::Direction;
 use bevy::prelude::Vec2;
-use bevy::reflect::{reflect_trait, Reflect};
+use bevy::reflect::{Reflect, reflect_trait};
 use std::fmt;
 use std::ops::Add;
 

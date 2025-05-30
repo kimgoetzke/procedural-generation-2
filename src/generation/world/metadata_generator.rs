@@ -1,8 +1,8 @@
 use crate::constants::*;
-use crate::coords::point::ChunkGrid;
 use crate::coords::Point;
+use crate::coords::point::ChunkGrid;
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
-use crate::generation::lib::{shared, TerrainType};
+use crate::generation::lib::{TerrainType, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
@@ -61,9 +61,9 @@ fn refresh_metadata_event(
   if let Some(event) = refresh_metadata_event.read().last() {
     regenerate_metadata(metadata, current_chunk.get_chunk_grid(), &settings);
     if event.regenerate_world_after {
-      regenerate_world_event.send(RegenerateWorldEvent {});
+      regenerate_world_event.write(RegenerateWorldEvent {});
     } else if event.prune_then_update_world_after && settings.general.enable_world_pruning {
-      prune_world_event.send(PruneWorldEvent {
+      prune_world_event.write(PruneWorldEvent {
         despawn_all_chunks: true,
         update_world_after: true,
       });

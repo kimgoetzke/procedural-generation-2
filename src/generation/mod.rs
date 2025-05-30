@@ -1,32 +1,30 @@
 use crate::constants::{
   CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
 };
-use crate::coords::point::{ChunkGrid, World};
 use crate::coords::Point;
+use crate::coords::point::{ChunkGrid, World};
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::{
-  get_direction_points, Chunk, ChunkComponent, Direction, GenerationStage, WorldComponent, WorldGenerationComponent,
+  Chunk, ChunkComponent, Direction, GenerationStage, WorldComponent, WorldGenerationComponent, get_direction_points,
 };
-use crate::generation::object::lib::ObjectData;
 use crate::generation::object::ObjectGenerationPlugin;
+use crate::generation::object::lib::ObjectData;
 use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection, Metadata};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
-use bevy::core::Name;
-use bevy::hierarchy::BuildChildren;
 use bevy::log::*;
 use bevy::prelude::{
-  in_state, ColorMaterial, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter, IntoSystemConfigs, Local, Mesh,
-  Mut, NextState, OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With,
+  ColorMaterial, Commands, Entity, EventReader, EventWriter, IntoScheduleConfigs, Local, Mesh, Mut, Name, NextState, OnExit,
+  OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With, in_state,
 };
-use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use lib::shared;
-use rand::prelude::StdRng;
 use rand::SeedableRng;
+use rand::prelude::StdRng;
 use resources::GenerationResourcesPlugin;
 
 mod debug;
@@ -90,11 +88,11 @@ fn regenerate_world_event(
 ) {
   let event_count = events.read().count();
   if event_count > 0 {
-    let world = existing_world.get_single().expect("Failed to get existing world entity");
+    let world = existing_world.single().expect("Failed to get existing world entity");
     let w = ORIGIN_WORLD_SPAWN_POINT;
     let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
     debug!("Regenerating world with origin {} {}", w, cg);
-    commands.entity(world).despawn_recursive();
+    commands.entity(world).despawn();
     commands.spawn((
       Name::new(format!("World Generation Component {}", cg)),
       WorldGenerationComponent::new(w, cg, false, shared::get_time()),
@@ -146,11 +144,7 @@ fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &Updat
   );
   trace!(
     "Update world event at {} {} will change the current chunk to be at [{:?}] of {} i.e. {}",
-    event.w,
-    event.tg,
-    direction,
-    current_chunk_w,
-    new_parent_chunk_w
+    event.w, event.tg, direction, current_chunk_w, new_parent_chunk_w
   );
 
   new_parent_chunk_w
@@ -172,7 +166,7 @@ fn world_generation_system(
 ) {
   for (entity, mut component) in world_generation_components.iter_mut() {
     let start_time = shared::get_time();
-    let world_entity = existing_world.get_single().expect("Failed to get existing world entity");
+    let world_entity = existing_world.single().expect("Failed to get existing world entity");
     let current_stage = std::mem::replace(&mut component.stage, GenerationStage::Stage7);
     let component_cg = &component.cg;
     component.stage = match current_stage {
@@ -240,7 +234,7 @@ fn stage_1_prune_world_and_schedule_chunk_generation(
   }
   if has_metadata {
     if !component.suppress_pruning_world && settings.general.enable_world_pruning {
-      prune_event.send(PruneWorldEvent {
+      prune_event.write(PruneWorldEvent {
         despawn_all_chunks: false,
         update_world_after: false,
       });
@@ -272,8 +266,7 @@ fn calculate_chunk_spawn_points(
         if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
           trace!(
             "❎  [{:?}] chunk at {:?} skipped because generating neighbours is disabled",
-            direction,
-            chunk_w
+            direction, chunk_w
           );
           return;
         }
@@ -299,7 +292,9 @@ fn stage_2_await_chunk_generation_task_completion(
       );
       GenerationStage::Stage3(chunks)
     } else {
-      trace!("World generation component {cg} - Stage 2 | Chunk generation task did not return any chunks - they probably exist already...");
+      trace!(
+        "World generation component {cg} - Stage 2 | Chunk generation task did not return any chunks - they probably exist already..."
+      );
       GenerationStage::Stage7
     };
   }
@@ -349,7 +344,7 @@ fn stage_4_spawn_tile_meshes(
   if !chunk_entity_pairs.is_empty() {
     let mut new_chunk_entity_pairs = Vec::new();
     for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
-      if commands.get_entity(chunk_entity).is_some() {
+      if commands.get_entity(chunk_entity).is_ok() {
         world::spawn_tiles(
           &mut commands,
           chunk_entity,
@@ -370,7 +365,9 @@ fn stage_4_spawn_tile_meshes(
     return GenerationStage::Stage5(new_chunk_entity_pairs);
   }
 
-  warn!("World generation component {cg} - Stage 4 | No chunk-entity pairs provided - assuming world generation component is redundant...");
+  warn!(
+    "World generation component {cg} - Stage 4 | No chunk-entity pairs provided - assuming world generation component is redundant..."
+  );
   GenerationStage::Stage7
 }
 
@@ -384,7 +381,7 @@ fn stage_5_schedule_generating_object_data(
   if !chunk_entity_pairs.is_empty() {
     let mut object_generation_tasks = Vec::new();
     for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
-      if commands.get_entity(chunk_entity).is_some() {
+      if commands.get_entity(chunk_entity).is_ok() {
         let resources = resources.clone();
         let settings = settings.clone();
         let task_pool = AsyncComputeTaskPool::get();
@@ -393,7 +390,7 @@ fn stage_5_schedule_generating_object_data(
         object_generation_tasks.push(task);
       } else {
         trace!(
-          "World generation component {cg} - Stage 5 | Chunk entity {:?} at {} no longer exists (it may have been pruned) - skipped scheduling object data generation...", 
+          "World generation component {cg} - Stage 5 | Chunk entity {:?} at {} no longer exists (it may have been pruned) - skipped scheduling object data generation...",
           chunk_entity, chunk.coords.chunk_grid
         );
       }
@@ -405,7 +402,9 @@ fn stage_5_schedule_generating_object_data(
     return GenerationStage::Stage6(object_generation_tasks);
   }
 
-  warn!("World generation component {cg} - Stage 5 | No chunk-entity pairs provided - assuming world generation component is redundant...");
+  warn!(
+    "World generation component {cg} - Stage 5 | No chunk-entity pairs provided - assuming world generation component is redundant..."
+  );
   GenerationStage::Stage7
 }
 
@@ -432,7 +431,9 @@ fn stage_6_schedule_spawning_objects(
     trace!("World generation component {cg} - Stage 6 | No object generation tasks left - marking stage as complete...");
     GenerationStage::Stage7
   } else {
-    trace!("World generation component {cg} - Stage 6 | There are still object generation tasks left, so stage is not changing...");
+    trace!(
+      "World generation component {cg} - Stage 6 | There are still object generation tasks left, so stage is not changing..."
+    );
     GenerationStage::Stage6(gen_task)
   }
 }
@@ -451,12 +452,12 @@ fn stage_7_clean_up(
     shared::get_time() - component.created_at
   );
   if existing_chunks.size() > MAX_CHUNKS && !component.suppress_pruning_world && settings.general.enable_world_pruning {
-    prune_world_event.send(PruneWorldEvent {
+    prune_world_event.write(PruneWorldEvent {
       despawn_all_chunks: false,
       update_world_after: false,
     });
   }
-  commands.entity(entity).despawn_recursive();
+  commands.entity(entity).despawn();
 
   GenerationStage::Done
 }
@@ -483,7 +484,7 @@ pub fn prune_world_event(
   // Allows the `PruneWorldEvent` to trigger an `UpdateWorldEvent` after the world has been pruned. Doing this in the
   // same frame will lead to race conditions and chunks been despawned just after they were spawned.
   if let Some(event) = delayed_update_world_event.take() {
-    update_world_event.send(event);
+    update_world_event.write(event);
   }
 
   for event in prune_world_event.read() {
@@ -515,8 +516,8 @@ fn prune_world(
   identify_chunks_to_despawn(existing_chunks, current_chunk, despawn_all_chunks)
     .iter()
     .for_each(|chunk_entity| {
-      if let Some(entity) = commands.get_entity(*chunk_entity) {
-        entity.try_despawn_recursive();
+      if let Ok(mut entity) = commands.get_entity(*chunk_entity) {
+        entity.try_despawn();
       }
     });
   info!(

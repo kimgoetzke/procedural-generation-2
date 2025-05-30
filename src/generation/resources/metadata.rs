@@ -1,10 +1,10 @@
-use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::coords::Point;
-use crate::generation::lib::{get_direction_points, Direction};
+use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::generation::lib::{Direction, get_direction_points};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
-use bevy::utils::HashMap;
 use std::fmt::Display;
 use std::ops::Range;
 

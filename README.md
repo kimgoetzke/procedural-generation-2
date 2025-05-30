@@ -1,7 +1,7 @@
 # Procedural Generation Project 2
 
 This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust,
-using Bevy engine. The purpose of this project was to familiarise myself a little more with Rust and procedural
+using Bevy engine (v0.16). The purpose of this project was to familiarise myself a little more with Rust and procedural
 generation. It's a follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids),
 and my first, non-Rust procedural generation
 project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedural-generation-1).
