@@ -12,8 +12,8 @@ use std::fmt::{Display, Formatter};
 #[derive(Component)]
 pub struct WorldComponent;
 
-/// A component that is attached to every chunk entity that is spawned in the world. Used in the `ChunkComponentIndex`
-/// but also by other core processes such as pruning the world.
+/// A component that is attached to every chunk entity that is spawned in the world. Used in the
+/// [`crate::generation::resources::ChunkComponentIndex`] but also by other core processes such as pruning the world.
 #[derive(Component, Debug, Clone, PartialEq)]
 pub struct ChunkComponent {
   pub coords: Coords,
@@ -21,7 +21,7 @@ pub struct ChunkComponent {
 }
 
 /// A component that is attached to every tile layer mesh that is spawned in the world. Contains the tile data
-/// and the parent entity which is a chunk. There's a `TileMeshComponent` for every terrain layer and even two if
+/// and the parent entity which is a chunk. There's a [`TileMeshComponent`] for every terrain layer and even two if
 /// the tiles for that layer can be both animated or not (one component for each).
 #[derive(Component, Debug, Clone, Eq, Hash, PartialEq)]
 pub struct TileMeshComponent {
@@ -60,25 +60,25 @@ pub struct ObjectComponent {
 
 #[derive(Debug)]
 pub enum GenerationStage {
-  /// Stage 1: Check if required metadata this `WorldGenerationComponent` exists. If no, return current stage.
+  /// Stage 1: Check if required metadata this [`WorldGenerationComponent`] exists. If no, return current stage.
   /// Otherwise, send event to clean up not-needed chunks and schedule chunk generation and return the `Task`.
   Stage1(bool),
-  /// Stage 2: Await completion of chunk generation task, then use `ChunkComponentIndex` to check if any of the chunks
-  /// already exists. Return all `Chunk`s that don't exist yet, so they can be spawned.
-  /// Stage 3: If `Chunk`s are provided and no chunk at "proposed" location exists, spawn the chunk(s) and return
+  /// Stage 2: Await completion of chunk generation task, then use [`crate::generation::resources::ChunkComponentIndex`]
+  /// to check if any of the chunks already exists. Return all [`Chunk`]s that don't exist yet, so they can be spawned.
+  /// Stage 3: If [`Chunk`]s are provided and no chunk at "proposed" location exists, spawn the chunk(s) and return
   Stage2(Task<Vec<Chunk>>),
-  /// `Chunk`-`Entity` pairs. If no `Chunk`s provided, set `GenerationStage` to clean-up stage.
+  /// [`Chunk`]-[`Entity`] pairs. If no [`Chunk`]s provided, set [`GenerationStage`] to clean-up stage.
   Stage3(Vec<Chunk>),
-  /// Stage 4: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, spawn tiles for each `Chunk` and
-  /// return `Chunk`-`Entity` pairs again.
+  /// Stage 4: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, spawn tiles for each [`Chunk`]
+  /// and return [`Chunk`]-[`Entity`] pairs again.
   Stage4(Vec<(Chunk, Entity)>),
-  /// Stage 5: If `Chunk`-`Entity` pairs are provided and `Entity`s still exists, schedule tasks to generate object
-  /// data and return the `Task`s.
+  /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
+  /// object data and return the [`Task`]s.
   Stage5(Vec<(Chunk, Entity)>),
   /// Stage 6: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
-  /// If not, do nothing. Return all remaining `Task`s until all are finished, then proceed to next stage.
+  /// If not, do nothing. Return all remaining [`Task`]s until all are finished, then proceed to next stage.
   Stage6(Vec<Task<Vec<ObjectData>>>),
-  /// Stage 7: Despawn the `WorldGenerationComponent` and, if necessary, fire a (second) send event to clean up
+  /// Stage 7: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) send event to clean up
   /// not-needed chunks.
   Stage7,
   Done,

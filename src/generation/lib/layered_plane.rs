@@ -2,9 +2,9 @@ use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::generation::lib::{DraftTile, Plane, TerrainType};
 use crate::resources::Settings;
 
-/// A `LayeredPlane` contains all relevant information about the `Tile`s in a `Chunk`. It contains a `Vec<Plane>` with
-/// an `Plane` for each `TerrainType` and, for ease of use, it also contains the flat terrain data in a separate
-/// `Plane`.
+/// A [`LayeredPlane`] contains all relevant information about the [`crate::generation::lib::Tile`]s in a
+/// [`crate::generation::lib::Chunk`]. It contains a [`Vec<Plane>`] with an [`Plane`] for each [`TerrainType`] and, for
+/// ease of use, it also contains the flat terrain data in a separate [`Plane`].
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LayeredPlane {
   pub planes: Vec<Plane>,
@@ -12,8 +12,9 @@ pub struct LayeredPlane {
 }
 
 impl LayeredPlane {
-  /// Creates a new `LayeredPlane` from the flat terrain data of vector of draft tiles by converting the terrain data
-  /// into a `Plane` for each layer and converting the `DraftTile`s to `Tile`s which contain their `TileType`s.
+  /// Creates a new [`LayeredPlane`] from the flat terrain data of vector of draft tiles by converting the terrain data
+  /// into a [`Plane`] for each layer and converting the [`DraftTile`]s to [`crate::generation::lib::Tile`]s which
+  /// contain their [`crate::generation::lib::TileType`]s.
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, settings: &Settings) -> Self {
     let mut final_layers = Vec::new();
 
@@ -60,7 +61,7 @@ impl LayeredPlane {
     }
   }
 
-  /// Returns a tuple of mutable references with the `Plane` at the specified layer and the `Plane` below it.
+  /// Returns a tuple of mutable references with the [`Plane`] at the specified layer and the [`Plane`] below it.
   pub fn get_and_below_mut(&mut self, layer: usize) -> (Option<&mut Plane>, Option<&mut Plane>) {
     match layer {
       0 => (self.planes.get_mut(layer), None),

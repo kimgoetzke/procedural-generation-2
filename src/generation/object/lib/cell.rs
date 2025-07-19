@@ -10,10 +10,14 @@ use rand::prelude::StdRng;
 
 pub struct PropagationFailure {}
 
-/// A `Cell` is a "placeholder" for an object. It is used in the `ObjectGrid`. This struct is used to represent a cell in
-/// the grid that can be collapsed to a single state. Once all `Cell`s in an `ObjectGrid` have been collapsed, they
-/// will be converted to `ObjectData`s which are then used to spawn object sprites in the world. A `Cell` is
-/// indirectly linked to an underlying `Tile` through its `TerrainType` and  `TileType` fields.
+/// A [`Cell`] is a "placeholder" for an object. It is used in the [`ObjectGrid`][og]. This struct is used to represent
+/// a cell in the grid that can be collapsed to a single state. Once all [`Cell`]s in an [`ObjectGrid`][og] have been
+/// collapsed, they will be converted to [`ObjectData`][od]s which are then used to spawn object sprites in the world.
+/// A [`Cell`] is indirectly linked to an underlying [`Tile`][t] through its [`TerrainType`] and  [`TileType`] fields.
+///
+/// [og]: crate::generation::object::lib::ObjectGrid
+/// [od]: crate::generation::object::lib::ObjectData
+/// [t]: crate::generation::lib::Tile
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {
   pub ig: Point<InternalGrid>,

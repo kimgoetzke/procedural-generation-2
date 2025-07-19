@@ -117,7 +117,8 @@ fn generate_elevation_metadata(
 
 // TODO: Consider improving this range calculation because it's too easy for a user to "break" it via the UI
 /// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
-/// the elevation offset. The step size is the amount of elevation change per `Tile` (not per `Chunk`).
+/// the elevation offset. The step size is the amount of elevation change per [`crate::generation::lib::Tile`]
+/// (not per [`crate::generation::lib::Chunk`]).
 fn calculate_range_and_step_size(
   coordinate: i32,
   grid_size: f64,

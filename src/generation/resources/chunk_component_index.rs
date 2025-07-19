@@ -17,8 +17,8 @@ impl Plugin for ChunkComponentIndexPlugin {
   }
 }
 
-/// Contains a clone of the `ChunkComponent` of each chunk entity that currently exists in the world. This index is
-/// kept up-to-date by observing the `OnAdd<ChunkComponent>` and `OnRemove<ChunkComponent>` triggers.
+/// Contains a clone of the [`ChunkComponent`] of each chunk entity that currently exists in the world. This index is
+/// kept up-to-date by observing the [`OnAdd`] and [`OnRemove`] triggers.
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
   map: HashMap<Point<World>, ChunkComponent>,

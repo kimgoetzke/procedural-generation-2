@@ -10,8 +10,8 @@ use bevy::log::*;
 use bevy::platform::collections::HashMap;
 use bevy::reflect::Reflect;
 
-/// An `ObjectGrid` is a 2D grid of `Cell`s, each of which representing the possible states of objects that may be
-/// spawned for the corresponding tile. The `ObjectGrid` is used to keep track of the state of each tile during the
+/// An [`ObjectGrid`] is a 2D grid of [`Cell`]s, each of which representing the possible states of objects that may be
+/// spawned for the corresponding tile. The [`ObjectGrid`] is used to keep track of the state of each tile during the
 /// object generation process and is discarded once the object generation process is complete as the outcome is
 /// spawned as a child entity of the tile.
 #[derive(Debug, Clone, Reflect)]
@@ -20,7 +20,7 @@ pub struct ObjectGrid {
   #[reflect(ignore)]
   pub grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
-  /// This `Cell` is used to represent out of bounds neighbours in the grid. It only allows `ObjectName::Empty` as
+  /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
   /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
   pub no_neighbours_tile: Cell,
 }
@@ -102,7 +102,7 @@ impl ObjectGrid {
     self.grid.iter_mut().flatten().find(|cell| cell.ig == *point)
   }
 
-  /// Replaces the `Cell` at the given point with the provided `Cell`.
+  /// Replaces the [`Cell`] at the given point with the provided [`Cell`].
   pub fn set_cell(&mut self, cell: Cell) {
     if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
       *existing_cell = cell;

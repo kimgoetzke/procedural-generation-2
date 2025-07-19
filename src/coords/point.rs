@@ -12,7 +12,7 @@ pub trait CoordType {
     Self: Sized;
 }
 
-/// Represents the world coordinates of the application. Like every `Point`, it stores the `x` and `y` values as `i32`.
+/// Represents the world coordinates of the application. Like every [`Point`], it stores the `x` and `y` values as `i32`.
 /// Each `x`-`y` value pair represents a pixel in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct World;
@@ -23,8 +23,8 @@ impl CoordType for World {
   }
 }
 
-/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `TileGrid`
-/// represents a tile of `TILE_SIZE` in the world.
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each [`Point`] of type [`TileGrid`]
+/// represents a tile of [`TILE_SIZE`] in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct TileGrid;
 
@@ -34,8 +34,8 @@ impl CoordType for TileGrid {
   }
 }
 
-/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `ChunkGrid`
-/// represents a chunk of `TILE_SIZE` * `CHUNK_SIZE` in the world.
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each [`Point`] of type [`ChunkGrid`]
+/// represents a chunk of [`TILE_SIZE`] * [`CHUNK_SIZE`] in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct ChunkGrid;
 
@@ -45,9 +45,9 @@ impl CoordType for ChunkGrid {
   }
 }
 
-/// Represents coordinates internal to any type of grid structure that uses them. `Point<InternalGrid>` differ from
-/// other `Point`s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
-/// values increase towards the bottom right corner, whereas all other `Point`s are based on the world coordinates i.e.
+/// Represents coordinates internal to any type of grid structure that uses them. [`Point<InternalGrid>`] differ from
+/// other [`Point`]s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
+/// values increase towards the bottom right corner, whereas all other [`Point`]s are based on the world coordinates i.e.
 /// not linked to structure that uses them.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct InternalGrid;
@@ -147,7 +147,7 @@ impl Point<World> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` of type `World` with the `x` and `y` values rounded to the nearest integer to achieve this.
+  /// Returns a [`Point`] of type [`World`] with the `x` and `y` values rounded to the nearest integer to achieve this.
   pub fn new_world_from_world_vec2(w: Vec2) -> Self {
     Self::new(w.x.round() as i32, w.y.round() as i32)
   }
@@ -162,8 +162,8 @@ impl Point<World> {
 }
 
 impl Point<InternalGrid> {
-  /// Creates new `Point` of type `InternalGrid` whereby the top left corner of the grid is (0, 0) and x and y values
-  /// increase towards the bottom right corner.
+  /// Creates new [`Point`] of type [`InternalGrid`] whereby the top left corner of the grid is (0, 0) and x and y
+  /// values increase towards the bottom right corner.
   pub fn new_internal_grid(x: i32, y: i32) -> Self {
     Self::new(x, y)
   }
@@ -174,8 +174,8 @@ impl Point<TileGrid> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
-  /// to convert world coordinates to tile grid coordinates.
+  /// Returns a [`Point`] on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this.
+  /// Used to convert world coordinates to tile grid coordinates.
   pub fn new_tile_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       ((w.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
@@ -196,8 +196,8 @@ impl Point<ChunkGrid> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` on the chunk grid with the `x` and `y` values rounded to the nearest chunk to achieve this. Used
-  /// to convert world coordinates to chunk grid coordinates.
+  /// Returns a [`Point`] on the chunk grid with the `x` and `y` values rounded to the nearest chunk to achieve this.
+  /// Used to convert world coordinates to chunk grid coordinates.
   pub fn new_chunk_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       (w.x / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,

@@ -20,9 +20,9 @@ impl Plugin for MetadataPlugin {
 }
 
 /// This resource holds data used during world generation, providing context that spans multiple chunks. In practice,
-/// data is stored in `HashMap`s with `Point<ChunkGrid>` as keys.
+/// data is stored in [`HashMap`]s with [`Point<ChunkGrid>`] as keys.
 ///
-/// For example, `ElevationMetadata` is used in tile generation to ensure seamless terrain transitions across chunks
+/// For example, [`ElevationMetadata`] is used in tile generation to ensure seamless terrain transitions across chunks
 /// which allows you to configure smooth transitions from water in the west, through coastal areas and grassy plains,
 /// to forests in the east.
 #[derive(Resource, Default, Clone, Reflect)]
@@ -35,7 +35,7 @@ pub struct Metadata {
 }
 
 impl Metadata {
-  /// Returns the biome metadata for the given `Point<ChunkGrid>` which includes the biome metadata for the four
+  /// Returns the biome metadata for the given [`Point<ChunkGrid>`] which includes the biome metadata for the four
   /// adjacent chunks as well.
   pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet {
     let bm: HashMap<Direction, &BiomeMetadata> = get_direction_points(cg)
@@ -66,12 +66,12 @@ impl Metadata {
   }
 }
 
-/// Metadata used to calculate an additional offset for any given `Point<InternalGrid>`. It is defined at the
-/// `ChunkGrid` level and includes:
+/// Metadata used to calculate an additional offset for any given [`Point<InternalGrid>`]. It is defined at the
+/// [`ChunkGrid`] level and includes:
 /// - `x_step`: The total elevation change applied across the x-axis of the chunk.
-/// - `x`: The exact range of x-values within the chunk that achieve the specified elevation change.
+/// - `x_range`: The exact range of x-values within the chunk that achieve the specified elevation change.
 /// - `y_step`: The total elevation change applied across the y-axis of the chunk.
-/// - `y`: The exact range of y-values within the chunk that achieve the specified elevation change.
+/// - `y_range`: The exact range of y-values within the chunk that achieve the specified elevation change.
 #[derive(Clone, Debug, Reflect)]
 pub struct ElevationMetadata {
   pub is_enabled: bool,
@@ -96,7 +96,7 @@ impl Display for ElevationMetadata {
 }
 
 impl ElevationMetadata {
-  /// Give it a `Point<InternalGrid>` and it will calculate the elevation offset you need to apply for that point.
+  /// Give it a [`Point<InternalGrid>`] and it will calculate the elevation offset you need to apply for that point.
   pub fn calculate_for_point(&self, ig: Point<InternalGrid>, _grid_size: i32, _grid_buffer: i32) -> f64 {
     if !self.is_enabled {
       return 0.0;
