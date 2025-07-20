@@ -4,16 +4,22 @@ use crate::generation::lib::ChunkComponent;
 use bevy::app::{App, Plugin};
 use bevy::log::trace;
 use bevy::platform::collections::HashMap;
-use bevy::prelude::{OnAdd, OnRemove, Query, ResMut, Resource, Trigger};
+use bevy::prelude::{IntoSystem, Name, Observer, OnAdd, OnRemove, Query, ResMut, Resource, Trigger};
 
 pub struct ChunkComponentIndexPlugin;
 
 impl Plugin for ChunkComponentIndexPlugin {
   fn build(&self, app: &mut App) {
-    app
-      .init_resource::<ChunkComponentIndex>()
-      .add_observer(on_add_chunk_component_trigger)
-      .add_observer(on_remove_chunk_component_trigger);
+    app.init_resource::<ChunkComponentIndex>().world_mut().spawn_batch([
+      (
+        Observer::new(IntoSystem::into_system(on_add_chunk_component_trigger)),
+        Name::new("Observer: Add ChunkComponent"),
+      ),
+      (
+        Observer::new(IntoSystem::into_system(on_remove_chunk_component_trigger)),
+        Name::new("Observer: Remove ChunkComponent"),
+      ),
+    ]);
   }
 }
 

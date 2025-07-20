@@ -19,8 +19,8 @@ use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::log::*;
 use bevy::prelude::{
-  ColorMaterial, Commands, Entity, EventReader, EventWriter, IntoScheduleConfigs, Local, Mesh, Mut, Name, NextState, OnExit,
-  OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With, in_state,
+  ColorMaterial, Commands, Entity, EventReader, EventWriter, IntoScheduleConfigs, IntoSystem, Local, Mesh, Mut, Name,
+  NextState, Observer, OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With, in_state,
 };
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use lib::shared;
@@ -56,7 +56,11 @@ impl Plugin for GenerationPlugin {
         )
           .run_if(in_state(AppState::Running)),
       )
-      .add_observer(on_remove_update_world_component_trigger);
+      .world_mut()
+      .spawn((
+        Observer::new(IntoSystem::into_system(on_remove_world_generation_component_trigger)),
+        Name::new("Observer: Remove WorldGenerationComponent"),
+      ));
   }
 }
 
@@ -464,8 +468,9 @@ fn stage_7_clean_up(
   GenerationStage::Done
 }
 
-/// Sets the `GenerationState` to `Idling` when the last `UpdateWorldComponent` has just been removed.
-fn on_remove_update_world_component_trigger(
+/// Sets the [`GenerationState`] to [`GenerationState::Idling`] when the last [`WorldGenerationComponent`] has just
+/// been removed.
+fn on_remove_world_generation_component_trigger(
   _trigger: Trigger<OnRemove, WorldGenerationComponent>,
   query: Query<&WorldGenerationComponent>,
   mut next_state: ResMut<NextState<GenerationState>>,
