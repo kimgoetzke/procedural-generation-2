@@ -1,7 +1,6 @@
 use crate::constants::*;
-use crate::generation::lib::{TerrainType, TileType};
+use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
 use crate::generation::object::lib::{ObjectName, TerrainState};
-use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
@@ -9,8 +8,7 @@ use bevy::log::*;
 use bevy::math::UVec2;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
-  Commands, Image, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath,
-  in_state,
+  Commands, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath, in_state,
 };
 use bevy_common_assets::ron::RonAssetPlugin;
 use std::fmt;
@@ -36,18 +34,16 @@ pub struct GenerationResourcesCollectionPlugin;
 impl Plugin for GenerationResourcesCollectionPlugin {
   fn build(&self, app: &mut App) {
     app
+      .init_resource::<GenerationResourcesCollection>()
       .add_plugins((
         RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
         RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
       ))
-      .init_resource::<GenerationResourcesCollection>()
       .add_systems(Startup, load_rule_sets_system)
       .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
       .add_systems(OnExit(AppState::Loading), initialise_resources_system);
   }
 }
-
-// --- Rules for wave function collapse -----------------------------------------------------
 
 #[derive(Resource, Default, Debug, Clone)]
 struct TerrainRuleSetHandle(Vec<Handle<TerrainRuleSet>>);
@@ -137,123 +133,6 @@ fn is_loading(loading_state: Option<LoadState>) -> bool {
   true
 }
 
-// --- Universal asset resources for the generation process ----------------------------------
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct GenerationResourcesCollection {
-  pub placeholder: AssetPack,
-  pub deep_water: AssetCollection,
-  pub shallow_water: AssetCollection,
-  pub land_dry_l1: AssetCollection,
-  pub land_dry_l2: AssetCollection,
-  pub land_dry_l3: AssetCollection,
-  pub land_moderate_l1: AssetCollection,
-  pub land_moderate_l2: AssetCollection,
-  pub land_moderate_l3: AssetCollection,
-  pub land_humid_l1: AssetCollection,
-  pub land_humid_l2: AssetCollection,
-  pub land_humid_l3: AssetCollection,
-  pub objects: ObjectResources,
-}
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct ObjectResources {
-  pub terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
-  pub water: AssetCollection,
-  pub shore: AssetCollection,
-  pub l1_dry: AssetCollection,
-  pub l1_moderate: AssetCollection,
-  pub l1_humid: AssetCollection,
-  pub l2_dry: AssetCollection,
-  pub l2_moderate: AssetCollection,
-  pub l2_humid: AssetCollection,
-  pub l3_dry: AssetCollection,
-  pub l3_moderate: AssetCollection,
-  pub l3_humid: AssetCollection,
-  pub trees_dry: AssetCollection,
-  pub trees_moderate: AssetCollection,
-  pub trees_humid: AssetCollection,
-}
-
-impl GenerationResourcesCollection {
-  pub fn get_terrain_collection(&self, terrain: TerrainType, climate: Climate) -> &AssetCollection {
-    match (terrain, climate) {
-      (TerrainType::DeepWater, _) => &self.deep_water,
-      (TerrainType::ShallowWater, _) => &self.shallow_water,
-      (TerrainType::Land1, Climate::Dry) => &self.land_dry_l1,
-      (TerrainType::Land1, Climate::Moderate) => &self.land_moderate_l1,
-      (TerrainType::Land1, Climate::Humid) => &self.land_humid_l1,
-      (TerrainType::Land2, Climate::Dry) => &self.land_dry_l2,
-      (TerrainType::Land2, Climate::Moderate) => &self.land_moderate_l2,
-      (TerrainType::Land2, Climate::Humid) => &self.land_humid_l2,
-      (TerrainType::Land3, Climate::Dry) => &self.land_dry_l3,
-      (TerrainType::Land3, Climate::Moderate) => &self.land_moderate_l3,
-      (TerrainType::Land3, Climate::Humid) => &self.land_humid_l3,
-      (TerrainType::Any, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
-    }
-  }
-
-  pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
-    match (terrain, climate, is_large_sprite) {
-      (TerrainType::DeepWater, _, _) => &self.objects.water,
-      (TerrainType::ShallowWater, _, _) => &self.objects.shore,
-      (TerrainType::Land1, Climate::Dry, _) => &self.objects.l1_dry,
-      (TerrainType::Land1, Climate::Moderate, _) => &self.objects.l1_moderate,
-      (TerrainType::Land1, Climate::Humid, _) => &self.objects.l1_humid,
-      (TerrainType::Land2, Climate::Dry, _) => &self.objects.l2_dry,
-      (TerrainType::Land2, Climate::Moderate, _) => &self.objects.l2_moderate,
-      (TerrainType::Land2, Climate::Humid, _) => &self.objects.l2_humid,
-      (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
-      (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
-      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_humid,
-      (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
-      (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
-      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l3_humid,
-      (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
-    }
-  }
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct AssetCollection {
-  pub stat: AssetPack,
-  pub anim: Option<AssetPack>,
-  pub animated_tile_types: HashSet<TileType>,
-}
-
-impl AssetCollection {
-  pub fn index_offset(&self) -> usize {
-    self.stat.index_offset
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct AssetPack {
-  pub texture: Handle<Image>,
-  pub texture_atlas_layout: Handle<TextureAtlasLayout>,
-  pub index_offset: usize,
-}
-
-impl Default for AssetPack {
-  fn default() -> Self {
-    Self {
-      texture: Handle::default(),
-      texture_atlas_layout: Handle::default(),
-      index_offset: 1,
-    }
-  }
-}
-
-impl AssetPack {
-  pub fn new(texture: Handle<Image>, texture_atlas_layout: Handle<TextureAtlasLayout>) -> Self {
-    Self {
-      texture,
-      texture_atlas_layout,
-      index_offset: 1,
-    }
-  }
-}
-
 fn initialise_resources_system(
   asset_server: Res<AssetServer>,
   mut layouts: ResMut<Assets<TextureAtlasLayout>>,
@@ -314,60 +193,6 @@ fn initialise_resources_system(
   let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
   let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
   asset_collection.objects.terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
-}
-
-/// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
-/// their possible states.
-///
-/// Note:
-/// - The `Any` terrain type is not included in the map, as it is used to extend other terrain types.
-/// - The `Unknown` tile type is also not included, as it is not a valid tile type and is only used to signal
-///   an error in the generation logic.
-fn resolve_rules_to_terrain_states_map(
-  terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
-  tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
-) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
-  let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
-  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
-    let relevant_terrain_rules = terrain_rules
-      .get(&terrain_type)
-      .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
-    let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
-      .filter(|&t| t != TileType::Unknown)
-      .map(|tile_type| {
-        let all_rules_for_tile_type = tile_type_rules
-          .get(&tile_type)
-          .expect(&format!("Failed to find rule set for [{:?}] tile type", tile_type));
-        let resolved_rules_for_tile_type = relevant_terrain_rules
-          .iter()
-          .filter(|rule| all_rules_for_tile_type.contains(&rule.name))
-          .cloned()
-          .collect();
-
-        (tile_type, resolved_rules_for_tile_type)
-      })
-      .collect();
-    debug!(
-      "Resolved [{}] rules for [{:?}] terrain type: {:?}",
-      resolved_rules_for_terrain.values().map(|ts| ts.len()).sum::<usize>(),
-      terrain_type,
-      resolved_rules_for_terrain
-        .iter()
-        .map(|(k, v)| (k, v.len()))
-        .collect::<HashMap<&TileType, usize>>()
-    );
-    terrain_state_map.insert(terrain_type, resolved_rules_for_terrain);
-  }
-  debug!(
-    "Resolved [{}] rules for [{}] terrain types",
-    terrain_state_map
-      .values()
-      .map(|tile_map| tile_map.values().map(|v| v.len()).sum::<usize>())
-      .sum::<usize>(),
-    terrain_state_map.len()
-  );
-
-  terrain_state_map
 }
 
 fn tile_set_static(
@@ -507,4 +332,58 @@ fn tile_type_rules(
   }
 
   HashMap::new()
+}
+
+/// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
+/// their possible states.
+///
+/// Note:
+/// - The `Any` terrain type is not included in the map, as it is used to extend other terrain types.
+/// - The `Unknown` tile type is also not included, as it is not a valid tile type and is only used to signal
+///   an error in the generation logic.
+fn resolve_rules_to_terrain_states_map(
+  terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
+  tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
+) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
+  let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
+  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
+    let relevant_terrain_rules = terrain_rules
+      .get(&terrain_type)
+      .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
+    let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
+      .filter(|&t| t != TileType::Unknown)
+      .map(|tile_type| {
+        let all_rules_for_tile_type = tile_type_rules
+          .get(&tile_type)
+          .expect(&format!("Failed to find rule set for [{:?}] tile type", tile_type));
+        let resolved_rules_for_tile_type = relevant_terrain_rules
+          .iter()
+          .filter(|rule| all_rules_for_tile_type.contains(&rule.name))
+          .cloned()
+          .collect();
+
+        (tile_type, resolved_rules_for_tile_type)
+      })
+      .collect();
+    trace!(
+      "Resolved [{}] rules for [{:?}] terrain type: {:?}",
+      resolved_rules_for_terrain.values().map(|ts| ts.len()).sum::<usize>(),
+      terrain_type,
+      resolved_rules_for_terrain
+        .iter()
+        .map(|(k, v)| (k, v.len()))
+        .collect::<HashMap<&TileType, usize>>()
+    );
+    terrain_state_map.insert(terrain_type, resolved_rules_for_terrain);
+  }
+  debug!(
+    "Resolved [{}] rules for [{}] terrain types",
+    terrain_state_map
+      .values()
+      .map(|tile_map| tile_map.values().map(|v| v.len()).sum::<usize>())
+      .sum::<usize>(),
+    terrain_state_map.len()
+  );
+
+  terrain_state_map
 }

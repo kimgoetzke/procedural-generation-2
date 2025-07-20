@@ -15,5 +15,4 @@ impl Plugin for GenerationResourcesPlugin {
 }
 
 pub use crate::generation::resources::chunk_component_index::*;
-pub use crate::generation::resources::generation_resources_collection::*;
 pub use crate::generation::resources::metadata::*;

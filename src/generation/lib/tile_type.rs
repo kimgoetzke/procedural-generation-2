@@ -1,6 +1,6 @@
 use crate::constants::*;
-use crate::generation::lib::TerrainType;
-use crate::generation::resources::{Climate, GenerationResourcesCollection};
+use crate::generation::lib::{GenerationResourcesCollection, TerrainType};
+use crate::generation::resources::Climate;
 use bevy::reflect::Reflect;
 use strum::EnumIter;
 

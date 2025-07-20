@@ -6,11 +6,12 @@ use crate::coords::point::{ChunkGrid, World};
 use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::{
-  Chunk, ChunkComponent, Direction, GenerationStage, WorldComponent, WorldGenerationComponent, get_direction_points,
+  Chunk, ChunkComponent, Direction, GenerationResourcesCollection, GenerationStage, WorldComponent,
+  WorldGenerationComponent, get_direction_points,
 };
 use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::object::lib::ObjectData;
-use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection, Metadata};
+use crate::generation::resources::{ChunkComponentIndex, Metadata};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::{AppState, GenerationState};
@@ -408,6 +409,7 @@ fn stage_5_schedule_generating_object_data(
   GenerationStage::Stage7
 }
 
+// TODO: Fix `cg` param because it's wrong and always has the same coords for some reason
 fn stage_6_schedule_spawning_objects(
   mut commands: &mut Commands,
   settings: &Settings,
