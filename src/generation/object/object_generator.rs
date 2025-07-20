@@ -90,7 +90,7 @@ pub fn schedule_spawning_objects(
     attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }
   debug!(
-    "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
+    "Scheduled {} object spawn tasks for world generation component {} in {} ms on {}",
     object_data_len,
     chunk_cg,
     shared::get_time() - start_time,

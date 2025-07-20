@@ -14,6 +14,7 @@ pub struct PropagationFailure {}
 /// a cell in the grid that can be collapsed to a single state. Once all [`Cell`]s in an [`ObjectGrid`][og] have been
 /// collapsed, they will be converted to [`ObjectData`][od]s which are then used to spawn object sprites in the world.
 /// A [`Cell`] is indirectly linked to an underlying [`Tile`][t] through its [`TerrainType`] and  [`TileType`] fields.
+/// Each [`Tile`][t] on a flat terrain plane has exactly 0 or 1 [`Cell`]s associated with it.
 ///
 /// [og]: crate::generation::object::lib::ObjectGrid
 /// [od]: crate::generation::object::lib::ObjectData
