@@ -53,6 +53,13 @@ pub fn determine_objects_in_grid(
   object_data
 }
 
+/// A single iteration over the object grid that performs the following steps:
+/// 1. **Observation**: Get the cells with the lowest entropy.
+/// 2. **Collapse**: Collapse a random cell from the cells with the lowest entropy.
+/// 3. **Propagation**: Update every neighbour's states and the grid, if possible.
+///
+/// This method is the central part of the wave function collapse algorithm and is called repeatedly until no more
+/// cells can be collapsed.
 fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
