@@ -9,7 +9,7 @@ bevy-inspector-egui = { version = "0.31.0" }
 bevy_pancam = { version = "0.18.0", features = ["bevy_egui"] }
 noise = { version = "0.9.0" }
 rand = { version = "0.9.1" }
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
 bevy_common_assets = { version = "0.13.0", features = ["ron"] }
 iyes_perf_ui = "0.5.0"
 strum = { version = "0.27.2", features = ["derive"] }
