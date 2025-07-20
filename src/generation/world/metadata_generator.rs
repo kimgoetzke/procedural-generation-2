@@ -2,16 +2,19 @@ use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::ChunkGrid;
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
-use crate::generation::lib::{TerrainType, shared};
+use crate::generation::lib::{Direction, TerrainType, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
+use bevy::platform::collections::HashSet;
 use bevy::prelude::{EventReader, EventWriter, NextState, OnEnter, Res, ResMut};
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
+use std::hash::Hasher;
+use std::hash::{DefaultHasher, Hash};
 use std::ops::Range;
 
 pub struct MetadataGeneratorPlugin;
@@ -83,6 +86,7 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
+      generate_connection_points(&mut metadata, cg);
       metadata.index.push(cg);
     })
   });
@@ -94,12 +98,15 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   );
 }
 
-fn generate_elevation_metadata(
-  metadata: &mut ResMut<Metadata>,
-  x: i32,
-  y: i32,
-  metadata_settings: &GenerationMetadataSettings,
-) {
+fn canonical_edge_id(chunk_a: &Point<ChunkGrid>, chunk_b: &Point<ChunkGrid>) -> (Point<ChunkGrid>, Point<ChunkGrid>) {
+  if chunk_a < chunk_b {
+    (*chunk_a, *chunk_b)
+  } else {
+    (*chunk_b, *chunk_a)
+  }
+}
+
+fn generate_elevation_metadata(metadata: &mut Metadata, x: i32, y: i32, metadata_settings: &GenerationMetadataSettings) {
   let grid_size = (CHUNK_SIZE as f32 - 1.) as f64;
   let (x_range, x_step) = calculate_range_and_step_size(x, grid_size, metadata_settings);
   let (y_range, y_step) = calculate_range_and_step_size(y, grid_size, metadata_settings);
@@ -176,4 +183,47 @@ fn generate_biome_metadata(
   let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
   trace!("Generated: {:?}", bm);
   metadata.biome.insert(cg, bm);
+}
+
+fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGrid>) {
+  get_cardinal_direction_points(&cg)
+    .iter()
+    .for_each(|(direction, neighbour_cg)| {
+      let (edge_a, edge_b) = canonical_edge_id(&cg, neighbour_cg);
+      let mut hasher = DefaultHasher::new();
+      format!("{:?}:{:?}", edge_a, edge_b).hash(&mut hasher);
+      let mut rng = StdRng::seed_from_u64(hasher.finish());
+      let num_points = match rng.random_range(0..100) {
+        0..=66 => 0,
+        67..=83 => 1,
+        _ => 2,
+      };
+
+      let mut connection_points = HashSet::new();
+      while connection_points.len() < num_points {
+        let coordinate = rng.random_range(2..CHUNK_SIZE - 2);
+        match direction {
+          Direction::Top => connection_points.insert(Point::new_internal_grid(coordinate, 0)),
+          Direction::Right => connection_points.insert(Point::new_internal_grid(CHUNK_SIZE, coordinate)),
+          Direction::Bottom => connection_points.insert(Point::new_internal_grid(coordinate, CHUNK_SIZE - 1)),
+          Direction::Left => connection_points.insert(Point::new_internal_grid(0, coordinate)),
+          _ => panic!(
+            "Unexpected intercardinal direction: [{:?}] - only cardinal directions are valid",
+            direction
+          ),
+        };
+      }
+
+      if connection_points.len() > 0 {
+        debug!(
+          "{} has [{}] connection points with [{:?}] {}: {:?}",
+          cg,
+          connection_points.len(),
+          direction,
+          neighbour_cg,
+          connection_points
+        );
+      }
+      metadata.connection_points.insert(cg, connection_points.into_iter().collect());
+    });
 }

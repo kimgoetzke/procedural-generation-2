@@ -32,6 +32,7 @@ pub struct Metadata {
   pub index: Vec<Point<ChunkGrid>>,
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
   pub biome: HashMap<Point<ChunkGrid>, BiomeMetadata>,
+  pub connection_points: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
 }
 
 impl Metadata {

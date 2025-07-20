@@ -75,6 +75,17 @@ pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direc
   ]
 }
 
+pub fn get_cardinal_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 4] {
+  let offset = calculate_offset::<T>();
+  let p = point;
+  [
+    (Direction::Top, Point::new(p.x, p.y + offset)),
+    (Direction::Left, Point::new(p.x - offset, p.y)),
+    (Direction::Right, Point::new(p.x + offset, p.y)),
+    (Direction::Bottom, Point::new(p.x, p.y - offset)),
+  ]
+}
+
 fn calculate_offset<T: CoordType + 'static>() -> i32 {
   match std::any::TypeId::of::<T>() {
     id if id == std::any::TypeId::of::<TileGrid>() => CHUNK_SIZE,

@@ -15,7 +15,7 @@ mod tile_type;
 pub use crate::resources::Settings;
 pub use chunk::Chunk;
 pub use components::*;
-pub use direction::{Direction, get_direction_points};
+pub use direction::{Direction, get_cardinal_direction_points, get_direction_points};
 pub use draft_tile::DraftTile;
 pub use layered_plane::LayeredPlane;
 pub use neighbours::{NeighbourTile, NeighbourTiles};
