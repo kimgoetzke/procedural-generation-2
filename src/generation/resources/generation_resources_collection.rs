@@ -301,13 +301,13 @@ fn terrain_rules(
   }
   if let Some(any_rule_set) = rule_sets.remove(&TerrainType::Any) {
     debug!(
-      "Found and removed [Any] terrain rule set with {} state(s) and will extend each of the other rule sets accordingly",
+      "Found and removed [Any] terrain rule set with [{}] state(s) and will extend each of the other rule sets accordingly",
       any_rule_set.len()
     );
     for (terrain, states) in rule_sets.iter_mut() {
       states.splice(0..0, any_rule_set.iter().cloned());
       debug!(
-        "Extended [{}] rule set by {}, it now has {} states",
+        "Extended [{}] rule set by [{}], it now has [{}] states",
         terrain,
         any_rule_set.len(),
         states.len()
@@ -323,7 +323,7 @@ fn tile_type_rules(
   tile_type_rule_set_assets: &mut ResMut<Assets<TileTypeRuleSet>>,
 ) -> HashMap<TileType, Vec<ObjectName>> {
   if let Some(rule_set) = tile_type_rule_set_assets.remove(&tile_type_rule_set_handle.0) {
-    debug!("Loaded: Tile type rule set for {} tiles", rule_set.states.len());
+    debug!("Loaded: Tile type rule set for [{}] tiles", rule_set.states.len());
     let mut rule_sets = HashMap::new();
     for state in rule_set.states {
       rule_sets.insert(state.tile_type, state.permitted_self);

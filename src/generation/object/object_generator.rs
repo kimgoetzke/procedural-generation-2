@@ -55,13 +55,12 @@ pub fn generate_object_data(
 
   let grid = ObjectGrid::new_initialised(chunk_cg, &resources.objects.terrain_state_map, &tile_data);
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
-  let objects_count = grid.grid.len();
   let tile_data_len = tile_data.len();
   let mut object_generation_data = (grid.clone(), tile_data);
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
-    "Generated object data for {} objects (for {} tiles) for chunk {} in {} ms on {}",
-    objects_count,
+    "Generated object data for [{}] objects (over {} tiles) for chunk {} in {} ms on {}",
+    object_data.len(),
     tile_data_len,
     chunk_cg,
     shared::get_time() - start_time,
@@ -88,7 +87,7 @@ pub fn schedule_spawning_objects(
   }
   if let Some(cg) = chunk_cg {
     debug!(
-      "Scheduled {} object spawn tasks for world generation component {} in {} ms on {}",
+      "Scheduled [{}] object spawn tasks for world generation component {} in {} ms on {}",
       object_data_len,
       cg,
       shared::get_time() - start_time,

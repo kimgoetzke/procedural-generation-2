@@ -527,7 +527,7 @@ fn prune_world(
       }
     });
   info!(
-    "World pruning (despawn_all_chunks={}, update_world_after={}) took {} ms on [{}]",
+    "World pruning (despawn_all_chunks={}, update_world_after={}) took {} ms on {}",
     despawn_all_chunks,
     update_world_after,
     shared::get_time() - start_time,
