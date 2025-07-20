@@ -334,6 +334,9 @@ fn tile_type_rules(
   HashMap::new()
 }
 
+// TODO: Consider adding some preprocessing logic that throws on invalid states e.g. if the specific terrain-tile type
+//  combination x has y as a possible neighbour but y does not have x as a possible neighbour. I assume there'll be a
+//  a few of those cases because the error rate for the WFC is too high.
 /// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
 /// their possible states.
 ///
