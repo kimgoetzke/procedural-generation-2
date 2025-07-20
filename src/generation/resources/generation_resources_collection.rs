@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::generation::lib::{TerrainType, TileType};
-use crate::generation::object::lib::{Connection, ObjectName};
+use crate::generation::object::lib::{ObjectName, TerrainState};
 use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
@@ -57,14 +57,6 @@ impl Display for TerrainRuleSet {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "[{:?}] terrain rule set with {} states", self.terrain, self.states.len())
   }
-}
-
-#[derive(serde::Deserialize, Debug, Clone, Reflect)]
-pub struct TerrainState {
-  pub name: ObjectName,
-  pub index: i32,
-  pub weight: i32,
-  pub permitted_neighbours: Vec<(Connection, Vec<ObjectName>)>,
 }
 
 #[derive(Resource, Default, Debug, Clone)]

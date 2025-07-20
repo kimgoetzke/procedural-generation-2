@@ -1,8 +1,8 @@
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::lib::{TerrainType, TileType};
+use crate::generation::object::lib::terrain_state::TerrainState;
 use crate::generation::object::lib::{Connection, ObjectName};
-use crate::generation::resources::TerrainState;
 use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::Rng;
