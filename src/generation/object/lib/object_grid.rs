@@ -51,8 +51,7 @@ impl ObjectGrid {
 
   pub fn new_initialised(
     cg: Point<ChunkGrid>,
-    terrain_rules: &HashMap<TerrainType, Vec<TerrainState>>,
-    tile_type_rules: &HashMap<TileType, Vec<ObjectName>>,
+    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
@@ -61,8 +60,13 @@ impl ObjectGrid {
       let terrain = data.flat_tile.terrain;
       let tile_type = data.flat_tile.tile_type;
       if let Some(cell) = grid.get_cell_mut(&ig) {
-        let relevant_rules = resolve_rules(tile_type, terrain_rules, tile_type_rules, terrain);
-        cell.initialise(terrain, tile_type, &relevant_rules);
+        let possible_states = terrain_state_map
+          .get(&terrain)
+          .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str())
+          .get(&tile_type)
+          .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str())
+          .clone();
+        cell.initialise(terrain, tile_type, &possible_states);
         trace!(
           "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           ig,
@@ -141,39 +145,4 @@ impl ObjectGrid {
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
     self.grid = other.grid.clone();
   }
-}
-
-// TODO: Make resolving rules for each tile type part of the app initialisation process
-//  instead of repeating for each tile during the object generation process
-fn resolve_rules(
-  tile_type: TileType,
-  terrain_rules: &HashMap<TerrainType, Vec<TerrainState>>,
-  tile_type_rules: &HashMap<TileType, Vec<ObjectName>>,
-  terrain: TerrainType,
-) -> Vec<TerrainState> {
-  let relevant_terrain_rules = terrain_rules
-    .get(&terrain)
-    .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str());
-  let relevant_tile_type_rules = tile_type_rules
-    .get(&tile_type)
-    .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str());
-
-  let mut resolved_rules = vec![];
-  for terrain_rule in relevant_terrain_rules {
-    if relevant_tile_type_rules.contains(&terrain_rule.name) {
-      resolved_rules.push(terrain_rule.clone());
-    }
-  }
-
-  trace!(
-    "Resolved {} rule(s) for this [{:?}] tile from {:?} [{}] terrain rules and {:?} tile type rules: {:?}",
-    resolved_rules.len(),
-    tile_type,
-    terrain_rules.len(),
-    terrain,
-    tile_type_rules.len(),
-    resolved_rules.iter().map(|r| r.name).collect::<Vec<ObjectName>>()
-  );
-
-  resolved_rules
 }

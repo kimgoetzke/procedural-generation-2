@@ -1,8 +1,9 @@
 use bevy::reflect::Reflect;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use strum::EnumIter;
 
-#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Reflect)]
+#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Reflect, EnumIter)]
 pub enum TerrainType {
   DeepWater,
   ShallowWater,
@@ -25,8 +26,9 @@ impl Display for TerrainType {
 }
 
 impl TerrainType {
+  /// The number of variants in the [`TerrainType`] enum excluding `Any`.
   pub fn length() -> usize {
-    5 // Ignore TerrainType:Any
+    5
   }
 
   pub fn from(i: usize) -> Self {

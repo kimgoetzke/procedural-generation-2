@@ -58,12 +58,7 @@ pub fn generate_object_data(
     }
   }
 
-  let grid = ObjectGrid::new_initialised(
-    chunk_cg,
-    &resources.objects.terrain_rules,
-    &resources.objects.tile_type_rules,
-    &tile_data,
-  );
+  let grid = ObjectGrid::new_initialised(chunk_cg, &resources.objects.terrain_state_map, &tile_data);
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let objects_count = grid.grid.len();
   let tile_data_len = tile_data.len();

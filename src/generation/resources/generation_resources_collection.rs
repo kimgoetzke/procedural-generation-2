@@ -15,6 +15,7 @@ use bevy::prelude::{
 use bevy_common_assets::ron::RonAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use strum::IntoEnumIterator;
 
 pub struct GenerationResourcesCollectionPlugin;
 
@@ -81,15 +82,14 @@ impl Display for TileTypeRuleSet {
 }
 
 #[derive(serde::Deserialize, Debug, Clone, Reflect)]
-pub struct TileTypeState {
+struct TileTypeState {
   pub tile_type: TileType,
   pub permitted_self: Vec<ObjectName>,
 }
 
 fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
-  for i in 0..TerrainType::length() {
-    let terrain_type = TerrainType::from(i);
+  for terrain_type in TerrainType::iter() {
     let path = format!("objects/{}.terrain.ruleset.ron", terrain_type.to_string().to_lowercase());
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
@@ -152,8 +152,7 @@ pub struct GenerationResourcesCollection {
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct ObjectResources {
-  pub terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
-  pub tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
+  pub terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
   pub water: AssetCollection,
   pub shore: AssetCollection,
   pub l1_dry: AssetCollection,
@@ -306,8 +305,63 @@ fn initialise_resources_system(
   asset_collection.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
 
   // Objects: Rule sets for wave function collapse
-  asset_collection.objects.terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
-  asset_collection.objects.tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
+  let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  asset_collection.objects.terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
+}
+
+/// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
+/// their possible states.
+///
+/// Note:
+/// - The `Any` terrain type is not included in the map, as it is used to extend other terrain types.
+/// - The `Unknown` tile type is also not included, as it is not a valid tile type and is only used to signal
+///   an error in the generation logic.
+fn resolve_rules_to_terrain_states_map(
+  terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
+  tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
+) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
+  let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
+  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
+    let relevant_terrain_rules = terrain_rules
+      .get(&terrain_type)
+      .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
+    let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
+      .filter(|&t| t != TileType::Unknown)
+      .map(|tile_type| {
+        let all_rules_for_tile_type = tile_type_rules
+          .get(&tile_type)
+          .expect(&format!("Failed to find rule set for [{:?}] tile type", tile_type));
+        let resolved_rules_for_tile_type = relevant_terrain_rules
+          .iter()
+          .filter(|rule| all_rules_for_tile_type.contains(&rule.name))
+          .cloned()
+          .collect();
+
+        (tile_type, resolved_rules_for_tile_type)
+      })
+      .collect();
+    debug!(
+      "Resolved [{}] rules for [{:?}] terrain type: {:?}",
+      resolved_rules_for_terrain.values().map(|ts| ts.len()).sum::<usize>(),
+      terrain_type,
+      resolved_rules_for_terrain
+        .iter()
+        .map(|(k, v)| (k, v.len()))
+        .collect::<HashMap<&TileType, usize>>()
+    );
+    terrain_state_map.insert(terrain_type, resolved_rules_for_terrain);
+  }
+  debug!(
+    "Resolved [{}] rules for [{}] terrain types",
+    terrain_state_map
+      .values()
+      .map(|tile_map| tile_map.values().map(|v| v.len()).sum::<usize>())
+      .sum::<usize>(),
+    terrain_state_map.len()
+  );
+
+  terrain_state_map
 }
 
 fn tile_set_static(

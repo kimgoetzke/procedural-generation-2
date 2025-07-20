@@ -2,8 +2,9 @@ use crate::constants::*;
 use crate::generation::lib::TerrainType;
 use crate::generation::resources::{Climate, GenerationResourcesCollection};
 use bevy::reflect::Reflect;
+use strum::EnumIter;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect, serde::Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Reflect, serde::Deserialize, EnumIter)]
 pub enum TileType {
   Fill,
   InnerCornerTopRight,
