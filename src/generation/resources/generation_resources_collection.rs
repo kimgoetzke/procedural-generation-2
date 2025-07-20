@@ -17,6 +17,20 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 
+/// This plugin is responsible for loading and managing the resources - e.g. sprites and rule sets - required for the
+/// generation process. The purpose of this plugin is to ensure that all necessary assets are loaded, preprocessed, and
+/// initialised before the generation process starts.
+///
+/// At its core, this plugin adds the [`GenerationResourcesCollection`] resource, making it available to the rest of the
+/// application.
+///
+/// In terms of process, it works as follows:
+/// 1. The plugin loads the rule sets for terrain and tile types from the file system. At this point, the application is
+///    in the [`AppState::Loading`] state.
+/// 2. While in this state, it checks the loading state of these assets and waits until they are fully loaded, then
+///    transitions the state to [`AppState::Initialising`].
+/// 3. Upon transitioning to the initialising state (i.e. [`OnExit`] of [`AppState::Loading`]), it finally
+///    initialises the [`GenerationResourcesCollection`] resource.
 pub struct GenerationResourcesCollectionPlugin;
 
 impl Plugin for GenerationResourcesCollectionPlugin {
