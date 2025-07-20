@@ -413,7 +413,6 @@ fn stage_5_schedule_generating_object_data(
   GenerationStage::Stage7
 }
 
-// TODO: Fix `cg` param because it's wrong and always has the same coords for some reason
 fn stage_6_schedule_spawning_objects(
   mut commands: &mut Commands,
   settings: &Settings,
@@ -425,7 +424,7 @@ fn stage_6_schedule_spawning_objects(
       if task.is_finished() {
         let object_data = block_on(poll_once(task)).expect("Failed to get object data");
         let mut rng = StdRng::seed_from_u64(shared::calculate_seed(*cg, settings.world.noise_seed));
-        object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data, cg);
+        object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data);
         false
       } else {
         true

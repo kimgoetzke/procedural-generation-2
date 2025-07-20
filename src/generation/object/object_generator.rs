@@ -1,6 +1,4 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::ChunkGrid;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
 use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
@@ -78,21 +76,25 @@ pub fn schedule_spawning_objects(
   settings: &Settings,
   mut rng: &mut StdRng,
   object_data: Vec<ObjectData>,
-  chunk_cg: &Point<ChunkGrid>,
 ) {
+  let chunk_cg = object_data
+    .first()
+    .map_or(None, |o| Some(o.tile_data.flat_tile.coords.chunk_grid));
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
   for object in object_data {
     attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }
-  debug!(
-    "Scheduled {} object spawn tasks for world generation component {} in {} ms on {}",
-    object_data_len,
-    chunk_cg,
-    shared::get_time() - start_time,
-    shared::thread_name()
-  );
+  if let Some(cg) = chunk_cg {
+    debug!(
+      "Scheduled {} object spawn tasks for world generation component {} in {} ms on {}",
+      object_data_len,
+      cg,
+      shared::get_time() - start_time,
+      shared::thread_name()
+    );
+  }
 }
 
 fn attach_object_spawn_task(
