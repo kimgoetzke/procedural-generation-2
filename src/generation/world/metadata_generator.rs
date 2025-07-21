@@ -8,7 +8,6 @@ use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
-use bevy::platform::collections::HashSet;
 use bevy::prelude::{EventReader, EventWriter, NextState, OnEnter, Res, ResMut};
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::prelude::StdRng;
@@ -192,47 +191,43 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
 
 fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
   let mut connection_points = Vec::new();
-  get_cardinal_direction_points(&cg)
-    .iter()
-    .for_each(|(direction, neighbour_cg)| {
-      let (edge_a, edge_b) = canonical_edge_id(&cg, neighbour_cg);
-      let mut hasher = DefaultHasher::new();
-      format!("{:?}:{:?}", edge_a, edge_b).hash(&mut hasher);
-      let mut rng = StdRng::seed_from_u64(hasher.finish());
-      let num_points = match rng.random_range(0..100) {
-        0..=80 => 0,
-        81..=90 => 1,
-        _ => 2,
-      };
-
-      let mut connection_points_for_direction = Vec::new();
-      while connection_points_for_direction.len() < num_points {
+  for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {
+    let (edge_a, edge_b) = canonical_edge_id(&cg, &neighbour_cg);
+    let mut hasher = DefaultHasher::new();
+    format!("{:?}:{:?}", edge_a, edge_b).hash(&mut hasher);
+    let mut rng = StdRng::seed_from_u64(hasher.finish());
+    let num_points = match rng.random_range(0..100) {
+      0..=80 => 0,
+      81..=90 => 1,
+      _ => 2,
+    };
+    let mut connection_points_for_edge = (0..num_points)
+      .map(|_| {
         let coordinate = rng.random_range(2..CHUNK_SIZE - 2);
         match direction {
-          Direction::Top => connection_points_for_direction.push(Point::new_internal_grid(coordinate, 0)),
-          Direction::Right => connection_points_for_direction.push(Point::new_internal_grid(CHUNK_SIZE, coordinate)),
-          Direction::Bottom => connection_points_for_direction.push(Point::new_internal_grid(coordinate, CHUNK_SIZE - 1)),
-          Direction::Left => connection_points_for_direction.push(Point::new_internal_grid(0, coordinate)),
+          Direction::Top => Point::new_internal_grid(coordinate, 0),
+          Direction::Right => Point::new_internal_grid(CHUNK_SIZE, coordinate),
+          Direction::Bottom => Point::new_internal_grid(coordinate, CHUNK_SIZE - 1),
+          Direction::Left => Point::new_internal_grid(0, coordinate),
           _ => panic!(
             "Unexpected intercardinal direction: [{:?}] - only cardinal directions are valid",
             direction
           ),
-        };
-      }
-
-      if connection_points_for_direction.len() > 0 {
-        debug!(
-          "{} has [{}] connection points with [{:?}] {}: {:?}",
-          cg,
-          connection_points_for_direction.len(),
-          direction,
-          neighbour_cg,
-          connection_points_for_direction
-        );
-      }
-
-      connection_points.append(&mut connection_points_for_direction);
-    });
+        }
+      })
+      .collect::<Vec<_>>();
+    if !connection_points_for_edge.is_empty() {
+      debug!(
+        "{} has [{}] connection points with [{:?}] {}: {:?}",
+        cg,
+        connection_points_for_edge.len(),
+        direction,
+        neighbour_cg,
+        connection_points_for_edge
+      );
+    }
+    connection_points.append(&mut connection_points_for_edge);
+  }
 
   connection_points
 }
@@ -284,49 +279,52 @@ mod tests {
   }
 
   fn run_test_for(cg: Point<ChunkGrid>) {
-    // Map of chunk grid points to their connection points
-    let mut points_map = std::collections::HashMap::new();
-    let center_points = calculate_connection_points_for_cg(&cg);
-    points_map.insert(cg, center_points);
+    // Generate connection points for requested point
+    let mut connection_points_map = std::collections::HashMap::new();
+    let connection_points = calculate_connection_points_for_cg(&cg);
+    connection_points_map.insert(cg, connection_points);
 
-    // Get direct neighbors and their connection points and assert that they never exceed the maximum
+    // Generate connection points for all neighbors
     for (_, neighbor_cg) in get_cardinal_direction_points(&cg) {
       let neighbor_points = calculate_connection_points_for_cg(&neighbor_cg);
-      assert!(
-        neighbor_points.len() <= 8,
-        "Neighbor {:?} has more than 8 connection points: {:?}",
-        neighbor_cg,
-        neighbor_points
-      );
-      points_map.insert(neighbor_cg, neighbor_points);
+      connection_points_map.insert(neighbor_cg, neighbor_points);
     }
 
-    // For each direction, check that connection points are paired
-    for (direction, neighbor_cg) in get_cardinal_direction_points(&cg) {
-      let center_points = points_map.get(&cg).unwrap();
-      let neighbor_points = points_map.get(&neighbor_cg).unwrap();
+    // Assert that no point has more than the permitted number of connections
+    for (cg, cps) in &connection_points_map {
+      assert!(cps.len() <= 8, "Neighbor {:?} has more than 8 connections: {:?}", cg, cps);
+    }
 
-      for p in center_points {
-        let (edge_match, coord) = match direction {
-          Direction::Top if p.y == 0 => (Direction::Bottom, p.x),
-          Direction::Bottom if p.y == CHUNK_SIZE - 1 => (Direction::Top, p.x),
-          Direction::Left if p.x == 0 => (Direction::Right, p.y),
-          Direction::Right if p.x == CHUNK_SIZE => (Direction::Left, p.y),
+    // For each direction in turn, assert that connection points are matching pairs
+    for (direction, neighbor_cg) in get_cardinal_direction_points(&cg) {
+      let reference_connection_points = connection_points_map
+        .get(&cg)
+        .expect("Failed to find connection points for current chunk grid");
+      let neighbor_connection_points = connection_points_map
+        .get(&neighbor_cg)
+        .expect("Failed to find connection points for current chunk grid");
+
+      for ig in reference_connection_points {
+        let (expected_direction, expected_coordinate) = match direction {
+          Direction::Top if ig.y == 0 => (Direction::Bottom, ig.x),
+          Direction::Bottom if ig.y == CHUNK_SIZE - 1 => (Direction::Top, ig.x),
+          Direction::Left if ig.x == 0 => (Direction::Right, ig.y),
+          Direction::Right if ig.x == CHUNK_SIZE => (Direction::Left, ig.y),
           _ => continue,
         };
-
-        let has_pair = neighbor_points.iter().any(|np| match edge_match {
-          Direction::Top => np.y == 0 && np.x == coord,
-          Direction::Bottom => np.y == CHUNK_SIZE - 1 && np.x == coord,
-          Direction::Left => np.x == 0 && np.y == coord,
-          Direction::Right => np.x == CHUNK_SIZE && np.y == coord,
-          _ => false,
-        });
-
+        let is_matching_pair = neighbor_connection_points
+          .iter()
+          .any(|neighbour_ig| match expected_direction {
+            Direction::Top => neighbour_ig.y == 0 && neighbour_ig.x == expected_coordinate,
+            Direction::Bottom => neighbour_ig.y == CHUNK_SIZE - 1 && neighbour_ig.x == expected_coordinate,
+            Direction::Left => neighbour_ig.x == 0 && neighbour_ig.y == expected_coordinate,
+            Direction::Right => neighbour_ig.x == CHUNK_SIZE && neighbour_ig.y == expected_coordinate,
+            _ => false,
+          });
         assert!(
-          has_pair,
+          is_matching_pair,
           "No matching connection point for {:?} at {:?} in neighbor {:?}",
-          direction, p, neighbor_cg
+          direction, ig, neighbor_cg
         );
       }
     }
