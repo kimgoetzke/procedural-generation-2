@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::coords::Point;
-use crate::coords::point::ChunkGrid;
+use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
 use crate::generation::lib::{Direction, TerrainType, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
@@ -186,6 +186,12 @@ fn generate_biome_metadata(
 }
 
 fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGrid>) {
+  let connection_points = calculate_connection_points_for_cg(&cg);
+  metadata.connection_points.insert(cg, connection_points);
+}
+
+fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
+  let mut connection_points = Vec::new();
   get_cardinal_direction_points(&cg)
     .iter()
     .for_each(|(direction, neighbour_cg)| {
@@ -194,19 +200,19 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
       format!("{:?}:{:?}", edge_a, edge_b).hash(&mut hasher);
       let mut rng = StdRng::seed_from_u64(hasher.finish());
       let num_points = match rng.random_range(0..100) {
-        0..=66 => 0,
-        67..=83 => 1,
+        0..=80 => 0,
+        81..=90 => 1,
         _ => 2,
       };
 
-      let mut connection_points = HashSet::new();
-      while connection_points.len() < num_points {
+      let mut connection_points_for_direction = Vec::new();
+      while connection_points_for_direction.len() < num_points {
         let coordinate = rng.random_range(2..CHUNK_SIZE - 2);
         match direction {
-          Direction::Top => connection_points.insert(Point::new_internal_grid(coordinate, 0)),
-          Direction::Right => connection_points.insert(Point::new_internal_grid(CHUNK_SIZE, coordinate)),
-          Direction::Bottom => connection_points.insert(Point::new_internal_grid(coordinate, CHUNK_SIZE - 1)),
-          Direction::Left => connection_points.insert(Point::new_internal_grid(0, coordinate)),
+          Direction::Top => connection_points_for_direction.push(Point::new_internal_grid(coordinate, 0)),
+          Direction::Right => connection_points_for_direction.push(Point::new_internal_grid(CHUNK_SIZE, coordinate)),
+          Direction::Bottom => connection_points_for_direction.push(Point::new_internal_grid(coordinate, CHUNK_SIZE - 1)),
+          Direction::Left => connection_points_for_direction.push(Point::new_internal_grid(0, coordinate)),
           _ => panic!(
             "Unexpected intercardinal direction: [{:?}] - only cardinal directions are valid",
             direction
@@ -214,16 +220,115 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
         };
       }
 
-      if connection_points.len() > 0 {
+      if connection_points_for_direction.len() > 0 {
         debug!(
           "{} has [{}] connection points with [{:?}] {}: {:?}",
           cg,
-          connection_points.len(),
+          connection_points_for_direction.len(),
           direction,
           neighbour_cg,
-          connection_points
+          connection_points_for_direction
         );
       }
-      metadata.connection_points.insert(cg, connection_points.into_iter().collect());
+
+      connection_points.append(&mut connection_points_for_direction);
     });
+
+  connection_points
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::coords::Point;
+  use crate::generation::lib::Direction;
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_1() {
+    run_test_for(Point::new_chunk_grid(1, 1))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_2() {
+    run_test_for(Point::new_chunk_grid(0, 0))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_1() {
+    run_test_for(Point::new_chunk_grid(50, 100))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_2() {
+    run_test_for(Point::new_chunk_grid(-9999, 9999))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_3() {
+    run_test_for(Point::new_chunk_grid(91933459, 89345345))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_1() {
+    run_test_for(Point::new_chunk_grid(-1, -1))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_2() {
+    run_test_for(Point::new_chunk_grid(-25, -74))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_3() {
+    run_test_for(Point::new_chunk_grid(-52939252, -82445308))
+  }
+
+  fn run_test_for(cg: Point<ChunkGrid>) {
+    // Map of chunk grid points to their connection points
+    let mut points_map = std::collections::HashMap::new();
+    let center_points = calculate_connection_points_for_cg(&cg);
+    points_map.insert(cg, center_points);
+
+    // Get direct neighbors and their connection points and assert that they never exceed the maximum
+    for (_, neighbor_cg) in get_cardinal_direction_points(&cg) {
+      let neighbor_points = calculate_connection_points_for_cg(&neighbor_cg);
+      assert!(
+        neighbor_points.len() <= 8,
+        "Neighbor {:?} has more than 8 connection points: {:?}",
+        neighbor_cg,
+        neighbor_points
+      );
+      points_map.insert(neighbor_cg, neighbor_points);
+    }
+
+    // For each direction, check that connection points are paired
+    for (direction, neighbor_cg) in get_cardinal_direction_points(&cg) {
+      let center_points = points_map.get(&cg).unwrap();
+      let neighbor_points = points_map.get(&neighbor_cg).unwrap();
+
+      for p in center_points {
+        let (edge_match, coord) = match direction {
+          Direction::Top if p.y == 0 => (Direction::Bottom, p.x),
+          Direction::Bottom if p.y == CHUNK_SIZE - 1 => (Direction::Top, p.x),
+          Direction::Left if p.x == 0 => (Direction::Right, p.y),
+          Direction::Right if p.x == CHUNK_SIZE => (Direction::Left, p.y),
+          _ => continue,
+        };
+
+        let has_pair = neighbor_points.iter().any(|np| match edge_match {
+          Direction::Top => np.y == 0 && np.x == coord,
+          Direction::Bottom => np.y == CHUNK_SIZE - 1 && np.x == coord,
+          Direction::Left => np.x == 0 && np.y == coord,
+          Direction::Right => np.x == CHUNK_SIZE && np.y == coord,
+          _ => false,
+        });
+
+        assert!(
+          has_pair,
+          "No matching connection point for {:?} at {:?} in neighbor {:?}",
+          direction, p, neighbor_cg
+        );
+      }
+    }
+  }
 }
