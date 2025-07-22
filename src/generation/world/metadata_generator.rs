@@ -97,14 +97,6 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   );
 }
 
-fn canonical_edge_id(chunk_a: &Point<ChunkGrid>, chunk_b: &Point<ChunkGrid>) -> (Point<ChunkGrid>, Point<ChunkGrid>) {
-  if chunk_a < chunk_b {
-    (*chunk_a, *chunk_b)
-  } else {
-    (*chunk_b, *chunk_a)
-  }
-}
-
 fn generate_elevation_metadata(metadata: &mut Metadata, x: i32, y: i32, metadata_settings: &GenerationMetadataSettings) {
   let grid_size = (CHUNK_SIZE as f32 - 1.) as f64;
   let (x_range, x_step) = calculate_range_and_step_size(x, grid_size, metadata_settings);
@@ -192,10 +184,8 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
 fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
   let mut connection_points = Vec::new();
   for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {
-    let (edge_a, edge_b) = canonical_edge_id(&cg, &neighbour_cg);
-    let mut hasher = DefaultHasher::new();
-    format!("{:?}:{:?}", edge_a, edge_b).hash(&mut hasher);
-    let mut rng = StdRng::seed_from_u64(hasher.finish());
+    let hash= generate_hash(&cg, &neighbour_cg);
+    let mut rng = StdRng::seed_from_u64(hash);
     let num_points = match rng.random_range(0..100) {
       0..=80 => 0,
       81..=90 => 1,
@@ -232,6 +222,20 @@ fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<Intern
   connection_points
 }
 
+/// Generates a hash based on ordered chunk grid points. This leads to the same hash for the same pair of
+/// chunk grids, regardless of the order in which they are passed.
+fn generate_hash(reference_cg: &Point<ChunkGrid>, neighbour_cg: &Point<ChunkGrid>) -> u64 {
+  let mut hasher = DefaultHasher::new();
+  let (smaller_point, larger_point) = if reference_cg < neighbour_cg {
+    (*reference_cg, *neighbour_cg)
+  } else {
+    (*neighbour_cg, *reference_cg)
+  };
+  format!("{:?}:{:?}", smaller_point, larger_point).hash(&mut hasher);
+
+  hasher.finish()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -240,45 +244,45 @@ mod tests {
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_1() {
-    run_test_for(Point::new_chunk_grid(1, 1))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(1, 1))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_2() {
-    run_test_for(Point::new_chunk_grid(0, 0))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(0, 0))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_large_numbers_1() {
-    run_test_for(Point::new_chunk_grid(50, 100))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(50, 100))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_large_numbers_2() {
-    run_test_for(Point::new_chunk_grid(-9999, 9999))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-9999, 9999))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_large_numbers_3() {
-    run_test_for(Point::new_chunk_grid(91933459, 89345345))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(91933459, 89345345))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_negative_numbers_1() {
-    run_test_for(Point::new_chunk_grid(-1, -1))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-1, -1))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_negative_numbers_2() {
-    run_test_for(Point::new_chunk_grid(-25, -74))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-25, -74))
   }
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_for_negative_numbers_3() {
-    run_test_for(Point::new_chunk_grid(-52939252, -82445308))
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-52939252, -82445308))
   }
 
-  fn run_test_for(cg: Point<ChunkGrid>) {
+  fn calculate_connection_points_generates_matching_pairs(cg: Point<ChunkGrid>) {
     // Generate connection points for requested point
     let mut connection_points_map = std::collections::HashMap::new();
     let connection_points = calculate_connection_points_for_cg(&cg);
