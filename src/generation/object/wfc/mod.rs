@@ -1,6 +1,5 @@
 use crate::generation::lib::shared;
-use crate::generation::object::lib::tile_data::TileData;
-use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid};
+use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid, TileData};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;

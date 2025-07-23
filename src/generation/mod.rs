@@ -31,6 +31,7 @@ use resources::GenerationResourcesPlugin;
 mod debug;
 pub(crate) mod lib;
 mod object;
+mod path;
 pub mod resources;
 mod world;
 

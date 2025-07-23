@@ -5,7 +5,7 @@ mod object_data;
 mod object_grid;
 mod object_name;
 mod terrain_state;
-pub mod tile_data;
+mod tile_data;
 
 pub use cell::Cell;
 pub use connection::Connection;

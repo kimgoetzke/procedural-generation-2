@@ -184,7 +184,7 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
 fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
   let mut connection_points = Vec::new();
   for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {
-    let hash= generate_hash(&cg, &neighbour_cg);
+    let hash = generate_hash(&cg, &neighbour_cg);
     let mut rng = StdRng::seed_from_u64(hash);
     let num_points = match rng.random_range(0..100) {
       0..=80 => 0,
