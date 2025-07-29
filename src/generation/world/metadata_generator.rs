@@ -196,7 +196,7 @@ fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<Intern
         let coordinate = rng.random_range(2..CHUNK_SIZE - 2);
         match direction {
           Direction::Top => Point::new_internal_grid(coordinate, 0),
-          Direction::Right => Point::new_internal_grid(CHUNK_SIZE, coordinate),
+          Direction::Right => Point::new_internal_grid(CHUNK_SIZE - 1, coordinate),
           Direction::Bottom => Point::new_internal_grid(coordinate, CHUNK_SIZE - 1),
           Direction::Left => Point::new_internal_grid(0, coordinate),
           _ => panic!(
