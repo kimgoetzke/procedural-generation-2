@@ -65,22 +65,24 @@ pub enum GenerationStage {
   Stage1(bool),
   /// Stage 2: Await completion of chunk generation task, then use [`crate::generation::resources::ChunkComponentIndex`]
   /// to check if any of the chunks already exists. Return all [`Chunk`]s that don't exist yet, so they can be spawned.
-  /// Stage 3: If [`Chunk`]s are provided and no chunk at "proposed" location exists, spawn the chunk(s) and return
   Stage2(Task<Vec<Chunk>>),
+  /// Stage 3: If [`Chunk`]s are provided and no chunk at the "proposed" location exists, spawn the chunk(s) and return
   /// [`Chunk`]-[`Entity`] pairs. If no [`Chunk`]s provided, set [`GenerationStage`] to clean-up stage.
   Stage3(Vec<Chunk>),
   /// Stage 4: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, spawn tiles for each [`Chunk`]
-  /// and return [`Chunk`]-[`Entity`] pairs again.
+  /// and return [`Chunk`]-[`Entity`] pairs again for further processing.
   Stage4(Vec<(Chunk, Entity)>),
-  /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
-  /// object data and return the [`Task`]s.
+  /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, generate paths.
   Stage5(Vec<(Chunk, Entity)>),
-  /// Stage 6: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
+  /// Stage 6: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
+  /// object data and return the [`Task`]s.
+  Stage6(Vec<(Chunk, Entity)>),
+  /// Stage 7: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
   /// If not, do nothing. Return all remaining [`Task`]s until all are finished, then proceed to next stage.
-  Stage6(Vec<Task<Vec<ObjectData>>>),
-  /// Stage 7: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) send event to clean up
-  /// not-needed chunks.
-  Stage7,
+  Stage7(Vec<Task<Vec<ObjectData>>>),
+  /// Stage 8: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) event to clean up
+  /// unneeded chunks.
+  Stage8,
   Done,
 }
 
@@ -93,7 +95,8 @@ impl PartialEq for GenerationStage {
       (GenerationStage::Stage4(_), GenerationStage::Stage4(_)) => true,
       (GenerationStage::Stage5(_), GenerationStage::Stage5(_)) => true,
       (GenerationStage::Stage6(_), GenerationStage::Stage6(_)) => true,
-      (GenerationStage::Stage7, GenerationStage::Stage7) => true,
+      (GenerationStage::Stage7(_), GenerationStage::Stage7(_)) => true,
+      (GenerationStage::Stage8, GenerationStage::Stage8) => true,
       (GenerationStage::Done, GenerationStage::Done) => true,
       _ => false,
     }
@@ -109,7 +112,8 @@ impl Display for GenerationStage {
       GenerationStage::Stage4(_) => write!(f, "Stage 4"),
       GenerationStage::Stage5(_) => write!(f, "Stage 5"),
       GenerationStage::Stage6(_) => write!(f, "Stage 6"),
-      GenerationStage::Stage7 => write!(f, "Stage 7"),
+      GenerationStage::Stage7(_) => write!(f, "Stage 7"),
+      GenerationStage::Stage8 => write!(f, "Stage 8"),
       GenerationStage::Done => write!(f, "Done"),
     }
   }

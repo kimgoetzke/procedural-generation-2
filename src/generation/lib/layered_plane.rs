@@ -7,7 +7,10 @@ use crate::resources::Settings;
 /// ease of use, it also contains the flat terrain data in a separate [`Plane`].
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct LayeredPlane {
+  /// A vector of [`Plane`]s, each representing a layer of terrain data for a specific [`TerrainType`]. The first
   pub planes: Vec<Plane>,
+  /// The flat plane effectively contains only the highest layer of terrain data for a given tile, which is the most
+  /// visible terrain layer after rendering.
   pub flat: Plane,
 }
 
@@ -22,7 +25,7 @@ impl LayeredPlane {
     for layer in 0..TerrainType::length() {
       let mut current_layer = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
 
-      // Skip water layer because water is not rendered
+      // Skip water layer because water is not rendered since the background colour is used instead
       if layer == 0 {
         final_layers.push(Plane::new(current_layer, Some(layer), settings));
         continue;

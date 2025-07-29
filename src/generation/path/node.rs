@@ -1,5 +1,5 @@
 use crate::coords::Point;
-use crate::coords::point::TileGrid;
+use crate::coords::point::InternalGrid;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -7,7 +7,7 @@ pub(crate) type NodeRef = Rc<RefCell<Node>>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Node {
-  tg: Point<TileGrid>,
+  ig: Point<InternalGrid>,
   neighbours: Vec<NodeRef>,
   connection: Box<Option<NodeRef>>,
   g: f32,
@@ -23,7 +23,7 @@ impl PartialEq<&Node> for Node {
 impl Node {
   pub fn default() -> Self {
     Self {
-      tg: Point::default(),
+      ig: Point::default(),
       neighbours: Vec::new(),
       connection: Box::new(None),
       g: 0.0,
@@ -31,24 +31,34 @@ impl Node {
     }
   }
 
-  /// Returns the distance to another [`Node`], which is the distance between their tile grid coordinates.
-  /// See [`Point::distance_to`] for more details.
-  pub fn distance_to(&self, other: &Node) -> f32 {
-    self.tg.distance_to(&other.tg)
+  pub fn new(ig: Point<InternalGrid>) -> NodeRef {
+    Rc::new(RefCell::new(Node {
+      ig,
+      neighbours: Vec::new(),
+      connection: Box::new(None),
+      g: 0.0,
+      h: 0.0,
+    }))
   }
 
-  /// Returns the distance to another [`NodeRef`], which is the distance between their tile grid coordinates.
-  /// See [`Point::distance_to`] for more details.
-  pub fn distance_to_ref(&self, other: &NodeRef) -> f32 {
-    self.tg.distance_to(&other.borrow().tg)
+  pub fn get_ig(&self) -> &Point<InternalGrid> {
+    &self.ig
+  }
+
+  pub fn add_neighbour(&mut self, neighbour: NodeRef) {
+    if !self.neighbours.contains(&neighbour) {
+      self.neighbours.push(neighbour);
+    }
+  }
+
+  pub fn add_neighbours(&mut self, neighbours: Vec<NodeRef>) {
+    for neighbour in neighbours {
+      self.add_neighbour(neighbour);
+    }
   }
 
   pub fn get_neighbours(&self) -> &Vec<NodeRef> {
     &self.neighbours
-  }
-
-  pub fn get_neighbours_excluding(&self, exclude: &Vec<NodeRef>) -> impl Iterator<Item = &NodeRef> {
-    self.neighbours.iter().filter(|n| !exclude.contains(n))
   }
 
   /// Returns the [`NodeRef`] that this node is connected to, if any. Used to reconstruct the path from the start node
@@ -88,5 +98,10 @@ impl Node {
   /// value (`H`).
   pub fn get_f(&self) -> f32 {
     self.g + self.h
+  }
+
+  /// Consumes the node and returns its internal grid coordinates for use by the wider crate.
+  pub fn to_ig(self) -> Point<InternalGrid> {
+    self.ig
   }
 }
