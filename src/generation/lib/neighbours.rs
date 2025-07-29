@@ -2,13 +2,13 @@ use crate::coords::Point;
 use crate::coords::point::CoordType;
 use crate::generation::lib::{TerrainType, Tile};
 use bevy::log::*;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct NeighbourTile<T: CoordType> {
   pub direction: Point<T>,
   pub terrain: TerrainType,
   pub same: bool,
-  pub is_any: bool,
 }
 
 impl<T: CoordType> NeighbourTile<T> {
@@ -17,7 +17,6 @@ impl<T: CoordType> NeighbourTile<T> {
       direction,
       terrain: TerrainType::Any,
       same: false,
-      is_any: true,
     }
   }
 
@@ -26,7 +25,6 @@ impl<T: CoordType> NeighbourTile<T> {
       direction,
       terrain: terrain_type,
       same: is_same,
-      is_any: terrain_type == TerrainType::Any,
     }
   }
 }
