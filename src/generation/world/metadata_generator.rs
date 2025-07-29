@@ -322,7 +322,7 @@ mod tests {
             Direction::Top => neighbour_ig.y == 0 && neighbour_ig.x == expected_coordinate,
             Direction::Bottom => neighbour_ig.y == CHUNK_SIZE - 1 && neighbour_ig.x == expected_coordinate,
             Direction::Left => neighbour_ig.x == 0 && neighbour_ig.y == expected_coordinate,
-            Direction::Right => neighbour_ig.x == CHUNK_SIZE && neighbour_ig.y == expected_coordinate,
+            Direction::Right => neighbour_ig.x == CHUNK_SIZE - 1 && neighbour_ig.y == expected_coordinate,
             _ => false,
           });
         assert!(

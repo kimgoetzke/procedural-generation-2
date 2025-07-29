@@ -14,23 +14,7 @@ pub(crate) struct Node {
   h: f32,
 }
 
-impl PartialEq<&Node> for Node {
-  fn eq(&self, other: &&Node) -> bool {
-    self.connection == other.connection && self.g == other.g && self.h == other.h && self.neighbours == other.neighbours
-  }
-}
-
 impl Node {
-  pub fn default() -> Self {
-    Self {
-      ig: Point::default(),
-      neighbours: Vec::new(),
-      connection: Box::new(None),
-      g: 0.0,
-      h: 0.0,
-    }
-  }
-
   pub fn new(ig: Point<InternalGrid>) -> NodeRef {
     Rc::new(RefCell::new(Node {
       ig,
@@ -103,5 +87,49 @@ impl Node {
   /// Consumes the node and returns its internal grid coordinates for use by the wider crate.
   pub fn to_ig(self) -> Point<InternalGrid> {
     self.ig
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn new_sets_correct_ig() {
+    let ig = Point::default();
+    let node_ref = Node::new(ig.clone());
+    assert_eq!(node_ref.borrow().get_ig(), &ig);
+  }
+
+  #[test]
+  fn add_neighbour_only_adds_unique_neighbours() {
+    let node_ref = Node::new(Point::default());
+    let neighbour = Node::new(Point::default());
+    node_ref.borrow_mut().add_neighbour(neighbour.clone());
+    node_ref.borrow_mut().add_neighbour(neighbour.clone());
+    assert_eq!(node_ref.borrow().get_neighbours().len(), 1);
+  }
+
+  #[test]
+  fn add_neighbours_adds_multiple_unique_neighbours() {
+    let node_ref = Node::new(Point::default());
+    let neighbour1 = Node::new(Point::new_internal_grid(1, 1));
+    let neighbour2 = Node::new(Point::new_internal_grid(2, 2));
+    node_ref
+      .borrow_mut()
+      .add_neighbours(vec![neighbour1.clone(), neighbour2.clone(), neighbour1.clone()]);
+    assert_eq!(node_ref.borrow().get_neighbours().len(), 2);
+  }
+
+  #[test]
+  fn set_connection_updates_connection() {
+    let node_ref = Node::new(Point::default());
+    let connection1 = Node::new(Point::default());
+    node_ref.borrow_mut().set_connection(&connection1);
+    assert_eq!(node_ref.borrow().get_connection().as_ref(), Some(&connection1));
+
+    let connection2 = Node::new(Point::new_internal_grid(4, 8));
+    node_ref.borrow_mut().set_connection(&connection2);
+    assert_eq!(node_ref.borrow().get_connection().as_ref(), Some(&connection2));
   }
 }
