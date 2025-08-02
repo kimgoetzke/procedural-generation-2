@@ -1,5 +1,3 @@
-mod node;
-
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::object::lib::{CellRef, ObjectGrid};
@@ -14,7 +12,7 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
+pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGrid {
   let cg = object_grid.cg;
   let connection_points = metadata
     .connection_points
@@ -38,7 +36,7 @@ pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> Obje
     return object_grid;
   }
 
-  debug!(
+  trace!(
     "Generating path for chunk {} which has [{}] connection points: {}",
     cg,
     connection_points.len(),
@@ -123,7 +121,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 
     // If we have reached the target cell, reconstruct the path and return it
     if Arc::ptr_eq(&current_cell, &target_cell) {
-      debug!(
+      trace!(
         "✅  Arrived at target node {:?}, now reconstructing the path",
         current_cell.try_lock().expect("Failed to lock current node").ig
       );
@@ -151,7 +149,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
     };
     let target_ig = get_target_cell_ig(target_cell);
 
-    debug!("Processing node at {:?}", current_ig);
+    trace!("Processing node at {:?}", current_ig);
     for neighbour in current_neighbours {
       let mut n = neighbour.lock().expect("Failed to lock neighbour");
 

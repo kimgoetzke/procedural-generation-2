@@ -7,8 +7,6 @@ use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::Rng;
 use rand::prelude::StdRng;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 pub struct PropagationFailure {}
@@ -101,11 +99,12 @@ impl Cell {
   }
 
   pub fn add_neighbour(&mut self, neighbour: CellRef) {
-    if !self.neighbours.iter().any(|n| {
-      let n_lock = n.lock().expect("Failed to lock neighbour cell");
-      let neighbour_lock = neighbour.lock().unwrap();
-      *n_lock == *neighbour_lock
-    }) {
+    let neighbour_ig = neighbour.try_lock().expect("Failed to lock cell to find").ig;
+    if !self
+      .neighbours
+      .iter()
+      .any(|n| n.try_lock().expect("Failed to lock neighbour").ig == neighbour_ig)
+    {
       self.neighbours.push(neighbour);
     }
   }
@@ -400,6 +399,74 @@ fn log_collapse_result(
     debug!(
       "└─> Selected state for {:?} is [{:?}] with a weight of {}",
       cell.ig, selected_state.name, selected_state.weight
+    );
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn new_sets_correct_ig() {
+    let ig = Point::default();
+    let cell = Cell::new(ig.x, ig.y);
+    assert_eq!(cell.get_ig(), &ig);
+  }
+
+  #[test]
+  fn add_neighbour_only_adds_unique_neighbours() {
+    let cell = Arc::new(Mutex::new(Cell::new(0, 0)));
+    let neighbour = Arc::new(Mutex::new(Cell::new(0, 0)));
+    let mut cell_guard = cell.lock().unwrap();
+    cell_guard.add_neighbour(neighbour.clone());
+    cell_guard.add_neighbour(neighbour.clone());
+    assert_eq!(cell_guard.get_neighbours().len(), 1);
+  }
+
+  #[test]
+  fn add_neighbours_adds_multiple_unique_neighbours() {
+    let cell = Arc::new(Mutex::new(Cell::new(0, 0)));
+    let neighbour1 = Arc::new(Mutex::new(Cell::new(1, 1)));
+    let neighbour2 = Arc::new(Mutex::new(Cell::new(2, 2)));
+    let neighbours = vec![neighbour1.clone(), neighbour2.clone(), neighbour1.clone()];
+    let mut cell_guard = cell.lock().unwrap();
+    cell_guard.add_neighbours(neighbours);
+    assert_eq!(cell_guard.get_neighbours().len(), 2);
+  }
+
+  #[test]
+  fn add_neighbours_adds_multiple_unique_neighbours_old() {
+    let cell = Arc::new(Mutex::new(Cell::new(0, 0)));
+    let neighbour1 = Arc::new(Mutex::new(Cell::new(1, 1)));
+    let neighbour2 = Arc::new(Mutex::new(Cell::new(2, 2)));
+    let mut cell_guard = cell.lock().unwrap();
+    cell_guard.add_neighbours(vec![neighbour1.clone(), neighbour2.clone(), neighbour1.clone()]);
+    assert_eq!(cell_guard.get_neighbours().len(), 2);
+  }
+
+  #[test]
+  fn set_connection_sets_and_then_updates_connection() {
+    let cell_ref = Arc::new(Mutex::new(Cell::new(1, 1)));
+    let connection1 = Arc::new(Mutex::new(Cell::new(2, 2)));
+    let mut cell_guard = cell_ref.lock().unwrap();
+    cell_guard.set_connection(&connection1);
+    assert!(
+      cell_guard
+        .get_connection()
+        .as_ref()
+        .map(|c| Arc::ptr_eq(c, &connection1))
+        .unwrap_or(false)
+    );
+
+    let connection2 = Arc::new(Mutex::new(Cell::new(4, 8)));
+    cell_guard.set_connection(&connection2);
+    assert!(
+      cell_guard
+        .get_connection()
+        .as_ref()
+        .map(|c| Arc::ptr_eq(c, &connection2))
+        .unwrap_or(false)
     );
   }
 }

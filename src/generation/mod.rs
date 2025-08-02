@@ -423,7 +423,7 @@ fn stage_5_schedule_object_grid_generation(
 fn stage_6_schedule_path_generation(
   commands: &mut Commands,
   metadata: &Metadata,
-  mut object_grid_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
+  object_grid_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
   if object_grid_generation_task.is_finished() {
@@ -458,7 +458,7 @@ fn stage_6_schedule_path_generation(
 fn stage_7_schedule_generating_object_data(
   commands: &mut Commands,
   settings: &Settings,
-  mut path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
+  path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
   if path_generation_task.is_finished() {
