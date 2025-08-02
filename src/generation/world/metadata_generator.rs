@@ -207,7 +207,7 @@ fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<Intern
       })
       .collect::<Vec<_>>();
     if !connection_points_for_edge.is_empty() {
-      debug!(
+      trace!(
         "{} has [{}] connection points with [{:?}] {}: {:?}",
         cg,
         connection_points_for_edge.len(),

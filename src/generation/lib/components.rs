@@ -1,7 +1,7 @@
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::{Chunk, LayeredPlane, Tile};
-use crate::generation::object::lib::{ObjectData, ObjectName};
+use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName};
 use bevy::prelude::{Component, Entity};
 use bevy::tasks::Task;
 use std::fmt;
@@ -72,17 +72,19 @@ pub enum GenerationStage {
   /// Stage 4: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, spawn tiles for each [`Chunk`]
   /// and return [`Chunk`]-[`Entity`] pairs again for further processing.
   Stage4(Vec<(Chunk, Entity)>),
-  /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, generate paths.
+  /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, generate an [`ObjectGrid`].
   Stage5(Vec<(Chunk, Entity)>),
-  /// Stage 6: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
+  /// Stage 6: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, calculate paths.
+  Stage6(Task<Vec<(Chunk, Entity, ObjectGrid)>>),
+  /// Stage 7: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
   /// object data and return the [`Task`]s.
-  Stage6(Vec<(Chunk, Entity)>),
-  /// Stage 7: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
+  Stage7(Task<Vec<(Chunk, Entity, ObjectGrid)>>),
+  /// Stage 8: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
   /// If not, do nothing. Return all remaining [`Task`]s until all are finished, then proceed to next stage.
-  Stage7(Vec<Task<Vec<ObjectData>>>),
-  /// Stage 8: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) event to clean up
+  Stage8(Vec<Task<Vec<ObjectData>>>),
+  /// Stage 9: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) event to clean up
   /// unneeded chunks.
-  Stage8,
+  Stage9,
   Done,
 }
 
@@ -96,7 +98,8 @@ impl PartialEq for GenerationStage {
       (GenerationStage::Stage5(_), GenerationStage::Stage5(_)) => true,
       (GenerationStage::Stage6(_), GenerationStage::Stage6(_)) => true,
       (GenerationStage::Stage7(_), GenerationStage::Stage7(_)) => true,
-      (GenerationStage::Stage8, GenerationStage::Stage8) => true,
+      (GenerationStage::Stage8(_), GenerationStage::Stage8(_)) => true,
+      (GenerationStage::Stage9, GenerationStage::Stage9) => true,
       (GenerationStage::Done, GenerationStage::Done) => true,
       _ => false,
     }
@@ -113,7 +116,8 @@ impl Display for GenerationStage {
       GenerationStage::Stage5(_) => write!(f, "Stage 5"),
       GenerationStage::Stage6(_) => write!(f, "Stage 6"),
       GenerationStage::Stage7(_) => write!(f, "Stage 7"),
-      GenerationStage::Stage8 => write!(f, "Stage 8"),
+      GenerationStage::Stage8(_) => write!(f, "Stage 8"),
+      GenerationStage::Stage9 => write!(f, "Stage 9"),
       GenerationStage::Done => write!(f, "Done"),
     }
   }

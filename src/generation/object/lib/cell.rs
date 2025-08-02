@@ -7,8 +7,13 @@ use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::Rng;
 use rand::prelude::StdRng;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 pub struct PropagationFailure {}
+
+pub(crate) type CellRef = Arc<Mutex<Cell>>;
 
 /// A [`Cell`] is a "placeholder" for an object. It is used in the [`ObjectGrid`][og]. This struct is used to represent
 /// a cell in the grid that can be collapsed to a single state. Once all [`Cell`]s in an [`ObjectGrid`][og] have been
@@ -21,7 +26,17 @@ pub struct PropagationFailure {}
 /// [t]: crate::generation::lib::Tile
 #[derive(Debug, Clone, Reflect)]
 pub struct Cell {
+  // General fields
   pub ig: Point<InternalGrid>,
+  pub index: i32,
+  // Pathfinding specific fields
+  #[reflect(ignore)]
+  neighbours: Vec<CellRef>,
+  #[reflect(ignore)]
+  connection: Box<Option<CellRef>>,
+  g: f32,
+  h: f32,
+  // Wave function collapse algorithm specific fields
   pub is_collapsed: bool,
   is_initialised: bool,
   is_being_monitored: bool,
@@ -29,13 +44,17 @@ pub struct Cell {
   pub tile_type: TileType,
   pub entropy: usize,
   pub possible_states: Vec<TerrainState>,
-  pub index: i32,
 }
 
 impl Cell {
   pub fn new(x: i32, y: i32) -> Self {
     Cell {
       ig: Point::new_internal_grid(x, y),
+      index: -1,
+      neighbours: vec![],
+      connection: Box::new(None),
+      g: 0.0,
+      h: 0.0,
       is_collapsed: false,
       is_initialised: false,
       is_being_monitored: false,
@@ -43,7 +62,6 @@ impl Cell {
       tile_type: TileType::Unknown,
       entropy: usize::MAX,
       possible_states: vec![],
-      index: -1,
     }
   }
 

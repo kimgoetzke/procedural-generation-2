@@ -35,28 +35,58 @@ impl CommandQueueTask for ObjectSpawnTask {
   }
 }
 
-pub fn generate_object_data(
+pub fn generate_object_grid(
   resources: &GenerationResourcesCollection,
   settings: &Settings,
-  spawn_data: (Chunk, Entity),
+  chunk: Chunk,
+  chunk_entity: Entity,
+) -> Option<(Chunk, Entity, ObjectGrid)> {
+  if !settings.object.generate_objects {
+    debug!("Skipped object generation because it's disabled");
+    return None;
+  }
+  let start_time = shared::get_time();
+  let chunk_cg = chunk.coords.chunk_grid;
+  let mut tile_data = Vec::new();
+  for t in chunk.layered_plane.flat.data.iter().flatten() {
+    if let Some(tile) = t {
+      tile_data.push(TileData::new(chunk_entity, tile.clone()));
+    }
+  }
+
+  let grid = ObjectGrid::new_initialised(chunk_cg, &resources.objects.terrain_state_map, &tile_data);
+  debug!(
+    "Generated object grid for chunk {} in {} ms on {}",
+    chunk_cg,
+    shared::get_time() - start_time,
+    shared::thread_name()
+  );
+
+  Some((chunk, chunk_entity, grid))
+}
+
+pub fn generate_object_data(
+  settings: &Settings,
+  object_grid: ObjectGrid,
+  chunk: Chunk,
+  chunk_entity: Entity,
 ) -> Vec<ObjectData> {
   if !settings.object.generate_objects {
     debug!("Skipped object generation because it's disabled");
     return vec![];
   }
   let start_time = shared::get_time();
-  let chunk_cg = spawn_data.0.coords.chunk_grid;
+  let chunk_cg = chunk.coords.chunk_grid;
   let mut tile_data = Vec::new();
-  for t in spawn_data.0.layered_plane.flat.data.iter().flatten() {
+  for t in chunk.layered_plane.flat.data.iter().flatten() {
     if let Some(tile) = t {
-      tile_data.push(TileData::new(spawn_data.1, tile.clone()));
+      tile_data.push(TileData::new(chunk_entity, tile.clone()));
     }
   }
 
-  let grid = ObjectGrid::new_initialised(chunk_cg, &resources.objects.terrain_state_map, &tile_data);
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let tile_data_len = tile_data.len();
-  let mut object_generation_data = (grid.clone(), tile_data);
+  let mut object_generation_data = (object_grid, tile_data);
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
     "Generated object data for [{}] objects (over {} tiles) for chunk {} in {} ms on {}",

@@ -1,5 +1,6 @@
 pub(crate) mod lib;
 mod object_generator;
+pub mod path;
 mod wfc;
 
 use crate::generation::object::object_generator::ObjectGeneratorPlugin;
@@ -13,4 +14,4 @@ impl Plugin for ObjectGenerationPlugin {
   }
 }
 
-pub use crate::generation::object::object_generator::{generate_object_data, schedule_spawning_objects};
+pub use crate::generation::object::object_generator::*;

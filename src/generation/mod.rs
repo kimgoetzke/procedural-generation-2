@@ -1,3 +1,4 @@
+use self::object::path;
 use crate::constants::{
   CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
 };
@@ -10,7 +11,7 @@ use crate::generation::lib::{
   WorldGenerationComponent, get_direction_points,
 };
 use crate::generation::object::ObjectGenerationPlugin;
-use crate::generation::object::lib::ObjectData;
+use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::resources::{ChunkComponentIndex, Metadata};
 use crate::generation::world::WorldGenerationPlugin;
 use crate::resources::{CurrentChunk, Settings};
@@ -31,7 +32,6 @@ use resources::GenerationResourcesPlugin;
 mod debug;
 pub(crate) mod lib;
 mod object;
-mod path;
 pub mod resources;
 mod world;
 
@@ -174,7 +174,7 @@ fn world_generation_system(
   for (entity, mut component) in world_generation_components.iter_mut() {
     let start_time = shared::get_time();
     let world_entity = existing_world.single().expect("Failed to get existing world entity");
-    let current_stage = std::mem::replace(&mut component.stage, GenerationStage::Stage8);
+    let current_stage = std::mem::replace(&mut component.stage, GenerationStage::Stage9);
     let component_cg = &component.cg;
     component.stage = match current_stage {
       GenerationStage::Stage1(has_metadata) => stage_1_prune_world_and_schedule_chunk_generation(
@@ -200,21 +200,19 @@ fn world_generation_system(
         &mut materials,
         component_cg,
       ),
-      GenerationStage::Stage5(chunk_entity_pairs) => stage_5_generate_paths(
-        &mut commands,
-        &settings,
-        &metadata,
-        &resources,
-        chunk_entity_pairs,
-        component_cg,
-      ),
-      GenerationStage::Stage6(chunk_entity_pairs) => {
-        stage_6_schedule_generating_object_data(&mut commands, &settings, &resources, chunk_entity_pairs, component_cg)
+      GenerationStage::Stage5(chunk_entity_pairs) => {
+        stage_5_schedule_object_grid_generation(&mut commands, &settings, &resources, chunk_entity_pairs, component_cg)
       }
-      GenerationStage::Stage7(generation_tasks) => {
-        stage_7_schedule_spawning_objects(&mut commands, &settings, generation_tasks, component_cg)
+      GenerationStage::Stage6(grid_generation_task) => {
+        stage_6_schedule_path_generation(&mut commands, &metadata, grid_generation_task, component_cg)
       }
-      GenerationStage::Stage8 => stage_8_clean_up(
+      GenerationStage::Stage7(path_generation_task) => {
+        stage_7_schedule_generating_object_data(&mut commands, &settings, path_generation_task, component_cg)
+      }
+      GenerationStage::Stage8(object_generation_tasks) => {
+        stage_8_schedule_spawning_objects(&mut commands, &settings, object_generation_tasks, component_cg)
+      }
+      GenerationStage::Stage9 => stage_9_clean_up(
         &mut commands,
         &mut component,
         &settings,
@@ -305,12 +303,14 @@ fn stage_2_await_chunk_generation_task_completion(
         "World generation component {cg} - Stage 2 | {} new chunks need to be spawned",
         chunks.len()
       );
+
       GenerationStage::Stage3(chunks)
     } else {
       trace!(
         "World generation component {cg} - Stage 2 | Chunk generation task did not return any chunks - they probably exist already..."
       );
-      GenerationStage::Stage8
+
+      GenerationStage::Stage9
     };
   }
 
@@ -344,7 +344,7 @@ fn stage_3_spawn_chunks(
   trace!(
     "World generation component {cg} - Stage 3 | Chunk data was empty - assuming world generation component is redundant..."
   );
-  GenerationStage::Stage8
+  GenerationStage::Stage9
 }
 
 fn stage_4_spawn_tile_meshes(
@@ -383,46 +383,10 @@ fn stage_4_spawn_tile_meshes(
   warn!(
     "World generation component {cg} - Stage 4 | No chunk-entity pairs provided - assuming world generation component is redundant..."
   );
-  GenerationStage::Stage8
+  GenerationStage::Stage9
 }
 
-fn stage_5_generate_paths(
-  commands: &mut Commands,
-  _settings: &Settings,
-  metadata: &Metadata,
-  _resources: &GenerationResourcesCollection,
-  mut chunk_entity_pairs: Vec<(Chunk, Entity)>,
-  cg: &Point<ChunkGrid>,
-) -> GenerationStage {
-  if !chunk_entity_pairs.is_empty() {
-    let mut new_chunk_entity_pairs = Vec::new();
-    for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
-      if commands.get_entity(chunk_entity).is_ok() {
-        // TODO: Implement this
-        // let resources = resources.clone();
-        // let settings = settings.clone();
-        // let metadata = metadata.clone();
-        let chunk_clone = chunk.clone();
-        path::generate_paths(&metadata, (chunk_clone, chunk_entity));
-        new_chunk_entity_pairs.push((chunk, chunk_entity))
-      } else {
-        trace!(
-          "World generation component {cg} - Stage 5 | Chunk entity {:?} at {} no longer exists (it may have been pruned) - skipped path generation...",
-          chunk_entity, chunk.coords.chunk_grid
-        );
-      }
-    }
-    trace!("World generation component {cg} - Stage 5 | Paths were generated",);
-    return GenerationStage::Stage6(new_chunk_entity_pairs);
-  }
-
-  warn!(
-    "World generation component {cg} - Stage 5 | No chunk-entity pairs provided - assuming world generation component is redundant..."
-  );
-  GenerationStage::Stage8
-}
-
-fn stage_6_schedule_generating_object_data(
+fn stage_5_schedule_object_grid_generation(
   commands: &mut Commands,
   settings: &Settings,
   resources: &GenerationResourcesCollection,
@@ -430,47 +394,121 @@ fn stage_6_schedule_generating_object_data(
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
   if !chunk_entity_pairs.is_empty() {
-    let mut object_generation_tasks = Vec::new();
-    for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
-      if commands.get_entity(chunk_entity).is_ok() {
+    chunk_entity_pairs.retain(|(_, chunk_entity)| commands.get_entity(*chunk_entity).is_ok());
+    let settings = settings.clone();
+    let resources = resources.clone();
+    let task_pool = AsyncComputeTaskPool::get();
+    let task = task_pool.spawn(async move {
+      let mut triplets = Vec::new();
+      for (chunk, chunk_entity) in chunk_entity_pairs.drain(..) {
         let resources = resources.clone();
         let settings = settings.clone();
-        let task_pool = AsyncComputeTaskPool::get();
-        let task =
-          task_pool.spawn(async move { object::generate_object_data(&resources, &settings, (chunk, chunk_entity)) });
-        object_generation_tasks.push(task);
-      } else {
-        trace!(
-          "World generation component {cg} - Stage 6 | Chunk entity {:?} at {} no longer exists (it may have been pruned) - skipped scheduling object data generation...",
-          chunk_entity, chunk.coords.chunk_grid
-        );
+        if let Some(triplet) = object::generate_object_grid(&resources, &settings, chunk, chunk_entity) {
+          triplets.push(triplet);
+        }
       }
-    }
-    trace!(
-      "World generation component {cg} - Stage 6 | {} object generation tasks were scheduled",
-      object_generation_tasks.len()
-    );
-    return GenerationStage::Stage7(object_generation_tasks);
+
+      triplets
+    });
+    trace!("World generation component {cg} - Stage 5 | Object grid generation task was scheduled",);
+    return GenerationStage::Stage6(task);
   }
 
   warn!(
-    "World generation component {cg} - Stage 6 | No chunk-entity pairs provided - assuming world generation component is redundant..."
+    "World generation component {cg} - Stage 5 | No chunk-entity pairs provided - assuming world generation component is redundant..."
   );
-  GenerationStage::Stage8
+  GenerationStage::Stage9
 }
 
-fn stage_7_schedule_spawning_objects(
-  mut commands: &mut Commands,
-  settings: &Settings,
-  mut gen_task: Vec<Task<Vec<ObjectData>>>,
+fn stage_6_schedule_path_generation(
+  commands: &mut Commands,
+  metadata: &Metadata,
+  mut object_grid_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
-  if !gen_task.is_empty() {
-    gen_task.retain_mut(|task| {
+  if object_grid_generation_task.is_finished() {
+    return if let Some(mut triplets) = block_on(poll_once(object_grid_generation_task)) {
+      triplets.retain(|(_, chunk_entity, _)| commands.get_entity(*chunk_entity).is_ok());
+      let metadata = metadata.clone();
+      let task_pool = AsyncComputeTaskPool::get();
+      let task = task_pool.spawn(async move {
+        let mut new_chunk_entity_grid_triplets = Vec::new();
+        for (chunk, chunk_entity, object_grid) in triplets.drain(..) {
+          let processed_object_grid = path::calculate_paths(&metadata, object_grid);
+          new_chunk_entity_grid_triplets.push((chunk, chunk_entity, processed_object_grid))
+        }
+
+        new_chunk_entity_grid_triplets
+      });
+
+      trace!("World generation component {cg} - Stage 6 | Path generation task was scheduled");
+      return GenerationStage::Stage7(task);
+    } else {
+      trace!(
+        "World generation component {cg} - Stage 6 | Object grid generation task did not return any data - skipping to clean up stage..."
+      );
+
+      GenerationStage::Stage9
+    };
+  }
+
+  GenerationStage::Stage6(object_grid_generation_task)
+}
+
+fn stage_7_schedule_generating_object_data(
+  commands: &mut Commands,
+  settings: &Settings,
+  mut path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
+  cg: &Point<ChunkGrid>,
+) -> GenerationStage {
+  if path_generation_task.is_finished() {
+    let mut object_generation_tasks = Vec::new();
+    return if let Some(mut triplets) = block_on(poll_once(path_generation_task)) {
+      for (chunk, chunk_entity, object_grid) in triplets.drain(..) {
+        if commands.get_entity(chunk_entity).is_ok() {
+          let settings = settings.clone();
+          let task_pool = AsyncComputeTaskPool::get();
+          let task =
+            task_pool.spawn(async move { object::generate_object_data(&settings, object_grid, chunk, chunk_entity) });
+          object_generation_tasks.push(task);
+        } else {
+          trace!(
+            "World generation component {cg} - Stage 7 | Chunk entity {:?} at {} no longer exists (it may have been pruned) - skipped scheduling object data generation...",
+            chunk_entity, chunk.coords.chunk_grid
+          );
+        }
+      }
+
+      trace!(
+        "World generation component {cg} - Stage 7 | {} object generation tasks were scheduled",
+        object_generation_tasks.len()
+      );
+      return GenerationStage::Stage8(object_generation_tasks);
+    } else {
+      trace!(
+        "World generation component {cg} - Stage 7 | Path generation task did not return any data - skipping to clean up stage..."
+      );
+
+      GenerationStage::Stage9
+    };
+  }
+
+  GenerationStage::Stage7(path_generation_task)
+}
+
+fn stage_8_schedule_spawning_objects(
+  mut commands: &mut Commands,
+  settings: &Settings,
+  mut object_generation_task: Vec<Task<Vec<ObjectData>>>,
+  cg: &Point<ChunkGrid>,
+) -> GenerationStage {
+  if !object_generation_task.is_empty() {
+    object_generation_task.retain_mut(|task| {
       if task.is_finished() {
         let object_data = block_on(poll_once(task)).expect("Failed to get object data");
         let mut rng = StdRng::seed_from_u64(shared::calculate_seed(*cg, settings.world.noise_seed));
         object::schedule_spawning_objects(&mut commands, &settings, &mut rng, object_data);
+
         false
       } else {
         true
@@ -478,18 +516,18 @@ fn stage_7_schedule_spawning_objects(
     });
   }
 
-  if gen_task.is_empty() {
-    trace!("World generation component {cg} - Stage 7 | No object generation tasks left - marking stage as complete...");
-    GenerationStage::Stage8
+  if object_generation_task.is_empty() {
+    trace!("World generation component {cg} - Stage 8 | No object generation tasks left - marking stage as complete...");
+    GenerationStage::Stage9
   } else {
     trace!(
-      "World generation component {cg} - Stage 7 | There are still object generation tasks left, so stage is not changing..."
+      "World generation component {cg} - Stage 8 | There are still object generation tasks left, so stage is not changing..."
     );
-    GenerationStage::Stage7(gen_task)
+    GenerationStage::Stage8(object_generation_task)
   }
 }
 
-fn stage_8_clean_up(
+fn stage_9_clean_up(
   commands: &mut Commands,
   component: &mut Mut<WorldGenerationComponent>,
   settings: &Res<Settings>,

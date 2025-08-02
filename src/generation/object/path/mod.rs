@@ -3,12 +3,11 @@ mod node;
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
-use crate::generation::lib::Chunk;
-use crate::generation::path::node::{Node, NodeRef};
+use crate::generation::object::lib::ObjectGrid;
+use crate::generation::object::path::node::{Node, NodeRef};
 use crate::generation::resources::Metadata;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use bevy::prelude::Entity;
 use std::rc::Rc;
 
 pub struct PathGenerationPlugin;
@@ -17,8 +16,8 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn generate_paths(metadata: &Metadata, spawn_data: (Chunk, Entity)) -> Vec<Point<InternalGrid>> {
-  let cg = spawn_data.0.coords.chunk_grid;
+pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGrid {
+  let cg = object_grid.cg;
   let connection_points = metadata
     .connection_points
     .get(&cg)
@@ -30,7 +29,7 @@ pub fn generate_paths(metadata: &Metadata, spawn_data: (Chunk, Entity)) -> Vec<P
       "Skipping path generation for chunk {} because it has no connection points",
       cg
     );
-    return vec![];
+    return object_grid;
   }
   if connection_points.len() != 2 {
     warn!(
@@ -38,7 +37,7 @@ pub fn generate_paths(metadata: &Metadata, spawn_data: (Chunk, Entity)) -> Vec<P
       cg,
       connection_points.len()
     );
-    return vec![];
+    return object_grid;
   }
 
   debug!(
@@ -51,61 +50,62 @@ pub fn generate_paths(metadata: &Metadata, spawn_data: (Chunk, Entity)) -> Vec<P
       .collect::<Vec<_>>()
       .join(", ")
   );
-  // return vec![];
+  return object_grid;
 
   // Create grid of nodes
-  let mut node_grid = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
-  let plane = spawn_data.0.layered_plane.flat;
-  for x in 0..plane.data[0].len() {
-    for y in 0..plane.data.len() {
-      if let Some(tile) = &plane.data[x][y] {
-        node_grid[x][y] = Some(Node::new(tile.coords.internal_grid));
-      }
-    }
-  }
-
-  // Populate neighbours for each node
-  for x in 0..node_grid.len() {
-    for y in 0..node_grid[x].len() {
-      if let Some(node) = &node_grid[x][y] {
-        let tile = plane.data[x][y].as_ref().expect("Tile should exist at this point");
-        let mut neighbours = Vec::new();
-        for p in vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)].iter() {
-          if let Some(neighbour) = plane.get_tile(Point::new_internal_grid(
-            tile.coords.internal_grid.x + p.0,
-            tile.coords.internal_grid.y + p.1,
-          )) {
-            let node_ref = node_grid[neighbour.coords.internal_grid.x as usize][neighbour.coords.internal_grid.y as usize]
-              .as_ref()
-              .expect("Neighbour node should exist at this point");
-            neighbours.push(node_ref.clone());
-          }
-        }
-        node.borrow_mut().add_neighbours(neighbours);
-      }
-    }
-  }
-
-  // Get start and target nodes based on connection points
-  let start_node = node_grid[connection_points[0].x as usize][connection_points[0].y as usize]
-    .as_ref()
-    .expect("Start node should exist at this point")
-    .clone();
-  let target_node = node_grid[connection_points[1].x as usize][connection_points[1].y as usize]
-    .as_ref()
-    .expect("Start node should exist at this point")
-    .clone();
-
-  // Run the pathfinding algorithm and return the resulting path
-  let path = run_algorithm(start_node, target_node);
-  debug!(
-    "Generated path for chunk {} with [{}] nodes in the path: {:?}",
-    cg,
-    path.len(),
-    path
-  );
-
-  path
+  // TODO: Update below to (populate if necessary and) use ObjectGrid
+  // let mut node_grid = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+  // let plane = spawn_data.0.layered_plane.flat;
+  // for x in 0..plane.data[0].len() {
+  //   for y in 0..plane.data.len() {
+  //     if let Some(tile) = &plane.data[x][y] {
+  //       node_grid[x][y] = Some(Node::new(tile.coords.internal_grid));
+  //     }
+  //   }
+  // }
+  //
+  // // Populate neighbours for each node
+  // for x in 0..node_grid.len() {
+  //   for y in 0..node_grid[x].len() {
+  //     if let Some(node) = &node_grid[x][y] {
+  //       let tile = plane.data[x][y].as_ref().expect("Tile should exist at this point");
+  //       let mut neighbours = Vec::new();
+  //       for p in vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)].iter() {
+  //         if let Some(neighbour) = plane.get_tile(Point::new_internal_grid(
+  //           tile.coords.internal_grid.x + p.0,
+  //           tile.coords.internal_grid.y + p.1,
+  //         )) {
+  //           let node_ref = node_grid[neighbour.coords.internal_grid.x as usize][neighbour.coords.internal_grid.y as usize]
+  //             .as_ref()
+  //             .expect("Neighbour node should exist at this point");
+  //           neighbours.push(node_ref.clone());
+  //         }
+  //       }
+  //       node.borrow_mut().add_neighbours(neighbours);
+  //     }
+  //   }
+  // }
+  //
+  // // Get start and target nodes based on connection points
+  // let start_node = node_grid[connection_points[0].x as usize][connection_points[0].y as usize]
+  //   .as_ref()
+  //   .expect("Start node should exist at this point")
+  //   .clone();
+  // let target_node = node_grid[connection_points[1].x as usize][connection_points[1].y as usize]
+  //   .as_ref()
+  //   .expect("Start node should exist at this point")
+  //   .clone();
+  //
+  // // Run the pathfinding algorithm and return the resulting path
+  // let path = run_algorithm(start_node, target_node);
+  // debug!(
+  //   "Generated path for chunk {} with [{}] nodes in the path: {:?}",
+  //   cg,
+  //   path.len(),
+  //   path
+  // );
+  //
+  // object_grid
 }
 
 pub fn run_algorithm(start_node: NodeRef, target_node: NodeRef) -> Vec<Point<InternalGrid>> {
