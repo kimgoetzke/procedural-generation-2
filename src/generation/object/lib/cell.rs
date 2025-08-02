@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 
 pub struct PropagationFailure {}
 
-pub(crate) type CellRef = Arc<Mutex<Cell>>;
+pub type CellRef = Arc<Mutex<Cell>>;
 
 /// A [`Cell`] is a "placeholder" for an object. It is used in the [`ObjectGrid`][og]. This struct is used to represent
 /// a cell in the grid that can be collapsed to a single state. Once all [`Cell`]s in an [`ObjectGrid`][og] have been
@@ -44,6 +44,12 @@ pub struct Cell {
   pub tile_type: TileType,
   pub entropy: usize,
   pub possible_states: Vec<TerrainState>,
+}
+
+impl PartialEq for Cell {
+  fn eq(&self, other: &Self) -> bool {
+    self.ig == other.ig
+  }
 }
 
 impl Cell {
@@ -88,6 +94,69 @@ impl Cell {
     self.tile_type = tile_type;
     self.possible_states = states.clone();
     self.entropy = self.possible_states.len();
+  }
+
+  pub fn get_ig(&self) -> &Point<InternalGrid> {
+    &self.ig
+  }
+
+  pub fn add_neighbour(&mut self, neighbour: CellRef) {
+    if !self.neighbours.iter().any(|n| {
+      let n_lock = n.lock().expect("Failed to lock neighbour cell");
+      let neighbour_lock = neighbour.lock().unwrap();
+      *n_lock == *neighbour_lock
+    }) {
+      self.neighbours.push(neighbour);
+    }
+  }
+
+  pub fn add_neighbours(&mut self, neighbours: Vec<CellRef>) {
+    for neighbour in neighbours {
+      self.add_neighbour(neighbour);
+    }
+  }
+
+  pub fn get_neighbours(&self) -> &Vec<CellRef> {
+    &self.neighbours
+  }
+
+  /// Returns the [`CellRef`] that this node is connected to, if any. Used to reconstruct the path from the start node
+  /// to the target node after the pathfinding algorithm has completed.
+  pub fn get_connection(&self) -> &Option<CellRef> {
+    &self.connection
+  }
+
+  /// Sets the connection to another [`CellRef`], which is used to reconstruct the path from the start node to the
+  /// target.
+  pub fn set_connection(&mut self, connection: &CellRef) {
+    *self.connection = Some(connection.clone());
+  }
+
+  /// The distance from the start node to this node.
+  pub fn get_g(&self) -> f32 {
+    self.g
+  }
+
+  /// Sets the `G` cost which represents the distance from the start node to this node.
+  pub fn set_g(&mut self, g: f32) {
+    self.g = g;
+  }
+
+  /// The heuristic value, which is the estimated ("ideal") distance to reach the target node from this node. This
+  /// value is always equal to or less than the actual distance to the target node.
+  pub fn get_h(&self) -> f32 {
+    self.h
+  }
+
+  /// Sets the `H` cost i.e. heuristic value, which is the estimated distance to reach the target node from this node.
+  pub fn set_h(&mut self, h: f32) {
+    self.h = h;
+  }
+
+  /// The total cost of this node, which is the sum of the distance from the start node (`G`) and the heuristic
+  /// value (`H`).
+  pub fn get_f(&self) -> f32 {
+    self.g + self.h
   }
 
   pub fn clone_and_reduce(

@@ -1,14 +1,12 @@
 mod node;
 
-use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
-use crate::generation::object::lib::ObjectGrid;
-use crate::generation::object::path::node::{Node, NodeRef};
+use crate::generation::object::lib::{CellRef, ObjectGrid};
 use crate::generation::resources::Metadata;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct PathGenerationPlugin;
 
@@ -16,7 +14,7 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGrid {
+pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
   let cg = object_grid.cg;
   let connection_points = metadata
     .connection_points
@@ -50,145 +48,135 @@ pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGr
       .collect::<Vec<_>>()
       .join(", ")
   );
-  return object_grid;
 
-  // Create grid of nodes
-  // TODO: Update below to (populate if necessary and) use ObjectGrid
-  // let mut node_grid = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
-  // let plane = spawn_data.0.layered_plane.flat;
-  // for x in 0..plane.data[0].len() {
-  //   for y in 0..plane.data.len() {
-  //     if let Some(tile) = &plane.data[x][y] {
-  //       node_grid[x][y] = Some(Node::new(tile.coords.internal_grid));
-  //     }
-  //   }
-  // }
-  //
-  // // Populate neighbours for each node
-  // for x in 0..node_grid.len() {
-  //   for y in 0..node_grid[x].len() {
-  //     if let Some(node) = &node_grid[x][y] {
-  //       let tile = plane.data[x][y].as_ref().expect("Tile should exist at this point");
-  //       let mut neighbours = Vec::new();
-  //       for p in vec![(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)].iter() {
-  //         if let Some(neighbour) = plane.get_tile(Point::new_internal_grid(
-  //           tile.coords.internal_grid.x + p.0,
-  //           tile.coords.internal_grid.y + p.1,
-  //         )) {
-  //           let node_ref = node_grid[neighbour.coords.internal_grid.x as usize][neighbour.coords.internal_grid.y as usize]
-  //             .as_ref()
-  //             .expect("Neighbour node should exist at this point");
-  //           neighbours.push(node_ref.clone());
-  //         }
-  //       }
-  //       node.borrow_mut().add_neighbours(neighbours);
-  //     }
-  //   }
-  // }
-  //
-  // // Get start and target nodes based on connection points
-  // let start_node = node_grid[connection_points[0].x as usize][connection_points[0].y as usize]
-  //   .as_ref()
-  //   .expect("Start node should exist at this point")
-  //   .clone();
-  // let target_node = node_grid[connection_points[1].x as usize][connection_points[1].y as usize]
-  //   .as_ref()
-  //   .expect("Start node should exist at this point")
-  //   .clone();
-  //
-  // // Run the pathfinding algorithm and return the resulting path
-  // let path = run_algorithm(start_node, target_node);
-  // debug!(
-  //   "Generated path for chunk {} with [{}] nodes in the path: {:?}",
-  //   cg,
-  //   path.len(),
-  //   path
-  // );
-  //
-  // object_grid
+  // Populate neighbours for each cell
+  for y in 0..object_grid.path_grid.len() {
+    for x in 0..object_grid.path_grid[y].len() {
+      let cell_ref = &object_grid.path_grid[y][x];
+      let ig = cell_ref.lock().expect("Failed to lock CellRef").ig;
+      let mut neighbours: Vec<CellRef> = Vec::new();
+
+      for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
+        let nx = ig.x + dx;
+        let ny = ig.y + dy;
+        if nx >= 0 && ny >= 0 {
+          if let Some(row) = object_grid.path_grid.get(ny as usize) {
+            if let Some(neighbour_ref) = row.get(nx as usize) {
+              neighbours.push(neighbour_ref.clone());
+            }
+          }
+        }
+      }
+
+      let mut cell = cell_ref.lock().expect("Failed to lock cell");
+      cell.add_neighbours(neighbours);
+    }
+  }
+
+  // Get start and target nodes based on connection points
+  let start_node = object_grid
+    .get_cell_ref(&connection_points[0])
+    .expect("Failed to get start node");
+  let target_node = object_grid
+    .get_cell_ref(&connection_points[1])
+    .expect("Failed to get target node");
+
+  // Run the pathfinding algorithm and return the resulting path
+  let path = run_algorithm(start_node, target_node);
+  debug!(
+    "Generated path for chunk {} with [{}] nodes in the path: {:?}",
+    cg,
+    path.len(),
+    path
+  );
+
+  object_grid
 }
 
-pub fn run_algorithm(start_node: NodeRef, target_node: NodeRef) -> Vec<Point<InternalGrid>> {
-  let mut nodes_to_search: Vec<NodeRef> = vec![start_node.clone()];
-  let mut processed: Vec<NodeRef> = Vec::new();
+pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<InternalGrid>> {
+  let mut to_search: Vec<CellRef> = vec![start_cell.clone()];
+  let mut processed: Vec<CellRef> = Vec::new();
 
-  while !nodes_to_search.is_empty() {
-    // Find the node with the lowest F cost, using H cost as a tiebreaker
-    let mut current: NodeRef = nodes_to_search[0].clone();
-    for node in nodes_to_search.iter() {
-      let node_f = node.borrow().get_f();
-      let node_h = node.borrow().get_h();
-      let current_f = current.borrow().get_f();
-      let current_h = current.borrow().get_h();
-
-      if node_f < current_f || (node_f == current_f && node_h < current_h) {
-        current = node.clone();
+  while !to_search.is_empty() {
+    // Find the cell with the lowest F cost, using H cost as a tiebreaker
+    let mut current_cell = to_search[0].clone();
+    for cell in &to_search {
+      if Arc::ptr_eq(&current_cell, cell) {
+        continue;
+      }
+      let cell_guard = cell.lock().expect("Failed to lock cell to search");
+      let current_guard = current_cell.lock().expect("Failed to lock current cell");
+      let cell_f = cell_guard.get_f();
+      let cell_h = cell_guard.get_h();
+      let current_f = current_guard.get_f();
+      let current_h = current_guard.get_h();
+      drop(current_guard);
+      drop(cell_guard);
+      if cell_f < current_f || (cell_f == current_f && cell_h < current_h) {
+        current_cell = cell.clone();
       }
     }
 
-    // Mark this node with the lowest F cost as processed
-    processed.push(current.clone());
-    nodes_to_search.retain(|n| !Rc::ptr_eq(n, &current));
+    // Mark this cell with the lowest F cost as processed and remove it from the cells to search
+    processed.push(current_cell.clone());
+    to_search.retain(|cell| !Arc::ptr_eq(cell, &current_cell));
 
-    // If we have reached the target node, reconstruct the path and return it
-    if Rc::ptr_eq(&current, &target_node) {
+    // If we have reached the target cell, reconstruct the path and return it
+    if Arc::ptr_eq(&current_cell, &target_cell) {
       debug!(
         "✅  Arrived at target node {:?}, now reconstructing the path",
-        current.borrow().get_ig()
+        current_cell.try_lock().expect("Failed to lock current node").ig
       );
       let mut path = Vec::new();
-      let mut node = Some(current.clone());
+      let mut cell = Some(current_cell.clone());
 
-      while let Some(current_node) = node {
-        let (current_node_clone, next_ref) = {
-          let cn = current_node.borrow();
-          let next_ref = cn.get_connection().as_ref().cloned();
-          let current_node_clone = cn.clone();
+      while let Some(current) = cell {
+        let (current_ig, next_cell) = {
+          let cell = current.lock().expect("Failed to lock current node");
 
-          (current_node_clone, next_ref)
+          (cell.ig, cell.get_connection().as_ref().cloned())
         };
-        path.push(current_node_clone.to_ig());
-        node = next_ref;
+        path.push(current_ig);
+        cell = next_cell;
       }
 
       path.reverse();
       return path;
     }
 
-    // Otherwise, process the current node's neighbours
+    // If we haven't reached the target, process the current cell's neighbours
     let (current_g, current_ig, current_neighbours) = {
-      let c = current.borrow();
-
-      (c.get_g(), c.get_ig().clone(), c.get_neighbours().clone())
+      let c = current_cell.lock().expect("Failed to lock current node");
+      (c.get_g(), c.ig, c.get_neighbours().clone())
     };
-    let target_ig: Point<InternalGrid> = get_target_node_ig(&target_node);
+    let target_ig = get_target_cell_ig(target_cell);
+
     debug!("Processing node at {:?}", current_ig);
     for neighbour in current_neighbours {
-      let mut n = neighbour.borrow_mut();
+      let mut n = neighbour.lock().expect("Failed to lock neighbour");
 
-      // Skip if the neighbour is already processed
-      if processed.iter().any(|p| Rc::ptr_eq(p, &neighbour)) {
-        trace!(
-          " └─> Skipping neighbour {:?} because it has already been processed",
-          n.get_ig()
-        );
+      // Skip if the neighbour has already been processed
+      if processed.iter().any(|c| Arc::ptr_eq(c, &neighbour)) {
+        trace!(" └─> Skipping neighbour {:?} because it has already been processed", n.ig);
         continue;
       }
 
-      // If the neighbour is not in the nodes to search or if the G cost to the neighbour is lower than its current
-      // G cost...
-      let is_not_in_nodes_to_search = !nodes_to_search.iter().any(|n| Rc::ptr_eq(n, &neighbour));
-      let g_cost_to_neighbour = current_g + calculate_distance_cost(&current_ig, &n.get_ig());
+      // If the neighbour is not in the cells to search or if the G cost to the neighbour is
+      // lower than its current G cost...
+      let is_not_in_nodes_to_search = !to_search.iter().any(|n_ref| Arc::ptr_eq(n_ref, &neighbour));
+      let g_cost_to_neighbour = current_g + calculate_distance_cost(&current_ig, &n.ig);
+
       if is_not_in_nodes_to_search || g_cost_to_neighbour < n.get_g() {
-        // ...then update the neighbour's G cost, set the current node as its connection
+        // ...then update the neighbour's G cost, and set the current cell as its connection
         n.set_g(g_cost_to_neighbour);
-        n.set_connection(&current);
+        n.set_connection(&current_cell);
         let distance_cost = calculate_distance_cost(&n.get_ig(), &target_ig);
 
-        // ...set the neighbour's H cost to the distance to the target node if it is not already in the nodes to search
+        // ...and set the neighbour's H cost to the distance to the target cell,
+        // if it is not already in the cells to search
         if is_not_in_nodes_to_search {
           n.set_h(distance_cost);
-          nodes_to_search.push(neighbour.clone());
+          to_search.push(neighbour.clone());
         }
 
         trace!(
@@ -209,8 +197,8 @@ pub fn run_algorithm(start_node: NodeRef, target_node: NodeRef) -> Vec<Point<Int
   vec![]
 }
 
-fn get_target_node_ig(target_node: &NodeRef) -> Point<InternalGrid> {
-  target_node.borrow().get_ig().clone()
+fn get_target_cell_ig(target_cell: &CellRef) -> Point<InternalGrid> {
+  target_cell.lock().expect("Failed to lock target node").get_ig().clone()
 }
 
 /// Calculates the costs based on the distance between two points in the internal grid, adjusting the cost based on the

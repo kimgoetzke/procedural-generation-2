@@ -7,7 +7,7 @@ mod object_name;
 mod terrain_state;
 mod tile_data;
 
-pub use cell::Cell;
+pub use cell::{Cell, CellRef};
 pub use connection::Connection;
 pub use iteration_result::IterationResult;
 pub use object_data::ObjectData;

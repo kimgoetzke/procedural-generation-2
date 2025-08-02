@@ -3,10 +3,11 @@ use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, Connection, ObjectName, TerrainState, TileData};
+use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState, TileData};
 use bevy::log::*;
 use bevy::platform::collections::HashMap;
 use bevy::reflect::Reflect;
+use std::sync::{Arc, Mutex};
 
 /// An [`ObjectGrid`] is a 2D grid of [`Cell`]s, each of which representing the possible states of objects that may be
 /// spawned for the corresponding tile. The [`ObjectGrid`] is used to keep track of the state of each tile during the
@@ -16,17 +17,22 @@ use bevy::reflect::Reflect;
 pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
-  pub grid: Vec<Vec<Cell>>,
+  pub path_grid: Vec<Vec<CellRef>>,
+  // TODO: Remove the field below and only use `path_grid` for pathfinding and wave function collapse
+  pub object_grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
   /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
   /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
-  pub no_neighbours_tile: Cell,
+  no_neighbours_tile: Cell,
 }
 
 impl ObjectGrid {
   fn new_uninitialised(cg: Point<ChunkGrid>) -> Self {
-    let grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
+    let object_grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
+      .collect();
+    let path_grid: Vec<Vec<CellRef>> = (0..CHUNK_SIZE)
+      .map(|y| (0..CHUNK_SIZE).map(|x| Arc::new(Mutex::new(Cell::new(x, y)))).collect())
       .collect();
     let mut no_neighbours_tile = Cell::new(-1, -1);
     no_neighbours_tile.possible_states = vec![TerrainState {
@@ -42,7 +48,8 @@ impl ObjectGrid {
     }];
     ObjectGrid {
       cg,
-      grid,
+      path_grid,
+      object_grid,
       no_neighbours_tile,
     }
   }
@@ -85,7 +92,7 @@ impl ObjectGrid {
     let points: Vec<_> = get_connection_points(&point).into_iter().collect();
     let mut neighbours = vec![];
     for (direction, point) in points {
-      if let Some(cell) = self.grid.iter().flatten().filter(|cell| cell.ig == point).next() {
+      if let Some(cell) = self.object_grid.iter().flatten().filter(|cell| cell.ig == point).next() {
         neighbours.push((direction, cell));
       } else {
         neighbours.push((direction, &self.no_neighbours_tile));
@@ -96,17 +103,25 @@ impl ObjectGrid {
     neighbours
   }
 
+  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
+    self
+      .path_grid
+      .iter()
+      .flatten()
+      .find(|cell| cell.lock().expect("Failed to lock cell").ig == *point)
+  }
+
   pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {
-    self.grid.iter().flatten().find(|cell| cell.ig == *point)
+    self.object_grid.iter().flatten().find(|cell| cell.ig == *point)
   }
 
   pub fn get_cell_mut(&mut self, point: &Point<InternalGrid>) -> Option<&mut Cell> {
-    self.grid.iter_mut().flatten().find(|cell| cell.ig == *point)
+    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *point)
   }
 
   /// Replaces the [`Cell`] at the given point with the provided [`Cell`].
   pub fn set_cell(&mut self, cell: Cell) {
-    if let Some(existing_cell) = self.grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
+    if let Some(existing_cell) = self.object_grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
       *existing_cell = cell;
     } else {
       error!("Failed to find cell to update at {:?}", cell.ig);
@@ -114,13 +129,13 @@ impl ObjectGrid {
   }
 
   pub fn calculate_total_entropy(&self) -> i32 {
-    self.grid.iter().flatten().map(|cell| cell.entropy as i32).sum()
+    self.object_grid.iter().flatten().map(|cell| cell.entropy as i32).sum()
   }
 
   pub fn get_cells_with_lowest_entropy(&self) -> Vec<&Cell> {
     let mut lowest_entropy = usize::MAX;
     let mut lowest_entropy_cells = vec![];
-    for cell in self.grid.iter().flatten() {
+    for cell in self.object_grid.iter().flatten() {
       if !cell.is_collapsed {
         let entropy = cell.entropy;
         if entropy < lowest_entropy {
@@ -141,6 +156,6 @@ impl ObjectGrid {
   }
 
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
-    self.grid = other.grid.clone();
+    self.object_grid = other.object_grid.clone();
   }
 }
