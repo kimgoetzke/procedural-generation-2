@@ -170,8 +170,7 @@ fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>, is_decoratio
         } else {
           grid
             .get_cell(&tile_data.flat_tile.coords.internal_grid)
-            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
-            .filter(|cell| cell.is_collapsed()) // Ignore non-collapsed cells since WFC did not run
+            .filter(|cell| cell.get_index() != 0 && cell.is_collapsed()) // Also ignore non-collapsed cells since WFC did not run
             .map(|cell| ObjectData::from(cell, tile_data))
         }
       })

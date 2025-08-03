@@ -85,7 +85,7 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
-      generate_connection_points(&mut metadata, cg);
+      generate_connection_points(&mut metadata, &settings, cg);
       metadata.index.push(cg);
     })
   });
@@ -176,14 +176,12 @@ fn generate_biome_metadata(
   metadata.biome.insert(cg, bm);
 }
 
-fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGrid>) {
-  let connection_points = calculate_connection_points_for_cg(&cg);
+fn generate_connection_points(metadata: &mut ResMut<Metadata>, settings: &Settings, cg: Point<ChunkGrid>) {
+  let connection_points = calculate_connection_points_for_cg(settings, &cg);
   metadata.connection_points.insert(cg, connection_points);
 }
 
-// TODO: Generate a random point in the middle of the chunk so that edge connection points
-//  can connect with it when there's no other connection point
-fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
+fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
   let mut connection_points = Vec::new();
   for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {
     let hash = generate_hash(&cg, &neighbour_cg);
@@ -208,17 +206,30 @@ fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<Intern
         }
       })
       .collect::<Vec<_>>();
-    if !connection_points_for_edge.is_empty() {
-      trace!(
-        "{} has [{}] connection points with [{:?}] {}: {:?}",
-        cg,
-        connection_points_for_edge.len(),
-        direction,
-        neighbour_cg,
-        connection_points_for_edge
-      );
-    }
     connection_points.append(&mut connection_points_for_edge);
+  }
+
+  connection_points.sort();
+  connection_points.dedup();
+  if connection_points.len() == 1 {
+    let mut rng = StdRng::seed_from_u64(shared::calculate_seed(*cg, settings.world.noise_seed));
+    loop {
+      let new_point = Point::new_internal_grid(rng.random_range(1..CHUNK_SIZE - 2), rng.random_range(1..CHUNK_SIZE - 2));
+      if !connection_points.contains(&new_point) {
+        debug!("Added an internal connection point {:?} for chunk {}", new_point, cg);
+        connection_points.push(new_point);
+        break;
+      }
+    }
+  }
+
+  if !connection_points.is_empty() {
+    debug!(
+      "{} has [{}] connection points: {:?}",
+      cg,
+      connection_points.len(),
+      connection_points
+    );
   }
 
   connection_points
@@ -286,13 +297,14 @@ mod tests {
 
   fn calculate_connection_points_generates_matching_pairs(cg: Point<ChunkGrid>) {
     // Generate connection points for requested point
+    let settings = Settings { ..Default::default() };
     let mut connection_points_map = std::collections::HashMap::new();
-    let connection_points = calculate_connection_points_for_cg(&cg);
+    let connection_points = calculate_connection_points_for_cg(&settings, &cg);
     connection_points_map.insert(cg, connection_points);
 
     // Generate connection points for all neighbors
     for (_, neighbor_cg) in get_cardinal_direction_points(&cg) {
-      let neighbor_points = calculate_connection_points_for_cg(&neighbor_cg);
+      let neighbor_points = calculate_connection_points_for_cg(&settings, &neighbor_cg);
       connection_points_map.insert(neighbor_cg, neighbor_points);
     }
 

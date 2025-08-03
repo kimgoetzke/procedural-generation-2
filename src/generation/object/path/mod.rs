@@ -5,6 +5,8 @@ use crate::generation::resources::Metadata;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
+use rand::Rng;
+use rand::prelude::StdRng;
 use std::sync::Arc;
 
 pub struct PathGenerationPlugin;
@@ -13,7 +15,12 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(settings: &Settings, metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
+pub fn calculate_paths(
+  settings: &Settings,
+  metadata: &Metadata,
+  mut object_grid: ObjectGrid,
+  mut rng: StdRng,
+) -> ObjectGrid {
   let cg = object_grid.cg;
   if !settings.object.generate_paths {
     debug!("Skipped path generation for {} because it is disabled", cg);
@@ -32,15 +39,7 @@ pub fn calculate_paths(settings: &Settings, metadata: &Metadata, mut object_grid
     );
     return object_grid;
   }
-  if connection_points.len() != 2 {
-    warn!(
-      "Skipping path generation for chunk {} because MVP implementation is only for exactly 2 connection points but there are [{}]",
-      cg,
-      connection_points.len()
-    );
-    return object_grid;
-  }
-  trace!(
+  debug!(
     "Generating path for chunk {} which has [{}] connection points: {}",
     cg,
     connection_points.len(),
@@ -52,15 +51,23 @@ pub fn calculate_paths(settings: &Settings, metadata: &Metadata, mut object_grid
   );
 
   // Get start and target cells based on connection points
-  let start_node = object_grid
-    .get_cell_ref(&connection_points[0])
-    .expect("Failed to get start node");
-  let target_node = object_grid
-    .get_cell_ref(&connection_points[1])
-    .expect("Failed to get target node");
+  let start_cell_index = rng.random_range(..connection_points.len());
+  let start_cell = object_grid
+    .get_cell_ref(&connection_points[rng.random_range(..connection_points.len())])
+    .expect("Failed to get start cell");
+  let closest_target = connection_points
+    .iter()
+    .filter(|p| *p != &connection_points[start_cell_index])
+    .min_by(|a, b| {
+      a.distance_to(b)
+        .partial_cmp(&b.distance_to(a))
+        .expect("Failed to compare distances")
+    })
+    .expect("Failed to find closest target point");
+  let target_cell = object_grid.get_cell_ref(closest_target).expect("Failed to get target cell");
 
-  // Run the pathfinding algorithm and TODO: Collapse or mark cells on the path
-  let path = run_algorithm(start_node, target_node);
+  // Run the pathfinding algorithm and collapse cells on the path
+  let path = run_algorithm(start_cell, target_cell);
   for point in &path {
     let cell = object_grid
       .get_cell_mut(point)
