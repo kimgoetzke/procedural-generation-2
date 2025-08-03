@@ -34,14 +34,14 @@ pub struct Cell {
   connection: Box<Option<CellRef>>,
   g: f32,
   h: f32,
-  // Wave function collapse algorithm specific fields
-  pub is_collapsed: bool,
+  // Wave function collapse specific fields
+  is_collapsed: bool,
   is_initialised: bool,
   is_being_monitored: bool,
-  pub terrain: TerrainType,
-  pub tile_type: TileType,
-  pub entropy: usize,
-  pub possible_states: Vec<TerrainState>,
+  terrain: TerrainType,
+  tile_type: TileType,
+  entropy: usize,
+  possible_states: Vec<TerrainState>,
 }
 
 impl PartialEq for Cell {
@@ -156,6 +156,25 @@ impl Cell {
   /// value (`H`).
   pub fn get_f(&self) -> f32 {
     self.g + self.h
+  }
+
+  pub fn is_collapsed(&self) -> bool {
+    self.is_collapsed
+  }
+
+  pub fn get_entropy(&self) -> usize {
+    self.entropy
+  }
+
+  pub fn get_possible_states(&self) -> &Vec<TerrainState> {
+    &self.possible_states
+  }
+
+  /// Sets the possible states of this cell. Does NOT update the entropy and can therefore cause an *inconsistent* 
+  /// state. Only use this method if you know what you are doing. States should only be updated using
+  /// [`Cell::clone_and_reduce`] or [`Cell::collapse`] as part of running the wave function collapse algorithm.
+  pub fn override_possible_states(&mut self, states: Vec<TerrainState>) {
+    self.possible_states = states;
   }
 
   pub fn clone_and_reduce(

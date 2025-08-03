@@ -181,6 +181,8 @@ fn generate_connection_points(metadata: &mut ResMut<Metadata>, cg: Point<ChunkGr
   metadata.connection_points.insert(cg, connection_points);
 }
 
+// TODO: Generate a random point in the middle of the chunk so that edge connection points
+//  can connect with it when there's no other connection point
 fn calculate_connection_points_for_cg(cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
   let mut connection_points = Vec::new();
   for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {

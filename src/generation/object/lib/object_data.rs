@@ -14,11 +14,11 @@ pub struct ObjectData {
 
 impl ObjectData {
   pub fn from_wfc_cell(tile_data: &TileData, cell: &Cell) -> Self {
-    let object_name = cell.possible_states[0].name;
+    let object_name = cell.get_possible_states()[0].name;
     let is_large_sprite = object_name.is_large_sprite();
     let sprite_index = cell.index;
-    let possible_states_count = cell.possible_states.len();
-    if sprite_index == -1 || possible_states_count > 1 || !cell.is_collapsed {
+    let possible_states_count = cell.get_possible_states().len();
+    if sprite_index == -1 || possible_states_count > 1 || !cell.is_collapsed() {
       error!(
         "Attempted to create object data from cell {:?} which is not fully collapsed",
         cell.ig,

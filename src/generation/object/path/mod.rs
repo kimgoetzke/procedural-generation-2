@@ -12,7 +12,7 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGrid {
+pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
   let cg = object_grid.cg;
   let connection_points = metadata
     .connection_points
@@ -35,7 +35,6 @@ pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGr
     );
     return object_grid;
   }
-
   trace!(
     "Generating path for chunk {} which has [{}] connection points: {}",
     cg,
@@ -47,31 +46,7 @@ pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGr
       .join(", ")
   );
 
-  // Populate neighbours for each cell
-  for y in 0..object_grid.path_grid.len() {
-    for x in 0..object_grid.path_grid[y].len() {
-      let cell_ref = &object_grid.path_grid[y][x];
-      let ig = cell_ref.lock().expect("Failed to lock CellRef").ig;
-      let mut neighbours: Vec<CellRef> = Vec::new();
-
-      for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
-        let nx = ig.x + dx;
-        let ny = ig.y + dy;
-        if nx >= 0 && ny >= 0 {
-          if let Some(row) = object_grid.path_grid.get(ny as usize) {
-            if let Some(neighbour_ref) = row.get(nx as usize) {
-              neighbours.push(neighbour_ref.clone());
-            }
-          }
-        }
-      }
-
-      let mut cell = cell_ref.lock().expect("Failed to lock cell");
-      cell.add_neighbours(neighbours);
-    }
-  }
-
-  // Get start and target nodes based on connection points
+  // Get start and target cells based on connection points
   let start_node = object_grid
     .get_cell_ref(&connection_points[0])
     .expect("Failed to get start node");
@@ -79,7 +54,7 @@ pub fn calculate_paths(metadata: &Metadata, object_grid: ObjectGrid) -> ObjectGr
     .get_cell_ref(&connection_points[1])
     .expect("Failed to get target node");
 
-  // Run the pathfinding algorithm and return the resulting path
+  // Run the pathfinding algorithm and TODO: Collapse or mark cells on the path
   let path = run_algorithm(start_node, target_node);
   debug!(
     "Generated path for chunk {} with [{}] nodes in the path: {:?}",

@@ -18,7 +18,7 @@ pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
   pub path_grid: Vec<Vec<CellRef>>,
-  // TODO: Remove the field below and only use `path_grid` for pathfinding and wave function collapse
+  // TODO: Remove the field below and only use `CellRef` for pathfinding and wave function collapse
   pub object_grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
   /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
@@ -35,7 +35,7 @@ impl ObjectGrid {
       .map(|y| (0..CHUNK_SIZE).map(|x| Arc::new(Mutex::new(Cell::new(x, y)))).collect())
       .collect();
     let mut no_neighbours_tile = Cell::new(-1, -1);
-    no_neighbours_tile.possible_states = vec![TerrainState {
+    no_neighbours_tile.override_possible_states(vec![TerrainState {
       name: ObjectName::Empty,
       index: 0,
       weight: 1,
@@ -45,7 +45,7 @@ impl ObjectGrid {
         (Connection::Bottom, vec![ObjectName::Empty]),
         (Connection::Left, vec![ObjectName::Empty]),
       ],
-    }];
+    }]);
     ObjectGrid {
       cg,
       path_grid,
@@ -60,6 +60,32 @@ impl ObjectGrid {
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
+
+    // Initialise path finding grid by populate neighbours for each cell
+    for y in 0..grid.path_grid.len() {
+      for x in 0..grid.path_grid[y].len() {
+        let cell_ref = &grid.path_grid[y][x];
+        let ig = cell_ref.lock().expect("Failed to lock CellRef").ig;
+        let mut neighbours: Vec<CellRef> = Vec::new();
+
+        for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
+          let nx = ig.x + dx;
+          let ny = ig.y + dy;
+          if nx >= 0 && ny >= 0 {
+            if let Some(row) = grid.path_grid.get(ny as usize) {
+              if let Some(neighbour_ref) = row.get(nx as usize) {
+                neighbours.push(neighbour_ref.clone());
+              }
+            }
+          }
+        }
+
+        let mut cell = cell_ref.lock().expect("Failed to lock cell");
+        cell.add_neighbours(neighbours);
+      }
+    }
+
+    // Initialise object grid cells with terrain and tile type
     for data in tile_data.iter() {
       let ig = data.flat_tile.coords.internal_grid;
       let terrain = data.flat_tile.terrain;
@@ -77,7 +103,7 @@ impl ObjectGrid {
           ig,
           data.flat_tile.terrain,
           data.flat_tile.tile_type,
-          cell.possible_states.len()
+          cell.get_possible_states().len()
         );
       } else {
         error!("Failed to find cell to initialise at {:?}", ig);
@@ -129,15 +155,15 @@ impl ObjectGrid {
   }
 
   pub fn calculate_total_entropy(&self) -> i32 {
-    self.object_grid.iter().flatten().map(|cell| cell.entropy as i32).sum()
+    self.object_grid.iter().flatten().map(|cell| cell.get_entropy() as i32).sum()
   }
 
   pub fn get_cells_with_lowest_entropy(&self) -> Vec<&Cell> {
     let mut lowest_entropy = usize::MAX;
     let mut lowest_entropy_cells = vec![];
     for cell in self.object_grid.iter().flatten() {
-      if !cell.is_collapsed {
-        let entropy = cell.entropy;
+      if !cell.is_collapsed() {
+        let entropy = cell.get_entropy();
         if entropy < lowest_entropy {
           lowest_entropy = entropy;
           lowest_entropy_cells = vec![cell];
