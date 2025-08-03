@@ -51,37 +51,23 @@ impl ObjectGrid {
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
+    grid.initialise_neighbours();
+    grid.initialise_cells(terrain_state_map, tile_data);
 
-    // Initialise path finding grid by populate neighbours for each cell
-    for y in 0..grid.path_grid.len() {
-      for x in 0..grid.path_grid[y].len() {
-        let cell_ref = &grid.path_grid[y][x];
-        let ig = cell_ref.lock().expect("Failed to lock CellRef").ig;
-        let mut neighbours: Vec<CellRef> = Vec::new();
+    grid
+  }
 
-        for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
-          let nx = ig.x + dx;
-          let ny = ig.y + dy;
-          if nx >= 0 && ny >= 0 {
-            if let Some(row) = grid.path_grid.get(ny as usize) {
-              if let Some(neighbour_ref) = row.get(nx as usize) {
-                neighbours.push(neighbour_ref.clone());
-              }
-            }
-          }
-        }
-
-        let mut cell = cell_ref.lock().expect("Failed to lock cell");
-        cell.add_neighbours(neighbours);
-      }
-    }
-
-    // Initialise object grid cells with terrain and tile type
+  /// Initialises object grid cells with terrain and tile type.
+  fn initialise_cells(
+    &mut self,
+    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+    tile_data: &Vec<TileData>,
+  ) {
     for data in tile_data.iter() {
       let ig = data.flat_tile.coords.internal_grid;
       let terrain = data.flat_tile.terrain;
       let tile_type = data.flat_tile.tile_type;
-      if let Some(cell) = grid.get_cell_mut(&ig) {
+      if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
           .get(&terrain)
           .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str())
@@ -100,8 +86,49 @@ impl ObjectGrid {
         error!("Failed to find cell to initialise at {:?}", ig);
       }
     }
+  }
 
-    grid
+  /// Initialises the path finding grid by populating the neighbours for each cell.
+  fn initialise_neighbours(&mut self) {
+    for y in 0..self.path_grid.len() {
+      for x in 0..self.path_grid[y].len() {
+        let cell_ref = &self.path_grid[y][x];
+        let ig = cell_ref.lock().expect("Failed to lock cell").ig;
+        let mut neighbours: Vec<CellRef> = Vec::new();
+
+        for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
+          let nx = ig.x + dx;
+          let ny = ig.y + dy;
+          if nx >= 0 && ny >= 0 {
+            if let Some(row) = self.path_grid.get(ny as usize) {
+              if let Some(neighbour_ref) = row.get(nx as usize) {
+                neighbours.push(neighbour_ref.clone());
+              }
+            }
+          }
+        }
+
+        let mut cell = cell_ref.try_lock().expect("Failed to lock cell");
+        cell.add_neighbours(neighbours);
+      }
+    }
+  }
+
+  pub fn reinitialise(&mut self) {
+    self.object_grid = self
+      .object_grid
+      .iter_mut()
+      .map(|row| {
+        row
+          .iter_mut()
+          .map(|cell| {
+            cell.reset_and_clear_references();
+            cell.clone()
+          })
+          .collect()
+      })
+      .collect();
+    self.initialise_neighbours();
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {

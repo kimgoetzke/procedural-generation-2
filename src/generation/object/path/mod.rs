@@ -39,6 +39,13 @@ pub fn calculate_paths(
     );
     return object_grid;
   }
+  if connection_points.len() == 1 {
+    warn!(
+      "Skipping path generation for chunk {} because it has only 1 connection point",
+      cg
+    );
+    return object_grid;
+  }
   debug!(
     "Generating path for chunk {} which has [{}] connection points: {}",
     cg,
@@ -116,15 +123,15 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
     // If we have reached the target cell, reconstruct the path and return it
     if Arc::ptr_eq(&current_cell, &target_cell) {
       trace!(
-        "✅  Arrived at target node {:?}, now reconstructing the path",
-        current_cell.try_lock().expect("Failed to lock current node").ig
+        "✅  Arrived at target cell {:?}, now reconstructing the path",
+        current_cell.try_lock().expect("Failed to lock current cell").ig
       );
       let mut path = Vec::new();
       let mut cell = Some(current_cell.clone());
 
       while let Some(current) = cell {
         let (current_ig, next_cell) = {
-          let cell = current.lock().expect("Failed to lock current node");
+          let cell = current.lock().expect("Failed to lock current cell");
 
           (cell.ig, cell.get_connection().as_ref().cloned())
         };
@@ -138,12 +145,12 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 
     // If we haven't reached the target, process the current cell's neighbours
     let (current_g, current_ig, current_neighbours) = {
-      let c = current_cell.lock().expect("Failed to lock current node");
+      let c = current_cell.lock().expect("Failed to lock current cell");
       (c.get_g(), c.ig, c.get_neighbours().clone())
     };
     let target_ig = get_target_cell_ig(target_cell);
 
-    trace!("Processing node at {:?}", current_ig);
+    trace!("Processing cell at {:?}", current_ig);
     for neighbour in current_neighbours {
       let mut n = neighbour.lock().expect("Failed to lock neighbour");
 
@@ -155,10 +162,10 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 
       // If the neighbour is not in the cells to search or if the G cost to the neighbour is
       // lower than its current G cost...
-      let is_not_in_nodes_to_search = !to_search.iter().any(|n_ref| Arc::ptr_eq(n_ref, &neighbour));
+      let is_not_in_cells_to_search = !to_search.iter().any(|n_ref| Arc::ptr_eq(n_ref, &neighbour));
       let g_cost_to_neighbour = current_g + calculate_distance_cost(&current_ig, &n.ig);
 
-      if is_not_in_nodes_to_search || g_cost_to_neighbour < n.get_g() {
+      if is_not_in_cells_to_search || g_cost_to_neighbour < n.get_g() {
         // ...then update the neighbour's G cost, and set the current cell as its connection
         n.set_g(g_cost_to_neighbour);
         n.set_connection(&current_cell);
@@ -166,7 +173,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 
         // ...and set the neighbour's H cost to the distance to the target cell,
         // if it is not already in the cells to search
-        if is_not_in_nodes_to_search {
+        if is_not_in_cells_to_search {
           n.set_h(distance_cost);
           to_search.push(neighbour.clone());
         }
@@ -176,10 +183,10 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
           n.get_ig(),
           n.get_ig(),
           g_cost_to_neighbour,
-          if is_not_in_nodes_to_search {
+          if is_not_in_cells_to_search {
             "".to_string()
           } else {
-            format!(", H to [{}], plus adding it to nodes to search", &distance_cost)
+            format!(", H to [{}], plus adding it to cell to search", &distance_cost)
           }
         );
       }
@@ -190,7 +197,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 }
 
 fn get_target_cell_ig(target_cell: &CellRef) -> Point<InternalGrid> {
-  target_cell.lock().expect("Failed to lock target node").get_ig().clone()
+  target_cell.lock().expect("Failed to lock target cell").get_ig().clone()
 }
 
 /// Calculates the costs based on the distance between two points in the internal grid, adjusting the cost based on the

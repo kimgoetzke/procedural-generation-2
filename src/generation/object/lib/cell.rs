@@ -102,6 +102,12 @@ impl Cell {
     self.index
   }
 
+  pub fn add_neighbours(&mut self, neighbours: Vec<CellRef>) {
+    for neighbour in neighbours {
+      self.add_neighbour(neighbour);
+    }
+  }
+
   pub fn add_neighbour(&mut self, neighbour: CellRef) {
     let neighbour_ig = neighbour.try_lock().expect("Failed to lock cell to find").ig;
     if !self
@@ -113,50 +119,44 @@ impl Cell {
     }
   }
 
-  pub fn add_neighbours(&mut self, neighbours: Vec<CellRef>) {
-    for neighbour in neighbours {
-      self.add_neighbour(neighbour);
-    }
-  }
-
   pub fn get_neighbours(&self) -> &Vec<CellRef> {
     &self.neighbours
   }
 
-  /// Returns the [`CellRef`] that this node is connected to, if any. Used to reconstruct the path from the start node
-  /// to the target node after the pathfinding algorithm has completed.
+  /// Returns the [`CellRef`] that this cell is connected to, if any. Used to reconstruct the path from the start cell
+  /// to the target cell after the pathfinding algorithm has completed.
   pub fn get_connection(&self) -> &Option<CellRef> {
     &self.connection
   }
 
-  /// Sets the connection to another [`CellRef`], which is used to reconstruct the path from the start node to the
+  /// Sets the connection to another [`CellRef`], which is used to reconstruct the path from the start cell to the
   /// target.
   pub fn set_connection(&mut self, connection: &CellRef) {
     *self.connection = Some(connection.clone());
   }
 
-  /// The distance from the start node to this node.
+  /// The distance from the start cell to this cell.
   pub fn get_g(&self) -> f32 {
     self.g
   }
 
-  /// Sets the `G` cost which represents the distance from the start node to this node.
+  /// Sets the `G` cost which represents the distance from the start cell to this cell.
   pub fn set_g(&mut self, g: f32) {
     self.g = g;
   }
 
-  /// The heuristic value, which is the estimated ("ideal") distance to reach the target node from this node. This
-  /// value is always equal to or less than the actual distance to the target node.
+  /// The heuristic value, which is the estimated ("ideal") distance to reach the target cell from this cell. This
+  /// value is always equal to or less than the actual distance to the target cell.
   pub fn get_h(&self) -> f32 {
     self.h
   }
 
-  /// Sets the `H` cost i.e. heuristic value, which is the estimated distance to reach the target node from this node.
+  /// Sets the `H` cost i.e. heuristic value, which is the estimated distance to reach the target cell from this cell.
   pub fn set_h(&mut self, h: f32) {
     self.h = h;
   }
 
-  /// The total cost of this node, which is the sum of the distance from the start node (`G`) and the heuristic
+  /// The total cost of this cell, which is the sum of the distance from the start cell (`G`) and the heuristic
   /// value (`H`).
   pub fn get_f(&self) -> f32 {
     self.g + self.h
