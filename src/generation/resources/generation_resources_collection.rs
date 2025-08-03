@@ -176,6 +176,13 @@ fn initialise_resources_system(
   asset_collection.objects.trees_humid.stat =
     AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
+  // Objects: Paths
+  asset_collection.objects.paths_water = path_assets_static(&asset_server, &mut layouts, 0);
+  asset_collection.objects.paths_shore = path_assets_static(&asset_server, &mut layouts, 1);
+  asset_collection.objects.paths_l1 = path_assets_static(&asset_server, &mut layouts, 2);
+  asset_collection.objects.paths_l2 = path_assets_static(&asset_server, &mut layouts, 3);
+  asset_collection.objects.paths_l3 = path_assets_static(&asset_server, &mut layouts, 4);
+
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_DEEP_OBJ_PATH);
   asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, WATER_SHALLOW_OBJ_PATH);
@@ -271,6 +278,27 @@ fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
   }
 
   set
+}
+
+fn path_assets_static(
+  asset_server: &Res<AssetServer>,
+  layout: &mut Assets<TextureAtlasLayout>,
+  offset: u32,
+) -> AssetCollection {
+  let static_layout = TextureAtlasLayout::from_grid(
+    DEFAULT_OBJ_SIZE,
+    PATHS_COLUMNS,
+    1,
+    None,
+    Some(UVec2::new(0, offset * TILE_SIZE)),
+  );
+  let static_atlas_layout = layout.add(static_layout);
+
+  AssetCollection {
+    stat: AssetPack::new(asset_server.load(PATHS_PATH.to_string()), static_atlas_layout.clone()),
+    anim: None,
+    animated_tile_types: HashSet::new(),
+  }
 }
 
 fn object_assets_static(

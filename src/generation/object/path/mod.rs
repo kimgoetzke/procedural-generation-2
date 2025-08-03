@@ -65,7 +65,7 @@ pub fn calculate_paths(settings: &Settings, metadata: &Metadata, mut object_grid
     let cell = object_grid
       .get_cell_mut(point)
       .expect(format!("Failed to get cell at point {:?}", point).as_str());
-    cell.pre_collapse(16);
+    cell.pre_collapse(8);
   }
 
   debug!(

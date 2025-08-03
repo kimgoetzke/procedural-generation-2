@@ -186,7 +186,7 @@ impl Cell {
     self.index = index;
     self.is_collapsed = true;
     self.entropy = 0usize;
-    self.possible_states = vec![TerrainState::new_with_no_neighbours(ObjectName::ForestBush4, index, 1)];
+    self.possible_states = vec![TerrainState::new_with_no_neighbours(ObjectName::PathUndefined, index, 1)];
   }
 
   pub fn clone_and_reduce(

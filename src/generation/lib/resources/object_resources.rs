@@ -21,4 +21,9 @@ pub struct ObjectResources {
   pub trees_dry: AssetCollection,
   pub trees_moderate: AssetCollection,
   pub trees_humid: AssetCollection,
+  pub paths_water: AssetCollection,
+  pub paths_shore: AssetCollection,
+  pub paths_l1: AssetCollection,
+  pub paths_l2: AssetCollection,
+  pub paths_l3: AssetCollection,
 }

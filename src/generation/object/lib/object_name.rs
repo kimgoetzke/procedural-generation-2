@@ -69,6 +69,7 @@ pub enum ObjectName {
   ForestBush2,
   ForestBush3,
   ForestBush4,
+  PathUndefined,
 }
 
 impl ObjectName {
@@ -81,5 +82,9 @@ impl ObjectName {
         | ObjectName::ForestTree4
         | ObjectName::ForestTree5
     )
+  }
+
+  pub fn is_path_sprite(&self) -> bool {
+    matches!(self, ObjectName::PathUndefined)
   }
 }
