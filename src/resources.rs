@@ -153,7 +153,14 @@ impl Default for WorldGenerationSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ObjectGenerationSettings {
+  /// Whether to generate objects in the world. If set to `false`, no object grids will be generated, effectively
+  /// disabling both path generation and the generation of decorative objects such as trees, stones, flowers, etc.
   pub generate_objects: bool,
+  /// Whether to generate paths in the world.
+  pub generate_paths: bool,
+  /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc.
+  pub generate_decoration: bool,
+  /// Whether to enable random colour variations for decorative objects. Does not affect paths.
   pub enable_colour_variations: bool,
 }
 
@@ -161,6 +168,8 @@ impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
       generate_objects: GENERATE_OBJECTS,
+      generate_paths: GENERATE_PATHS,
+      generate_decoration: GENERATE_DECORATION,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }
   }

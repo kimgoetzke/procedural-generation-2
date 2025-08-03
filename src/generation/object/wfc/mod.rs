@@ -16,38 +16,52 @@ impl Plugin for WfcPlugin {
 pub fn determine_objects_in_grid(
   mut rng: &mut StdRng,
   object_generation_data: &mut (ObjectGrid, Vec<TileData>),
-  _settings: &Settings,
+  settings: &Settings,
 ) -> Vec<ObjectData> {
   let start_time = shared::get_time();
-  let grid = &mut object_generation_data.0;
-  let mut snapshots = vec![];
-  let mut iter_count = 1;
-  let mut has_entropy = true;
+  let is_decoration_enabled = settings.object.generate_decoration;
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
+  if is_decoration_enabled {
+    let grid = &mut object_generation_data.0;
+    let mut snapshots = vec![];
+    let mut iter_count = 1;
+    let mut has_entropy = true;
 
-  while has_entropy {
-    match iterate(&mut rng, grid) {
-      IterationResult::Failure => handle_failure(
-        grid,
-        &mut snapshots,
-        &mut iter_count,
-        &mut snapshot_error_count,
-        &mut iter_error_count,
-        &mut total_error_count,
-      ),
-      result => handle_success(
-        grid,
-        &mut snapshots,
-        &mut iter_count,
-        &mut has_entropy,
-        &mut iter_error_count,
-        result,
-      ),
+    while has_entropy {
+      match iterate(&mut rng, grid) {
+        IterationResult::Failure => handle_failure(
+          grid,
+          &mut snapshots,
+          &mut iter_count,
+          &mut snapshot_error_count,
+          &mut iter_error_count,
+          &mut total_error_count,
+        ),
+        result => handle_success(
+          grid,
+          &mut snapshots,
+          &mut iter_count,
+          &mut has_entropy,
+          &mut iter_error_count,
+          result,
+        ),
+      }
     }
+  } else {
+    debug!(
+      "Skipped decoration generation for {} because it is disabled",
+      object_generation_data.0.cg
+    );
   }
 
-  let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1);
-  log_summary(start_time, snapshot_error_count, total_error_count, &object_generation_data.0);
+  let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1, is_decoration_enabled);
+  log_summary(
+    start_time,
+    snapshot_error_count,
+    total_error_count,
+    &object_generation_data.0,
+    is_decoration_enabled,
+  );
 
   object_data
 }
@@ -142,16 +156,24 @@ fn handle_success(
   *iter_error_count = 0;
 }
 
-fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<ObjectData> {
+fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>, is_decoration_enabled: bool) -> Vec<ObjectData> {
   let mut object_data = vec![];
   object_data.extend(
     tile_data
       .iter()
       .filter_map(|tile_data| {
-        grid
-          .get_cell(&tile_data.flat_tile.coords.internal_grid)
-          .filter(|cell| cell.index != 0) // Sprite index 0 is always transparent
-          .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
+        if is_decoration_enabled {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
+            .map(|cell| ObjectData::from(cell, tile_data))
+        } else {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
+            .filter(|cell| cell.is_collapsed()) // Ignore non-collapsed cells since WFC did not run
+            .map(|cell| ObjectData::from(cell, tile_data))
+        }
       })
       .collect::<Vec<ObjectData>>(),
   );
@@ -182,9 +204,23 @@ fn log_failure(
   );
 }
 
-fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count: i32, grid: &ObjectGrid) {
-  match (total_error_count, snapshot_error_count) {
-    (0, 0) => {
+fn log_summary(
+  start_time: u128,
+  snapshot_error_count: usize,
+  total_error_count: i32,
+  grid: &ObjectGrid,
+  is_decoration_enabled: bool,
+) {
+  match (is_decoration_enabled, total_error_count, snapshot_error_count) {
+    (false, _, _) => {
+      trace!(
+        "Completed converting object grid to object data for {} in {} ms on {}",
+        grid.cg,
+        shared::get_time() - start_time,
+        shared::thread_name()
+      );
+    }
+    (true, 0, 0) => {
       trace!(
         "Completed wave function collapse for {} in {} ms on {}",
         grid.cg,
@@ -192,7 +228,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (1..15, 0) => {
+    (true, 1..15, 0) => {
       debug!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,
@@ -201,7 +237,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (15.., 0) => {
+    (true, 15.., 0) => {
       warn!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,

@@ -74,10 +74,16 @@ pub enum GenerationStage {
   Stage4(Vec<(Chunk, Entity)>),
   /// Stage 5: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, generate an [`ObjectGrid`].
   Stage5(Vec<(Chunk, Entity)>),
-  /// Stage 6: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, calculate paths.
+  /// Stage 6: If [`Chunk`]-[`Entity`]-[`ObjectGrid`] triplets are provided and [`Entity`]s still exists, schedule
+  /// a task to calculate paths and update the [`ObjectGrid`]s accordingly for each of the triplet. Return the updated
+  /// triplets for further processing.
   Stage6(Task<Vec<(Chunk, Entity, ObjectGrid)>>),
-  /// Stage 7: If [`Chunk`]-[`Entity`] pairs are provided and [`Entity`]s still exists, schedule tasks to generate
-  /// object data and return the [`Task`]s.
+  /// Stage 7: If [`Chunk`]-[`Entity`]-[`ObjectGrid`] triplets are provided and [`Entity`]s still exists, schedule
+  /// a task to generate objects and convert the [`ObjectGrid`]s to [`ObjectData`], which is used to spawn any sprites
+  /// in a separate step. Return a [`Task`] for each chunk.
+  ///
+  /// NOTE: The [`ObjectData`] must always be generated and returned for any sprites to be spawned, even if the
+  /// generation of details is disabled, because paths also require object sprites to be spawned.
   Stage7(Task<Vec<(Chunk, Entity, ObjectGrid)>>),
   /// Stage 8: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
   /// If not, do nothing. Return all remaining [`Task`]s until all are finished, then proceed to next stage.

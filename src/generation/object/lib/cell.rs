@@ -26,7 +26,7 @@ pub type CellRef = Arc<Mutex<Cell>>;
 pub struct Cell {
   // General fields
   pub ig: Point<InternalGrid>,
-  pub index: i32,
+  index: i32,
   // Pathfinding specific fields
   #[reflect(ignore)]
   neighbours: Vec<CellRef>,
@@ -96,6 +96,10 @@ impl Cell {
 
   pub fn get_ig(&self) -> &Point<InternalGrid> {
     &self.ig
+  }
+
+  pub fn get_index(&self) -> i32 {
+    self.index
   }
 
   pub fn add_neighbour(&mut self, neighbour: CellRef) {
@@ -170,11 +174,19 @@ impl Cell {
     &self.possible_states
   }
 
-  /// Sets the possible states of this cell. Does NOT update the entropy and can therefore cause an *inconsistent* 
+  /// Sets the possible states of this cell. Does NOT update the entropy and can therefore cause an *inconsistent*
   /// state. Only use this method if you know what you are doing. States should only be updated using
   /// [`Cell::clone_and_reduce`] or [`Cell::collapse`] as part of running the wave function collapse algorithm.
   pub fn override_possible_states(&mut self, states: Vec<TerrainState>) {
     self.possible_states = states;
+  }
+
+  // TODO: Implement this method and give it an appropriate name
+  pub fn pre_collapse(&mut self, index: i32) {
+    self.index = index;
+    self.is_collapsed = true;
+    self.entropy = 0usize;
+    self.possible_states = vec![TerrainState::new_with_no_neighbours(ObjectName::ForestBush4, index, 1)];
   }
 
   pub fn clone_and_reduce(

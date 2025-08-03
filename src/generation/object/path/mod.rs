@@ -2,6 +2,7 @@ use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::object::lib::{CellRef, ObjectGrid};
 use crate::generation::resources::Metadata;
+use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use std::sync::Arc;
@@ -12,8 +13,12 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
+pub fn calculate_paths(settings: &Settings, metadata: &Metadata, mut object_grid: ObjectGrid) -> ObjectGrid {
   let cg = object_grid.cg;
+  if !settings.object.generate_paths {
+    debug!("Skipped path generation for {} because it is disabled", cg);
+    return object_grid;
+  }
   let connection_points = metadata
     .connection_points
     .get(&cg)
@@ -56,6 +61,13 @@ pub fn calculate_paths(metadata: &Metadata, mut object_grid: ObjectGrid) -> Obje
 
   // Run the pathfinding algorithm and TODO: Collapse or mark cells on the path
   let path = run_algorithm(start_node, target_node);
+  for point in &path {
+    let cell = object_grid
+      .get_cell_mut(point)
+      .expect(format!("Failed to get cell at point {:?}", point).as_str());
+    cell.pre_collapse(16);
+  }
+
   debug!(
     "Generated path for chunk {} with [{}] nodes in the path: {:?}",
     cg,

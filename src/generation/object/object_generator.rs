@@ -41,23 +41,20 @@ pub fn generate_object_grid(
   chunk: Chunk,
   chunk_entity: Entity,
 ) -> Option<(Chunk, Entity, ObjectGrid)> {
+  let cg = chunk.coords.chunk_grid;
   if !settings.object.generate_objects {
-    debug!("Skipped object generation because it's disabled");
+    debug!(
+      "Skipped object grid generation for {} because generating objects is disabled",
+      cg
+    );
     return None;
   }
   let start_time = shared::get_time();
-  let chunk_cg = chunk.coords.chunk_grid;
-  let mut tile_data = Vec::new();
-  for t in chunk.layered_plane.flat.data.iter().flatten() {
-    if let Some(tile) = t {
-      tile_data.push(TileData::new(chunk_entity, tile.clone()));
-    }
-  }
-
-  let grid = ObjectGrid::new_initialised(chunk_cg, &resources.objects.terrain_state_map, &tile_data);
+  let tile_data = generate_tile_data(&chunk, chunk_entity);
+  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &tile_data);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
-    chunk_cg,
+    cg,
     shared::get_time() - start_time,
     shared::thread_name()
   );
@@ -71,12 +68,26 @@ pub fn generate_object_data(
   chunk: Chunk,
   chunk_entity: Entity,
 ) -> Vec<ObjectData> {
-  if !settings.object.generate_objects {
-    debug!("Skipped object generation because it's disabled");
-    return vec![];
-  }
   let start_time = shared::get_time();
   let chunk_cg = chunk.coords.chunk_grid;
+  let tile_data = generate_tile_data(&chunk, chunk_entity);
+  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
+  let tile_data_len = tile_data.len();
+  let mut object_generation_data = (object_grid, tile_data);
+  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
+  debug!(
+    "Generated object data for [{}] objects, at density [{}], for chunk {} in {} ms on {}",
+    object_data.len(),
+    format!("{:.2}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
+    chunk_cg,
+    shared::get_time() - start_time,
+    shared::thread_name()
+  );
+
+  object_data
+}
+
+fn generate_tile_data(chunk: &Chunk, chunk_entity: Entity) -> Vec<TileData> {
   let mut tile_data = Vec::new();
   for t in chunk.layered_plane.flat.data.iter().flatten() {
     if let Some(tile) = t {
@@ -84,20 +95,7 @@ pub fn generate_object_data(
     }
   }
 
-  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
-  let tile_data_len = tile_data.len();
-  let mut object_generation_data = (object_grid, tile_data);
-  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
-  debug!(
-    "Generated object data for [{}] objects (over {} tiles) for chunk {} in {} ms on {}",
-    object_data.len(),
-    tile_data_len,
-    chunk_cg,
-    shared::get_time() - start_time,
-    shared::thread_name()
-  );
-
-  object_data
+  tile_data
 }
 
 pub fn schedule_spawning_objects(

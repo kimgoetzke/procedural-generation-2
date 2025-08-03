@@ -204,7 +204,7 @@ fn world_generation_system(
         stage_5_schedule_object_grid_generation(&mut commands, &settings, &resources, chunk_entity_pairs, component_cg)
       }
       GenerationStage::Stage6(grid_generation_task) => {
-        stage_6_schedule_path_generation(&mut commands, &metadata, grid_generation_task, component_cg)
+        stage_6_schedule_path_generation(&mut commands, &settings, &metadata, grid_generation_task, component_cg)
       }
       GenerationStage::Stage7(path_generation_task) => {
         stage_7_schedule_generating_object_data(&mut commands, &settings, path_generation_task, component_cg)
@@ -422,6 +422,7 @@ fn stage_5_schedule_object_grid_generation(
 
 fn stage_6_schedule_path_generation(
   commands: &mut Commands,
+  settings: &Settings,
   metadata: &Metadata,
   object_grid_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
@@ -429,12 +430,13 @@ fn stage_6_schedule_path_generation(
   if object_grid_generation_task.is_finished() {
     return if let Some(mut triplets) = block_on(poll_once(object_grid_generation_task)) {
       triplets.retain(|(_, chunk_entity, _)| commands.get_entity(*chunk_entity).is_ok());
+      let settings = settings.clone();
       let metadata = metadata.clone();
       let task_pool = AsyncComputeTaskPool::get();
       let task = task_pool.spawn(async move {
         let mut new_chunk_entity_grid_triplets = Vec::new();
         for (chunk, chunk_entity, object_grid) in triplets.drain(..) {
-          let processed_object_grid = path::calculate_paths(&metadata, object_grid);
+          let processed_object_grid = path::calculate_paths(&settings, &metadata, object_grid);
           new_chunk_entity_grid_triplets.push((chunk, chunk_entity, processed_object_grid))
         }
 

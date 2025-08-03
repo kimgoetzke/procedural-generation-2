@@ -35,17 +35,8 @@ impl ObjectGrid {
       .map(|y| (0..CHUNK_SIZE).map(|x| Arc::new(Mutex::new(Cell::new(x, y)))).collect())
       .collect();
     let mut no_neighbours_tile = Cell::new(-1, -1);
-    no_neighbours_tile.override_possible_states(vec![TerrainState {
-      name: ObjectName::Empty,
-      index: 0,
-      weight: 1,
-      permitted_neighbours: vec![
-        (Connection::Top, vec![ObjectName::Empty]),
-        (Connection::Right, vec![ObjectName::Empty]),
-        (Connection::Bottom, vec![ObjectName::Empty]),
-        (Connection::Left, vec![ObjectName::Empty]),
-      ],
-    }]);
+    no_neighbours_tile.override_possible_states(vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)]);
+
     ObjectGrid {
       cg,
       path_grid,
