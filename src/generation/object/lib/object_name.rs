@@ -69,6 +69,17 @@ pub enum ObjectName {
   ForestBush2,
   ForestBush3,
   ForestBush4,
+  PathRight,
+  PathHorizontal,
+  PathCross,
+  PathVertical,
+  PathBottom,
+  PathTop,
+  PathLeft,
+  PathTopRight,
+  PathTopLeft,
+  PathBottomRight,
+  PathBottomLeft,
   PathUndefined,
 }
 
@@ -85,6 +96,38 @@ impl ObjectName {
   }
 
   pub fn is_path_sprite(&self) -> bool {
-    matches!(self, ObjectName::PathUndefined)
+    matches!(
+      self,
+      ObjectName::PathUndefined
+        | ObjectName::PathRight
+        | ObjectName::PathHorizontal
+        | ObjectName::PathCross
+        | ObjectName::PathVertical
+        | ObjectName::PathBottom
+        | ObjectName::PathTop
+        | ObjectName::PathLeft
+        | ObjectName::PathTopRight
+        | ObjectName::PathTopLeft
+        | ObjectName::PathBottomRight
+        | ObjectName::PathBottomLeft
+    )
+  }
+
+  /// Returns the correct index for the path sprite based on its name. Falls back to `12` for all invalid object names.
+  pub fn get_index_for_path(&self) -> i32 {
+    match self {
+      ObjectName::PathRight => 1,
+      ObjectName::PathHorizontal => 2,
+      ObjectName::PathCross => 3,
+      ObjectName::PathVertical => 4,
+      ObjectName::PathBottom => 5,
+      ObjectName::PathTop => 6,
+      ObjectName::PathLeft => 7,
+      ObjectName::PathTopRight => 8,
+      ObjectName::PathTopLeft => 9,
+      ObjectName::PathBottomRight => 10,
+      ObjectName::PathBottomLeft => 11,
+      _ => 12,
+    }
   }
 }
