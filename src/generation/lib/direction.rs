@@ -65,6 +65,20 @@ impl Direction {
 
     to_direction(other_world, chunk_left, chunk_right, chunk_top, chunk_bottom)
   }
+
+  pub fn to_opposite(self) -> Self {
+    match self {
+      Direction::TopLeft => Direction::BottomRight,
+      Direction::Top => Direction::Bottom,
+      Direction::TopRight => Direction::BottomLeft,
+      Direction::Left => Direction::Right,
+      Direction::Center => Direction::Center,
+      Direction::Right => Direction::Left,
+      Direction::BottomLeft => Direction::TopRight,
+      Direction::Bottom => Direction::Top,
+      Direction::BottomRight => Direction::TopLeft,
+    }
+  }
 }
 
 impl PartialEq<Direction> for &Direction {

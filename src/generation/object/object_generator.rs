@@ -78,7 +78,7 @@ pub fn generate_object_data(
   debug!(
     "Generated object data for [{}] objects, at density [{}], for chunk {} in {} ms on {}",
     object_data.len(),
-    format!("{:.2}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
+    format!("{:.1}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
     chunk_cg,
     shared::get_time() - start_time,
     shared::thread_name()

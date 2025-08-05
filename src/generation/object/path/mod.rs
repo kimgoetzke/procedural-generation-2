@@ -1,6 +1,7 @@
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
-use crate::generation::object::lib::{CellRef, ObjectGrid};
+use crate::generation::lib::Direction;
+use crate::generation::object::lib::{CellRef, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -57,21 +58,29 @@ pub fn calculate_paths(
       .join(", ")
   );
 
-  // Get start and target cells based on connection points
-  let start_cell_index = rng.random_range(..connection_points.len());
-  let start_cell = object_grid
-    .get_cell_ref(&connection_points[rng.random_range(..connection_points.len())])
-    .expect("Failed to get start cell");
-  let closest_target = connection_points
-    .iter()
-    .filter(|p| *p != &connection_points[start_cell_index])
-    .min_by(|a, b| {
-      a.distance_to(b)
-        .partial_cmp(&b.distance_to(a))
-        .expect("Failed to compare distances")
-    })
-    .expect("Failed to find closest target point");
-  let target_cell = object_grid.get_cell_ref(closest_target).expect("Failed to get target cell");
+  // Randomly select the initial start point and remove it from remaining points
+  let mut remaining_points = connection_points.clone();
+  let start_index = rng.random_range(..remaining_points.len());
+  let mut current_start = remaining_points.remove(start_index);
+  let mut total_path_cells = 0;
+
+  // Loop through remaining connection points, always picking the closest one
+  while !remaining_points.is_empty() {
+    // Identify the start and target points for the path segment
+    let closest_index = remaining_points
+      .iter()
+      .enumerate()
+      .min_by(|(_, a), (_, b)| {
+        current_start
+          .distance_to(a)
+          .partial_cmp(&current_start.distance_to(b))
+          .expect("Failed to compare distances")
+      })
+      .map(|(index, _)| index)
+      .expect("Failed to find closest point");
+    let target_point = remaining_points.remove(closest_index);
+    let start_cell = object_grid.get_cell_ref(&current_start).expect("Failed to get start cell");
+    let target_cell = object_grid.get_cell_ref(&target_point).expect("Failed to get target cell");
 
   // Run the pathfinding algorithm and collapse cells on the path
   let path = run_algorithm(start_cell, target_cell);
@@ -87,12 +96,54 @@ pub fn calculate_paths(
     cg,
     path.len(),
     path
+    // Run the pathfinding algorithm and collapse cells on the path
+    debug!(
+      "Generating path segment for chunk {} from {:?} to {:?}",
+      cg, current_start, target_point
+    );
+    let path = run_algorithm(start_cell, target_cell);
+    for (i, (point, direction)) in path.iter().enumerate() {
+      let prev_direction = if i > 0 { Some(path[i - 1].1.to_opposite()) } else { None };
+      let object_name = determine_path_object_name(prev_direction.as_ref(), Some(direction));
+      trace!(
+        "Path segment [{}/{}] at point {:?} with next cell [{:?}] and previous cell [{:?}] has name [{:?}]",
+        i + 1,
+        path.len(),
+        point,
+        direction,
+        prev_direction,
+        object_name
+      );
+      let cell = object_grid
+        .get_cell_mut(&point)
+        .expect(format!("Failed to get cell at point {:?}", point).as_str());
+      cell.pre_collapse(object_name);
+    }
+    object_grid.reinitialise();
+    debug!(
+      "Generated path segment for chunk {} from {:?} to {:?} with [{}] cells: {}",
+      cg,
+      current_start,
+      target_point,
+      path.len(),
+      path.iter().map(|p| format!("{:?}", p)).collect::<Vec<_>>().join(", ")
+    );
+
+    // Set the target as the new start for the next iteration
+    total_path_cells += path.len();
+    break;
+    // current_start = target_point;
+  }
+
+  debug!(
+    "Generated complete path network for chunk {} with [{}] total cells across all segments",
+    cg, total_path_cells
   );
 
   object_grid
 }
 
-pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<InternalGrid>> {
+pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<InternalGrid>, Direction)> {
   let mut to_search: Vec<CellRef> = vec![start_cell.clone()];
   let mut processed: Vec<CellRef> = Vec::new();
 
@@ -131,15 +182,20 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<Point<I
 
       while let Some(current) = cell {
         let (current_ig, next_cell) = {
-          let cell = current.lock().expect("Failed to lock current cell");
+          let cell = current.try_lock().expect("Failed to lock current cell");
 
           (cell.ig, cell.get_connection().as_ref().cloned())
         };
-        path.push(current_ig);
+        let direction_to_next = if let Some(ref next_cell) = next_cell {
+          let next_cell_ig = next_cell.try_lock().expect("Failed to lock next cell").ig;
+          Direction::from_points(&current_ig, &next_cell_ig)
+        } else {
+          Direction::Center
+        };
+        path.push((current_ig, direction_to_next));
         cell = next_cell;
       }
 
-      path.reverse();
       return path;
     }
 
@@ -213,4 +269,26 @@ fn calculate_distance_cost(a: &Point<InternalGrid>, b: &Point<InternalGrid>) -> 
   } else {
     14. * x_diff + 10. * (y_diff - x_diff)
   }
+}
+
+fn determine_path_object_name(
+  previous_cell_direction: Option<&Direction>,
+  next_cell_direction: Option<&Direction>,
+) -> ObjectName {
+  use Direction::*;
+  let result = match (previous_cell_direction, next_cell_direction) {
+    (Some(Top), Some(Right)) | (Some(Right), Some(Top)) => ObjectName::PathTopRight,
+    (Some(Top), Some(Bottom)) | (Some(Bottom), Some(Top)) => ObjectName::PathVertical,
+    (Some(Right), Some(Left)) | (Some(Left), Some(Right)) => ObjectName::PathHorizontal,
+    (Some(Bottom), Some(Left)) | (Some(Left), Some(Bottom)) => ObjectName::PathBottomLeft,
+    (Some(Bottom), Some(Right)) | (Some(Right), Some(Bottom)) => ObjectName::PathBottomRight,
+    (Some(Top), Some(Left)) | (Some(Left), Some(Top)) => ObjectName::PathTopLeft,
+    (Some(Top), None) | (Some(Top), Some(Center)) | (None, Some(Top)) => ObjectName::PathTop,
+    (Some(Right), None) | (Some(Right), Some(Center)) | (None, Some(Right)) => ObjectName::PathRight,
+    (Some(Bottom), None) | (Some(Bottom), Some(Center)) | (None, Some(Bottom)) => ObjectName::PathBottom,
+    (Some(Left), None) | (Some(Left), Some(Center)) | (None, Some(Left)) => ObjectName::PathLeft,
+    _ => ObjectName::PathUndefined,
+  };
+
+  result
 }

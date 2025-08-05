@@ -181,12 +181,12 @@ impl Cell {
     self.possible_states = states;
   }
 
-  // TODO: Implement this method and give it an appropriate name
-  pub fn pre_collapse(&mut self, index: i32) {
-    self.index = index;
+  pub fn pre_collapse(&mut self, object_name: ObjectName) {
+    let i = object_name.get_index_for_path();
+    self.index = i;
     self.is_collapsed = true;
     self.entropy = 0usize;
-    self.possible_states = vec![TerrainState::new_with_no_neighbours(ObjectName::PathUndefined, index, 1)];
+    self.possible_states = vec![TerrainState::new_with_no_neighbours(object_name, i, 1)];
   }
 
   pub fn clone_and_reduce(
