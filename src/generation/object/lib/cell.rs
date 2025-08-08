@@ -181,6 +181,13 @@ impl Cell {
     self.possible_states = states;
   }
 
+  pub fn reset_and_clear_references(&mut self) {
+    self.neighbours.clear();
+    self.connection = Box::new(None);
+    self.g = 0.0;
+    self.h = 0.0;
+  }
+
   pub fn pre_collapse(&mut self, object_name: ObjectName) {
     let i = object_name.get_index_for_path();
     self.index = i;
