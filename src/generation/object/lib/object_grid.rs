@@ -96,7 +96,7 @@ impl ObjectGrid {
         let ig = cell_ref.lock().expect("Failed to lock cell").ig;
         let mut neighbours: Vec<CellRef> = Vec::new();
 
-        for (dx, dy) in [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)] {
+        for (dx, dy) in [(0, 1), (-1, 0), (1, 0), (0, -1)] {
           let nx = ig.x + dx;
           let ny = ig.y + dy;
           if nx >= 0 && ny >= 0 {
