@@ -82,20 +82,6 @@ pub fn calculate_paths(
     let start_cell = object_grid.get_cell_ref(&current_start).expect("Failed to get start cell");
     let target_cell = object_grid.get_cell_ref(&target_point).expect("Failed to get target cell");
 
-  // Run the pathfinding algorithm and collapse cells on the path
-  let path = run_algorithm(start_cell, target_cell);
-  for point in &path {
-    let cell = object_grid
-      .get_cell_mut(point)
-      .expect(format!("Failed to get cell at point {:?}", point).as_str());
-    cell.pre_collapse(8);
-  }
-
-  debug!(
-    "Generated path for chunk {} with [{}] nodes in the path: {:?}",
-    cg,
-    path.len(),
-    path
     // Run the pathfinding algorithm and collapse cells on the path
     debug!(
       "Generating path segment for chunk {} from {:?} to {:?}",
@@ -132,6 +118,7 @@ pub fn calculate_paths(
     // Set the target as the new start for the next iteration
     total_path_cells += path.len();
     break;
+    // TODO: Fix memory leak and then uncomment the below
     // current_start = target_point;
   }
 

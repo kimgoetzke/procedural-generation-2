@@ -12,6 +12,8 @@ impl Plugin for WfcPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
+// TODO: Separate wave function collapse logic from converting the object grid to object data
+//  and move conversion to object_generator.rs
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn determine_objects_in_grid(
   mut rng: &mut StdRng,
