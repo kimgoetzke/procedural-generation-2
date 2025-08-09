@@ -67,6 +67,7 @@ pub fn calculate_paths(
 
   // Loop through remaining connection points, always picking the closest one
   while !remaining_points.is_empty() {
+    object_grid.initialise_path_grid();
     // Identify the start and target points for the path segment
     let closest_index = remaining_points
       .iter()
@@ -110,8 +111,7 @@ pub fn calculate_paths(
         .expect(format!("Failed to get cell at point {:?}", point).as_str());
       cell.pre_collapse(object_name);
     }
-    object_grid.clear_references();
-    object_grid.initialise_neighbours();
+    object_grid.reset_path_grid();
     debug!(
       "Generated path segment for chunk {} from {:?} to {:?} with [{}] cells: {}",
       cg,

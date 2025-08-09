@@ -51,7 +51,6 @@ impl ObjectGrid {
     tile_data: &Vec<TileData>,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
-    grid.initialise_neighbours();
     grid.initialise_cells(terrain_state_map, tile_data);
 
     grid
@@ -89,7 +88,7 @@ impl ObjectGrid {
   }
 
   /// Initialises the path finding grid by populating the neighbours for each cell.
-  pub(crate) fn initialise_neighbours(&mut self) {
+  pub(crate) fn initialise_path_grid(&mut self) {
     for y in 0..self.path_grid.len() {
       for x in 0..self.path_grid[y].len() {
         let cell_ref = &self.path_grid[y][x];
@@ -114,7 +113,7 @@ impl ObjectGrid {
     }
   }
 
-  pub fn clear_references(&mut self) {
+  pub fn reset_path_grid(&mut self) {
     for row in &mut self.path_grid {
       for cell_ref in row {
         if let Ok(mut cell) = cell_ref.try_lock() {
