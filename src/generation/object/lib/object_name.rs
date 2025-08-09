@@ -80,6 +80,10 @@ pub enum ObjectName {
   PathTopLeft,
   PathBottomRight,
   PathBottomLeft,
+  PathTopHorizontal,
+  PathBottomHorizontal,
+  PathLeftVertical,
+  PathRightVertical,
   PathUndefined,
 }
 
@@ -110,6 +114,10 @@ impl ObjectName {
         | ObjectName::PathTopLeft
         | ObjectName::PathBottomRight
         | ObjectName::PathBottomLeft
+        | ObjectName::PathTopHorizontal
+        | ObjectName::PathBottomHorizontal
+        | ObjectName::PathLeftVertical
+        | ObjectName::PathRightVertical
     )
   }
 

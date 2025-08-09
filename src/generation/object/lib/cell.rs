@@ -34,6 +34,7 @@ pub struct Cell {
   connection: Box<Option<CellRef>>,
   g: f32,
   h: f32,
+  is_walkable: bool,
   // Wave function collapse specific fields
   is_collapsed: bool,
   is_initialised: bool,
@@ -59,6 +60,7 @@ impl Cell {
       connection: Box::new(None),
       g: 0.0,
       h: 0.0,
+      is_walkable: true,
       is_collapsed: false,
       is_initialised: false,
       is_being_monitored: false,
@@ -162,6 +164,18 @@ impl Cell {
     self.g + self.h
   }
 
+  // TODO: Use is_walkable in algorithm
+  /// Returns whether this cell is walkable.
+  pub fn is_walkable(&self) -> bool {
+    self.is_walkable
+  }
+
+  /// Calculates whether this cell is walkable based on its terrain type and tile type.
+  pub fn calculate_is_walkable(&mut self) {
+    self.is_walkable =
+      self.terrain != TerrainType::DeepWater || self.terrain != TerrainType::ShallowWater && self.tile_type == TileType::Fill
+  }
+
   pub fn is_collapsed(&self) -> bool {
     self.is_collapsed
   }
@@ -188,7 +202,8 @@ impl Cell {
     self.h = 0.0;
   }
 
-  pub fn pre_collapse(&mut self, object_name: ObjectName) {
+  /// Used outside the wave function collapse algorithm to set the cell as collapsed with a single state.
+  pub fn set_collapsed(&mut self, object_name: ObjectName) {
     let i = object_name.get_index_for_path();
     self.index = i;
     self.is_collapsed = true;

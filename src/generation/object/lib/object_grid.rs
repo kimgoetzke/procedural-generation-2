@@ -115,6 +115,7 @@ impl ObjectGrid {
 
           let mut cell = cell_ref.try_lock().expect("Failed to lock cell");
           cell.add_neighbours(neighbours);
+          cell.calculate_is_walkable();
         }
       }
     }
