@@ -90,15 +90,13 @@ pub fn calculate_paths(
     );
     let path = run_algorithm(start_cell, target_cell);
     for (i, (point, direction)) in path.iter().enumerate() {
-      let prev_direction = if i > 0 { Some(path[i - 1].1.to_opposite()) } else { None };
-      let object_name = determine_path_object_name(prev_direction.as_ref(), Some(direction));
-      trace!(
       let prev_direction = if i > 0 {
         path[i - 1].1.to_opposite()
       } else {
         Direction::Center
       };
       let object_name = determine_path_object_name(&prev_direction, direction, point);
+      debug!(
         "Path segment [{}/{}] at point {:?} with next cell [{:?}] and previous cell [{:?}] has name [{:?}]",
         i + 1,
         path.len(),
