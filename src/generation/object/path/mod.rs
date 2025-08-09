@@ -110,7 +110,8 @@ pub fn calculate_paths(
         .expect(format!("Failed to get cell at point {:?}", point).as_str());
       cell.pre_collapse(object_name);
     }
-    object_grid.reinitialise();
+    object_grid.clear_references();
+    object_grid.initialise_neighbours();
     debug!(
       "Generated path segment for chunk {} from {:?} to {:?} with [{}] cells: {}",
       cg,
@@ -122,9 +123,7 @@ pub fn calculate_paths(
 
     // Set the target as the new start for the next iteration
     total_path_cells += path.len();
-    break;
-    // TODO: Fix memory leak and then uncomment the below
-    // current_start = target_point;
+    current_start = target_point;
   }
 
   debug!(
@@ -263,6 +262,7 @@ fn calculate_distance_cost(a: &Point<InternalGrid>, b: &Point<InternalGrid>) -> 
   }
 }
 
+// TODO: Deal with two neighbouring cells
 /// Determines the [`ObjectName`] for the path object based on the previous and next cell directions.
 fn determine_path_object_name(
   mut previous_cell_direction: &Direction,

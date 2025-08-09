@@ -187,9 +187,8 @@ fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>
     let hash = generate_hash(&cg, &neighbour_cg);
     let mut rng = StdRng::seed_from_u64(hash);
     let num_points = match rng.random_range(0..100) {
-      0..=80 => 0,
-      81..=90 => 1,
-      _ => 2,
+      0..=70 => 0,
+      _ => 1,
     };
     let mut connection_points_for_edge = (0..num_points)
       .map(|_| {

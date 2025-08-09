@@ -181,7 +181,7 @@ impl Cell {
     self.possible_states = states;
   }
 
-  pub fn reset_and_clear_references(&mut self) {
+  pub fn clear_references(&mut self) {
     self.neighbours.clear();
     self.connection = Box::new(None);
     self.g = 0.0;

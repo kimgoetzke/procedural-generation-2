@@ -89,7 +89,7 @@ impl ObjectGrid {
   }
 
   /// Initialises the path finding grid by populating the neighbours for each cell.
-  fn initialise_neighbours(&mut self) {
+  pub(crate) fn initialise_neighbours(&mut self) {
     for y in 0..self.path_grid.len() {
       for x in 0..self.path_grid[y].len() {
         let cell_ref = &self.path_grid[y][x];
@@ -114,21 +114,14 @@ impl ObjectGrid {
     }
   }
 
-  pub fn reinitialise(&mut self) {
-    self.object_grid = self
-      .object_grid
-      .iter_mut()
-      .map(|row| {
-        row
-          .iter_mut()
-          .map(|cell| {
-            cell.reset_and_clear_references();
-            cell.clone()
-          })
-          .collect()
-      })
-      .collect();
-    self.initialise_neighbours();
+  pub fn clear_references(&mut self) {
+    for row in &mut self.path_grid {
+      for cell_ref in row {
+        if let Ok(mut cell) = cell_ref.try_lock() {
+          cell.clear_references();
+        }
+      }
+    }
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
