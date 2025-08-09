@@ -33,21 +33,20 @@ pub fn calculate_paths(
     .get(&cg)
     .expect(format!("Failed to get connection points for {}", cg).as_str());
 
-  // TODO: Extend implementation to handle 1 or more than 2 connection points
   if connection_points.is_empty() {
     debug!(
       "Skipping path generation for chunk {} because it has no connection points",
       cg
     );
     return object_grid;
-  }
-  if connection_points.len() == 1 {
-    warn!(
-      "Skipping path generation for chunk {} because it has only 1 connection point",
+  } else if connection_points.len() == 1 {
+    error!(
+      "Skipping path generation for chunk {} because it has only 1 connection point which is a bug",
       cg
     );
     return object_grid;
   }
+
   debug!(
     "Generating path for chunk {} which has [{}] connection points: {}",
     cg,
