@@ -1,3 +1,4 @@
+use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::lib::Direction;
@@ -92,6 +93,12 @@ pub fn calculate_paths(
       let prev_direction = if i > 0 { Some(path[i - 1].1.to_opposite()) } else { None };
       let object_name = determine_path_object_name(prev_direction.as_ref(), Some(direction));
       trace!(
+      let prev_direction = if i > 0 {
+        path[i - 1].1.to_opposite()
+      } else {
+        Direction::Center
+      };
+      let object_name = determine_path_object_name(&prev_direction, direction, point);
         "Path segment [{}/{}] at point {:?} with next cell [{:?}] and previous cell [{:?}] has name [{:?}]",
         i + 1,
         path.len(),
@@ -258,24 +265,45 @@ fn calculate_distance_cost(a: &Point<InternalGrid>, b: &Point<InternalGrid>) -> 
   }
 }
 
+/// Determines the [`ObjectName`] for the path object based on the previous and next cell directions.
 fn determine_path_object_name(
-  previous_cell_direction: Option<&Direction>,
-  next_cell_direction: Option<&Direction>,
+  mut previous_cell_direction: &Direction,
+  mut next_cell_direction: &Direction,
+  point: &Point<InternalGrid>,
 ) -> ObjectName {
-  use Direction::*;
+  next_cell_direction = update_if_edge_connection(point, next_cell_direction);
+  previous_cell_direction = update_if_edge_connection(point, previous_cell_direction);
   let result = match (previous_cell_direction, next_cell_direction) {
-    (Some(Top), Some(Right)) | (Some(Right), Some(Top)) => ObjectName::PathTopRight,
-    (Some(Top), Some(Bottom)) | (Some(Bottom), Some(Top)) => ObjectName::PathVertical,
-    (Some(Right), Some(Left)) | (Some(Left), Some(Right)) => ObjectName::PathHorizontal,
-    (Some(Bottom), Some(Left)) | (Some(Left), Some(Bottom)) => ObjectName::PathBottomLeft,
-    (Some(Bottom), Some(Right)) | (Some(Right), Some(Bottom)) => ObjectName::PathBottomRight,
-    (Some(Top), Some(Left)) | (Some(Left), Some(Top)) => ObjectName::PathTopLeft,
-    (Some(Top), None) | (Some(Top), Some(Center)) | (None, Some(Top)) => ObjectName::PathTop,
-    (Some(Right), None) | (Some(Right), Some(Center)) | (None, Some(Right)) => ObjectName::PathRight,
-    (Some(Bottom), None) | (Some(Bottom), Some(Center)) | (None, Some(Bottom)) => ObjectName::PathBottom,
-    (Some(Left), None) | (Some(Left), Some(Center)) | (None, Some(Left)) => ObjectName::PathLeft,
+    (Direction::Top, Direction::Right) | (Direction::Right, Direction::Top) => ObjectName::PathTopRight,
+    (Direction::Top, Direction::Bottom) | (Direction::Bottom, Direction::Top) => ObjectName::PathVertical,
+    (Direction::Right, Direction::Left) | (Direction::Left, Direction::Right) => ObjectName::PathHorizontal,
+    (Direction::Bottom, Direction::Left) | (Direction::Left, Direction::Bottom) => ObjectName::PathBottomLeft,
+    (Direction::Bottom, Direction::Right) | (Direction::Right, Direction::Bottom) => ObjectName::PathBottomRight,
+    (Direction::Top, Direction::Left) | (Direction::Left, Direction::Top) => ObjectName::PathTopLeft,
+    (Direction::Top, Direction::Center) | (Direction::Center, Direction::Top) => ObjectName::PathTop,
+    (Direction::Right, Direction::Center) | (Direction::Center, Direction::Right) => ObjectName::PathRight,
+    (Direction::Bottom, Direction::Center) | (Direction::Center, Direction::Bottom) => ObjectName::PathBottom,
+    (Direction::Left, Direction::Center) | (Direction::Center, Direction::Left) => ObjectName::PathLeft,
     _ => ObjectName::PathUndefined,
   };
 
   result
+}
+
+/// Updates the direction if the point is at an edge of the internal grid. This is required because a point at the edge
+/// signifies a connection point, meaning that the path does not end here but continues in the next chunk. Leaving the
+/// direction as [`Direction::Center`] means that the path starts/ends here, which is never the case for a connection
+/// point.
+fn update_if_edge_connection<'a>(point: &Point<InternalGrid>, direction: &'a Direction) -> &'a Direction {
+  if direction == Direction::Center {
+    match point {
+      point if point.x == 0 => &Direction::Left,
+      point if point.x == CHUNK_SIZE - 1 => &Direction::Right,
+      point if point.y == 0 => &Direction::Top,
+      point if point.y == CHUNK_SIZE - 1 => &Direction::Bottom,
+      _ => &Direction::Center,
+    }
+  } else {
+    direction
+  }
 }
