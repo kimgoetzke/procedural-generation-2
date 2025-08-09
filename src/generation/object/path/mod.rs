@@ -10,6 +10,7 @@ use bevy::log::*;
 use bevy::platform::collections::HashSet;
 use rand::Rng;
 use rand::prelude::StdRng;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 pub struct PathGenerationPlugin;
@@ -92,7 +93,6 @@ pub fn calculate_paths(
       "Generating path segment for chunk {} from {:?} to {:?}",
       cg, current_start, target_point
     );
-    // TODO: Consider using this for all path segments to determine object names to be fixed
     let path_segment: Vec<(Point<InternalGrid>, Direction)> = run_algorithm(start_cell, target_cell);
     path.extend(&path_segment);
 
@@ -134,30 +134,45 @@ pub fn calculate_paths(
 
   // Find any collapsed cells that have more than two neighbours and update their object name which
   // is required as in the loop above we have no knowledge of any potential future path segments that may connect.
-  let collapsed_cells = object_grid
-    .object_grid
-    .iter_mut()
-    .flatten()
-    .filter(|cell| cell.is_collapsed())
-    .map(|cell| cell.ig.clone())
-    .collect::<Vec<_>>();
-  for point in collapsed_cells {
-    let ig = object_grid.get_cell(&point).expect("Cell not found").ig;
-    let neighbours = get_cardinal_direction_points(&ig)
-      .into_iter()
-      .filter_map(|(_, point)| {
-        object_grid
-          .get_cell(&point)
-          .and_then(|cell| if cell.is_collapsed() { Some(cell) } else { None })
-      })
-      .collect::<Vec<_>>();
-    if neighbours.len() > 2 {
+  let counts = path.iter().fold(HashMap::new(), |mut acc, (point, _)| {
+    *acc.entry(point).or_insert(0) += 1;
+    acc
+  });
+  let cells_requiring_update: HashSet<(Point<InternalGrid>, Vec<Point<InternalGrid>>)> = path
+    .iter()
+    .map(|(point, _)| {
+      let cell = object_grid.get_cell(point).expect("Cell not found");
+      let neighbours = get_cardinal_direction_points(&cell.ig)
+        .into_iter()
+        .filter_map(|(_, point)| object_grid.get_cell(&point))
+        .filter(|cell| cell.is_collapsed())
+        .map(|cell| cell.ig.clone())
+        .collect::<Vec<_>>();
+      (point.clone(), neighbours)
+    })
+    .filter(|(point, _)| counts.get(point).copied().unwrap_or(0) > 1)
+    .filter(|(_, neighbours)| neighbours.len() > 1)
+    .collect::<HashSet<_>>();
+  if !cells_requiring_update.is_empty() {
+    warn!(
+      "Found [{}] path cells with more than 2 neighbours that need to be updated: {:?}",
+      cells_requiring_update.len(),
+      cells_requiring_update
+        .iter()
+        .map(|(point, neighbours)| format!("{:?} -> {:?}", point, neighbours))
+        .collect::<Vec<_>>()
+        .join(", ")
+    );
+    for (point, neighbours) in cells_requiring_update {
       let neighbour_directions = neighbours
         .iter()
-        .map(|n| Direction::from_points(&ig, &n.ig))
+        .map(|n| {
+          let cell = object_grid.get_cell(n).expect("Cell not found");
+          Direction::from_points(&point, &cell.ig)
+        })
         .collect::<HashSet<_>>();
-      let object_name = determine_path_object_name_from_all_neighbours(neighbour_directions);
       let cell = object_grid.get_cell_mut(&point).expect("Cell not found");
+      let object_name = determine_path_object_name_from_all_neighbours(neighbour_directions, cell.ig);
       cell.set_collapsed(object_name);
     }
   }
@@ -340,15 +355,23 @@ fn update_if_edge_connection<'a>(point: &Point<InternalGrid>, direction: &'a Dir
   }
 }
 
-// TODO: Remove this or figure out a way to only update relevant directions i.e. the ones that currently don't connect
-fn is_direction_relevant(ig: &Point<InternalGrid>, object_name: ObjectName, direction: &Direction) -> bool {
-  match direction {
-    _ => false,
-  }
-}
-
-fn determine_path_object_name_from_all_neighbours(directions: HashSet<Direction>) -> ObjectName {
+fn determine_path_object_name_from_all_neighbours(
+  mut directions: HashSet<Direction>,
+  ig: Point<InternalGrid>,
+) -> ObjectName {
   use crate::generation::lib::Direction::*;
+  // If we only have two directions, then this an edge cell, so we need to add the direction to the connection point
+  // in the neighbouring chunk
+  if directions.len() == 2 {
+    let d = match ig {
+      point if point.x == 0 => Left,
+      point if point.x == CHUNK_SIZE - 1 => Right,
+      point if point.y == 0 => Top,
+      point if point.y == CHUNK_SIZE - 1 => Bottom,
+      _ => Center,
+    };
+    directions.insert(d);
+  }
   let result = match directions.len() {
     3 => match &directions {
       d if d == &[Top, Right, Bottom].iter().cloned().collect() => ObjectName::PathRightVertical,
