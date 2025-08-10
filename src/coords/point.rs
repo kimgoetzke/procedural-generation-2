@@ -117,8 +117,7 @@ impl<T: CoordType> Point<T> {
     }
   }
 
-  // TODO: Consider changing implementation for InternalGrid point because top/bottom directions are flipped when used
-  pub fn from_direction(direction: &Direction) -> Self {
+  pub fn from_direction(direction: &Direction) -> Point<T> {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),
       Direction::Top => (0, 1),
@@ -130,11 +129,19 @@ impl<T: CoordType> Point<T> {
       Direction::Bottom => (0, -1),
       Direction::BottomRight => (1, -1),
     };
-    Self::new(i, j)
+
+    Self::new(i, if T::type_name() == "ig" { -j } else { j }) // Flip y for InternalGrid
   }
 
   pub fn distance_to(&self, other: &Point<T>) -> f32 {
     ((self.x - other.x).pow(2) as f32 + (self.y - other.y).pow(2) as f32).sqrt()
+  }
+
+  pub fn is_direct_cardinal_neighbour(&self, other: &Point<T>) -> bool {
+    let dx = (self.x - other.x).abs();
+    let dy = (self.y - other.y).abs();
+
+    (dx == 1 && dy == 0) || (dx == 0 && dy == 1)
   }
 
   pub fn to_vec2(&self) -> Vec2 {
@@ -219,7 +226,7 @@ mod tests {
   use bevy::prelude::Vec2;
 
   #[test]
-  fn internal_grid_point_creation() {
+  fn new_internal_grid() {
     let p = Point::new_internal_grid(5, 6);
     assert_eq!(p.x, 5);
     assert_eq!(p.y, 6);
@@ -227,7 +234,7 @@ mod tests {
   }
 
   #[test]
-  fn world_point_creation() {
+  fn new_world() {
     let p = Point::new_world(10, 20);
     assert_eq!(p.x, 10);
     assert_eq!(p.y, 20);
@@ -235,7 +242,7 @@ mod tests {
   }
 
   #[test]
-  fn tile_grid_point_creation() {
+  fn new_tile_grid() {
     let p = Point::new_tile_grid(2, 13);
     assert_eq!(p.x, 2);
     assert_eq!(p.y, 13);
@@ -243,28 +250,28 @@ mod tests {
   }
 
   #[test]
-  fn point_creation_from_direction_1() {
+  fn from_direction_for_internal_grid_point() {
+    let direction = Direction::TopLeft;
+    let point: Point<InternalGrid> = Point::from_direction(&direction);
+    assert_eq!(point, Point::new(-1, -1));
+  }
+
+  #[test]
+  fn from_direction_for_other_grid_points() {
     let direction = Direction::TopLeft;
     let point: Point<World> = Point::from_direction(&direction);
     assert_eq!(point, Point::new(-1, 1));
   }
 
   #[test]
-  fn point_creation_from_direction_2() {
-    let direction = Direction::TopLeft;
-    let point: Point<InternalGrid> = Point::from_direction(&direction);
-    assert_eq!(point, Point::new(-1, 1));
-  }
-
-  #[test]
-  fn tile_grid_point_creation_from_world() {
+  fn new_tile_grid_from_world() {
     let w = Point::new_world(TILE_SIZE as i32, TILE_SIZE as i32);
     let tg = Point::new_tile_grid_from_world(w);
     assert_eq!(tg, Point::new_tile_grid(1, 1));
   }
 
   #[test]
-  fn chunk_grid_point_creation_from_world() {
+  fn new_chunk_grid_from_world() {
     let w = Point::new_world(TILE_SIZE as i32 * CHUNK_SIZE * 2, TILE_SIZE as i32 * CHUNK_SIZE * 2);
     let cg = Point::new_chunk_grid_from_world(w);
     assert_eq!(cg, Point::new_chunk_grid(2, 2));
@@ -280,11 +287,38 @@ mod tests {
   }
 
   #[test]
-  fn point_distance() {
-    let p1: Point<TileGrid> = Point::new(0, 0);
-    let p2 = Point::new(3, 4);
-    let distance = p1.distance_to(&p2);
-    assert_eq!(distance, 5.0);
+  fn distance_to_same_point() {
+    let p1: Point<InternalGrid> = Point::new(3, 4);
+    let p2: Point<InternalGrid> = Point::new(3, 4);
+    assert_eq!(p1.distance_to(&p2), 0.0);
+  }
+
+  #[test]
+  fn distance_to_positive_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(0, 0);
+    let p2: Point<InternalGrid> = Point::new(3, 4);
+    assert_eq!(p1.distance_to(&p2), 5.0);
+  }
+
+  #[test]
+  fn distance_to_negative_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(-3, -4);
+    let p2: Point<InternalGrid> = Point::new(0, 0);
+    assert_eq!(p1.distance_to(&p2), 5.0);
+  }
+
+  #[test]
+  fn distance_to_mixed_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(-3, 4);
+    let p2: Point<InternalGrid> = Point::new(3, -4);
+    assert_eq!(p1.distance_to(&p2), 10.0);
+  }
+
+  #[test]
+  fn distance_to_large_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(1000, 2000);
+    let p2: Point<InternalGrid> = Point::new(3000, 4000);
+    assert_eq!(p1.distance_to(&p2), 2828.4272);
   }
 
   #[test]
@@ -292,5 +326,40 @@ mod tests {
     let p: Point<ChunkGrid> = Point::new(1, 2);
     let vec = p.to_vec2();
     assert_eq!(vec, Vec2::new(1.0, 2.0));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_true_horizontal() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(2, 1);
+    assert!(p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_true_vertical() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(1, 2);
+    assert!(p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_diagonal() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(2, 2);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_far_away() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(3, 3);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_same_point() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(1, 1);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
   }
 }
