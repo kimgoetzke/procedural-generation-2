@@ -2,6 +2,7 @@ use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use cmp::Ordering;
+use std::any::TypeId;
 use std::cmp;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -21,8 +22,8 @@ impl Direction {
   //noinspection DuplicatedCode
   pub fn from_points<T: CoordType + 'static>(a: &Point<T>, b: &Point<T>) -> Self {
     let (x_cmp, y_cmp) = (a.x.cmp(&b.x), a.y.cmp(&b.y));
-    match std::any::TypeId::of::<T>() {
-      id if id == std::any::TypeId::of::<InternalGrid>() => match (x_cmp, y_cmp) {
+    match TypeId::of::<T>() {
+      id if id == TypeId::of::<InternalGrid>() => match (x_cmp, y_cmp) {
         (Ordering::Less, Ordering::Less) => Direction::BottomRight,
         (Ordering::Less, Ordering::Equal) => Direction::Right,
         (Ordering::Less, Ordering::Greater) => Direction::TopRight,
@@ -79,6 +80,26 @@ impl Direction {
       Direction::BottomRight => Direction::TopLeft,
     }
   }
+
+  pub fn to_point<T: CoordType + 'static>(&self) -> Point<T> {
+    match (TypeId::of::<T>(), self) {
+      (id, Direction::TopLeft) if id == TypeId::of::<InternalGrid>() => Point::new(-1, -1),
+      (_, Direction::TopLeft) => Point::new(-1, 1),
+      (id, Direction::Top) if id == TypeId::of::<InternalGrid>() => Point::new(0, -1),
+      (_, Direction::Top) => Point::new(0, 1),
+      (id, Direction::TopRight) if id == TypeId::of::<InternalGrid>() => Point::new(1, -1),
+      (_, Direction::TopRight) => Point::new(1, 1),
+      (_, Direction::Left) => Point::new(-1, 0),
+      (_, Direction::Center) => Point::new(0, 0),
+      (_, Direction::Right) => Point::new(1, 0),
+      (id, Direction::BottomLeft) if id == TypeId::of::<InternalGrid>() => Point::new(-1, 1),
+      (_, Direction::BottomLeft) => Point::new(-1, -1),
+      (id, Direction::Bottom) if id == TypeId::of::<InternalGrid>() => Point::new(0, 1),
+      (_, Direction::Bottom) => Point::new(0, -1),
+      (id, Direction::BottomRight) if id == TypeId::of::<InternalGrid>() => Point::new(1, 1),
+      (_, Direction::BottomRight) => Point::new(1, -1),
+    }
+  }
 }
 
 impl PartialEq<Direction> for &Direction {
@@ -123,11 +144,11 @@ pub fn get_cardinal_direction_points<T: CoordType + 'static>(point: &Point<T>) -
 /// # Panics
 /// If used with a coordinate type that is not implemented.
 fn calculate_offsets<T: CoordType + 'static>() -> (i32, i32) {
-  match std::any::TypeId::of::<T>() {
-    id if id == std::any::TypeId::of::<TileGrid>() => (CHUNK_SIZE, CHUNK_SIZE),
-    id if id == std::any::TypeId::of::<World>() => (TILE_SIZE as i32 * CHUNK_SIZE, TILE_SIZE as i32 * CHUNK_SIZE),
-    id if id == std::any::TypeId::of::<InternalGrid>() => (1, -1),
-    id if id == std::any::TypeId::of::<ChunkGrid>() => (1, 1),
+  match TypeId::of::<T>() {
+    id if id == TypeId::of::<TileGrid>() => (CHUNK_SIZE, CHUNK_SIZE),
+    id if id == TypeId::of::<World>() => (TILE_SIZE as i32 * CHUNK_SIZE, TILE_SIZE as i32 * CHUNK_SIZE),
+    id if id == TypeId::of::<InternalGrid>() => (1, -1),
+    id if id == TypeId::of::<ChunkGrid>() => (1, 1),
     id => panic!("Coord type {:?} not implemented for calculate_offset", id),
   }
 }
@@ -387,5 +408,40 @@ mod tests {
     assert_eq!(points[1], (Direction::Left, Point::new(-512, 0)));
     assert_eq!(points[2], (Direction::Right, Point::new(512, 0)));
     assert_eq!(points[3], (Direction::Bottom, Point::new(0, -512)));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_top_left_internal_grid() {
+    let direction = Direction::TopLeft;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(-1, -1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_top_left_other_grids() {
+    let direction = Direction::TopLeft;
+    let point: Point<TileGrid> = direction.to_point();
+    assert_eq!(point, Point::new(-1, 1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_center() {
+    let direction = Direction::Center;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(0, 0));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_bottom_right_internal_grid() {
+    let direction = Direction::BottomRight;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(1, 1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_bottom_right_other_grids() {
+    let direction = Direction::BottomRight;
+    let point: Point<World> = direction.to_point();
+    assert_eq!(point, Point::new(1, -1));
   }
 }
