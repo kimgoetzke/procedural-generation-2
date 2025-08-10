@@ -1,9 +1,9 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{TerrainType, TileType};
+use crate::generation::lib::{Plane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState, TileData};
+use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
 use bevy::log::*;
 use bevy::platform::collections::HashMap;
 use bevy::reflect::Reflect;
@@ -45,10 +45,10 @@ impl ObjectGrid {
   pub fn new_initialised(
     cg: Point<ChunkGrid>,
     terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
-    tile_data: &Vec<TileData>,
+    flat_plane: &Plane,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
-    grid.initialise_cells(terrain_state_map, tile_data);
+    grid.initialise_cells(terrain_state_map, flat_plane);
 
     grid
   }
@@ -57,12 +57,12 @@ impl ObjectGrid {
   fn initialise_cells(
     &mut self,
     terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
-    tile_data: &Vec<TileData>,
+    flat_plane: &Plane,
   ) {
-    for data in tile_data.iter() {
-      let ig = data.flat_tile.coords.internal_grid;
-      let terrain = data.flat_tile.terrain;
-      let tile_type = data.flat_tile.tile_type;
+    for tile in flat_plane.data.iter().flatten().flatten() {
+      let ig = tile.coords.internal_grid;
+      let terrain = tile.terrain;
+      let tile_type = tile.tile_type;
       if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
           .get(&terrain)
@@ -74,8 +74,8 @@ impl ObjectGrid {
         trace!(
           "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           ig,
-          data.flat_tile.terrain,
-          data.flat_tile.tile_type,
+          tile.terrain,
+          tile.tile_type,
           cell.get_possible_states().len()
         );
       } else {
