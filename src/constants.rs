@@ -128,7 +128,7 @@ pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
 pub const DEFAULT_OBJ_ROWS: u32 = 2;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 pub const PATHS_PATH: &str = "objects/paths.png";
-pub const PATHS_COLUMNS: u32 = 13;
+pub const PATHS_COLUMNS: u32 = 17;
 pub const PATHS_ROWS: u32 = 5;
 // ------------------------------------------------------------------------------------------------------
 // Colours
