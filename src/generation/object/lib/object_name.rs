@@ -135,7 +135,11 @@ impl ObjectName {
       ObjectName::PathTopLeft => 9,
       ObjectName::PathBottomRight => 10,
       ObjectName::PathBottomLeft => 11,
-      _ => 12,
+      ObjectName::PathTopHorizontal => 12,
+      ObjectName::PathBottomHorizontal => 13,
+      ObjectName::PathLeftVertical => 14,
+      ObjectName::PathRightVertical => 15,
+      _ => 16,
     }
   }
 }
