@@ -61,6 +61,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathHorizontal,
+            PathTop,
+            PathLeft,
+            PathTopRight,
+            PathTopLeft,
+            PathTopHorizontal,
           ]
         ),
         (
@@ -119,6 +126,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathVertical,
+            PathBottom,
+            PathTop,
+            PathLeft,
+            PathTopLeft,
+            PathBottomLeft,
+            PathLeftVertical,
           ]
         ),
         (
@@ -177,6 +191,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathVertical,
+            PathBottom,
+            PathTop,
+            PathTopRight,
+            PathBottomRight,
+            PathRightVertical,
           ]
         ),
         (
@@ -236,6 +257,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathHorizontal,
+            PathBottom,
+            PathLeft,
+            PathBottomRight,
+            PathBottomLeft,
+            PathBottomHorizontal,
           ]
         ),
       ]
