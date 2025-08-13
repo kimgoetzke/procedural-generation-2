@@ -74,20 +74,32 @@ impl ObjectGrid {
           .planes
           .iter()
           .filter_map(|plane| {
+            // TODO: Check if this is correct because it looks like tiles are missing
             plane.data[0][0]
               .as_ref()
               .and_then(|t| if t.terrain < tile.terrain { Some(plane) } else { None })
           })
           .filter_map(|plane| plane.get_tile(ig).and_then(|t| Some((t.terrain, t.tile_type))))
           .collect::<Vec<(TerrainType, TileType)>>();
-        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data);
-        trace!(
-          "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
-          ig,
-          tile.terrain,
-          tile.tile_type,
-          cell.get_possible_states().len()
-        );
+        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone());
+        if ig == Point::new(15, 12) {
+          warn!(
+            "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
+            tile.coords,
+            tile.terrain,
+            tile.tile_type,
+            cell.get_possible_states().len(),
+          );
+          cell.log_tiles_below();
+          warn!(
+            "- Lower tile data for {:?} was: {:?}",
+            ig,
+            lower_tile_data
+              .iter()
+              .map(|(t, tt)| format!("{:?} {:?}", t, tt))
+              .collect::<Vec<String>>()
+          );
+        }
       } else {
         error!("Failed to find cell to initialise at {:?}", ig);
       }

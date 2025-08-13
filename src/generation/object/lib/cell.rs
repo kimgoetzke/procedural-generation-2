@@ -236,6 +236,14 @@ impl Cell {
     })
   }
 
+  pub fn log_tiles_below(&self) {
+    if let Some(tile_below) = &self.tile_below {
+      tile_below.log();
+    } else {
+      debug!("- This cell does not have a tile below it");
+    }
+  }
+
   pub fn is_collapsed(&self) -> bool {
     self.is_collapsed
   }
@@ -420,12 +428,10 @@ fn is_filled_at_facing_edge_incl_corner_types(ig: Point<InternalGrid>, tile_type
   match tile_type {
     Fill | BottomFill | TopFill if ig.x == 0 || ig.x == CHUNK_SIZE - 1 => true,
     Fill | LeftFill | RightFill if ig.y == 0 || ig.y == CHUNK_SIZE - 1 => true,
-    OuterCornerBottomRight | OuterCornerBottomLeft | InnerCornerBottomLeft | InnerCornerBottomRight if ig.y == 0 => true,
-    OuterCornerTopRight | OuterCornerTopLeft | InnerCornerTopLeft | InnerCornerTopRight if ig.y == CHUNK_SIZE - 1 => true,
-    OuterCornerBottomRight | OuterCornerTopRight | InnerCornerBottomRight | InnerCornerTopRight if ig.x == 0 => true,
-    OuterCornerBottomLeft | OuterCornerTopLeft | InnerCornerBottomLeft | InnerCornerTopLeft if ig.x == CHUNK_SIZE - 1 => {
-      true
-    }
+    OuterCornerBottomRight | OuterCornerBottomLeft if ig.y == 0 => true,
+    OuterCornerTopRight | OuterCornerTopLeft if ig.y == CHUNK_SIZE - 1 => true,
+    OuterCornerBottomRight | OuterCornerTopRight if ig.x == 0 => true,
+    OuterCornerBottomLeft | OuterCornerTopLeft if ig.x == CHUNK_SIZE - 1 => true,
     _ => false,
   }
 }
