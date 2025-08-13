@@ -50,7 +50,7 @@ pub fn generate_object_grid(
     return None;
   }
   let start_time = shared::get_time();
-  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &chunk.layered_plane.flat);
+  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
     cg,

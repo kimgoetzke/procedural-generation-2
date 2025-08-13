@@ -33,19 +33,64 @@ pub fn calculate_paths(
   let connection_points = metadata
     .connection_points
     .get(&cg)
-    .expect(format!("Failed to get connection points for {}", cg).as_str());
+    .expect(format!("Failed to get connection points for {}", cg).as_str())
+    .iter()
+    .filter(|p| {
+      if let Some(cell) = object_grid.get_cell_mut(&p) {
+        cell.calculate_is_walkable();
+        if cell.is_valid_connection_point() {
+          // Remove when done:
+          if let Some(tile_below) = &cell.tile_below {
+            debug!("Keeping chunk {} connection point {:?} as a valid connection", cg, p,);
+            tile_below.log();
+          }
 
-  // TODO: Check if connection point is_walkable and if not, skip it
+          return true;
+        }
+        debug!(
+          "Removing chunk {} connection point {:?} because is walkable={} & is_valid_connection_point={}",
+          cg,
+          p,
+          cell.is_walkable(),
+          cell.is_valid_connection_point()
+        );
+        if let Some(tile_below) = &cell.tile_below {
+          tile_below.log();
+        } else {
+          debug!("- No tile below for connection point {:?}", p);
+        }
+
+        return false;
+      }
+      debug!(
+        "Removing chunk {} connection point {:?} because there is no tile in the object grid",
+        cg, p
+      );
+
+      false
+    })
+    .collect::<Vec<_>>();
 
   if connection_points.is_empty() {
-    debug!(
-      "Skipping path generation for chunk {} because it has no connection points",
-      cg
-    );
+    debug!("Skipped path generation for chunk {} because it has no connection points", cg);
     return object_grid;
-  } else if connection_points.len() == 1 {
-    error!(
-      "Skipping path generation for chunk {} because it has only 1 connection point which is a bug",
+  }
+  if connection_points.len() == 1 {
+    if !is_edge_connection_point(connection_points[0]) {
+      debug!(
+        "Skipped path generation for chunk {} because it has no edge connection points",
+        cg
+      );
+      return object_grid;
+    }
+    let cell = object_grid
+      .get_cell_mut(&connection_points[0])
+      .expect("Failed to get cell for connection point");
+    let direction = direction_to_neighbour_chunk(connection_points[0]);
+    let object_name = determine_path_object_name_from_neighbours(HashSet::from([direction]), connection_points[0]);
+    cell.set_collapsed(object_name);
+    debug!(
+      "Skipped path generation for chunk {} because it has only 1 connection point",
       cg
     );
     return object_grid;
@@ -104,7 +149,7 @@ pub fn calculate_paths(
         Direction::Center
       };
       let object_name = determine_path_object_name(&prev_direction, next_direction, point);
-      trace!(
+      debug!(
         "- Path cell [{}/{}] at point {:?} with next cell [{:?}] + previous cell [{:?}] has name [{:?}]",
         i + 1,
         path_segment.len(),
@@ -154,8 +199,8 @@ pub fn calculate_paths(
     .filter(|(_, neighbours)| neighbours.len() > 1)
     .collect::<HashSet<_>>();
   if !cells_requiring_update.is_empty() {
-    warn!(
-      "Found [{}] path cells with more than 2 neighbours that need to be updated: {:?}",
+    debug!(
+      "Found [{}] path cells where the object name needs to be updated: {:?}",
       cells_requiring_update.len(),
       cells_requiring_update
         .iter()
@@ -172,7 +217,7 @@ pub fn calculate_paths(
         })
         .collect::<HashSet<_>>();
       let cell = object_grid.get_cell_mut(&point).expect("Cell not found");
-      let object_name = determine_path_object_name_from_all_neighbours(neighbour_directions, cell.ig);
+      let object_name = determine_path_object_name_from_neighbours(neighbour_directions, &cell.ig);
       cell.set_collapsed(object_name);
     }
   }
@@ -243,14 +288,15 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
     }
 
     // If we haven't reached the target, process the current cell's neighbours
-    let (current_g, current_ig, current_neighbours) = {
+    let (current_g, current_ig, current_walkable_neighbours) = {
       let c = current_cell.lock().expect("Failed to lock current cell");
-      (c.get_g(), c.ig, c.get_neighbours().clone())
+
+      (c.get_g(), c.ig, c.get_walkable_neighbours().clone())
     };
-    let target_ig = get_target_cell_ig(target_cell);
+    let target_ig = get_cell_ig(target_cell);
 
     trace!("Processing cell at {:?}", current_ig);
-    for neighbour in current_neighbours {
+    for neighbour in current_walkable_neighbours {
       let mut n = neighbour.lock().expect("Failed to lock neighbour");
 
       // Skip if the neighbour has already been processed
@@ -292,11 +338,25 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
     }
   }
 
-  vec![]
+  let mut result = Vec::new();
+  push_path_if_valid(start_cell, &mut result);
+  push_path_if_valid(target_cell, &mut result);
+  result
 }
 
-fn get_target_cell_ig(target_cell: &CellRef) -> Point<InternalGrid> {
-  target_cell.lock().expect("Failed to lock target cell").get_ig().clone()
+fn push_path_if_valid(cell: &CellRef, result: &mut Vec<(Point<InternalGrid>, Direction)>) {
+  let ig = get_cell_ig(cell);
+  if is_edge_connection_point(&ig) {
+    result.push((ig, Direction::Center));
+  }
+}
+
+fn is_edge_connection_point(ig: &Point<InternalGrid>) -> bool {
+  ig.x == 0 || ig.x == CHUNK_SIZE - 1 || ig.y == 0 || ig.y == CHUNK_SIZE - 1
+}
+
+fn get_cell_ig(cell: &CellRef) -> Point<InternalGrid> {
+  cell.lock().expect("Failed to lock cell").get_ig().clone()
 }
 
 /// Calculates the costs based on the distance between two points in the internal grid, adjusting the cost based on the
@@ -320,19 +380,20 @@ fn determine_path_object_name(
   mut next_cell_direction: &Direction,
   ig: &Point<InternalGrid>,
 ) -> ObjectName {
+  use crate::generation::lib::Direction::*;
   next_cell_direction = update_if_edge_connection(ig, next_cell_direction);
   previous_cell_direction = update_if_edge_connection(ig, previous_cell_direction);
   match (previous_cell_direction, next_cell_direction) {
-    (Direction::Top, Direction::Right) | (Direction::Right, Direction::Top) => ObjectName::PathTopRight,
-    (Direction::Top, Direction::Bottom) | (Direction::Bottom, Direction::Top) => ObjectName::PathVertical,
-    (Direction::Right, Direction::Left) | (Direction::Left, Direction::Right) => ObjectName::PathHorizontal,
-    (Direction::Bottom, Direction::Left) | (Direction::Left, Direction::Bottom) => ObjectName::PathBottomLeft,
-    (Direction::Bottom, Direction::Right) | (Direction::Right, Direction::Bottom) => ObjectName::PathBottomRight,
-    (Direction::Top, Direction::Left) | (Direction::Left, Direction::Top) => ObjectName::PathTopLeft,
-    (Direction::Top, Direction::Center) | (Direction::Center, Direction::Top) => ObjectName::PathTop,
-    (Direction::Right, Direction::Center) | (Direction::Center, Direction::Right) => ObjectName::PathRight,
-    (Direction::Bottom, Direction::Center) | (Direction::Center, Direction::Bottom) => ObjectName::PathBottom,
-    (Direction::Left, Direction::Center) | (Direction::Center, Direction::Left) => ObjectName::PathLeft,
+    (Top, Right) | (Right, Top) => ObjectName::PathTopRight,
+    (Top, Bottom) | (Bottom, Top) => ObjectName::PathVertical,
+    (Right, Left) | (Left, Right) => ObjectName::PathHorizontal,
+    (Bottom, Left) | (Left, Bottom) => ObjectName::PathBottomLeft,
+    (Bottom, Right) | (Right, Bottom) => ObjectName::PathBottomRight,
+    (Top, Left) | (Left, Top) => ObjectName::PathTopLeft,
+    (Top, Center) | (Center, Top) | (Top, Top) => ObjectName::PathTop,
+    (Right, Center) | (Center, Right) | (Right, Right) => ObjectName::PathRight,
+    (Bottom, Center) | (Center, Bottom) | (Bottom, Bottom) => ObjectName::PathBottom,
+    (Left, Center) | (Center, Left) | (Left, Left) => ObjectName::PathLeft,
     _ => ObjectName::PathUndefined,
   }
 }
@@ -355,38 +416,51 @@ fn update_if_edge_connection<'a>(point: &Point<InternalGrid>, direction: &'a Dir
   }
 }
 
-fn determine_path_object_name_from_all_neighbours(
-  mut directions: HashSet<Direction>,
-  ig: Point<InternalGrid>,
+fn determine_path_object_name_from_neighbours(
+  mut neighbour_directions: HashSet<Direction>,
+  ig: &Point<InternalGrid>,
 ) -> ObjectName {
   use crate::generation::lib::Direction::*;
   // If we only have two directions, then this an edge cell, so we need to add the direction to the connection point
   // in the neighbouring chunk
-  if directions.len() == 2 {
-    let d = match ig {
-      point if point.x == 0 => Left,
-      point if point.x == CHUNK_SIZE - 1 => Right,
-      point if point.y == 0 => Top,
-      point if point.y == CHUNK_SIZE - 1 => Bottom,
-      _ => Center,
-    };
-    directions.insert(d);
+  if neighbour_directions.len() == 2 {
+    neighbour_directions.insert(direction_to_neighbour_chunk(&ig));
   }
-  let result = match directions.len() {
-    3 => match &directions {
+  let result = match neighbour_directions.len() {
+    1 => match neighbour_directions.iter().next() {
+      Some(Top) => ObjectName::PathTop,
+      Some(Right) => ObjectName::PathRight,
+      Some(Bottom) => ObjectName::PathBottom,
+      Some(Left) => ObjectName::PathLeft,
+      _ => unreachable!("Unexpected single direction for path object name: {:?}", neighbour_directions),
+    },
+    3 => match &neighbour_directions {
       d if d == &[Top, Right, Bottom].iter().cloned().collect() => ObjectName::PathRightVertical,
       d if d == &[Top, Left, Bottom].iter().cloned().collect() => ObjectName::PathLeftVertical,
       d if d == &[Left, Top, Right].iter().cloned().collect() => ObjectName::PathTopHorizontal,
       d if d == &[Left, Bottom, Right].iter().cloned().collect() => ObjectName::PathBottomHorizontal,
-      _ => panic!("Unexpected combination of directions for path object name: {:?}", directions),
+      _ => unreachable!(
+        "Unexpected combination of directions for path object name: {:?}",
+        neighbour_directions
+      ),
     },
     4 => ObjectName::PathCross,
     _ => ObjectName::PathUndefined,
   };
-  debug!(
+  trace!(
     "Resolved path object name from directions [{:?}] to [{:?}]",
-    directions, result
+    neighbour_directions, result
   );
 
   result
+}
+
+fn direction_to_neighbour_chunk(ig: &Point<InternalGrid>) -> Direction {
+  match ig {
+    point if point.x == 0 => Direction::Left,
+    point if point.x == CHUNK_SIZE - 1 => Direction::Right,
+    point if point.y == 0 => Direction::Top,
+    point if point.y == CHUNK_SIZE - 1 => Direction::Bottom,
+    _ => Direction::Center,
+  }
 }

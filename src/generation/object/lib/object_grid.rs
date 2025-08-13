@@ -1,7 +1,7 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Plane, TerrainType, TileType};
+use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
 use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
 use bevy::log::*;
@@ -45,10 +45,10 @@ impl ObjectGrid {
   pub fn new_initialised(
     cg: Point<ChunkGrid>,
     terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
-    flat_plane: &Plane,
+    layered_plane: &LayeredPlane,
   ) -> Self {
     let mut grid = ObjectGrid::new_uninitialised(cg);
-    grid.initialise_cells(terrain_state_map, flat_plane);
+    grid.initialise_cells(terrain_state_map, layered_plane);
 
     grid
   }
@@ -57,9 +57,9 @@ impl ObjectGrid {
   fn initialise_cells(
     &mut self,
     terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
-    flat_plane: &Plane,
+    layered_plane: &LayeredPlane,
   ) {
-    for tile in flat_plane.data.iter().flatten().flatten() {
+    for tile in layered_plane.flat.data.iter().flatten().flatten() {
       let ig = tile.coords.internal_grid;
       let terrain = tile.terrain;
       let tile_type = tile.tile_type;
@@ -70,7 +70,17 @@ impl ObjectGrid {
           .get(&tile_type)
           .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str())
           .clone();
-        cell.initialise(terrain, tile_type, &possible_states);
+        let lower_tile_data = layered_plane
+          .planes
+          .iter()
+          .filter_map(|plane| {
+            plane.data[0][0]
+              .as_ref()
+              .and_then(|t| if t.terrain < tile.terrain { Some(plane) } else { None })
+          })
+          .filter_map(|plane| plane.get_tile(ig).and_then(|t| Some((t.terrain, t.tile_type))))
+          .collect::<Vec<(TerrainType, TileType)>>();
+        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data);
         trace!(
           "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
           ig,
@@ -90,7 +100,17 @@ impl ObjectGrid {
     if self.path_grid.is_none() {
       self.path_grid = Some(
         (0..CHUNK_SIZE)
-          .map(|y| (0..CHUNK_SIZE).map(|x| Arc::new(Mutex::new(Cell::new(x, y)))).collect())
+          .map(|y| {
+            (0..CHUNK_SIZE)
+              .map(|x| {
+                if let Some(existing_cell) = self.object_grid.get(y as usize).and_then(|row| row.get(x as usize)) {
+                  return Arc::new(Mutex::new(existing_cell.clone()));
+                }
+
+                Arc::new(Mutex::new(Cell::new(x, y)))
+              })
+              .collect()
+          })
           .collect(),
       );
     }
@@ -113,9 +133,9 @@ impl ObjectGrid {
             }
           }
 
-          let mut cell = cell_ref.try_lock().expect("Failed to lock cell");
-          cell.add_neighbours(neighbours);
-          cell.calculate_is_walkable();
+          let mut cell_guard = cell_ref.try_lock().expect("Failed to lock cell");
+          cell_guard.add_neighbours(neighbours);
+          cell_guard.calculate_is_walkable();
         }
       }
     }

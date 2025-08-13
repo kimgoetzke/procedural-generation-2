@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use strum::EnumIter;
 
-#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Reflect, EnumIter)]
+#[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, Reflect, EnumIter)]
 pub enum TerrainType {
   DeepWater,
   ShallowWater,

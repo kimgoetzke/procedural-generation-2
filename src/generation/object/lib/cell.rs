@@ -1,7 +1,9 @@
+use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::terrain_state::TerrainState;
+use crate::generation::object::lib::tile_below::TileBelow;
 use crate::generation::object::lib::{Connection, ObjectName};
 use bevy::log::*;
 use bevy::prelude::Reflect;
@@ -27,6 +29,10 @@ pub struct Cell {
   // General fields
   pub ig: Point<InternalGrid>,
   index: i32,
+  terrain: TerrainType,
+  tile_type: TileType,
+  #[reflect(ignore)]
+  pub tile_below: Option<TileBelow>,
   // Pathfinding specific fields
   #[reflect(ignore)]
   neighbours: Vec<CellRef>,
@@ -34,13 +40,12 @@ pub struct Cell {
   connection: Box<Option<CellRef>>,
   g: f32,
   h: f32,
-  is_walkable: bool,
+  is_walkable_connection: bool,
+  is_walkable_tile: bool,
   // Wave function collapse specific fields
   is_collapsed: bool,
   is_initialised: bool,
   is_being_monitored: bool,
-  terrain: TerrainType,
-  tile_type: TileType,
   entropy: usize,
   possible_states: Vec<TerrainState>,
 }
@@ -56,22 +61,30 @@ impl Cell {
     Cell {
       ig: Point::new_internal_grid(x, y),
       index: -1,
+      terrain: TerrainType::Any,
+      tile_type: TileType::Unknown,
+      tile_below: None,
       neighbours: vec![],
       connection: Box::new(None),
       g: 0.0,
       h: 0.0,
-      is_walkable: true,
+      is_walkable_connection: true,
+      is_walkable_tile: true,
       is_collapsed: false,
       is_initialised: false,
       is_being_monitored: false,
-      terrain: TerrainType::Any,
-      tile_type: TileType::Unknown,
       entropy: usize::MAX,
       possible_states: vec![],
     }
   }
 
-  pub fn initialise(&mut self, terrain_type: TerrainType, tile_type: TileType, states: &Vec<TerrainState>) {
+  pub fn initialise(
+    &mut self,
+    terrain_type: TerrainType,
+    tile_type: TileType,
+    states: &Vec<TerrainState>,
+    lower_layer_info: Vec<(TerrainType, TileType)>,
+  ) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
@@ -92,6 +105,11 @@ impl Cell {
     self.is_initialised = true;
     self.terrain = terrain_type;
     self.tile_type = tile_type;
+    self.tile_below = if lower_layer_info.is_empty() {
+      None
+    } else {
+      Some(TileBelow::new(lower_layer_info))
+    };
     self.possible_states = states.clone();
     self.entropy = self.possible_states.len();
   }
@@ -121,8 +139,15 @@ impl Cell {
     }
   }
 
-  pub fn get_neighbours(&self) -> &Vec<CellRef> {
-    &self.neighbours
+  /// Returns the [`CellRef`]s of all neighbours of this cell if they are walkable. See [`Cell::calculate_is_walkable`]
+  /// for the definition of walkable.
+  pub fn get_walkable_neighbours(&self) -> Vec<CellRef> {
+    self
+      .neighbours
+      .iter()
+      .filter(|n| n.try_lock().expect("Failed to lock neighbour").is_walkable())
+      .cloned()
+      .collect::<Vec<CellRef>>()
   }
 
   /// Returns the [`CellRef`] that this cell is connected to, if any. Used to reconstruct the path from the start cell
@@ -164,16 +189,51 @@ impl Cell {
     self.g + self.h
   }
 
-  // TODO: Use is_walkable in algorithm
   /// Returns whether this cell is walkable.
   pub fn is_walkable(&self) -> bool {
-    self.is_walkable
+    self.is_walkable_tile
   }
 
   /// Calculates whether this cell is walkable based on its terrain type and tile type.
   pub fn calculate_is_walkable(&mut self) {
-    self.is_walkable =
-      self.terrain != TerrainType::DeepWater || self.terrain != TerrainType::ShallowWater && self.tile_type == TileType::Fill
+    self.is_walkable_connection = self.is_walkable_connection();
+    self.is_walkable_tile = self.is_walkable_tile();
+  }
+
+  /// Same as [`Cell::is_walkable_tile`] but more lenient because there are many edge cases where a connection point in
+  /// one chunk is clearly walkable, but in another chunk may not be (specifically when the tile type is of a partial
+  /// fill type).
+  fn is_walkable_connection(&self) -> bool {
+    (self.terrain == TerrainType::Land1 && is_filled_or_filled_at_facing_edge(self.ig, self.tile_type)
+      || self.terrain.gt(&TerrainType::Land1))
+      && self.terrain != TerrainType::Any
+  }
+
+  fn is_walkable_tile(&self) -> bool {
+    (self.terrain == TerrainType::Land1 && self.tile_type == TileType::Fill || self.terrain.gt(&TerrainType::Land1))
+      && self.terrain != TerrainType::Any
+  }
+
+  pub fn is_valid_connection_point(&self) -> bool {
+    if !self.is_walkable_connection {
+      return false;
+    }
+    if is_filled_or_filled_at_facing_edge(self.ig, self.tile_type) {
+      return true;
+    }
+    if self.terrain > TerrainType::Land1 && is_filled_at_facing_edge_incl_corner_types(self.ig, self.tile_type) {
+      return true;
+    }
+    self.tile_below.as_ref().map_or(false, |tile_below| {
+      let mut current = Some(tile_below);
+      while let Some(below) = current {
+        if is_filled_or_filled_at_facing_edge(self.ig, below.tile_type) && below.terrain >= TerrainType::Land1 {
+          return true;
+        }
+        current = below.below.as_deref();
+      }
+      false
+    })
   }
 
   pub fn is_collapsed(&self) -> bool {
@@ -330,6 +390,46 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
     .collect()
 }
 
+fn is_filled_or_filled_at_facing_edge(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
+  (ig.x == 0
+    && matches!(
+      tile_type,
+      TileType::LeftFill | TileType::OuterCornerTopRight | TileType::OuterCornerBottomRight
+    ))
+    || (ig.x == CHUNK_SIZE - 1
+      && matches!(
+        tile_type,
+        TileType::RightFill | TileType::OuterCornerBottomLeft | TileType::OuterCornerTopLeft
+      ))
+    || (ig.y == 0
+      && matches!(
+        tile_type,
+        TileType::TopFill | TileType::OuterCornerBottomLeft | TileType::OuterCornerBottomRight
+      ))
+    || (ig.y == CHUNK_SIZE - 1
+      && matches!(
+        tile_type,
+        TileType::BottomFill | TileType::OuterCornerTopRight | TileType::OuterCornerTopLeft
+      ))
+    || tile_type == TileType::Fill
+}
+
+fn is_filled_at_facing_edge_incl_corner_types(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
+  use TileType::*;
+
+  match tile_type {
+    Fill | BottomFill | TopFill if ig.x == 0 || ig.x == CHUNK_SIZE - 1 => true,
+    Fill | LeftFill | RightFill if ig.y == 0 || ig.y == CHUNK_SIZE - 1 => true,
+    OuterCornerBottomRight | OuterCornerBottomLeft | InnerCornerBottomLeft | InnerCornerBottomRight if ig.y == 0 => true,
+    OuterCornerTopRight | OuterCornerTopLeft | InnerCornerTopLeft | InnerCornerTopRight if ig.y == CHUNK_SIZE - 1 => true,
+    OuterCornerBottomRight | OuterCornerTopRight | InnerCornerBottomRight | InnerCornerTopRight if ig.x == 0 => true,
+    OuterCornerBottomLeft | OuterCornerTopLeft | InnerCornerBottomLeft | InnerCornerTopLeft if ig.x == CHUNK_SIZE - 1 => {
+      true
+    }
+    _ => false,
+  }
+}
+
 fn log_result(
   is_update: bool,
   reference_cell: &Cell,
@@ -460,6 +560,12 @@ fn log_collapse_result(
 mod tests {
   use super::*;
 
+  impl Cell {
+    pub fn get_neighbours(&self) -> &Vec<CellRef> {
+      &self.neighbours
+    }
+  }
+
   #[test]
   fn new_sets_correct_ig() {
     let ig = Point::default();
@@ -521,5 +627,133 @@ mod tests {
         .map(|c| Arc::ptr_eq(c, &connection2))
         .unwrap_or(false)
     );
+  }
+
+  #[test]
+  fn is_walkable_returns_true_for_land1_only_if_filled() {
+    let mut cell = Cell::new(0, 0);
+    cell.terrain = TerrainType::Land1;
+    cell.tile_type = TileType::Fill;
+    cell.calculate_is_walkable();
+    assert!(cell.is_walkable());
+
+    cell.tile_type = TileType::BottomFill;
+    cell.calculate_is_walkable();
+    assert!(!cell.is_walkable());
+
+    cell.tile_type = TileType::OuterCornerBottomLeft;
+    cell.calculate_is_walkable();
+    assert!(!cell.is_walkable());
+  }
+
+  #[test]
+  fn is_walkable_returns_true_for_anything_above_land1() {
+    let mut cell = Cell::new(0, 0);
+    cell.terrain = TerrainType::Land2;
+    cell.tile_type = TileType::Fill;
+    cell.calculate_is_walkable();
+    assert!(cell.is_walkable());
+
+    cell.tile_type = TileType::BottomFill;
+    cell.calculate_is_walkable();
+    assert!(cell.is_walkable());
+
+    cell.tile_type = TileType::OuterCornerBottomLeft;
+    cell.calculate_is_walkable();
+    assert!(cell.is_walkable());
+  }
+
+  #[test]
+  fn is_walkable_returns_false_for_any_water() {
+    let mut cell = Cell::new(0, 0);
+    cell.terrain = TerrainType::ShallowWater;
+    cell.tile_type = TileType::Fill;
+    cell.calculate_is_walkable();
+    assert!(!cell.is_walkable());
+
+    cell.terrain = TerrainType::DeepWater;
+    cell.calculate_is_walkable();
+    assert!(!cell.is_walkable());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_false_if_self_is_not_walkable() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = false;
+    assert!(!cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_true_if_tile_type_is_fill() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Fill;
+    assert!(cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_true_if_any_below_tile_is_filled_and_land1_or_higher() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Unknown;
+    cell.tile_below = Some(TileBelow {
+      terrain: TerrainType::Land2,
+      tile_type: TileType::Unknown,
+      below: Some(Box::new(TileBelow::from(TerrainType::Land1, TileType::Fill, None))),
+    });
+    assert!(cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_true_if_facing_edge_and_land1_or_higher() {
+    let mut cell = Cell::new(0, 4);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::OuterCornerBottomRight;
+    cell.tile_below = None;
+    assert!(cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_true_if_below_is_facing_edge_and_land1_or_higher() {
+    let mut cell = Cell::new(0, 4);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Unknown;
+    cell.tile_below = Some(TileBelow::from(TerrainType::Land1, TileType::LeftFill, None));
+    assert!(cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_false_if_no_below_tile_is_filled() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Unknown;
+    cell.tile_below = Some(TileBelow {
+      terrain: TerrainType::Land3,
+      tile_type: TileType::Unknown,
+      below: Some(Box::new(TileBelow::from(TerrainType::Land2, TileType::Unknown, None))),
+    });
+    assert!(!cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_false_if_only_filled_tile_below_is_water() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Unknown;
+    cell.tile_below = Some(TileBelow {
+      terrain: TerrainType::Land1,
+      tile_type: TileType::Unknown,
+      below: Some(Box::new(TileBelow::from(TerrainType::ShallowWater, TileType::Fill, None))),
+    });
+    assert!(!cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn is_valid_connection_point_returns_false_if_no_tile_below() {
+    let mut cell = Cell::new(0, 0);
+    cell.is_walkable_connection = true;
+    cell.tile_type = TileType::Unknown;
+    cell.tile_below = None;
+    assert!(!cell.is_valid_connection_point());
   }
 }

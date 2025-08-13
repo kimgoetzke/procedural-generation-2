@@ -5,6 +5,7 @@ mod object_data;
 mod object_grid;
 mod object_name;
 mod terrain_state;
+mod tile_below;
 mod tile_data;
 
 pub use cell::{Cell, CellRef};

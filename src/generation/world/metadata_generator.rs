@@ -215,7 +215,7 @@ fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>
     loop {
       let new_point = Point::new_internal_grid(rng.random_range(1..CHUNK_SIZE - 2), rng.random_range(1..CHUNK_SIZE - 2));
       if !connection_points.contains(&new_point) {
-        debug!("Added an internal connection point {:?} for chunk {}", new_point, cg);
+        trace!("Added an internal connection point {:?} for chunk {}", new_point, cg);
         connection_points.push(new_point);
         break;
       }
@@ -223,7 +223,7 @@ fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>
   }
 
   if !connection_points.is_empty() {
-    debug!(
+    trace!(
       "{} has [{}] connection points: {:?}",
       cg,
       connection_points.len(),
