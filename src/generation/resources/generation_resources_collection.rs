@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
-use crate::generation::object::lib::{ObjectName, TerrainState};
+use crate::generation::object::lib::{Connection, ObjectName, TerrainState};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
@@ -24,11 +24,11 @@ use strum::IntoEnumIterator;
 ///
 /// In terms of process, it works as follows:
 /// 1. The plugin loads the rule sets for terrain and tile types from the file system. At this point, the application is
-///    in the [`AppState::Loading`] state.
+///    in the [`AppState::Loading`] state. See [`load_rule_sets_system`].
 /// 2. While in this state, it checks the loading state of these assets and waits until they are fully loaded, then
-///    transitions the state to [`AppState::Initialising`].
+///    it transitions the state to [`AppState::Initialising`]. See [`check_loading_state_system`].
 /// 3. Upon transitioning to the initialising state (i.e. [`OnExit`] of [`AppState::Loading`]), it finally
-///    initialises the [`GenerationResourcesCollection`] resource.
+///    initialises the [`GenerationResourcesCollection`] resource. See [`initialise_resources_system`].
 pub struct GenerationResourcesCollectionPlugin;
 
 impl Plugin for GenerationResourcesCollectionPlugin {
@@ -40,7 +40,7 @@ impl Plugin for GenerationResourcesCollectionPlugin {
         RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
       ))
       .add_systems(Startup, load_rule_sets_system)
-      .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
+      .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
       .add_systems(OnExit(AppState::Loading), initialise_resources_system);
   }
 }
@@ -103,7 +103,7 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
   commands.insert_resource(TileTypeRuleSetHandle(handle));
 }
 
-fn check_loading_state(
+fn check_loading_state_system(
   asset_server: Res<AssetServer>,
   terrain_handles: Res<TerrainRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
@@ -369,9 +369,11 @@ fn tile_type_rules(
 /// their possible states.
 ///
 /// Note:
-/// - The `Any` terrain type is not included in the map, as it is used to extend other terrain types.
-/// - The `Unknown` tile type is also not included, as it is not a valid tile type and is only used to signal
-///   an error in the generation logic.
+/// - [`TerrainType::Any`] is filtered out, as it is not a valid terrain type to be rendered and used to extend other
+///   terrain types. This [`TerrainType`] causes panics if it is used later in the generation logic.
+/// - [`TileType::Unknown`] is also filtered out, as it is not a valid tile type and is only used to signal
+///   an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
+///   single-coloured tile to indicate the error.
 fn resolve_rules_to_terrain_states_map(
   terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
   tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
