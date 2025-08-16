@@ -199,7 +199,9 @@ fn initialise_resources_system(
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
   let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
-  asset_collection.objects.terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
+  let terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
+  validate_terrain_state_map(&terrain_state_map);
+  asset_collection.objects.terrain_state_map = terrain_state_map.clone();
 }
 
 fn tile_set_static(
@@ -362,9 +364,6 @@ fn tile_type_rules(
   HashMap::new()
 }
 
-// TODO: Consider adding some preprocessing logic that throws on invalid states e.g. if the specific terrain-tile type
-//  combination x has y as a possible neighbour but y does not have x as a possible neighbour. I assume there'll be a
-//  a few of those cases because the error rate for the WFC is too high.
 /// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
 /// their possible states.
 ///
@@ -419,4 +418,164 @@ fn resolve_rules_to_terrain_states_map(
   );
 
   terrain_state_map
+}
+
+/// Validates the terrain state map in a basic way. This function checks for the following:
+/// - The map must not contain [`TerrainType::Any`]
+/// - The map must not contain [`TileType::Unknown`] for any [`TerrainType`]
+/// - Each state must not have asymmetric neighbour rules (i.e. a state that allows a neighbour in one direction
+///   but the neighbour state does not allow the original state in the opposite direction) - however, paths and
+///   [`ObjectName::Empty`] are ignored
+/// - Each state must not have duplicate neighbours in the same direction
+/// - Each state must not have duplicate [`Connection`]s (i.e. same direction defined multiple times)
+/// - Each state must not have missing [`Connection`] definitions
+fn validate_terrain_state_map(terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>) {
+  let mut errors = HashSet::new();
+  let mut state_lookup: HashMap<(TerrainType, TileType, ObjectName), &TerrainState> = HashMap::new();
+
+  for (terrain, state_map) in terrain_state_map {
+    for (tile_type, states) in state_map {
+      for state in states {
+        state_lookup.insert((*terrain, *tile_type, state.name), state);
+      }
+    }
+  }
+
+  for (terrain, state_map) in terrain_state_map {
+    if terrain == &TerrainType::Any {
+      errors.insert("Found terrain type [Any], which is not allowed".to_string());
+      continue;
+    }
+    for (tile_type, states) in state_map {
+      if tile_type == &TileType::Unknown {
+        errors.insert(format!(
+          "Found tile type [Unknown] for terrain [{:?}], which is not allowed",
+          terrain
+        ));
+        continue;
+      }
+      for state in states {
+        validate_state_neighbours(*terrain, *tile_type, state, &state_lookup, terrain_state_map, &mut errors);
+      }
+    }
+  }
+
+  if !errors.is_empty() {
+    error!("Found [{}] validation errors in terrain state map:", errors.len());
+    for (i, error) in errors.iter().enumerate() {
+      error!("- {}. {}", i + 1, error);
+    }
+    panic!("Terrain state map failed validation - please fix the errors above before proceeding");
+  } else if errors.is_empty() {
+    debug!("✅  Terrain state map passed validation");
+  }
+}
+
+fn validate_state_neighbours(
+  terrain: TerrainType,
+  tile_type: TileType,
+  state: &TerrainState,
+  state_lookup: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
+  terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+  errors: &mut HashSet<String>,
+) {
+  let object_name_to_find = state.name;
+
+  // Skip validation for Empty objects
+  if object_name_to_find == ObjectName::Empty {
+    trace!(
+      "Skipping validation of object name [Empty] for [{:?}] [{:?}]",
+      terrain, tile_type
+    );
+    return;
+  }
+
+  // Check all other objects for asymmetric neighbour rules
+  for (connection, permitted_neighbours) in &state.permitted_neighbours {
+    let opposite_connection = connection.opposite();
+    for &neighbour_object_name in permitted_neighbours {
+      let mut has_found_reciprocal = false;
+      let mut has_checked_any_terrain = false;
+      for terrain_to_check in terrain_state_map.keys().copied().collect::<Vec<TerrainType>>() {
+        for tile_type_to_check in terrain_state_map
+          .iter()
+          .flat_map(|(_, m)| m.keys().copied())
+          .collect::<Vec<TileType>>()
+        {
+          has_checked_any_terrain = true;
+          if let Some(neighbour_state) = state_lookup.get(&(terrain_to_check, tile_type_to_check, neighbour_object_name)) {
+            if let Some(reciprocal_neighbours) = neighbour_state
+              .permitted_neighbours
+              .iter()
+              .find(|(conn, _)| *conn == opposite_connection)
+              .map(|(_, neighbours)| neighbours)
+            {
+              if reciprocal_neighbours.contains(&object_name_to_find) {
+                has_found_reciprocal = true;
+                break;
+              }
+            }
+          }
+        }
+        if has_found_reciprocal {
+          break;
+        }
+      }
+
+      if !has_checked_any_terrain {
+        errors.insert(format!(
+          "No terrain/tile combinations found to validate neighbour [{:?}] for object [{:?}] on [{:?}] [{:?}]",
+          neighbour_object_name, object_name_to_find, terrain, tile_type
+        ));
+        continue;
+      }
+
+      // If no reciprocal neighbour was found, log an error if the neighbour object is not a path sprite - paths are
+      // allowed to have asymmetric connections because paths are calculated and collapsed before the wave function
+      // collapse algorithm even runs, so only non-path objects need to know that they are allowed to be placed next to
+      // paths
+      if !has_found_reciprocal && !neighbour_object_name.is_path_sprite() {
+        errors.insert(format!(
+          "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
+          terrain,
+          object_name_to_find,
+          neighbour_object_name,
+          connection,
+          neighbour_object_name,
+          object_name_to_find,
+          opposite_connection
+        ));
+      }
+    }
+
+    // Check for duplicate neighbours in the same direction
+    let unique_neighbours: HashSet<&ObjectName> = permitted_neighbours.iter().collect();
+    if unique_neighbours.len() != permitted_neighbours.len() {
+      errors.insert(format!(
+        "Duplicate neighbours found in [{:?}] for [{:?}] [{:?}]",
+        terrain, object_name_to_find, connection,
+      ));
+    }
+  }
+
+  // Check for duplicate connections i.e. same direction defined multiple times
+  let connections: Vec<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
+  let unique_connections: HashSet<_> = connections.iter().collect();
+  if unique_connections.len() != connections.len() {
+    errors.insert(format!(
+      "Duplicate connection directions found for [{:?}] [{:?}]: {:?}",
+      terrain, object_name_to_find, connections
+    ));
+  }
+
+  // Check if all four directions are defined
+  let defined_connections: HashSet<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
+  for c in &[Connection::Top, Connection::Right, Connection::Bottom, Connection::Left] {
+    if !defined_connections.contains(c) {
+      errors.insert(format!(
+        "Connection definition for [{:?}] is missing for [{:?}] [{:?}]",
+        c, terrain, object_name_to_find
+      ));
+    }
+  }
 }
