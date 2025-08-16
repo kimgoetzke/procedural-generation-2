@@ -78,7 +78,7 @@ impl ObjectGrid {
             let terrain_as_usize = tile.terrain as usize;
             if is_monitored {
               warn!(
-                "At {:?}, plane with layer [{}] is included: [{}] - because [{}] is [{:?}]",
+                "At {:?}, plane with layer [{}] is included: [{}] because [{}] is [{:?}]",
                 tile.coords,
                 plane.layer.unwrap_or(usize::MAX),
                 plane.layer.unwrap_or(usize::MIN) < terrain_as_usize,
