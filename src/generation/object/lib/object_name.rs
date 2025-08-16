@@ -88,7 +88,7 @@ pub enum ObjectName {
 }
 
 impl ObjectName {
-  pub fn is_large_sprite(&self) -> bool {
+  pub fn is_multi_tile(&self) -> bool {
     matches!(
       self,
       ObjectName::ForestTree1
@@ -99,7 +99,7 @@ impl ObjectName {
     )
   }
 
-  pub fn is_path_sprite(&self) -> bool {
+  pub fn is_path(&self) -> bool {
     matches!(
       self,
       ObjectName::PathUndefined

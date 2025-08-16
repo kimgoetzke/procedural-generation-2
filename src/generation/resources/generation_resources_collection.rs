@@ -443,7 +443,7 @@ fn validate_terrain_state_map(terrain_state_map: &HashMap<TerrainType, HashMap<T
         continue;
       }
       for state in states {
-        validate_terrain_state(state, *terrain, *tile_type, &state_lookup_map, terrain_state_map, &mut errors);
+        validate_terrain_state(state, *terrain, &state_lookup_map, terrain_state_map, &mut errors);
       }
     }
   }
@@ -501,20 +501,10 @@ fn validate_tile_type(tile_type: &TileType, terrain: &TerrainType) -> Result<(),
 fn validate_terrain_state(
   state: &TerrainState,
   terrain: TerrainType,
-  tile_type: TileType,
   state_lookup: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
   terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
   errors: &mut HashSet<String>,
 ) {
-  // Skip validation for Empty objects
-  if state.name == ObjectName::Empty {
-    trace!(
-      "Skipping validation of object name [Empty] for [{:?}] [{:?}]",
-      terrain, tile_type
-    );
-    return;
-  }
-
   validate_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
   validate_duplicate_neighbours(state, terrain, errors);
   validate_duplicate_connections(state, terrain, errors);
@@ -553,7 +543,7 @@ fn validate_asymmetric_rules(
             .iter()
             .any(|(c, neighbours)| *c == opposite_connection && neighbours.contains(&state.name))
         });
-      if !has_reciprocal && !neighbour_object_name.is_path_sprite() {
+      if !has_reciprocal && !neighbour_object_name.is_path() {
         errors.insert(format!(
           "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
           terrain,
