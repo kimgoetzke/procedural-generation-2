@@ -298,10 +298,10 @@
       name: ForestBush2,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -309,10 +309,10 @@
       name: ForestBush3,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
