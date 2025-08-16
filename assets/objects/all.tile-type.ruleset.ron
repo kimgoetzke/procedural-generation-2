@@ -38,6 +38,7 @@
         SandPathBottom,
         SandPathLeft,
         SandPathCross,
+        SandPathVertical,
         SandPathHorizontal,
         SandStone1,
         SandStone2,

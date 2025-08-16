@@ -342,7 +342,7 @@
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Right, [ SandPattern2, SandPattern3, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone3, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
       ]
     ),
     (
