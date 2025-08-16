@@ -188,7 +188,7 @@ impl ObjectGrid {
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
     let point = cell.ig;
-    let points: Vec<_> = get_connection_points(&point).into_iter().collect();
+    let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&point).into_iter().collect();
     let mut neighbours = vec![];
     for (direction, point) in points {
       if let Some(cell) = self.object_grid.iter().flatten().filter(|cell| cell.ig == point).next() {
@@ -197,7 +197,7 @@ impl ObjectGrid {
         neighbours.push((direction, &self.no_neighbours_tile));
       }
     }
-    trace!("Found {} neighbours for {:?}", neighbours.len(), point);
+    trace!("Found [{}] neighbours for {:?}", neighbours.len(), point);
 
     neighbours
   }

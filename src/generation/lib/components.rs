@@ -79,8 +79,8 @@ pub enum GenerationStage {
   /// triplets for further processing.
   Stage6(Task<Vec<(Chunk, Entity, ObjectGrid)>>),
   /// Stage 7: If [`Chunk`]-[`Entity`]-[`ObjectGrid`] triplets are provided and [`Entity`]s still exists, schedule
-  /// a task to generate objects and convert the [`ObjectGrid`]s to [`ObjectData`], which is used to spawn any sprites
-  /// in a separate step. Return a [`Task`] for each chunk.
+  /// a task to generate objects and convert the [`ObjectGrid`]s to [`Vec<ObjectData>`], which is used to spawn any
+  /// sprites in a separate step. Return a [`Task`] for each chunk.
   ///
   /// NOTE: The [`ObjectData`] must always be generated and returned for any sprites to be spawned, even if the
   /// generation of details is disabled, because paths also require object sprites to be spawned.

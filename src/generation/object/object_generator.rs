@@ -2,7 +2,6 @@ use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
 use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
-use crate::generation::object::wfc;
 use crate::generation::object::wfc::WfcPlugin;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
@@ -13,8 +12,8 @@ use bevy::prelude::{Commands, Component, Entity, Name, Query, TextureAtlas, Tran
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on};
+use rand::Rng;
 use rand::prelude::StdRng;
-use rand::{Rng, SeedableRng};
 
 pub struct ObjectGeneratorPlugin;
 
@@ -35,6 +34,9 @@ impl CommandQueueTask for ObjectSpawnTask {
   }
 }
 
+/// Generates the [`ObjectGrid`] for the given chunk. The [`ObjectGrid`] is the key struct used by
+/// [`crate::generation::object`] when running various algorithms to determine which objects should be spawned in
+/// the world.
 pub fn generate_object_grid(
   resources: &GenerationResourcesCollection,
   settings: &Settings,
@@ -61,6 +63,9 @@ pub fn generate_object_grid(
   Some((chunk, chunk_entity, grid))
 }
 
+/// Consumes the [`ObjectGrid`] and returns a [`Vec<ObjectData>`] for the given chunk. Once the tile data is generated,
+/// the [`ObjectGrid`] is no longer needed. The returned [`Vec<ObjectData>`] can then be used to spawn objects in the
+/// world.
 pub fn generate_object_data(
   settings: &Settings,
   object_grid: ObjectGrid,
@@ -70,12 +75,11 @@ pub fn generate_object_data(
   let start_time = shared::get_time();
   let chunk_cg = chunk.coords.chunk_grid;
   let tile_data = generate_tile_data(&chunk, chunk_entity);
-  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
   let tile_data_len = tile_data.len();
-  let mut object_generation_data = (object_grid, tile_data);
-  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
+  let is_decoration_enabled = settings.object.generate_decoration;
+  let object_data = convert_grid_to_object_data(object_grid, &tile_data, is_decoration_enabled);
   debug!(
-    "Generated object data for [{}] objects (density [{}]) for chunk {} in {} ms on {}",
+    "Generated object data for [{}] objects (density {}) for chunk {} in {} ms on {}",
     object_data.len(),
     format!("{:.0}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
     chunk_cg,
@@ -95,6 +99,30 @@ fn generate_tile_data(chunk: &Chunk, chunk_entity: Entity) -> Vec<TileData> {
   }
 
   tile_data
+}
+
+fn convert_grid_to_object_data(grid: ObjectGrid, tile_data: &Vec<TileData>, is_decoration_enabled: bool) -> Vec<ObjectData> {
+  let mut object_data = vec![];
+  object_data.extend(
+    tile_data
+      .iter()
+      .filter_map(|tile_data| {
+        if is_decoration_enabled {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
+            .map(|cell| ObjectData::from(cell, tile_data))
+        } else {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0 && cell.is_collapsed()) // Also ignore non-collapsed cells since WFC did not run
+            .map(|cell| ObjectData::from(cell, tile_data))
+        }
+      })
+      .collect::<Vec<ObjectData>>(),
+  );
+
+  object_data
 }
 
 pub fn schedule_spawning_objects(

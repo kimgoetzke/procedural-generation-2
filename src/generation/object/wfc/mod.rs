@@ -1,6 +1,5 @@
 use crate::generation::lib::shared;
-use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid, TileData};
-use crate::resources::Settings;
+use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::Rng;
@@ -12,19 +11,11 @@ impl Plugin for WfcPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-// TODO: Separate wave function collapse logic from converting the object grid to object data
-//  and move conversion to object_generator.rs
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
-pub fn determine_objects_in_grid(
-  mut rng: &mut StdRng,
-  object_generation_data: &mut (ObjectGrid, Vec<TileData>),
-  settings: &Settings,
-) -> Vec<ObjectData> {
+pub fn determine_decorative_objects(mut rng: &mut StdRng, grid: &mut ObjectGrid, is_decoration_enabled: bool) {
   let start_time = shared::get_time();
-  let is_decoration_enabled = settings.object.generate_decoration;
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
   if is_decoration_enabled {
-    let grid = &mut object_generation_data.0;
     let mut snapshots = vec![];
     let mut iter_count = 1;
     let mut has_entropy = true;
@@ -50,22 +41,16 @@ pub fn determine_objects_in_grid(
       }
     }
   } else {
-    debug!(
-      "Skipped decoration generation for {} because it is disabled",
-      object_generation_data.0.cg
-    );
+    debug!("Skipped decoration generation for {} because it is disabled", grid.cg);
   }
 
-  let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1, is_decoration_enabled);
   log_summary(
     start_time,
     snapshot_error_count,
     total_error_count,
-    &object_generation_data.0,
+    &grid,
     is_decoration_enabled,
   );
-
-  object_data
 }
 
 /// A single iteration over the object grid that performs the following steps:
@@ -156,29 +141,6 @@ fn handle_success(
   *has_entropy = result == IterationResult::Incomplete;
   *iter_count += 1;
   *iter_error_count = 0;
-}
-
-fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>, is_decoration_enabled: bool) -> Vec<ObjectData> {
-  let mut object_data = vec![];
-  object_data.extend(
-    tile_data
-      .iter()
-      .filter_map(|tile_data| {
-        if is_decoration_enabled {
-          grid
-            .get_cell(&tile_data.flat_tile.coords.internal_grid)
-            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
-            .map(|cell| ObjectData::from(cell, tile_data))
-        } else {
-          grid
-            .get_cell(&tile_data.flat_tile.coords.internal_grid)
-            .filter(|cell| cell.get_index() != 0 && cell.is_collapsed()) // Also ignore non-collapsed cells since WFC did not run
-            .map(|cell| ObjectData::from(cell, tile_data))
-        }
-      })
-      .collect::<Vec<ObjectData>>(),
-  );
-  object_data
 }
 
 fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mut usize, current_entropy: i32) {

@@ -1,7 +1,7 @@
 pub(crate) mod lib;
 mod object_generator;
 pub mod path;
-mod wfc;
+pub mod wfc;
 
 use crate::generation::object::object_generator::ObjectGeneratorPlugin;
 use bevy::app::{App, Plugin};

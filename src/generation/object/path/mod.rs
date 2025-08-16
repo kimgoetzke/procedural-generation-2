@@ -1,7 +1,7 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Direction, get_cardinal_direction_points};
+use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::object::lib::{CellRef, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;
 use crate::resources::Settings;
@@ -30,6 +30,7 @@ pub fn calculate_paths(
     debug!("Skipped path generation for {} because it is disabled", cg);
     return object_grid;
   }
+  let start_time = shared::get_time();
   let connection_points = get_valid_connection_points(&mut object_grid, &cg, metadata);
   if connection_points.is_empty() {
     debug!("Skipped path generation for chunk {} because it has no connection points", cg);
@@ -55,8 +56,8 @@ pub fn calculate_paths(
     );
     return object_grid;
   }
-  debug!(
-    "Generating path for chunk {} which has [{}] connection points: {}",
+  trace!(
+    "Generating path network for chunk {} which has [{}] connection points: {}",
     cg,
     connection_points.len(),
     connection_points
@@ -67,12 +68,19 @@ pub fn calculate_paths(
   );
 
   let mut path: Vec<(Point<InternalGrid>, Direction)> = Vec::new();
-  calculate_path_and_draft_object_names(&mut object_grid, &mut rng, cg, connection_points, &mut path);
+  calculate_path_and_draft_object_names(&mut object_grid, &mut rng, cg, &connection_points, &mut path);
   finalise_object_names_along_the_path(&mut object_grid, &mut path);
   debug!(
-    "Generated complete path network for chunk {} with [{}] total cells across all segments",
+    "Generated path network for {} with [{}] cells connecting [{}] in {} ms on {}",
     cg,
-    path.len()
+    path.len(),
+    connection_points
+      .iter()
+      .map(|p| format!("{}", p))
+      .collect::<Vec<_>>()
+      .join(", "),
+    shared::get_time() - start_time,
+    shared::thread_name()
   );
 
   object_grid
@@ -137,7 +145,7 @@ fn calculate_path_and_draft_object_names(
   object_grid: &mut ObjectGrid,
   rng: &mut StdRng,
   cg: Point<ChunkGrid>,
-  connection_points: Vec<Point<InternalGrid>>,
+  connection_points: &Vec<Point<InternalGrid>>,
   path: &mut Vec<(Point<InternalGrid>, Direction)>,
 ) {
   // Randomly select the initial start point and remove it from remaining points
@@ -167,7 +175,7 @@ fn calculate_path_and_draft_object_names(
     let target_cell = object_grid.get_cell_ref(&target_point).expect("Failed to get target cell");
 
     // Run the pathfinding algorithm
-    debug!(
+    trace!(
       "Generating path segment for chunk {} from {:?} to {:?}",
       cg, current_start, target_point
     );
@@ -196,7 +204,7 @@ fn calculate_path_and_draft_object_names(
         .expect(format!("Failed to get cell at point {:?}", point).as_str());
       cell.set_collapsed(object_name);
     }
-    debug!(
+    trace!(
       "Generated path segment for chunk {} from {:?} to {:?} with [{}] cells",
       cg,
       current_start,
@@ -238,7 +246,7 @@ fn finalise_object_names_along_the_path(object_grid: &mut ObjectGrid, path: &mut
     .filter(|(_, neighbours)| neighbours.len() > 1)
     .collect::<HashSet<_>>();
   if !cells_requiring_update.is_empty() {
-    debug!(
+    trace!(
       "Found [{}] path cells where the object name needs to be updated: {}",
       cells_requiring_update.len(),
       cells_requiring_update
