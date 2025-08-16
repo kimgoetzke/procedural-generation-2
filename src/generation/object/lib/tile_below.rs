@@ -1,5 +1,5 @@
 use crate::generation::lib::{TerrainType, TileType};
-use bevy::log::debug;
+use bevy::log::*;
 
 #[derive(Clone, Debug)]
 pub struct TileBelow {
@@ -44,7 +44,7 @@ impl TileBelow {
   }
 
   pub fn log(&self) {
-    debug!(
+    trace!(
       "- Tile below is [{:?}] of type [{:?}] and {}",
       self.terrain,
       self.tile_type,

@@ -48,7 +48,8 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
                 return Some((tile.coords.internal_grid, Some(tile_below.tile_type)));
               }
             } else if tile.terrain != TerrainType::ShallowWater {
-              // TODO: Find out why the below happening and fix it or remove the warning if intended
+              // TODO: Find out why the below happening - it can conflict with the pathfinding logic for edge
+              //  connection points when the flat plane tile below was assumed to be Fill (see next warning below)
               warn!(
                 "{:?} tile {:?} {:?} removed because the layer below it was missing: {:?}",
                 tile.terrain, tile.coords.tile_grid, tile.coords.internal_grid, tile

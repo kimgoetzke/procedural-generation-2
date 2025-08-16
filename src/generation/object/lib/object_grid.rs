@@ -63,7 +63,7 @@ impl ObjectGrid {
       let ig = tile.coords.internal_grid;
       let terrain = tile.terrain;
       let tile_type = tile.tile_type;
-      let is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(3, 3) && ig == Point::new(9, 15);
+      let is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(15, 17) && ig == Point::new(10, 0);
       if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
           .get(&terrain)
@@ -77,7 +77,7 @@ impl ObjectGrid {
           .filter_map(|plane| {
             let terrain_as_usize = tile.terrain as usize;
             if is_monitored {
-              warn!(
+              debug!(
                 "At {:?}, plane with layer [{}] is included: [{}] because [{}] is [{:?}]",
                 tile.coords,
                 plane.layer.unwrap_or(usize::MAX),
@@ -105,7 +105,7 @@ impl ObjectGrid {
             cell.get_possible_states().len(),
           );
           cell.log_tiles_below();
-          warn!(
+          debug!(
             "- Lower tile data for {:?} was: {:?}",
             ig,
             lower_tile_data
@@ -121,7 +121,7 @@ impl ObjectGrid {
   }
 
   /// Initialises the path finding grid by populating it with strong references to the respective [`Cell`]s, if
-  /// it has not been initialised yet. Then, it populates the neighbours for each cell.
+  /// it has not been initialised yet. Then, populates the neighbours for each cell.
   pub(crate) fn initialise_path_grid(&mut self) {
     if self.path_grid.is_none() {
       self.path_grid = Some(
