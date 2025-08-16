@@ -63,6 +63,7 @@ impl ObjectGrid {
       let ig = tile.coords.internal_grid;
       let terrain = tile.terrain;
       let tile_type = tile.tile_type;
+      let is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(3, 3) && ig == Point::new(9, 15);
       if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
           .get(&terrain)
@@ -74,16 +75,29 @@ impl ObjectGrid {
           .planes
           .iter()
           .filter_map(|plane| {
-            // TODO: Check if this is correct because it looks like tiles are missing
-            plane.data[0][0]
-              .as_ref()
-              .and_then(|t| if t.terrain < tile.terrain { Some(plane) } else { None })
+            let terrain_as_usize = tile.terrain as usize;
+            if is_monitored {
+              warn!(
+                "At {:?}, plane with layer [{}] is included: [{}] - because [{}] is [{:?}]",
+                tile.coords,
+                plane.layer.unwrap_or(usize::MAX),
+                plane.layer.unwrap_or(usize::MIN) < terrain_as_usize,
+                tile.terrain,
+                terrain_as_usize,
+              );
+            }
+            if let Some(plane_layer_as_usize) = plane.layer {
+              if plane_layer_as_usize < terrain_as_usize {
+                return Some(plane);
+              }
+            }
+            return None;
           })
           .filter_map(|plane| plane.get_tile(ig).and_then(|t| Some((t.terrain, t.tile_type))))
           .collect::<Vec<(TerrainType, TileType)>>();
         cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone());
-        if ig == Point::new(15, 12) {
-          warn!(
+        if is_monitored {
+          debug!(
             "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
             tile.coords,
             tile.terrain,

@@ -204,7 +204,7 @@ impl Cell {
   /// one chunk is clearly walkable, but in another chunk may not be (specifically when the tile type is of a partial
   /// fill type).
   fn is_walkable_connection(&self) -> bool {
-    (self.terrain == TerrainType::Land1 && is_filled_or_filled_at_facing_edge(self.ig, self.tile_type)
+    (self.terrain == TerrainType::Land1 && is_filled_at_facing_edge(self.ig, self.tile_type)
       || self.terrain.gt(&TerrainType::Land1))
       && self.terrain != TerrainType::Any
   }
@@ -218,7 +218,7 @@ impl Cell {
     if !self.is_walkable_connection {
       return false;
     }
-    if is_filled_or_filled_at_facing_edge(self.ig, self.tile_type) {
+    if is_filled_at_facing_edge(self.ig, self.tile_type) {
       return true;
     }
     if self.terrain > TerrainType::Land1 && is_filled_at_facing_edge_incl_corner_types(self.ig, self.tile_type) {
@@ -227,7 +227,7 @@ impl Cell {
     self.tile_below.as_ref().map_or(false, |tile_below| {
       let mut current = Some(tile_below);
       while let Some(below) = current {
-        if is_filled_or_filled_at_facing_edge(self.ig, below.tile_type) && below.terrain >= TerrainType::Land1 {
+        if is_filled_at_facing_edge(self.ig, below.tile_type) && below.terrain >= TerrainType::Land1 {
           return true;
         }
         current = below.below.as_deref();
@@ -398,7 +398,7 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
     .collect()
 }
 
-fn is_filled_or_filled_at_facing_edge(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
+fn is_filled_at_facing_edge(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
   (ig.x == 0
     && matches!(
       tile_type,

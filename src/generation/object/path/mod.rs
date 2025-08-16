@@ -149,7 +149,7 @@ pub fn calculate_paths(
         Direction::Center
       };
       let object_name = determine_path_object_name(&prev_direction, next_direction, point);
-      debug!(
+      trace!(
         "- Path cell [{}/{}] at point {:?} with next cell [{:?}] + previous cell [{:?}] has name [{:?}]",
         i + 1,
         path_segment.len(),
@@ -200,7 +200,7 @@ pub fn calculate_paths(
     .collect::<HashSet<_>>();
   if !cells_requiring_update.is_empty() {
     debug!(
-      "Found [{}] path cells where the object name needs to be updated: {:?}",
+      "Found [{}] path cells where the object name needs to be updated: {}",
       cells_requiring_update.len(),
       cells_requiring_update
         .iter()
