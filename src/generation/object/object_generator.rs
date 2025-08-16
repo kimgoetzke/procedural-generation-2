@@ -75,7 +75,7 @@ pub fn generate_object_data(
   let mut object_generation_data = (object_grid, tile_data);
   let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
   debug!(
-    "Generated object data for [{}] objects, at density [{}], for chunk {} in {} ms on {}",
+    "Generated object data for [{}] objects (density [{}]) for chunk {} in {} ms on {}",
     object_data.len(),
     format!("{:.0}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
     chunk_cg,
