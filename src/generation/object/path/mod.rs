@@ -242,7 +242,7 @@ fn finalise_object_names_along_the_path(object_grid: &mut ObjectGrid, path: &mut
 
       (point.clone(), neighbours)
     })
-    .filter(|(_, neighbours)| neighbours.len() > 1)
+    .filter(|(_, neighbours)| neighbours.len() >= 1)
     .collect::<HashSet<_>>();
   if !cells_requiring_update.is_empty() {
     trace!(
@@ -447,9 +447,9 @@ fn determine_path_object_name_from_neighbours(
   ig: &Point<InternalGrid>,
 ) -> ObjectName {
   use crate::generation::lib::Direction::*;
-  // If we only have two directions and the cell is an edge connection point, then we may need to add the direction
+  // If we have two or fewer directions and the cell is an edge connection point, then we may need to add the direction
   // to the expected connection point in the neighbouring chunk
-  if neighbour_directions.len() == 2 && ig.is_touching_edge() {
+  if neighbour_directions.len() <= 2 && ig.is_touching_edge() {
     let direction = direction_to_neighbour_chunk(&ig);
     if direction != Center {
       neighbour_directions.insert(direction);

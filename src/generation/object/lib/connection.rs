@@ -21,7 +21,7 @@ impl Connection {
   }
 }
 
-// TODO: Find out why left/right appear to be inverted - is it making up for a bug elsewhere?
+// TODO: Find out why left/right appear to be inverted - is this making up for a bug elsewhere?
 pub fn get_connection_points(point: &Point<InternalGrid>) -> [(Connection, Point<InternalGrid>); 4] {
   let p = point;
   [
