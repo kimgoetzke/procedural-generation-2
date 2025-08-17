@@ -13,7 +13,7 @@ impl Plugin for PostProcessorPlugin {
 
 pub(crate) fn process(mut chunk: Chunk, settings: &Settings) -> Chunk {
   let start_time = shared::get_time();
-  for layer in 1..TerrainType::length() {
+  for layer in (1..TerrainType::length()).rev() {
     let layer_name = TerrainType::from(layer);
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
       trace!("Skipped processing [{:?}] layer because it's disabled", layer_name);
@@ -51,7 +51,7 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
                 return Some((tile.coords.internal_grid, Some(tile_below.tile_type)));
               }
             } else if tile.terrain != TerrainType::ShallowWater {
-              // TODO: Find out why the below happening - it doesn't appear to be a problem in practice though
+              // TODO: Find out if the below still happens and why - it's not a problem in practice though
               warn!(
                 "Removed [{:?}] [{:?}] tile {:?} {:?} because it did not exist on the layer below",
                 tile.terrain, tile.tile_type, tile.coords.tile_grid, tile.coords.internal_grid
