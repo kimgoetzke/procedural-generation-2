@@ -159,6 +159,10 @@ fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &Updat
 /// The system that actually orchestrates the modification of the world and all its objects. This is the core system
 /// that drives the generation of the world and all its objects. It is triggered by spawning a
 /// [`WorldGenerationComponent`].
+///
+/// This system used to run stages in parallel but this made debugging annoying at times while 90%+ of generation time
+/// is consumed by 1) the wave function collapse algorithm which generates decorative objects and 2) the spawning of
+/// entities.
 fn world_generation_system(
   mut commands: Commands,
   existing_world: Query<Entity, With<WorldComponent>>,

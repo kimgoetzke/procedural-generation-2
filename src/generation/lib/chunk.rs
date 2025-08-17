@@ -83,7 +83,7 @@ fn generate_terrain_data(
       let normalised_noise = (clamped_noise + 1.) / 2.;
 
       // Adjust noise based on elevation metadata
-      let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
+      let elevation_offset = elevation_metadata.calculate_for_point(ig);
       let normalised_noise = ((normalised_noise * strength) + elevation_offset).clamp(0., 1.);
 
       // Calculate if this tile is a biome edge

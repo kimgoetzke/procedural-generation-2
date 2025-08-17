@@ -5,6 +5,7 @@ use bevy::log::*;
 use rand::Rng;
 use rand::prelude::StdRng;
 
+/// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
 
 impl Plugin for WfcPlugin {

@@ -27,7 +27,7 @@ pub struct ObjectGrid {
 }
 
 impl ObjectGrid {
-  fn new_uninitialised(cg: Point<ChunkGrid>) -> Self {
+  pub fn default(cg: Point<ChunkGrid>) -> Self {
     let object_grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
@@ -47,7 +47,7 @@ impl ObjectGrid {
     terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
     layered_plane: &LayeredPlane,
   ) -> Self {
-    let mut grid = ObjectGrid::new_uninitialised(cg);
+    let mut grid = ObjectGrid::default(cg);
     grid.initialise_cells(terrain_state_map, layered_plane);
 
     grid
@@ -261,5 +261,23 @@ impl ObjectGrid {
 
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
     self.object_grid = other.object_grid.clone();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  impl ObjectGrid {
+    pub fn default_walkable(cg: Point<ChunkGrid>) -> Self {
+      let mut grid = ObjectGrid::default(cg);
+      for row in &mut grid.object_grid {
+        for cell in row {
+          cell.initialise(TerrainType::Land2, TileType::Fill, &vec![], vec![]);
+        }
+      }
+
+      grid
+    }
   }
 }

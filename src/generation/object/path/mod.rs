@@ -37,7 +37,7 @@ pub fn calculate_paths(
     return object_grid;
   }
   if connection_points.len() == 1 {
-    if !is_edge_connection_point(&connection_points[0]) {
+    if !connection_points[0].is_touching_edge() {
       debug!(
         "Skipped path generation for chunk {} because it has no edge connection points",
         cg
@@ -388,7 +388,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
 
 fn push_path_if_valid(cell: &CellRef, result: &mut Vec<(Point<InternalGrid>, Direction)>) {
   let ig = get_cell_ig(cell);
-  if is_edge_connection_point(&ig) {
+  if ig.is_touching_edge() {
     result.push((ig, Direction::Center));
   }
 }
@@ -450,7 +450,7 @@ fn determine_path_object_name_from_neighbours(
   use crate::generation::lib::Direction::*;
   // If we only have two directions and the cell is an edge connection point, then we may need to add the direction
   // to the expected connection point in the neighbouring chunk
-  if neighbour_directions.len() == 2 && is_edge_connection_point(&ig) {
+  if neighbour_directions.len() == 2 && ig.is_touching_edge() {
     let direction = direction_to_neighbour_chunk(&ig);
     if direction != Center {
       neighbour_directions.insert(direction);
@@ -522,6 +522,158 @@ fn direction_to_neighbour_chunk(ig: &Point<InternalGrid>) -> Direction {
   }
 }
 
-fn is_edge_connection_point(ig: &Point<InternalGrid>) -> bool {
-  ig.x == 0 || ig.x == CHUNK_SIZE - 1 || ig.y == 0 || ig.y == CHUNK_SIZE - 1
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  #[should_panic(expected = "Failed to get connection points for cg(0, 0)")]
+  fn get_valid_connection_points_panics_when_there_are_no_points_for_cg() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let metadata = Metadata::default(cg);
+    get_valid_connection_points(&mut object_grid, &cg, &metadata);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_empty_list_when_no_connection_points_exist() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let mut metadata = Metadata::default(cg);
+    metadata.connection_points.insert(cg.clone(), vec![]);
+    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn get_valid_connection_points_filters_out_non_walkable_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    object_grid.object_grid[1][1].calculate_is_walkable(); // Point (1, 1) is not walkable
+    let mut metadata = Metadata::default(cg);
+    metadata
+      .connection_points
+      .insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
+    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
+    assert_eq!(result, vec![]);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_valid_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default_walkable(cg);
+    let mut metadata = Metadata::default(cg);
+    let expected_point1 = Point::new_internal_grid(1, 1);
+    let expected_point2 = Point::new_internal_grid(1, 2);
+    metadata
+      .connection_points
+      .insert(cg.clone(), vec![expected_point1, expected_point2]);
+    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
+    assert_eq!(result, vec![expected_point1, expected_point2]);
+  }
+
+  #[test]
+  fn determine_path_object_name_top_right_for_top_and_right_directions() {
+    let ig = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name(&Direction::Top, &Direction::Right, &ig),
+      ObjectName::PathTopRight
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_vertical_for_top_and_bottom_directions() {
+    let ig = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name(&Direction::Top, &Direction::Bottom, &ig),
+      ObjectName::PathVertical
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_horizontal_for_left_and_right_directions() {
+    let ig = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name(&Direction::Left, &Direction::Right, &ig),
+      ObjectName::PathHorizontal
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_top_for_top_and_center_directions() {
+    let ig = Point::new_internal_grid(5, 0); // i.e. top edge connection
+    assert_eq!(
+      determine_path_object_name(&Direction::Bottom, &Direction::Center, &ig),
+      ObjectName::PathVertical
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_undefined_for_unexpected_directions() {
+    let ig = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name(&Direction::Center, &Direction::Center, &ig),
+      ObjectName::PathUndefined
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_resolves_single_top_direction() {
+    let directions = HashSet::from([Direction::Top]);
+    let point = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathTop
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_resolves_two_directions_top_right() {
+    let directions = HashSet::from([Direction::Top, Direction::Right]);
+    let point = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathTopRight
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_resolves_three_directions_top_right_bottom() {
+    let directions = HashSet::from([Direction::Top, Direction::Right, Direction::Bottom]);
+    let point = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathRightVertical
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_resolves_four_directions() {
+    let directions = HashSet::from([Direction::Top, Direction::Right, Direction::Bottom, Direction::Left]);
+    let point = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathCross
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_resolves_edge_connection() {
+    let directions = HashSet::from([Direction::Top, Direction::Right]);
+    let point = Point::new_internal_grid(0, 5); // i.e. left edge connection
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathTopHorizontal
+    );
+  }
+
+  #[test]
+  fn determine_path_object_name_from_neighbours_falls_back_to_undefined() {
+    let directions = HashSet::new();
+    let point = Point::new_internal_grid(5, 5);
+    assert_eq!(
+      determine_path_object_name_from_neighbours(directions, &point),
+      ObjectName::PathUndefined
+    );
+  }
 }

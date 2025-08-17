@@ -174,6 +174,10 @@ impl Point<InternalGrid> {
   pub fn new_internal_grid(x: i32, y: i32) -> Self {
     Self::new(x, y)
   }
+
+  pub fn is_touching_edge(&self) -> bool {
+    self.x == 0 || self.x == CHUNK_SIZE - 1 || self.y == 0 || self.y == CHUNK_SIZE - 1
+  }
 }
 
 impl Point<TileGrid> {
@@ -361,5 +365,41 @@ mod tests {
     let p1: Point<InternalGrid> = Point::new(1, 1);
     let p2: Point<InternalGrid> = Point::new(1, 1);
     assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_touching_edge_true_top_edge() {
+    let p = Point::new_internal_grid(5, 0);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_bottom_edge() {
+    let p = Point::new_internal_grid(5, CHUNK_SIZE - 1);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_left_edge() {
+    let p = Point::new_internal_grid(0, 5);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_right_edge() {
+    let p = Point::new_internal_grid(CHUNK_SIZE - 1, 5);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_false_inside_grid() {
+    let p = Point::new_internal_grid(5, 5);
+    assert!(!p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_false_outside_grid() {
+    let p = Point::new_internal_grid(CHUNK_SIZE, CHUNK_SIZE);
+    assert!(!p.is_touching_edge());
   }
 }
