@@ -98,9 +98,8 @@ fn get_valid_connection_points(
     .iter()
     .filter(|p| {
       if let Some(cell) = object_grid.get_cell_mut(&p) {
-        cell.calculate_is_walkable();
         if cell.is_valid_connection_point() {
-          // Uncomment below for troubleshooting
+          // Uncomment below for debugging purposes
           // if let Some(tile_below) = &cell.tile_below {
           //   debug!("Keeping chunk {} connection point {:?} as a valid connection", cg, p,);
           //   tile_below.log();

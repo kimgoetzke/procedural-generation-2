@@ -20,7 +20,7 @@ impl<T: CoordType> NeighbourTile<T> {
     }
   }
 
-  pub(crate) fn new(direction: Point<T>, terrain_type: TerrainType, is_same: bool) -> NeighbourTile<T> {
+  pub fn new(direction: Point<T>, terrain_type: TerrainType, is_same: bool) -> NeighbourTile<T> {
     NeighbourTile {
       direction,
       terrain: terrain_type,

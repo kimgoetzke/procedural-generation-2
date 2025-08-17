@@ -40,8 +40,7 @@ pub struct Cell {
   connection: Box<Option<CellRef>>,
   g: f32,
   h: f32,
-  is_walkable_connection: bool,
-  is_walkable_tile: bool,
+  is_walkable: bool,
   // Wave function collapse specific fields
   is_collapsed: bool,
   is_initialised: bool,
@@ -57,6 +56,7 @@ impl PartialEq for Cell {
 }
 
 impl Cell {
+  /// Creates a new [`Cell`] with default values at the given internal grid coordinates.
   pub fn new(x: i32, y: i32) -> Self {
     Cell {
       ig: Point::new_internal_grid(x, y),
@@ -68,8 +68,7 @@ impl Cell {
       connection: Box::new(None),
       g: 0.0,
       h: 0.0,
-      is_walkable_connection: true,
-      is_walkable_tile: true,
+      is_walkable: true,
       is_collapsed: false,
       is_initialised: false,
       is_being_monitored: false,
@@ -78,6 +77,9 @@ impl Cell {
     }
   }
 
+  /// Initialises an uninitialised [`Cell`] i.e. one created with [`Cell::new`].
+  /// # Panics
+  /// If the cell has already been initialised, this method will panic.
   pub fn initialise(
     &mut self,
     terrain_type: TerrainType,
@@ -114,21 +116,30 @@ impl Cell {
     self.entropy = self.possible_states.len();
   }
 
+  /// Returns a reference to the coordinates of this cell.
   pub fn get_ig(&self) -> &Point<InternalGrid> {
     &self.ig
   }
 
+  /// Returns the sprite index of this cell. No information about the resource the index refers to is stored, but
+  /// it can be inferred from other fields such as [`Cell::get_terrain`] and [`Cell::get_tile_type`].
   pub fn get_index(&self) -> i32 {
     self.index
   }
 
+  /// Adds a vector of pathfinding neighbours to this cell.
+  /// # Panics
+  /// If the lock guard for any neighbour cannot be acquired, this method will panic.
   pub fn add_neighbours(&mut self, neighbours: Vec<CellRef>) {
     for neighbour in neighbours {
       self.add_neighbour(neighbour);
     }
   }
 
-  pub fn add_neighbour(&mut self, neighbour: CellRef) {
+  /// Adds a single pathfinding neighbour to this cell.
+  /// # Panics
+  /// If the lock guard for the neighbour cannot be acquired, this method will panic.
+  fn add_neighbour(&mut self, neighbour: CellRef) {
     let neighbour_ig = neighbour.try_lock().expect("Failed to lock cell to find").ig;
     if !self
       .neighbours
@@ -191,16 +202,17 @@ impl Cell {
 
   /// Returns whether this cell is walkable.
   pub fn is_walkable(&self) -> bool {
-    self.is_walkable_tile
+    self.is_walkable
   }
 
   /// Calculates whether this cell is walkable based on its terrain type and tile type.
   pub fn calculate_is_walkable(&mut self) {
-    self.is_walkable_connection = self.is_walkable_connection();
-    self.is_walkable_tile = self.is_walkable_tile();
+    self.is_walkable = (self.terrain == TerrainType::Land1 && self.tile_type == TileType::Fill
+      || self.terrain.gt(&TerrainType::Land1))
+      && self.terrain != TerrainType::Any;
   }
 
-  /// Same as [`Cell::is_walkable_tile`] but more lenient because there are many edge cases where a connection point in
+  /// Same as [`Cell::calculate_is_walkable`] but more lenient because there are many edge cases where a connection point in
   /// one chunk is clearly walkable, but in another chunk may not be (specifically when the tile type is of a partial
   /// fill type).
   fn is_walkable_connection(&self) -> bool {
@@ -209,19 +221,20 @@ impl Cell {
       && self.terrain != TerrainType::Any
   }
 
-  fn is_walkable_tile(&self) -> bool {
-    (self.terrain == TerrainType::Land1 && self.tile_type == TileType::Fill || self.terrain.gt(&TerrainType::Land1))
-      && self.terrain != TerrainType::Any
-  }
-
+  /// Returns whether this [`Cell`] is a valid connection point for pathfinding. The logic here is a little complex
+  /// because it must handle with a bunch of edge cases. Examples:
+  /// - The [`Cell`] is facing the edge of a chunk and is "filled towards to edge" while the touching tile on
+  ///   the neighbouring chunk is [`TileType::Fill`]. Therefore, this [`Cell`] must be included.
+  /// - The [`Cell`] is of a [`TileType`] and [`TerrainType`] combination that is not conclusive, but it has a
+  /// [`TileBelow`] that is considered walkable. In this case, the [`Cell`] is still a valid connection point.
   pub fn is_valid_connection_point(&self) -> bool {
-    if !self.is_walkable_connection {
+    if !self.is_walkable_connection() {
       return false;
     }
     if is_filled_at_facing_edge(self.ig, self.tile_type) {
       return true;
     }
-    if self.terrain > TerrainType::Land1 && is_filled_at_facing_edge_incl_corner_types(self.ig, self.tile_type) {
+    if self.terrain > TerrainType::Land1 && is_filled_at_facing_edge_including_corner_types(self.ig, self.tile_type) {
       return true;
     }
     self.tile_below.as_ref().map_or(false, |tile_below| {
@@ -244,10 +257,12 @@ impl Cell {
     }
   }
 
+  /// Sets the collapsed state of this [`Cell`].
   pub fn is_collapsed(&self) -> bool {
     self.is_collapsed
   }
 
+  /// Returns the entropy of this [`Cell`], which is the number of possible states it can collapse to.
   pub fn get_entropy(&self) -> usize {
     self.entropy
   }
@@ -256,13 +271,15 @@ impl Cell {
     &self.possible_states
   }
 
-  /// Sets the possible states of this cell. Does NOT update the entropy and can therefore cause an *inconsistent*
+  /// Sets the possible states of this [`Cell`]. Does NOT update the entropy and can therefore cause an *inconsistent*
   /// state. Only use this method if you know what you are doing. States should only be updated using
   /// [`Cell::clone_and_reduce`] or [`Cell::collapse`] as part of running the wave function collapse algorithm.
   pub fn override_possible_states(&mut self, states: Vec<TerrainState>) {
     self.possible_states = states;
   }
 
+  /// Clears all references to other [`Cell`]s, resets the connection, and sets the `g` and `h` costs to `0`. Only
+  /// used for pathfinding.
   pub fn clear_references(&mut self) {
     self.neighbours.clear();
     self.connection = Box::new(None);
@@ -270,7 +287,8 @@ impl Cell {
     self.h = 0.0;
   }
 
-  /// Used outside the wave function collapse algorithm to set the cell as collapsed with a single state.
+  /// Used outside the wave function collapse algorithm to set the [`Cell`] as collapsed with a single state.
+  /// Must only be called prior to the wave function collapse algorithm starting.
   pub fn set_collapsed(&mut self, object_name: ObjectName) {
     let i = object_name.get_index_for_path();
     self.index = i;
@@ -279,6 +297,10 @@ impl Cell {
     self.possible_states = vec![TerrainState::new_with_no_neighbours(object_name, i, 1)];
   }
 
+  /// Clones this [`Cell`] and reduces its possible states based on the reference cell and the connection to it.
+  /// Returns a tuple containing a boolean indicating whether the [`Cell`] was updated and the cloned and modified cell.
+  /// # Errors
+  /// If the [`Cell`] has no possible states left after the reduction, an error is returned.
   pub fn clone_and_reduce(
     &self,
     reference_cell: &Cell,
@@ -313,6 +335,9 @@ impl Cell {
     }
   }
 
+  /// Collapses this [`Cell`] to a single state based on the weights of the remaining possible states. This means
+  /// that the [`Cell`] will be set to a single state, with an entropy of `0`, the `is_collapsed` flag set to `true`,
+  /// and the index set to the index of the only remaining state.
   pub fn collapse(&mut self, rng: &mut StdRng) {
     let possible_states_count = self.possible_states.len();
     let state = if possible_states_count == 1 {
@@ -363,6 +388,11 @@ impl Cell {
     self.possible_states = vec![state.clone()];
   }
 
+  /// Verifies that the current state of this [`Cell`] is valid with respect to the given reference cell and the
+  /// connection to it. This is used to ensure that the wave function collapse algorithm does not produce
+  /// invalid states that would not be allowed by the rules defined in the reference cell.
+  /// # Errors
+  /// If the current state of this [`Cell`] is not valid.
   pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<(), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
@@ -398,6 +428,14 @@ fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: 
     .collect()
 }
 
+/// Returns `true` if the tile type is touching the edge of a chunk and is a fill type at the facing edge of the chunk
+/// or if it is [`TileType::Fill`]. For example, if the tile type is [`TileType::LeftFill`] and the `ig.x` is `0`, it
+/// means that the tile is touching the left edge of the chunk and is filled at that edge.
+///
+/// This allows is useful when determining whether a tile is a valid connection point for pathfinding but none of the
+/// lower layers, except for the water layers, are [`TileType::Fill`]. In this case, the neighbouring chunk will have
+/// a connecting tile that is rather likely of type [`TileType::Fill`] and therefore a valid connection point. We must
+/// therefore not remove the partially filled tile as it would otherwise create incomplete paths.
 fn is_filled_at_facing_edge(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
   (ig.x == 0
     && matches!(
@@ -422,9 +460,8 @@ fn is_filled_at_facing_edge(ig: Point<InternalGrid>, tile_type: TileType) -> boo
     || tile_type == TileType::Fill
 }
 
-fn is_filled_at_facing_edge_incl_corner_types(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
+fn is_filled_at_facing_edge_including_corner_types(ig: Point<InternalGrid>, tile_type: TileType) -> bool {
   use TileType::*;
-
   match tile_type {
     Fill | BottomFill | TopFill if ig.x == 0 || ig.x == CHUNK_SIZE - 1 => true,
     Fill | LeftFill | RightFill if ig.y == 0 || ig.y == CHUNK_SIZE - 1 => true,
@@ -683,24 +720,26 @@ mod tests {
   }
 
   #[test]
-  fn is_valid_connection_point_returns_false_if_self_is_not_walkable() {
-    let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = false;
-    assert!(!cell.is_valid_connection_point());
-  }
-
-  #[test]
   fn is_valid_connection_point_returns_true_if_tile_type_is_fill() {
     let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land1;
     cell.tile_type = TileType::Fill;
     assert!(cell.is_valid_connection_point());
   }
 
   #[test]
+  fn is_valid_connection_point_returns_false_if_self_is_not_walkable() {
+    let mut cell = Cell::new(0, 0);
+    cell.terrain = TerrainType::Land2;
+    cell.tile_type = TileType::Unknown;
+    // This cell is not walkable because it is not a fill type and has no tile below
+    assert!(!cell.is_valid_connection_point());
+  }
+
+  #[test]
   fn is_valid_connection_point_returns_true_if_any_below_tile_is_filled_and_land1_or_higher() {
     let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land2;
     cell.tile_type = TileType::Unknown;
     cell.tile_below = Some(TileBelow {
       terrain: TerrainType::Land2,
@@ -713,7 +752,7 @@ mod tests {
   #[test]
   fn is_valid_connection_point_returns_true_if_facing_edge_and_land1_or_higher() {
     let mut cell = Cell::new(0, 4);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land2;
     cell.tile_type = TileType::OuterCornerBottomRight;
     cell.tile_below = None;
     assert!(cell.is_valid_connection_point());
@@ -722,7 +761,7 @@ mod tests {
   #[test]
   fn is_valid_connection_point_returns_true_if_below_is_facing_edge_and_land1_or_higher() {
     let mut cell = Cell::new(0, 4);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land2;
     cell.tile_type = TileType::Unknown;
     cell.tile_below = Some(TileBelow::from(TerrainType::Land1, TileType::LeftFill, None));
     assert!(cell.is_valid_connection_point());
@@ -731,12 +770,12 @@ mod tests {
   #[test]
   fn is_valid_connection_point_returns_false_if_no_below_tile_is_filled() {
     let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land3;
     cell.tile_type = TileType::Unknown;
     cell.tile_below = Some(TileBelow {
-      terrain: TerrainType::Land3,
+      terrain: TerrainType::Land2,
       tile_type: TileType::Unknown,
-      below: Some(Box::new(TileBelow::from(TerrainType::Land2, TileType::Unknown, None))),
+      below: Some(Box::new(TileBelow::from(TerrainType::Land1, TileType::Unknown, None))),
     });
     assert!(!cell.is_valid_connection_point());
   }
@@ -744,7 +783,7 @@ mod tests {
   #[test]
   fn is_valid_connection_point_returns_false_if_only_filled_tile_below_is_water() {
     let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land2;
     cell.tile_type = TileType::Unknown;
     cell.tile_below = Some(TileBelow {
       terrain: TerrainType::Land1,
@@ -757,7 +796,7 @@ mod tests {
   #[test]
   fn is_valid_connection_point_returns_false_if_no_tile_below() {
     let mut cell = Cell::new(0, 0);
-    cell.is_walkable_connection = true;
+    cell.terrain = TerrainType::Land2;
     cell.tile_type = TileType::Unknown;
     cell.tile_below = None;
     assert!(!cell.is_valid_connection_point());
