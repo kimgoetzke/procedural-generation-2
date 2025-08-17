@@ -152,9 +152,6 @@
       tile_type: Single,
       permitted_self: [
         Empty,
-        GrassFlower1,
-        GrassFlower2,
-        GrassFlower3,
       ]
     ),
   ]

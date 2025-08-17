@@ -56,8 +56,8 @@ impl Tile {
     )
   }
 
-  pub fn lower_terrain_by_one(&mut self, tile_type: TileType) {
-    self.terrain = TerrainType::from(self.terrain as usize - 1);
+  pub fn update_to(&mut self, tile_type: TileType, terrain: TerrainType) {
+    self.terrain = terrain;
     self.tile_type = tile_type;
   }
 }

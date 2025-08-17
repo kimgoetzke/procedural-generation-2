@@ -1,5 +1,7 @@
 use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
-use crate::generation::lib::{DraftTile, Plane, TerrainType};
+use crate::coords::Point;
+use crate::coords::point::InternalGrid;
+use crate::generation::lib::{DraftTile, Plane, TerrainType, Tile};
 use crate::resources::Settings;
 
 /// A [`LayeredPlane`] contains all relevant information about the [`crate::generation::lib::Tile`]s in a
@@ -25,7 +27,7 @@ impl LayeredPlane {
     for layer in 0..TerrainType::length() {
       let mut current_layer = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
 
-      // Skip water layer because water is not rendered since the background colour is used instead
+      // Skip lowest water layer because water is not rendered since the background colour is used instead
       if layer == 0 {
         final_layers.push(Plane::new(current_layer, Some(layer), settings));
         continue;
@@ -74,5 +76,17 @@ impl LayeredPlane {
         (this_and_above.get_mut(0), below.get_mut(layer - 1))
       }
     }
+  }
+
+  /// Returns a reference to the tile on the highest layer at the specified internal grid coordinates, if it exists.
+  /// This function does not use the [`LayeredPlane::flat`] plane, but instead uses the max layer from the
+  /// [`LayeredPlane::planes`] vector to find the tile.
+  pub fn get_tile_from_highest_layer(&mut self, ig: &Point<InternalGrid>) -> Option<&Tile> {
+    self
+      .planes
+      .iter()
+      .filter(|plane| if let Some(_) = plane.get_tile(*ig) { true } else { false })
+      .max_by(|a, b| a.layer.cmp(&b.layer))
+      .map(|plane| plane.get_tile(*ig).expect("Tile should exist on the highest layer"))
   }
 }
