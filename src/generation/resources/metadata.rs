@@ -38,7 +38,7 @@ pub struct Metadata {
 impl Metadata {
   /// Returns the biome metadata for the given [`Point<ChunkGrid>`] which includes the biome metadata for the four
   /// adjacent chunks as well.
-  pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet {
+  pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet<'_> {
     let bm: HashMap<Direction, &BiomeMetadata> = get_direction_points(cg)
       .iter()
       .map(|(direction, point)| {
