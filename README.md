@@ -1,7 +1,8 @@
 # Procedural Generation Project 2
 
 This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust,
-using Bevy engine (v0.16). The purpose of this project was to familiarise myself a little more with Rust and procedural
+using Bevy engine (v0.16.1). The purpose of this project was to familiarise myself a little more with Rust and
+procedural
 generation. It's a follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids),
 and my first, non-Rust procedural generation
 project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedural-generation-1).
@@ -20,24 +21,27 @@ techniques.
 
 ## Features
 
-- Generates an infinite and animated, 2D pixel art world
+- Generates an infinite and animated, 2D pixel art world that is fully deterministic
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
     - Uses multi-fractal Perlin noise to generate terrain layers
     - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g.
       sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
-      transitions/layering
-    - Uses a deterministic chunk-based approach (as can be seen in the GIFs)
+      transitions and layering
+    - Uses a chunk-based approach (as can be seen in the GIFs)
     - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual elevation
       changes over great distances and inter-chunk biome changes without reducing generation performance
 - Object generation:
-    - Uses the wave function collapse algorithm to generate objects such as trees, ruins, stones, etc.
+    - Uses a basic A* pathfinding algorithm implementation to generate paths crossing multiple chunks
+    - Uses the wave function collapse algorithm to generate additional decorative objects such as trees, ruins,
+      stones, etc.
     - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
       for example, ruins can span multiple tiles and span over multiple terrain types
 - Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
-- `bevy-pancam` plugin for free camera movement
+- `bevy_pancam` plugin for free camera movement
+- `iyes_perf_ui` plugin for performance metrics in an overlay
 
 ## Attribution
 
@@ -45,6 +49,16 @@ techniques.
 - All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 ## How to develop
+
+### Haven't looked at the codebase in a while or looking at it for the first time?
+
+- Start with the `GenerationStage` enum in conjunction with the `world_generation_system` in `GenerationPlugin` which is
+  driving the generation process
+- The terrain/world generation which generates chunks and tiles sits in `crate::generation::world`
+- The object generation which generates paths and decorative objects places on the terrain lives in
+  `crate::generation::object`
+- Resources used for both of the above can be found in `crate::generation::resources`
+- Structs and enums used across multiple modules sit in `crate::generation::lib`
 
 ### Using Nix Flakes, JetBrains RustRover & Direnv
 
@@ -103,8 +117,11 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 
 #### Run configurations
 
-- Create a run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
-- Create a run configuration with environment variable
-  `RUST_LOG=procedural_generation_2=debug,procedural_generation_2::generation::object=trace` to add WFC trace logs too
-- Create a run configuration with environment variable `RUST_LOG=bevy_ecs=debug` to see Bevy ECS logs (e.g. which system
+The `.run` folder contains a few run configurations for RustRover. Alternatively, you may want to consider creating:
+
+- A run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
+- A run configuration that also appends
+  `,procedural_generation_2::generation::object=trace,procedural_generation_2::generation::path=trace` to `RUST_LOG` for
+  WFC and pathfinding trace logs
+- A run configuration with environment variable `RUST_LOG=bevy_ecs=debug` to see Bevy ECS logs (e.g. which system
   caused an `error[B0003]`)
