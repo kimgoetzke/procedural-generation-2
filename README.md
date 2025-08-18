@@ -55,7 +55,7 @@ techniques.
 - Start with the `GenerationStage` enum in conjunction with the `world_generation_system` in `GenerationPlugin` which is
   driving the generation process
 - The terrain/world generation which generates chunks and tiles sits in `crate::generation::world`
-- The object generation which generates paths and decorative objects places on the terrain lives in
+- The object generation which generates paths and decorative objects placed on the terrain lives in
   `crate::generation::object`
 - Resources used for both of the above can be found in `crate::generation::resources`
 - Structs and enums used across multiple modules sit in `crate::generation::lib`
