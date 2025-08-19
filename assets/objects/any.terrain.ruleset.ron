@@ -4,7 +4,7 @@
     (
       index: 0,
       name: Empty,
-      weight: 100,
+      weight: 200,
       permitted_neighbours: [
         (
           Top,
