@@ -12,8 +12,11 @@ techniques.
 ## Demo
 
 [![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
+
+_The above video has not been updated to feature paths yet._ 
+
 ![Screenshot 1](assets/ignore/screenshot1.png)
-![Screenshot 2](assets/ignore/screenshot2.png)
+![Screenshot 4](assets/ignore/screenshot4.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
