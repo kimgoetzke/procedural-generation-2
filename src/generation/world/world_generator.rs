@@ -2,8 +2,10 @@ use crate::components::{AnimationMeshComponent, AnimationTimer};
 use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::World;
-use crate::generation::lib::{Chunk, ChunkComponent, Plane, TerrainType, Tile, TileMeshComponent, shared};
-use crate::generation::resources::{GenerationResourcesCollection, Metadata};
+use crate::generation::lib::{
+  Chunk, ChunkComponent, GenerationResourcesCollection, Plane, TerrainType, Tile, TileMeshComponent, shared,
+};
+use crate::generation::resources::Metadata;
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -31,7 +33,7 @@ pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, sett
     chunks.push(chunk);
   }
   debug!(
-    "Generated {} chunks in {} ms on {}",
+    "Generated [{}] chunks in {} ms on {}",
     chunks.len(),
     shared::get_time() - start_time,
     shared::thread_name()

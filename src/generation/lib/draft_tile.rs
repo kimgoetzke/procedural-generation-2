@@ -4,10 +4,12 @@ use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::terrain_type::TerrainType;
 use crate::generation::resources::Climate;
 
-/// A `DraftTile` contains the key information to generate a `Tile` and is therefore only an intermediate
-/// representation. While the `Coords` and `TerrainType` of a tile will remain the same after the conversion, the
-/// `layer` will be modified when creating a `Tile` from a `DraftTile` by adding the y-coordinate of the world grid
-/// `Coords` to the layer.
+/// Contains the key information to generate a [`Tile`][t] and is therefore only an intermediate representation.
+/// While the [`Coords`] and [`TerrainType`] of a tile will remain the same after the conversion, the
+/// `layer` will be modified when creating a `Tile` from a [`DraftTile`] by adding the y-coordinate of the world grid
+/// [`Coords`] to the layer.
+///
+/// [t]: crate::generation::lib::Tile
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct DraftTile {
   pub coords: Coords,

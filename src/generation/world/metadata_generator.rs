@@ -1,8 +1,8 @@
 use crate::constants::*;
 use crate::coords::Point;
-use crate::coords::point::ChunkGrid;
+use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
-use crate::generation::lib::{TerrainType, shared};
+use crate::generation::lib::{Direction, TerrainType, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
@@ -12,6 +12,8 @@ use bevy::prelude::{EventReader, EventWriter, NextState, OnEnter, Res, ResMut};
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
+use std::hash::Hasher;
+use std::hash::{DefaultHasher, Hash};
 use std::ops::Range;
 
 pub struct MetadataGeneratorPlugin;
@@ -83,6 +85,7 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
       generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
+      generate_connection_points(&mut metadata, &settings, cg);
       metadata.index.push(cg);
     })
   });
@@ -94,12 +97,7 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   );
 }
 
-fn generate_elevation_metadata(
-  metadata: &mut ResMut<Metadata>,
-  x: i32,
-  y: i32,
-  metadata_settings: &GenerationMetadataSettings,
-) {
+fn generate_elevation_metadata(metadata: &mut Metadata, x: i32, y: i32, metadata_settings: &GenerationMetadataSettings) {
   let grid_size = (CHUNK_SIZE as f32 - 1.) as f64;
   let (x_range, x_step) = calculate_range_and_step_size(x, grid_size, metadata_settings);
   let (y_range, y_step) = calculate_range_and_step_size(y, grid_size, metadata_settings);
@@ -117,7 +115,8 @@ fn generate_elevation_metadata(
 
 // TODO: Consider improving this range calculation because it's too easy for a user to "break" it via the UI
 /// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
-/// the elevation offset. The step size is the amount of elevation change per `Tile` (not per `Chunk`).
+/// the elevation offset. The step size is the amount of elevation change per [`crate::generation::lib::Tile`]
+/// (not per [`crate::generation::lib::Chunk`]).
 fn calculate_range_and_step_size(
   coordinate: i32,
   grid_size: f64,
@@ -175,4 +174,176 @@ fn generate_biome_metadata(
   let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
   trace!("Generated: {:?}", bm);
   metadata.biome.insert(cg, bm);
+}
+
+fn generate_connection_points(metadata: &mut ResMut<Metadata>, settings: &Settings, cg: Point<ChunkGrid>) {
+  let connection_points = calculate_connection_points_for_cg(settings, &cg);
+  metadata.connection_points.insert(cg, connection_points);
+}
+
+fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
+  let mut connection_points = Vec::new();
+  for (direction, neighbour_cg) in get_cardinal_direction_points(&cg) {
+    let hash = generate_hash(&cg, &neighbour_cg);
+    let mut rng = StdRng::seed_from_u64(hash);
+    let num_points = match rng.random_range(0..100) {
+      0..=40 => 0,
+      _ => 1,
+    };
+    let mut connection_points_for_edge = (0..num_points)
+      .map(|_| {
+        let coordinate = rng.random_range(2..CHUNK_SIZE - 2);
+        match direction {
+          Direction::Top => Point::new_internal_grid(coordinate, 0),
+          Direction::Right => Point::new_internal_grid(CHUNK_SIZE - 1, coordinate),
+          Direction::Bottom => Point::new_internal_grid(coordinate, CHUNK_SIZE - 1),
+          Direction::Left => Point::new_internal_grid(0, coordinate),
+          _ => panic!(
+            "Unexpected intercardinal direction: [{:?}] - only cardinal directions are valid",
+            direction
+          ),
+        }
+      })
+      .collect::<Vec<_>>();
+    connection_points.append(&mut connection_points_for_edge);
+  }
+
+  connection_points.sort();
+  connection_points.dedup();
+  if connection_points.len() == 1 {
+    let mut rng = StdRng::seed_from_u64(shared::calculate_seed(*cg, settings.world.noise_seed));
+    loop {
+      let new_point = Point::new_internal_grid(rng.random_range(1..CHUNK_SIZE - 2), rng.random_range(1..CHUNK_SIZE - 2));
+      if !connection_points.contains(&new_point) {
+        trace!("Added an internal connection point {:?} for chunk {}", new_point, cg);
+        connection_points.push(new_point);
+        break;
+      }
+    }
+  }
+
+  if !connection_points.is_empty() {
+    trace!(
+      "{} has [{}] connection points: {:?}",
+      cg,
+      connection_points.len(),
+      connection_points
+    );
+  }
+
+  connection_points
+}
+
+/// Generates a hash based on ordered chunk grid points. This leads to the same hash for the same pair of
+/// chunk grids, regardless of the order in which they are passed.
+fn generate_hash(reference_cg: &Point<ChunkGrid>, neighbour_cg: &Point<ChunkGrid>) -> u64 {
+  let mut hasher = DefaultHasher::new();
+  let (smaller_point, larger_point) = if reference_cg < neighbour_cg {
+    (*reference_cg, *neighbour_cg)
+  } else {
+    (*neighbour_cg, *reference_cg)
+  };
+  format!("{:?}:{:?}", smaller_point, larger_point).hash(&mut hasher);
+
+  hasher.finish()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::coords::Point;
+  use crate::generation::lib::Direction;
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_1() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(1, 1))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_2() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(0, 0))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_1() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(50, 100))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_2() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-9999, 9999))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_large_numbers_3() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(91933459, 89345345))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_1() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-1, -1))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_2() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-25, -74))
+  }
+
+  #[test]
+  fn calculate_connection_points_in_matching_pairs_for_negative_numbers_3() {
+    calculate_connection_points_generates_matching_pairs(Point::new_chunk_grid(-52939252, -82445308))
+  }
+
+  fn calculate_connection_points_generates_matching_pairs(cg: Point<ChunkGrid>) {
+    // Generate connection points for requested point
+    let settings = Settings { ..Default::default() };
+    let mut connection_points_map = std::collections::HashMap::new();
+    let connection_points = calculate_connection_points_for_cg(&settings, &cg);
+    connection_points_map.insert(cg, connection_points);
+
+    // Generate connection points for all neighbors
+    for (_, neighbor_cg) in get_cardinal_direction_points(&cg) {
+      let neighbor_points = calculate_connection_points_for_cg(&settings, &neighbor_cg);
+      connection_points_map.insert(neighbor_cg, neighbor_points);
+    }
+
+    // Assert that no point has more than the permitted number of connections
+    for (cg, cps) in &connection_points_map {
+      assert!(cps.len() <= 8, "Neighbor {:?} has more than 8 connections: {:?}", cg, cps);
+    }
+
+    // For each direction in turn, assert that connection points are matching pairs
+    for (direction, neighbor_cg) in get_cardinal_direction_points(&cg) {
+      let reference_connection_points = connection_points_map
+        .get(&cg)
+        .expect("Failed to find connection points for current chunk grid");
+      let neighbor_connection_points = connection_points_map
+        .get(&neighbor_cg)
+        .expect("Failed to find connection points for current chunk grid");
+
+      for ig in reference_connection_points {
+        let (expected_direction, expected_coordinate) = match direction {
+          Direction::Top if ig.y == 0 => (Direction::Bottom, ig.x),
+          Direction::Bottom if ig.y == CHUNK_SIZE - 1 => (Direction::Top, ig.x),
+          Direction::Left if ig.x == 0 => (Direction::Right, ig.y),
+          Direction::Right if ig.x == CHUNK_SIZE => (Direction::Left, ig.y),
+          _ => continue,
+        };
+        let is_matching_pair = neighbor_connection_points
+          .iter()
+          .any(|neighbour_ig| match expected_direction {
+            Direction::Top => neighbour_ig.y == 0 && neighbour_ig.x == expected_coordinate,
+            Direction::Bottom => neighbour_ig.y == CHUNK_SIZE - 1 && neighbour_ig.x == expected_coordinate,
+            Direction::Left => neighbour_ig.x == 0 && neighbour_ig.y == expected_coordinate,
+            Direction::Right => neighbour_ig.x == CHUNK_SIZE - 1 && neighbour_ig.y == expected_coordinate,
+            _ => false,
+          });
+        assert!(
+          is_matching_pair,
+          "No matching connection point for {:?} at {:?} in neighbor {:?}",
+          direction, ig, neighbor_cg
+        );
+      }
+    }
+  }
 }

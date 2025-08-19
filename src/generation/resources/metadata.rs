@@ -20,9 +20,9 @@ impl Plugin for MetadataPlugin {
 }
 
 /// This resource holds data used during world generation, providing context that spans multiple chunks. In practice,
-/// data is stored in `HashMap`s with `Point<ChunkGrid>` as keys.
+/// data is stored in [`HashMap`]s with [`Point<ChunkGrid>`] as keys.
 ///
-/// For example, `ElevationMetadata` is used in tile generation to ensure seamless terrain transitions across chunks
+/// For example, [`ElevationMetadata`] is used in tile generation to ensure seamless terrain transitions across chunks
 /// which allows you to configure smooth transitions from water in the west, through coastal areas and grassy plains,
 /// to forests in the east.
 #[derive(Resource, Default, Clone, Reflect)]
@@ -32,12 +32,13 @@ pub struct Metadata {
   pub index: Vec<Point<ChunkGrid>>,
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
   pub biome: HashMap<Point<ChunkGrid>, BiomeMetadata>,
+  pub connection_points: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
 }
 
 impl Metadata {
-  /// Returns the biome metadata for the given `Point<ChunkGrid>` which includes the biome metadata for the four
+  /// Returns the biome metadata for the given [`Point<ChunkGrid>`] which includes the biome metadata for the four
   /// adjacent chunks as well.
-  pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet {
+  pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet<'_> {
     let bm: HashMap<Direction, &BiomeMetadata> = get_direction_points(cg)
       .iter()
       .map(|(direction, point)| {
@@ -66,12 +67,15 @@ impl Metadata {
   }
 }
 
-/// Metadata used to calculate an additional offset for any given `Point<InternalGrid>`. It is defined at the
-/// `ChunkGrid` level and includes:
+/// Metadata used to calculate an additional offset for any given [`Point<InternalGrid>`]. It is defined at the
+/// [`ChunkGrid`] level and includes:
 /// - `x_step`: The total elevation change applied across the x-axis of the chunk.
-/// - `x`: The exact range of x-values within the chunk that achieve the specified elevation change.
+/// - `x_range`: The exact range of x-values within the chunk that achieve the specified elevation change.
 /// - `y_step`: The total elevation change applied across the y-axis of the chunk.
-/// - `y`: The exact range of y-values within the chunk that achieve the specified elevation change.
+/// - `y_range`: The exact range of y-values within the chunk that achieve the specified elevation change.
+///
+/// The [`ElevationMetadata::is_enabled`] flag indicates whether elevation metadata is enabled or disabled, which
+/// can be done via the settings, for the chunk.
 #[derive(Clone, Debug, Reflect)]
 pub struct ElevationMetadata {
   pub is_enabled: bool,
@@ -96,8 +100,8 @@ impl Display for ElevationMetadata {
 }
 
 impl ElevationMetadata {
-  /// Give it a `Point<InternalGrid>` and it will calculate the elevation offset you need to apply for that point.
-  pub fn calculate_for_point(&self, ig: Point<InternalGrid>, _grid_size: i32, _grid_buffer: i32) -> f64 {
+  /// Give it a [`Point<InternalGrid>`] and it will calculate the elevation offset you need to apply for that point.
+  pub fn calculate_for_point(&self, ig: Point<InternalGrid>) -> f64 {
     if !self.is_enabled {
       return 0.0;
     }
@@ -238,5 +242,129 @@ impl Climate {
       n if n < 0.65 => Climate::Moderate,
       _ => Climate::Humid,
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  impl Metadata {
+    pub fn default(current_chunk_cg: Point<ChunkGrid>) -> Self {
+      Self {
+        current_chunk_cg,
+        index: vec![],
+        elevation: HashMap::new(),
+        biome: HashMap::new(),
+        connection_points: HashMap::new(),
+      }
+    }
+  }
+
+  #[test]
+  fn get_biome_metadata_for_retrieves_biome_metadata_for_all_directions() {
+    let mut metadata = Metadata::default(Point::new_chunk_grid(0, 0));
+    let cg = Point::new_chunk_grid(0, 0);
+
+    // Given some random metadata
+    for (direction, point) in get_direction_points(&cg) {
+      metadata
+        .biome
+        .insert(point.clone(), BiomeMetadata::new(point, false, 0.5, 5, Climate::Moderate));
+      if direction == Direction::Top {
+        metadata
+          .biome
+          .insert(point.clone(), BiomeMetadata::new(point, false, 0.1, 10, Climate::Dry));
+      } else if direction == Direction::BottomLeft {
+        metadata
+          .biome
+          .insert(point.clone(), BiomeMetadata::new(point, false, 0.8, 11, Climate::Humid));
+      }
+    }
+
+    let result = metadata.get_biome_metadata_for(&cg);
+
+    assert_eq!(result.this.cg, cg);
+    assert_eq!(result.this.is_rocky, false);
+    assert_eq!(result.top_right.rainfall, 0.5);
+    assert_eq!(result.top_right.max_layer, 5);
+    assert_eq!(result.top_right.climate, Climate::Moderate);
+    assert_eq!(result.top.cg, Point::new(0, 1));
+    assert_eq!(result.top.is_rocky, false);
+    assert_eq!(result.top.rainfall, 0.1);
+    assert_eq!(result.top.max_layer, 10);
+    assert_eq!(result.bottom_left.cg, Point::new(-1, -1));
+    assert_eq!(result.bottom_left.rainfall, 0.8);
+    assert_eq!(result.bottom_left.climate, Climate::Humid);
+  }
+
+  #[test]
+  #[should_panic(expected = "Failed to get biome metadata for cg(-1, 1) when retrieving data for cg(0, 0)")]
+  fn get_biome_metadata_for_panics_when_biome_metadata_is_missing_for_a_direction() {
+    let mut metadata = Metadata::default(Point::new_chunk_grid(0, 0));
+    let cg = Point::new_chunk_grid(0, 0);
+
+    // Given incomplete metadata
+    metadata
+      .biome
+      .insert(cg.clone(), BiomeMetadata::new(cg.clone(), false, 0.5, 10, Climate::Moderate));
+
+    metadata.get_biome_metadata_for(&cg);
+  }
+
+  #[test]
+  fn calculate_for_point_is_zero_offset_when_elevation_is_disabled() {
+    let elevation_metadata = ElevationMetadata {
+      is_enabled: false,
+      x_step: 1.0,
+      x_range: 0.0..10.0,
+      y_step: 1.0,
+      y_range: 0.0..10.0,
+    };
+    let ig = Point::new_internal_grid(5, 5);
+    let result = elevation_metadata.calculate_for_point(ig);
+    assert_eq!(result, 0.0);
+  }
+
+  #[test]
+  fn calculate_for_point_calculates_correct_offset_for_point_within_range() {
+    let elevation_metadata = ElevationMetadata {
+      is_enabled: true,
+      x_step: 0.01,
+      x_range: 0.0..5.,
+      y_step: 0.01,
+      y_range: 0.0..5.,
+    };
+    let ig = Point::new_internal_grid(4, 6);
+    let result = elevation_metadata.calculate_for_point(ig);
+    assert_eq!(result, 4.98);
+  }
+
+  #[test]
+  fn calculate_for_point_clamps_offset_to_range_limits() {
+    let elevation_metadata = ElevationMetadata {
+      is_enabled: true,
+      x_step: 0.5,
+      x_range: 0.0..10.,
+      y_step: 0.3,
+      y_range: 0.0..10.,
+    };
+    let ig = Point::new_internal_grid(4, 6);
+    let result = elevation_metadata.calculate_for_point(ig);
+    assert_eq!(result, 10.);
+  }
+
+  #[test]
+  fn calculates_correct_offset_for_negative_coordinates() {
+    let elevation_metadata = ElevationMetadata {
+      is_enabled: true,
+      x_step: 0.5,
+      x_range: -5.0..5.0,
+      y_step: 0.3,
+      y_range: -5.0..5.0,
+    };
+    let ig = Point::new_internal_grid(1, 6);
+    let result = elevation_metadata.calculate_for_point(ig);
+    assert_eq!(result, -1.5);
   }
 }

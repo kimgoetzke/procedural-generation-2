@@ -36,6 +36,8 @@ pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
+pub const GENERATE_PATHS: bool = true;
+pub const GENERATE_DECORATION: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
@@ -43,7 +45,8 @@ pub const MAX_CHUNKS: usize = 9;
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
-/// `TileType`s of outermost tiles are known. Must not be modified directly. Change `CHUNK_SIZE` instead.
+/// [`crate::generation::lib::TileType`]s of outermost tiles are known. Must not be modified directly. Change
+/// [`CHUNK_SIZE`] instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The size of a chunk that is rendered on the screen.
 pub const CHUNK_SIZE: i32 = 16;
@@ -124,6 +127,9 @@ pub const OBJ_L3_HUMID_PATH: &str = "objects/objects-l3-humid.png";
 pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
 pub const DEFAULT_OBJ_ROWS: u32 = 2;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const PATHS_PATH: &str = "objects/paths.png";
+pub const PATHS_COLUMNS: u32 = 17;
+pub const PATHS_ROWS: u32 = 5;
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);

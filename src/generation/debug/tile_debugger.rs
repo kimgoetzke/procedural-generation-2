@@ -2,15 +2,15 @@ use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
-use crate::generation::lib::{ObjectComponent, Tile, TileMeshComponent};
-use crate::generation::resources::{ChunkComponentIndex, GenerationResourcesCollection};
+use crate::generation::lib::{GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent};
+use crate::generation::resources::ChunkComponentIndex;
 use crate::resources::Settings;
-use bevy::app::{App, Plugin, Update};
+use bevy::app::{App, Plugin, Startup, Update};
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
-  Commands, Component, Entity, EventReader, JustifyText, Name, OnAdd, OnRemove, Query, Res, ResMut, Resource, Text2d,
-  TextFont, Transform, Trigger, Vec3, Visibility, With, default,
+  Commands, Component, Entity, EventReader, IntoSystem, JustifyText, Name, Observer, OnAdd, OnRemove, Query, Res, ResMut,
+  Resource, Text2d, TextFont, Transform, Trigger, Vec3, Visibility, With, default,
 };
 use bevy::sprite::Anchor;
 use bevy::text::{LineBreak, TextBounds, TextColor, TextLayout};
@@ -20,11 +20,7 @@ pub struct TileDebuggerPlugin;
 impl Plugin for TileDebuggerPlugin {
   fn build(&self, app: &mut App) {
     app
-      .add_observer(on_add_object_component_trigger)
-      .add_observer(on_remove_object_component_trigger)
-      .add_observer(on_add_tile_mesh_component_trigger)
-      .add_observer(on_remove_tile_mesh_component_trigger)
-      .add_observer(on_left_mouse_click_trigger)
+      .add_systems(Startup, spawn_observers_system)
       .add_systems(Update, (toggle_tile_info_event, regenerate_world_event))
       .init_resource::<TileMeshComponentIndex>()
       .init_resource::<ObjectComponentIndex>();
@@ -67,6 +63,31 @@ impl ObjectComponentIndex {
   pub fn get(&self, point: Point<TileGrid>) -> Option<&ObjectComponent> {
     if let Some(t) = self.map.get(&point) { Some(t) } else { None }
   }
+}
+
+fn spawn_observers_system(world: &mut bevy::ecs::world::World) {
+  world.spawn_batch([
+    (
+      Observer::new(IntoSystem::into_system(on_add_object_component_trigger)),
+      Name::new("Observer: Add ObjectComponent"),
+    ),
+    (
+      Observer::new(IntoSystem::into_system(on_remove_object_component_trigger)),
+      Name::new("Observer: Remove ObjectComponent"),
+    ),
+    (
+      Observer::new(IntoSystem::into_system(on_add_tile_mesh_component_trigger)),
+      Name::new("Observer: Add TileMeshComponent"),
+    ),
+    (
+      Observer::new(IntoSystem::into_system(on_remove_tile_mesh_component_trigger)),
+      Name::new("Observer: Remove TileMeshComponent"),
+    ),
+    (
+      Observer::new(IntoSystem::into_system(on_left_mouse_click_trigger)),
+      Name::new("Observer: MouseClickEvent"),
+    ),
+  ]);
 }
 
 fn on_add_object_component_trigger(

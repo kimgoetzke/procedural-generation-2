@@ -69,10 +69,26 @@ pub enum ObjectName {
   ForestBush2,
   ForestBush3,
   ForestBush4,
+  PathRight,
+  PathHorizontal,
+  PathCross,
+  PathVertical,
+  PathBottom,
+  PathTop,
+  PathLeft,
+  PathTopRight,
+  PathTopLeft,
+  PathBottomRight,
+  PathBottomLeft,
+  PathTopHorizontal,
+  PathBottomHorizontal,
+  PathLeftVertical,
+  PathRightVertical,
+  PathUndefined,
 }
 
 impl ObjectName {
-  pub fn is_large_sprite(&self) -> bool {
+  pub fn is_multi_tile(&self) -> bool {
     matches!(
       self,
       ObjectName::ForestTree1
@@ -81,5 +97,49 @@ impl ObjectName {
         | ObjectName::ForestTree4
         | ObjectName::ForestTree5
     )
+  }
+
+  pub fn is_path(&self) -> bool {
+    matches!(
+      self,
+      ObjectName::PathUndefined
+        | ObjectName::PathRight
+        | ObjectName::PathHorizontal
+        | ObjectName::PathCross
+        | ObjectName::PathVertical
+        | ObjectName::PathBottom
+        | ObjectName::PathTop
+        | ObjectName::PathLeft
+        | ObjectName::PathTopRight
+        | ObjectName::PathTopLeft
+        | ObjectName::PathBottomRight
+        | ObjectName::PathBottomLeft
+        | ObjectName::PathTopHorizontal
+        | ObjectName::PathBottomHorizontal
+        | ObjectName::PathLeftVertical
+        | ObjectName::PathRightVertical
+    )
+  }
+
+  /// Returns the correct index for the path sprite based on its name. Falls back to `12` for all invalid object names.
+  pub fn get_index_for_path(&self) -> i32 {
+    match self {
+      ObjectName::PathRight => 1,
+      ObjectName::PathHorizontal => 2,
+      ObjectName::PathCross => 3,
+      ObjectName::PathVertical => 4,
+      ObjectName::PathBottom => 5,
+      ObjectName::PathTop => 6,
+      ObjectName::PathLeft => 7,
+      ObjectName::PathTopRight => 8,
+      ObjectName::PathTopLeft => 9,
+      ObjectName::PathBottomRight => 10,
+      ObjectName::PathBottomLeft => 11,
+      ObjectName::PathTopHorizontal => 12,
+      ObjectName::PathBottomHorizontal => 13,
+      ObjectName::PathLeftVertical => 14,
+      ObjectName::PathRightVertical => 15,
+      _ => 16,
+    }
   }
 }

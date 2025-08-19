@@ -1,14 +1,8 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::ChunkGrid;
 use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{Chunk, ObjectComponent, Tile, shared};
-use crate::generation::object::lib::ObjectName;
-use crate::generation::object::lib::tile_data::TileData;
-use crate::generation::object::lib::{ObjectData, ObjectGrid};
-use crate::generation::object::wfc;
+use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
+use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
 use crate::generation::object::wfc::WfcPlugin;
-use crate::generation::resources::{AssetCollection, GenerationResourcesCollection};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
@@ -18,8 +12,8 @@ use bevy::prelude::{Commands, Component, Entity, Name, Query, TextureAtlas, Tran
 use bevy::sprite::{Anchor, Sprite};
 use bevy::tasks;
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on};
+use rand::Rng;
 use rand::prelude::StdRng;
-use rand::{Rng, SeedableRng};
 
 pub struct ObjectGeneratorPlugin;
 
@@ -40,42 +34,92 @@ impl CommandQueueTask for ObjectSpawnTask {
   }
 }
 
-pub fn generate_object_data(
+/// Generates the [`ObjectGrid`] for the given chunk. The [`ObjectGrid`] is the key struct used by
+/// [`crate::generation::object`] when running various algorithms to determine which objects should be spawned in
+/// the world.
+pub fn generate_object_grid(
   resources: &GenerationResourcesCollection,
   settings: &Settings,
-  spawn_data: (Chunk, Entity),
-) -> Vec<ObjectData> {
+  chunk: Chunk,
+  chunk_entity: Entity,
+) -> Option<(Chunk, Entity, ObjectGrid)> {
+  let cg = chunk.coords.chunk_grid;
   if !settings.object.generate_objects {
-    debug!("Skipped object generation because it's disabled");
-    return vec![];
+    debug!(
+      "Skipped object grid generation for {} because generating objects is disabled",
+      cg
+    );
+    return None;
   }
   let start_time = shared::get_time();
-  let chunk_cg = spawn_data.0.coords.chunk_grid;
-  let mut tile_data = Vec::new();
-  for t in spawn_data.0.layered_plane.flat.data.iter().flatten() {
-    if let Some(tile) = t {
-      tile_data.push(TileData::new(spawn_data.1, tile.clone()));
-    }
-  }
-
-  let grid = ObjectGrid::new_initialised(
-    chunk_cg,
-    &resources.objects.terrain_rules,
-    &resources.objects.tile_type_rules,
-    &tile_data,
-  );
-  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk_cg, settings.world.noise_seed));
-  let objects_count = grid.grid.len();
-  let tile_data_len = tile_data.len();
-  let mut object_generation_data = (grid.clone(), tile_data);
-  let object_data = { wfc::determine_objects_in_grid(&mut rng, &mut object_generation_data, &settings) };
+  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &chunk.layered_plane);
   debug!(
-    "Generated object data for {} objects (for {} tiles) for chunk {} in {} ms on {}",
-    objects_count,
-    tile_data_len,
+    "Generated object grid for chunk {} in {} ms on {}",
+    cg,
+    shared::get_time() - start_time,
+    shared::thread_name()
+  );
+
+  Some((chunk, chunk_entity, grid))
+}
+
+/// Consumes the [`ObjectGrid`] and returns a [`Vec<ObjectData>`] for the given chunk. Once the tile data is generated,
+/// the [`ObjectGrid`] is no longer needed. The returned [`Vec<ObjectData>`] can then be used to spawn objects in the
+/// world.
+pub fn generate_object_data(
+  settings: &Settings,
+  object_grid: ObjectGrid,
+  chunk: Chunk,
+  chunk_entity: Entity,
+) -> Vec<ObjectData> {
+  let start_time = shared::get_time();
+  let chunk_cg = chunk.coords.chunk_grid;
+  let tile_data = generate_tile_data(&chunk, chunk_entity);
+  let tile_data_len = tile_data.len();
+  let is_decoration_enabled = settings.object.generate_decoration;
+  let object_data = convert_grid_to_object_data(object_grid, &tile_data, is_decoration_enabled);
+  debug!(
+    "Generated object data for [{}] objects (density {}) for chunk {} in {} ms on {}",
+    object_data.len(),
+    format!("{:.0}%", (object_data.len() as f32 / tile_data_len as f32) * 100.0),
     chunk_cg,
     shared::get_time() - start_time,
     shared::thread_name()
+  );
+
+  object_data
+}
+
+fn generate_tile_data(chunk: &Chunk, chunk_entity: Entity) -> Vec<TileData> {
+  let mut tile_data = Vec::new();
+  for t in chunk.layered_plane.flat.data.iter().flatten() {
+    if let Some(tile) = t {
+      tile_data.push(TileData::new(chunk_entity, tile.clone()));
+    }
+  }
+
+  tile_data
+}
+
+fn convert_grid_to_object_data(grid: ObjectGrid, tile_data: &Vec<TileData>, is_decoration_enabled: bool) -> Vec<ObjectData> {
+  let mut object_data = vec![];
+  object_data.extend(
+    tile_data
+      .iter()
+      .filter_map(|tile_data| {
+        if is_decoration_enabled {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0) // Sprite index 0 is always transparent
+            .map(|cell| ObjectData::from(cell, tile_data))
+        } else {
+          grid
+            .get_cell(&tile_data.flat_tile.coords.internal_grid)
+            .filter(|cell| cell.get_index() != 0 && cell.is_collapsed()) // Also ignore non-collapsed cells since WFC did not run
+            .map(|cell| ObjectData::from(cell, tile_data))
+        }
+      })
+      .collect::<Vec<ObjectData>>(),
   );
 
   object_data
@@ -86,21 +130,25 @@ pub fn schedule_spawning_objects(
   settings: &Settings,
   mut rng: &mut StdRng,
   object_data: Vec<ObjectData>,
-  chunk_cg: &Point<ChunkGrid>,
 ) {
+  let chunk_cg = object_data
+    .first()
+    .map_or(None, |o| Some(o.tile_data.flat_tile.coords.chunk_grid));
   let start_time = shared::get_time();
   let task_pool = AsyncComputeTaskPool::get();
   let object_data_len = object_data.len();
   for object in object_data {
     attach_object_spawn_task(commands, settings, &mut rng, task_pool, object);
   }
-  debug!(
-    "Scheduled {} object spawn tasks for chunk {} in {} ms on {}",
-    object_data_len,
-    chunk_cg,
-    shared::get_time() - start_time,
-    shared::thread_name()
-  );
+  if let Some(cg) = chunk_cg {
+    debug!(
+      "Scheduled [{}] object spawn tasks for world generation component {} in {} ms on {}",
+      object_data_len,
+      cg,
+      shared::get_time() - start_time,
+      shared::thread_name()
+    );
+  }
 }
 
 fn attach_object_spawn_task(
@@ -126,6 +174,7 @@ fn attach_object_spawn_task(
             tile_data.flat_tile.terrain,
             tile_data.flat_tile.climate,
             object_data.is_large_sprite,
+            object_data.is_path_sprite,
           )
           .clone()
       };

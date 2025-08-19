@@ -33,12 +33,12 @@ struct UiState {
 }
 
 impl UiState {
-  pub fn trigger_regeneration(&mut self) {
+  fn trigger_regeneration(&mut self) {
     self.regenerate = true;
     self.has_changed = true;
   }
 
-  pub fn trigger_next_generation(&mut self) {
+  fn trigger_next_generation(&mut self) {
     self.generate_next = true;
     self.has_changed = true;
   }

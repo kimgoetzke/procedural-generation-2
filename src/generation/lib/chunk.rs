@@ -15,7 +15,11 @@ const OUTSIDE: i32 = CHUNK_SIZE + 1;
 const EXPANDED_INSIDE: i32 = 2;
 const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
 
-/// A `Chunk` represents a single chunk of the world.
+/// Represents a single chunk of the world which is a square area of [`CHUNK_SIZE`] tiles by [`CHUNK_SIZE`] tiles. It
+/// contains a [`LayeredPlane`] which is a collection of layers of terrain data, each layer containing information
+/// about the [`Tile`][t]s that make up the terrain.
+///
+/// [t]: crate::generation::lib::Tile
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
   pub coords: Coords,
@@ -25,8 +29,8 @@ pub struct Chunk {
 
 impl Chunk {
   /// Creates a new chunk from a draft chunk by converting the flat terrain data from the draft chunk into a
-  /// `LayeredPlane`. As a result, a chunk has multiple layers of terrain data, each of which contains rich information
-  /// about the `Tile`s that make up the terrain including their `TileType`s.
+  /// [`LayeredPlane`]. As a result, a chunk has multiple layers of terrain data, each of which contains information
+  /// about the [`crate::generation::lib::Tile`]s that make up the terrain including their types.
   pub fn new(w: Point<World>, tg: Point<TileGrid>, metadata: &Metadata, settings: &Settings) -> Self {
     let coords = Coords::new_for_chunk(w, tg);
     let data = generate_terrain_data(&tg, &coords.chunk_grid, metadata, settings);
@@ -39,8 +43,8 @@ impl Chunk {
   }
 }
 
-/// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a `Point` of type
-/// `TileGrid` that describes the top-left corner of the grid.
+/// Generates terrain data for a draft chunk based on Perlin noise. Expects `tg` to be a [`Point`] of type
+/// [`TileGrid`] that describes the top-left corner of the grid.
 fn generate_terrain_data(
   tg: &Point<TileGrid>,
   cg: &Point<ChunkGrid>,
@@ -79,7 +83,7 @@ fn generate_terrain_data(
       let normalised_noise = (clamped_noise + 1.) / 2.;
 
       // Adjust noise based on elevation metadata
-      let elevation_offset = elevation_metadata.calculate_for_point(ig, CHUNK_SIZE, BUFFER_SIZE);
+      let elevation_offset = elevation_metadata.calculate_for_point(ig);
       let normalised_noise = ((normalised_noise * strength) + elevation_offset).clamp(0., 1.);
 
       // Calculate if this tile is a biome edge
@@ -127,14 +131,14 @@ fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx
   distance_x.max(distance_y)
 }
 
-/// Calculates if a tile `TerrainType` should be adjusted by checking if:
+/// Calculates if a tile [`TerrainType`] should be adjusted by checking if:
 /// 1. The tile is "far enough" from the center (otherwise it cannot be an edge)
 /// 2. The tile is at any of the edges of the chunk (direction match statement arms using `INSIDE` and/or `OUTSIDE`)
 /// 3. The tile is at the randomly determined, expanded edges of the chunk (arms using `EXPANDED_INSIDE`,
 ///    `EXPANDED_OUTSIDE`) - this introduces some randomness (vs having perfectly straight edges around chunks)
 ///
 /// If all of the above checks are true, the tile is located at the edge of a biome, allowing the tile to be forcibly
-/// adjusted to a lower `TerrainType`. Without this, you'd need to have a lot of additional sprites to handle the
+/// adjusted to a lower [`TerrainType`]. Without this, you'd need to have a lot of additional sprites to handle the
 /// transitions between each possible biome/terrain type/tile type combination (= 144 extra sprites at the time of
 /// writing this code).
 #[allow(non_contiguous_range_endpoints)]

@@ -164,9 +164,9 @@
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
-        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, ] ),
         ( Bottom, [ Empty ] ),
-        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, SandStoneBottomRightFill, ] ),
+        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, ] ),
       ]
     ),
     (
@@ -175,9 +175,9 @@
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
-        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, ] ),
         ( Bottom, [ Empty ] ),
-        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, SandStoneBottomRightFill, ] ),
+        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, ] ),
       ]
     ),
     (
@@ -185,7 +185,7 @@
       name: SandStoneTopRightFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
+        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomRightFill, ] ),
         ( Right, [ Empty, SandStoneTopLeftFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
         ( Bottom, [ Empty ] ),
         ( Left, [ Empty ] ),
@@ -196,7 +196,7 @@
       name: SandStoneTopLeftFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneLeftFill, ] ),
+        ( Top, [ Empty, SandStoneLeftFill, SandStoneBottomLeftFill, ] ),
         ( Right, [ Empty, ] ),
         ( Bottom, [ Empty ] ),
         ( Left, [ Empty, SandStoneTopRightFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
@@ -207,7 +207,7 @@
       name: SandStoneLeftFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneLeftFill, ] ),
+        ( Top, [ Empty, SandStoneLeftFill, SandStoneBottomLeftFill, ] ),
         ( Right, [ Empty, ] ),
         ( Bottom, [ Empty, SandStoneLeftFill, SandStoneTopLeftFill, ] ),
         ( Left, [ Empty, ] ),
@@ -218,9 +218,9 @@
       name: SandStoneRightFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomLeftFill, SandStoneBottomRightFill, ] ),
+        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomRightFill, ] ),
         ( Right, [ Empty, ] ),
-        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, SandStoneBottomLeftFill, ] ),
+        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, ] ),
         ( Left, [ Empty, ] ),
       ]
     ),
@@ -253,7 +253,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -264,7 +264,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -275,7 +275,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -286,7 +286,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -297,7 +297,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -308,7 +308,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -319,7 +319,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -330,7 +330,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
         ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
         ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
       ]
     ),
@@ -339,10 +339,10 @@
       name: SandPattern1,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Right, [ SandPattern2, SandPattern3, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
       ]
     ),
     (
@@ -350,9 +350,9 @@
       name: SandPattern2,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Right, [ SandPattern3, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone5, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Left, [ SandPattern1, ] ),
       ]
     ),
@@ -361,9 +361,9 @@
       name: SandPattern3,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
         ( Left, [ SandPattern1, SandPattern2, ] ),
       ]
     ),
@@ -372,10 +372,10 @@
       name: SandPattern4,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern1, SandPattern3, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Left, [ Empty, SandPattern3, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
       ]
     ),
     (
@@ -383,10 +383,10 @@
       name: SandPattern5,
       weight: 5,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern2, SandPattern4, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern1, SandPattern3, SandPattern4, SandStone1, SandStone2, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Right, [ Empty, SandPattern1, SandPattern4, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Left, [ Empty, SandPattern3, SandPattern4, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
       ]
     ),
   ]

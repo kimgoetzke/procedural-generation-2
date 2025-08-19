@@ -94,7 +94,7 @@ pub struct GenerationMetadataSettings {
   #[inspector(min = -1.0, max = 1.0, display = NumberDisplay::Slider)]
   pub elevation_offset: f64,
   /// The scale of the noise map generated for the biome metadata: the higher the frequency, the smaller the terrain
-  /// features. A parameter of `BasicMulti<Perlin>`.
+  /// features. A parameter of [`noise::BasicMulti<noise::Perlin>`].
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   pub biome_noise_frequency: f64,
 }
@@ -112,28 +112,28 @@ impl Default for GenerationMetadataSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct WorldGenerationSettings {
-  /// The seed for the noise function. A parameter of `BasicMulti`. Allows for the same terrain to be generated i.e.
-  /// the same seed will always generate the exact same terrain.
+  /// The seed for the noise function. A parameter of [`noise::BasicMulti`]. Allows for the same terrain to be
+  /// generated i.e. the same seed will always generate the exact same terrain.
   #[inspector(min = 0, max = 100, display = NumberDisplay::Slider)]
   pub noise_seed: u32,
   /// The overall impact of the noise function on the terrain generation. A simple multiplier for the final output of
   /// the Perlin noise function. The lower the value, the higher the impact of other parameters such as the elevation
-  /// offset from the `ElevationMetadata`.
+  /// offset from the [`crate::generation::resources::ElevationMetadata`].
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
   pub noise_strength: f64,
-  /// The amount of detail: The higher the octaves, the more detailed the terrain. A parameter of `BasicMulti`.
+  /// The amount of detail: The higher the octaves, the more detailed the terrain. A parameter of [`noise::BasicMulti`].
   #[inspector(min = 0, max = 12, display = NumberDisplay::Slider)]
   pub noise_octaves: usize,
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
-  /// The scale: the higher the frequency, the smaller the terrain features. A parameter of `BasicMulti`.
+  /// The scale: the higher the frequency, the smaller the terrain features. A parameter of [`noise::BasicMulti`].
   pub noise_frequency: f64,
   /// The abruptness of changes in terrain: The higher the persistence, the rougher the terrain. A parameter of
-  /// `BasicMulti`.
+  /// [`noise::BasicMulti`].
   #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
   pub noise_persistence: f64,
   #[inspector(min = 0., max = 10., display = NumberDisplay::Slider)]
   /// The higher the amplitude, the more extreme the terrain. Similar to `noise_persistence` but applies to the entire
-  /// output of the noise function equally. A custom parameter that is not part of `BasicMulti`.
+  /// output of the noise function equally. A custom parameter that is not part of [`noise::BasicMulti`].
   pub noise_amplitude: f64,
 }
 
@@ -153,7 +153,14 @@ impl Default for WorldGenerationSettings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ObjectGenerationSettings {
+  /// Whether to generate objects in the world. If set to `false`, no object grids will be generated, effectively
+  /// disabling both path generation and the generation of decorative objects such as trees, stones, flowers, etc.
   pub generate_objects: bool,
+  /// Whether to generate paths in the world.
+  pub generate_paths: bool,
+  /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc.
+  pub generate_decoration: bool,
+  /// Whether to enable random colour variations for decorative objects. Does not affect paths.
   pub enable_colour_variations: bool,
 }
 
@@ -161,6 +168,8 @@ impl Default for ObjectGenerationSettings {
   fn default() -> Self {
     Self {
       generate_objects: GENERATE_OBJECTS,
+      generate_paths: GENERATE_PATHS,
+      generate_decoration: GENERATE_DECORATION,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }
   }

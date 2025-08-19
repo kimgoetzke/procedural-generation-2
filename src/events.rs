@@ -26,16 +26,16 @@ pub struct RefreshMetadata {
 
 #[derive(Event)]
 /// An event that triggers the regeneration of the world. It will cause the world entity and all its descendants to be
-/// removed before generating an entirely new world based on the current `Settings`.
+/// removed before generating an entirely new world based on the current [`crate::resources::Settings`].
 pub struct RegenerateWorldEvent {}
 
 #[derive(Event)]
 /// An event that triggers the evaluation of the world, causing the generation of new chunks and/or the despawning of
-/// distant chunks (by triggering `PruneWorldEvent` at the end), if necessary. Will never remove the world entity.
+/// distant chunks (by triggering [`PruneWorldEvent`] at the end), if necessary. Will never remove the world entity.
 pub struct UpdateWorldEvent {
-  /// Will force the update to happen, even if the `CurrentChunk` has not changed. Will also suppress triggering
-  /// `PruneWorldEvent` after the update which would happen by default. Used when updating the world via the UI when
-  /// the `CurrentChunk` has not changed.
+  /// Will force the update to happen, even if the [`CurrentChunk`][crate::resources::CurrentChunk] has not changed.
+  /// Will also suppress triggering [`PruneWorldEvent`] after the update which would happen by default. Used when
+  /// updating the world via the UI when the [`CurrentChunk`][crate::resources::CurrentChunk] has not changed.
   pub is_forced_update: bool,
   pub w: Point<World>,
   pub tg: Point<TileGrid>,
@@ -44,7 +44,7 @@ pub struct UpdateWorldEvent {
 #[derive(Event)]
 /// An event that triggers a clean-up process of the world. In particular, this event is used to despawn all chunks
 /// before generating new ones or to despawn distant chunks after having generated new chunks and changed the
-/// `CurrentChunk`.
+/// [`CurrentChunk`][crate::resources::CurrentChunk].
 pub struct PruneWorldEvent {
   pub despawn_all_chunks: bool,
   pub update_world_after: bool,

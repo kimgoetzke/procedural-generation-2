@@ -4,21 +4,27 @@ use crate::generation::lib::ChunkComponent;
 use bevy::app::{App, Plugin};
 use bevy::log::trace;
 use bevy::platform::collections::HashMap;
-use bevy::prelude::{OnAdd, OnRemove, Query, ResMut, Resource, Trigger};
+use bevy::prelude::{IntoSystem, Name, Observer, OnAdd, OnRemove, Query, ResMut, Resource, Trigger};
 
 pub struct ChunkComponentIndexPlugin;
 
 impl Plugin for ChunkComponentIndexPlugin {
   fn build(&self, app: &mut App) {
-    app
-      .init_resource::<ChunkComponentIndex>()
-      .add_observer(on_add_chunk_component_trigger)
-      .add_observer(on_remove_chunk_component_trigger);
+    app.init_resource::<ChunkComponentIndex>().world_mut().spawn_batch([
+      (
+        Observer::new(IntoSystem::into_system(on_add_chunk_component_trigger)),
+        Name::new("Observer: Add ChunkComponent"),
+      ),
+      (
+        Observer::new(IntoSystem::into_system(on_remove_chunk_component_trigger)),
+        Name::new("Observer: Remove ChunkComponent"),
+      ),
+    ]);
   }
 }
 
-/// Contains a clone of the `ChunkComponent` of each chunk entity that currently exists in the world. This index is
-/// kept up-to-date by observing the `OnAdd<ChunkComponent>` and `OnRemove<ChunkComponent>` triggers.
+/// Contains a clone of the [`ChunkComponent`] of each chunk entity that currently exists in the world. This index is
+/// kept up-to-date by observing the [`OnAdd`] and [`OnRemove`] triggers.
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
   map: HashMap<Point<World>, ChunkComponent>,

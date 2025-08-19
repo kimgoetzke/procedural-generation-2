@@ -2,6 +2,7 @@ use crate::constants::{CHUNK_SIZE, TILE_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use cmp::Ordering;
+use std::any::TypeId;
 use std::cmp;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -17,19 +18,33 @@ pub enum Direction {
   BottomRight,
 }
 
-#[allow(dead_code)]
 impl Direction {
-  pub fn from_points<T: CoordType>(a: &Point<T>, b: &Point<T>) -> Self {
-    match (a.x.cmp(&b.x), a.y.cmp(&b.y)) {
-      (Ordering::Less, Ordering::Less) => Direction::TopRight,
-      (Ordering::Less, Ordering::Equal) => Direction::Right,
-      (Ordering::Less, Ordering::Greater) => Direction::BottomRight,
-      (Ordering::Equal, Ordering::Less) => Direction::Top,
-      (Ordering::Equal, Ordering::Equal) => Direction::Center,
-      (Ordering::Equal, Ordering::Greater) => Direction::Bottom,
-      (Ordering::Greater, Ordering::Less) => Direction::TopLeft,
-      (Ordering::Greater, Ordering::Equal) => Direction::Left,
-      (Ordering::Greater, Ordering::Greater) => Direction::BottomLeft,
+  //noinspection DuplicatedCode
+  pub fn from_points<T: CoordType + 'static>(a: &Point<T>, b: &Point<T>) -> Self {
+    let (x_cmp, y_cmp) = (a.x.cmp(&b.x), a.y.cmp(&b.y));
+    match TypeId::of::<T>() {
+      id if id == TypeId::of::<InternalGrid>() => match (x_cmp, y_cmp) {
+        (Ordering::Less, Ordering::Less) => Direction::BottomRight,
+        (Ordering::Less, Ordering::Equal) => Direction::Right,
+        (Ordering::Less, Ordering::Greater) => Direction::TopRight,
+        (Ordering::Equal, Ordering::Less) => Direction::Bottom,
+        (Ordering::Equal, Ordering::Equal) => Direction::Center,
+        (Ordering::Equal, Ordering::Greater) => Direction::Top,
+        (Ordering::Greater, Ordering::Less) => Direction::BottomLeft,
+        (Ordering::Greater, Ordering::Equal) => Direction::Left,
+        (Ordering::Greater, Ordering::Greater) => Direction::TopLeft,
+      },
+      _ => match (x_cmp, y_cmp) {
+        (Ordering::Less, Ordering::Less) => Direction::TopRight,
+        (Ordering::Less, Ordering::Equal) => Direction::Right,
+        (Ordering::Less, Ordering::Greater) => Direction::BottomRight,
+        (Ordering::Equal, Ordering::Less) => Direction::Top,
+        (Ordering::Equal, Ordering::Equal) => Direction::Center,
+        (Ordering::Equal, Ordering::Greater) => Direction::Bottom,
+        (Ordering::Greater, Ordering::Less) => Direction::TopLeft,
+        (Ordering::Greater, Ordering::Equal) => Direction::Left,
+        (Ordering::Greater, Ordering::Greater) => Direction::BottomLeft,
+      },
     }
   }
 
@@ -51,6 +66,40 @@ impl Direction {
 
     to_direction(other_world, chunk_left, chunk_right, chunk_top, chunk_bottom)
   }
+
+  pub fn to_opposite(self) -> Self {
+    match self {
+      Direction::TopLeft => Direction::BottomRight,
+      Direction::Top => Direction::Bottom,
+      Direction::TopRight => Direction::BottomLeft,
+      Direction::Left => Direction::Right,
+      Direction::Center => Direction::Center,
+      Direction::Right => Direction::Left,
+      Direction::BottomLeft => Direction::TopRight,
+      Direction::Bottom => Direction::Top,
+      Direction::BottomRight => Direction::TopLeft,
+    }
+  }
+
+  pub fn to_point<T: CoordType + 'static>(&self) -> Point<T> {
+    match (TypeId::of::<T>(), self) {
+      (id, Direction::TopLeft) if id == TypeId::of::<InternalGrid>() => Point::new(-1, -1),
+      (_, Direction::TopLeft) => Point::new(-1, 1),
+      (id, Direction::Top) if id == TypeId::of::<InternalGrid>() => Point::new(0, -1),
+      (_, Direction::Top) => Point::new(0, 1),
+      (id, Direction::TopRight) if id == TypeId::of::<InternalGrid>() => Point::new(1, -1),
+      (_, Direction::TopRight) => Point::new(1, 1),
+      (_, Direction::Left) => Point::new(-1, 0),
+      (_, Direction::Center) => Point::new(0, 0),
+      (_, Direction::Right) => Point::new(1, 0),
+      (id, Direction::BottomLeft) if id == TypeId::of::<InternalGrid>() => Point::new(-1, 1),
+      (_, Direction::BottomLeft) => Point::new(-1, -1),
+      (id, Direction::Bottom) if id == TypeId::of::<InternalGrid>() => Point::new(0, 1),
+      (_, Direction::Bottom) => Point::new(0, -1),
+      (id, Direction::BottomRight) if id == TypeId::of::<InternalGrid>() => Point::new(1, 1),
+      (_, Direction::BottomRight) => Point::new(1, -1),
+    }
+  }
 }
 
 impl PartialEq<Direction> for &Direction {
@@ -60,27 +109,46 @@ impl PartialEq<Direction> for &Direction {
 }
 
 pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 9] {
-  let offset = calculate_offset::<T>();
+  let (x_offset, y_offset) = calculate_offsets::<T>();
   let p = point;
   [
-    (Direction::TopLeft, Point::new(p.x - offset, p.y + offset)),
-    (Direction::Top, Point::new(p.x, p.y + offset)),
-    (Direction::TopRight, Point::new(p.x + offset, p.y + offset)),
-    (Direction::Left, Point::new(p.x - offset, p.y)),
+    (Direction::TopLeft, Point::new(p.x - x_offset, p.y + y_offset)),
+    (Direction::Top, Point::new(p.x, p.y + y_offset)),
+    (Direction::TopRight, Point::new(p.x + x_offset, p.y + y_offset)),
+    (Direction::Left, Point::new(p.x - x_offset, p.y)),
     (Direction::Center, Point::new(p.x, p.y)),
-    (Direction::Right, Point::new(p.x + offset, p.y)),
-    (Direction::BottomLeft, Point::new(p.x - offset, p.y - offset)),
-    (Direction::Bottom, Point::new(p.x, p.y - offset)),
-    (Direction::BottomRight, Point::new(p.x + offset, p.y - offset)),
+    (Direction::Right, Point::new(p.x + x_offset, p.y)),
+    (Direction::BottomLeft, Point::new(p.x - x_offset, p.y - y_offset)),
+    (Direction::Bottom, Point::new(p.x, p.y - y_offset)),
+    (Direction::BottomRight, Point::new(p.x + x_offset, p.y - y_offset)),
   ]
 }
 
-fn calculate_offset<T: CoordType + 'static>() -> i32 {
-  match std::any::TypeId::of::<T>() {
-    id if id == std::any::TypeId::of::<TileGrid>() => CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<World>() => TILE_SIZE as i32 * CHUNK_SIZE,
-    id if id == std::any::TypeId::of::<InternalGrid>() => 1,
-    id if id == std::any::TypeId::of::<ChunkGrid>() => 1,
+pub fn get_cardinal_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direction, Point<T>); 4] {
+  let (x_offset, y_offset) = calculate_offsets::<T>();
+  let p = point;
+  [
+    (Direction::Top, Point::new(p.x, p.y + y_offset)),
+    (Direction::Left, Point::new(p.x - x_offset, p.y)),
+    (Direction::Right, Point::new(p.x + x_offset, p.y)),
+    (Direction::Bottom, Point::new(p.x, p.y - y_offset)),
+  ]
+}
+
+/// Calculates the x and y offsets for a given coordinate type `T`. The returned tuple \(`(x_offset, y_offset)`\)
+/// depends on the type parameter:
+/// - For [`TileGrid`]: returns the chunk size for both x and y.
+/// - For [`World`]: returns the product of tile size and chunk size for both x and y.
+/// - For [`InternalGrid`]: returns (1, -1), reflecting its grid orientation.
+/// - For [`ChunkGrid`]: returns (1, 1).
+/// # Panics
+/// If used with a coordinate type that is not implemented.
+fn calculate_offsets<T: CoordType + 'static>() -> (i32, i32) {
+  match TypeId::of::<T>() {
+    id if id == TypeId::of::<TileGrid>() => (CHUNK_SIZE, CHUNK_SIZE),
+    id if id == TypeId::of::<World>() => (TILE_SIZE as i32 * CHUNK_SIZE, TILE_SIZE as i32 * CHUNK_SIZE),
+    id if id == TypeId::of::<InternalGrid>() => (1, -1),
+    id if id == TypeId::of::<ChunkGrid>() => (1, 1),
     id => panic!("Coord type {:?} not implemented for calculate_offset", id),
   }
 }
@@ -112,5 +180,268 @@ fn to_direction<T: CoordType>(other_world: &Point<T>, left: i32, right: i32, top
     (0, -1) => Direction::Bottom,
     (1, -1) => Direction::BottomRight,
     _ => unreachable!("Reaching this was supposed to be impossible..."),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::coords::Point;
+
+  #[test]
+  fn from_points_returns_correct_direction_for_internal_grid_1() {
+    let a = Point::new_internal_grid(0, 0);
+    let b = Point::new_internal_grid(1, 1);
+    assert_eq!(Direction::from_points(&a, &b), Direction::BottomRight);
+
+    let c = Point::new_internal_grid(0, 0);
+    let d = Point::new_internal_grid(-1, -1);
+    assert_eq!(Direction::from_points(&c, &d), Direction::TopLeft);
+
+    let e = Point::new_internal_grid(0, 0);
+    let f = Point::new_internal_grid(0, 0);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_internal_grid_2() {
+    let a = Point::new_internal_grid(0, 0);
+    for (direction, point) in get_direction_points(&a) {
+      assert_eq!(Direction::from_points(&a, &point), direction);
+    }
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_tile_grid_1() {
+    let a = Point::new_tile_grid(0, 0);
+    let b = Point::new_tile_grid(1, 1);
+    assert_eq!(Direction::from_points(&a, &b), Direction::TopRight);
+
+    let c = Point::new_tile_grid(0, 0);
+    let d = Point::new_tile_grid(-1, -1);
+    assert_eq!(Direction::from_points(&c, &d), Direction::BottomLeft);
+
+    let e = Point::new_tile_grid(0, 0);
+    let f = Point::new_tile_grid(0, 0);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_tile_grid_2() {
+    let a = Point::new_tile_grid(0, 0);
+    for (direction, point) in get_direction_points(&a) {
+      assert_eq!(Direction::from_points(&a, &point), direction);
+    }
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_chunk_grid_1() {
+    let a = Point::new_chunk_grid(0, 0);
+    let b = Point::new_chunk_grid(1, 1);
+    assert_eq!(Direction::from_points(&a, &b), Direction::TopRight);
+
+    let c = Point::new_chunk_grid(0, 0);
+    let d = Point::new_chunk_grid(-1, -1);
+    assert_eq!(Direction::from_points(&c, &d), Direction::BottomLeft);
+
+    let e = Point::new_chunk_grid(0, 0);
+    let f = Point::new_chunk_grid(0, 0);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_chunk_grid_2() {
+    let a = Point::new_chunk_grid(0, 0);
+    for (direction, point) in get_direction_points(&a) {
+      assert_eq!(Direction::from_points(&a, &point), direction);
+    }
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_world_1() {
+    let a = Point::new_world(0, 0);
+    let b = Point::new_world(1, 1);
+    assert_eq!(Direction::from_points(&a, &b), Direction::TopRight);
+
+    let c = Point::new_world(0, 0);
+    let d = Point::new_world(-1, -1);
+    assert_eq!(Direction::from_points(&c, &d), Direction::BottomLeft);
+
+    let e = Point::new_world(0, 0);
+    let f = Point::new_world(0, 0);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+  }
+
+  #[test]
+  fn from_points_returns_correct_direction_for_world_grid_2() {
+    let a = Point::new_world(0, 0);
+    for (direction, point) in get_direction_points(&a) {
+      assert_eq!(Direction::from_points(&a, &point), direction);
+    }
+  }
+
+  #[test]
+  fn from_chunk_w_returns_correct_direction_for_adjacent_positive_chunk_w() {
+    let distance = CHUNK_SIZE * TILE_SIZE as i32;
+    let chunk_world = Point::new_world(0, 0);
+    let other_world = Point::new_world(distance, distance);
+    assert_eq!(Direction::from_chunk_w(&chunk_world, &other_world), Direction::TopRight);
+  }
+
+  #[test]
+  fn from_chunk_w_returns_correct_direction_for_adjacent_negative_chunk_w() {
+    let distance = CHUNK_SIZE * TILE_SIZE as i32;
+    let chunk_world = Point::new_world(0, 0);
+    let other_world = Point::new_world(-1 * distance, -1 * distance);
+    assert_eq!(Direction::from_chunk_w(&chunk_world, &other_world), Direction::BottomLeft);
+  }
+
+  #[test]
+  fn from_chunk_w_returns_correct_direction_for_distant_positive_chunk_w() {
+    let distance = CHUNK_SIZE * TILE_SIZE as i32;
+    let chunk_world = Point::new_world(0, 0);
+    let other_world = Point::new_world(2 * distance, 4 * distance);
+    assert_eq!(Direction::from_chunk_w(&chunk_world, &other_world), Direction::TopRight);
+  }
+
+  #[test]
+  fn from_chunk_w_returns_correct_direction_for_distant_negative_chunk_w() {
+    let distance = CHUNK_SIZE * TILE_SIZE as i32;
+    let chunk_world = Point::new_world(0, 0);
+    let other_world = Point::new_world(-3 * distance, -2 * distance);
+    assert_eq!(Direction::from_chunk_w(&chunk_world, &other_world), Direction::BottomLeft);
+  }
+
+  #[test]
+  fn from_chunk_cg_returns_correct_direction_for_adjacent_cg() {
+    let first_cg = Point::new(0, 0);
+    let second_cg = Point::new(1, 1);
+    assert_eq!(Direction::from_chunk_cg(&first_cg, &second_cg), Direction::TopRight);
+
+    let third_cg = Point::new(-1, -1);
+    assert_eq!(Direction::from_chunk_cg(&first_cg, &third_cg), Direction::BottomLeft);
+    assert_eq!(Direction::from_chunk_cg(&second_cg, &third_cg), Direction::BottomLeft);
+  }
+
+  #[test]
+  fn from_chunk_cg_returns_correct_direction_for_distant_cg() {
+    let first_cg = Point::new(0, 0);
+    let second_cg = Point::new(10, 51);
+    assert_eq!(Direction::from_chunk_cg(&first_cg, &second_cg), Direction::TopRight);
+
+    let third_cg = Point::new(-25, -63);
+    assert_eq!(Direction::from_chunk_cg(&first_cg, &third_cg), Direction::BottomLeft);
+    assert_eq!(Direction::from_chunk_cg(&second_cg, &third_cg), Direction::BottomLeft);
+  }
+
+  #[test]
+  fn get_direction_points_returns_correct_points_for_ig() {
+    let point = Point::new_internal_grid(0, 0);
+    let points = get_direction_points(&point);
+    assert_eq!(points[0], (Direction::TopLeft, Point::new(-1, -1)));
+    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[8], (Direction::BottomRight, Point::new(1, 1)));
+  }
+
+  #[test]
+  fn get_direction_points_returns_correct_points_for_tg() {
+    let point = Point::new_tile_grid(0, 0);
+    let points = get_direction_points(&point);
+    assert_eq!(points[0], (Direction::TopLeft, Point::new(-16, 16)));
+    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[8], (Direction::BottomRight, Point::new(16, -16)));
+  }
+
+  #[test]
+  fn get_direction_points_returns_correct_points_for_cg() {
+    let point = Point::new_chunk_grid(0, 0);
+    let points = get_direction_points(&point);
+    assert_eq!(points[0], (Direction::TopLeft, Point::new(-1, 1)));
+    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[8], (Direction::BottomRight, Point::new(1, -1)));
+  }
+
+  #[test]
+  fn get_direction_points_returns_correct_points_for_w() {
+    let point = Point::new_world(0, 0);
+    let points = get_direction_points(&point);
+    assert_eq!(points[0], (Direction::TopLeft, Point::new(-512, 512)));
+    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[8], (Direction::BottomRight, Point::new(512, -512)));
+  }
+
+  #[test]
+  fn get_cardinal_direction_points_returns_correct_points_for_ig() {
+    let point = Point::new_internal_grid(0, 0);
+    let points = get_cardinal_direction_points(&point);
+    assert_eq!(points[0], (Direction::Top, Point::new(0, -1)));
+    assert_eq!(points[1], (Direction::Left, Point::new(-1, 0)));
+    assert_eq!(points[2], (Direction::Right, Point::new(1, 0)));
+    assert_eq!(points[3], (Direction::Bottom, Point::new(0, 1)));
+  }
+
+  #[test]
+  fn get_cardinal_direction_points_returns_correct_points_for_tg() {
+    let point = Point::new_tile_grid(0, 0);
+    let points = get_cardinal_direction_points(&point);
+    assert_eq!(points[0], (Direction::Top, Point::new(0, 16)));
+    assert_eq!(points[1], (Direction::Left, Point::new(-16, 0)));
+    assert_eq!(points[2], (Direction::Right, Point::new(16, 0)));
+    assert_eq!(points[3], (Direction::Bottom, Point::new(0, -16)));
+  }
+
+  #[test]
+  fn get_cardinal_direction_points_returns_correct_points_for_cg() {
+    let point = Point::new_chunk_grid(0, 0);
+    let points = get_cardinal_direction_points(&point);
+    assert_eq!(points[0], (Direction::Top, Point::new(0, 1)));
+    assert_eq!(points[1], (Direction::Left, Point::new(-1, 0)));
+    assert_eq!(points[2], (Direction::Right, Point::new(1, 0)));
+    assert_eq!(points[3], (Direction::Bottom, Point::new(0, -1)));
+  }
+
+  #[test]
+  fn get_cardinal_direction_points_returns_correct_points_for_w() {
+    let point = Point::new_world(0, 0);
+    let points = get_cardinal_direction_points(&point);
+    assert_eq!(points[0], (Direction::Top, Point::new(0, 512)));
+    assert_eq!(points[1], (Direction::Left, Point::new(-512, 0)));
+    assert_eq!(points[2], (Direction::Right, Point::new(512, 0)));
+    assert_eq!(points[3], (Direction::Bottom, Point::new(0, -512)));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_top_left_internal_grid() {
+    let direction = Direction::TopLeft;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(-1, -1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_top_left_other_grids() {
+    let direction = Direction::TopLeft;
+    let point: Point<TileGrid> = direction.to_point();
+    assert_eq!(point, Point::new(-1, 1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_center() {
+    let direction = Direction::Center;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(0, 0));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_bottom_right_internal_grid() {
+    let direction = Direction::BottomRight;
+    let point: Point<InternalGrid> = direction.to_point();
+    assert_eq!(point, Point::new(1, 1));
+  }
+
+  #[test]
+  fn to_point_returns_correct_point_for_bottom_right_other_grids() {
+    let direction = Direction::BottomRight;
+    let point: Point<World> = direction.to_point();
+    assert_eq!(point, Point::new(1, -1));
   }
 }

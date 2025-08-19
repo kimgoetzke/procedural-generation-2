@@ -3,9 +3,9 @@ use crate::coords::Point;
 use crate::coords::point::{CoordType, InternalGrid};
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
 
-/// A 2D grid of `Tile`s that is created using `DraftTile`s. During it's creation, it determines the `TileType` of each
-/// `Tile` based on the `TerrainType` of its neighbours and resizes the grid by cutting off `BUFFER_SIZE` from each
-/// side of the grid.
+/// A 2D grid of [`Tile`]s that is created using [`DraftTile`]s. During it's creation, it determines the [`TileType`] of
+/// each [`Tile`] based on the [`TerrainType`] of its neighbours and resizes the grid by cutting off [`BUFFER_SIZE`]
+/// from each side of the grid.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Plane {
   pub layer: Option<usize>,
@@ -13,8 +13,9 @@ pub struct Plane {
 }
 
 impl Plane {
-  /// Creates a new `Plane` from a 2D grid of `DraftTile`s. Fist, the `DraftTile`s `TileType` is being determined,
-  /// therefore, converting them to `Tile`s. The `Plane` is then resized by cutting off `BUFFER_SIZE` from each side.
+  /// Creates a new [`Plane`] from a 2D grid of [`DraftTile`]s. Fist, the [`DraftTile`]s [`TileType`] is being
+  /// determined, therefore, converting them to [`Tile`]s. The [`Plane`] is then resized by cutting off [`BUFFER_SIZE`]
+  /// from each side.
   pub fn new(draft_tiles: Vec<Vec<Option<DraftTile>>>, layer: Option<usize>, _settings: &Settings) -> Self {
     let plane_data = determine_tile_types(&draft_tiles);
     let plane_data = resize_grid(plane_data);
@@ -205,11 +206,12 @@ fn get_draft_tile(x: i32, y: i32, from: &Vec<Vec<Option<DraftTile>>>) -> Option<
   }
 }
 
-/// Resizes the grid by cutting off `BUFFER_SIZE` from each side of the grid. This is because the input data for
+/// Resizes the grid by cutting off [`BUFFER_SIZE`] from each side of the grid. This is because the input data for
 /// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges
 /// (which requires knowledge about the tiles neighbours).
 /// ###### Important:
-/// For this to work, the `Point<TileGrid>` in `Coords` must be adjusted when creating a `Tile` from a `DraftTile`.
+/// For this to work, the [`Point<TileGrid>`] in [`crate::coords::Coords`] must be adjusted when creating a [`Tile`]
+/// from a [`DraftTile`].
 fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
   let cut_off = BUFFER_SIZE as usize;
   let mut cut_off_tiles = vec![vec![None; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];

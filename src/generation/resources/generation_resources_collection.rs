@@ -1,7 +1,6 @@
 use crate::constants::*;
-use crate::generation::lib::{TerrainType, TileType};
-use crate::generation::object::lib::{Connection, ObjectName};
-use crate::generation::resources::Climate;
+use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
+use crate::generation::object::lib::{Connection, ObjectName, TerrainState};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
@@ -9,30 +8,42 @@ use bevy::log::*;
 use bevy::math::UVec2;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
-  Commands, Image, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath,
-  in_state,
+  Commands, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath, in_state,
 };
 use bevy_common_assets::ron::RonAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use strum::IntoEnumIterator;
 
+/// This plugin is responsible for loading and managing the resources - e.g. sprites and rule sets - required for the
+/// generation process. The purpose of this plugin is to ensure that all necessary assets are loaded, preprocessed, and
+/// initialised before the generation process starts.
+///
+/// At its core, this plugin adds the [`GenerationResourcesCollection`] resource, making it available to the rest of the
+/// application.
+///
+/// In terms of process, it works as follows:
+/// 1. The plugin loads the rule sets for terrain and tile types from the file system. At this point, the application is
+///    in the [`AppState::Loading`] state. See [`load_rule_sets_system`].
+/// 2. While in this state, it checks the loading state of these assets and waits until they are fully loaded, then
+///    it transitions the state to [`AppState::Initialising`]. See [`check_loading_state_system`].
+/// 3. Upon transitioning to the initialising state (i.e. [`OnExit`] of [`AppState::Loading`]), it finally
+///    initialises the [`GenerationResourcesCollection`] resource. See [`initialise_resources_system`].
 pub struct GenerationResourcesCollectionPlugin;
 
 impl Plugin for GenerationResourcesCollectionPlugin {
   fn build(&self, app: &mut App) {
     app
+      .init_resource::<GenerationResourcesCollection>()
       .add_plugins((
         RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
         RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
       ))
-      .init_resource::<GenerationResourcesCollection>()
       .add_systems(Startup, load_rule_sets_system)
-      .add_systems(Update, check_loading_state.run_if(in_state(AppState::Loading)))
+      .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
       .add_systems(OnExit(AppState::Loading), initialise_resources_system);
   }
 }
-
-// --- Rules for wave function collapse -----------------------------------------------------
 
 #[derive(Resource, Default, Debug, Clone)]
 struct TerrainRuleSetHandle(Vec<Handle<TerrainRuleSet>>);
@@ -58,14 +69,6 @@ impl Display for TerrainRuleSet {
   }
 }
 
-#[derive(serde::Deserialize, Debug, Clone, Reflect)]
-pub struct TerrainState {
-  pub name: ObjectName,
-  pub index: i32,
-  pub weight: i32,
-  pub permitted_neighbours: Vec<(Connection, Vec<ObjectName>)>,
-}
-
 #[derive(Resource, Default, Debug, Clone)]
 struct TileTypeRuleSetHandle(Handle<TileTypeRuleSet>);
 
@@ -81,15 +84,14 @@ impl Display for TileTypeRuleSet {
 }
 
 #[derive(serde::Deserialize, Debug, Clone, Reflect)]
-pub struct TileTypeState {
+struct TileTypeState {
   pub tile_type: TileType,
   pub permitted_self: Vec<ObjectName>,
 }
 
 fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
-  for i in 0..TerrainType::length() {
-    let terrain_type = TerrainType::from(i);
+  for terrain_type in TerrainType::iter() {
     let path = format!("objects/{}.terrain.ruleset.ron", terrain_type.to_string().to_lowercase());
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
@@ -101,7 +103,7 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
   commands.insert_resource(TileTypeRuleSetHandle(handle));
 }
 
-fn check_loading_state(
+fn check_loading_state_system(
   asset_server: Res<AssetServer>,
   terrain_handles: Res<TerrainRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
@@ -129,124 +131,6 @@ fn is_loading(loading_state: Option<LoadState>) -> bool {
     };
   };
   true
-}
-
-// --- Universal asset resources for the generation process ----------------------------------
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct GenerationResourcesCollection {
-  pub placeholder: AssetPack,
-  pub deep_water: AssetCollection,
-  pub shallow_water: AssetCollection,
-  pub land_dry_l1: AssetCollection,
-  pub land_dry_l2: AssetCollection,
-  pub land_dry_l3: AssetCollection,
-  pub land_moderate_l1: AssetCollection,
-  pub land_moderate_l2: AssetCollection,
-  pub land_moderate_l3: AssetCollection,
-  pub land_humid_l1: AssetCollection,
-  pub land_humid_l2: AssetCollection,
-  pub land_humid_l3: AssetCollection,
-  pub objects: ObjectResources,
-}
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct ObjectResources {
-  pub terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
-  pub tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
-  pub water: AssetCollection,
-  pub shore: AssetCollection,
-  pub l1_dry: AssetCollection,
-  pub l1_moderate: AssetCollection,
-  pub l1_humid: AssetCollection,
-  pub l2_dry: AssetCollection,
-  pub l2_moderate: AssetCollection,
-  pub l2_humid: AssetCollection,
-  pub l3_dry: AssetCollection,
-  pub l3_moderate: AssetCollection,
-  pub l3_humid: AssetCollection,
-  pub trees_dry: AssetCollection,
-  pub trees_moderate: AssetCollection,
-  pub trees_humid: AssetCollection,
-}
-
-impl GenerationResourcesCollection {
-  pub fn get_terrain_collection(&self, terrain: TerrainType, climate: Climate) -> &AssetCollection {
-    match (terrain, climate) {
-      (TerrainType::DeepWater, _) => &self.deep_water,
-      (TerrainType::ShallowWater, _) => &self.shallow_water,
-      (TerrainType::Land1, Climate::Dry) => &self.land_dry_l1,
-      (TerrainType::Land1, Climate::Moderate) => &self.land_moderate_l1,
-      (TerrainType::Land1, Climate::Humid) => &self.land_humid_l1,
-      (TerrainType::Land2, Climate::Dry) => &self.land_dry_l2,
-      (TerrainType::Land2, Climate::Moderate) => &self.land_moderate_l2,
-      (TerrainType::Land2, Climate::Humid) => &self.land_humid_l2,
-      (TerrainType::Land3, Climate::Dry) => &self.land_dry_l3,
-      (TerrainType::Land3, Climate::Moderate) => &self.land_moderate_l3,
-      (TerrainType::Land3, Climate::Humid) => &self.land_humid_l3,
-      (TerrainType::Any, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
-    }
-  }
-
-  pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
-    match (terrain, climate, is_large_sprite) {
-      (TerrainType::DeepWater, _, _) => &self.objects.water,
-      (TerrainType::ShallowWater, _, _) => &self.objects.shore,
-      (TerrainType::Land1, Climate::Dry, _) => &self.objects.l1_dry,
-      (TerrainType::Land1, Climate::Moderate, _) => &self.objects.l1_moderate,
-      (TerrainType::Land1, Climate::Humid, _) => &self.objects.l1_humid,
-      (TerrainType::Land2, Climate::Dry, _) => &self.objects.l2_dry,
-      (TerrainType::Land2, Climate::Moderate, _) => &self.objects.l2_moderate,
-      (TerrainType::Land2, Climate::Humid, _) => &self.objects.l2_humid,
-      (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
-      (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
-      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_humid,
-      (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
-      (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
-      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l3_humid,
-      (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
-    }
-  }
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct AssetCollection {
-  pub stat: AssetPack,
-  pub anim: Option<AssetPack>,
-  pub animated_tile_types: HashSet<TileType>,
-}
-
-impl AssetCollection {
-  pub fn index_offset(&self) -> usize {
-    self.stat.index_offset
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct AssetPack {
-  pub texture: Handle<Image>,
-  pub texture_atlas_layout: Handle<TextureAtlasLayout>,
-  pub index_offset: usize,
-}
-
-impl Default for AssetPack {
-  fn default() -> Self {
-    Self {
-      texture: Handle::default(),
-      texture_atlas_layout: Handle::default(),
-      index_offset: 1,
-    }
-  }
-}
-
-impl AssetPack {
-  pub fn new(texture: Handle<Image>, texture_atlas_layout: Handle<TextureAtlasLayout>) -> Self {
-    Self {
-      texture,
-      texture_atlas_layout,
-      index_offset: 1,
-    }
-  }
 }
 
 fn initialise_resources_system(
@@ -292,6 +176,13 @@ fn initialise_resources_system(
   asset_collection.objects.trees_humid.stat =
     AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
+  // Objects: Paths
+  asset_collection.objects.paths_water = path_assets_static(&asset_server, &mut layouts, 0);
+  asset_collection.objects.paths_shore = path_assets_static(&asset_server, &mut layouts, 1);
+  asset_collection.objects.paths_l1 = path_assets_static(&asset_server, &mut layouts, 2);
+  asset_collection.objects.paths_l2 = path_assets_static(&asset_server, &mut layouts, 3);
+  asset_collection.objects.paths_l3 = path_assets_static(&asset_server, &mut layouts, 4);
+
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_DEEP_OBJ_PATH);
   asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, WATER_SHALLOW_OBJ_PATH);
@@ -306,8 +197,11 @@ fn initialise_resources_system(
   asset_collection.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
 
   // Objects: Rule sets for wave function collapse
-  asset_collection.objects.terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
-  asset_collection.objects.tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
+  let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  let terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
+  validate_terrain_state_map(&terrain_state_map);
+  asset_collection.objects.terrain_state_map = terrain_state_map.clone();
 }
 
 fn tile_set_static(
@@ -388,6 +282,27 @@ fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
   set
 }
 
+fn path_assets_static(
+  asset_server: &Res<AssetServer>,
+  layout: &mut Assets<TextureAtlasLayout>,
+  offset: u32,
+) -> AssetCollection {
+  let static_layout = TextureAtlasLayout::from_grid(
+    DEFAULT_OBJ_SIZE,
+    PATHS_COLUMNS,
+    1,
+    None,
+    Some(UVec2::new(0, offset * TILE_SIZE)),
+  );
+  let static_atlas_layout = layout.add(static_layout);
+
+  AssetCollection {
+    stat: AssetPack::new(asset_server.load(PATHS_PATH.to_string()), static_atlas_layout.clone()),
+    anim: None,
+    animated_tile_types: HashSet::new(),
+  }
+}
+
 fn object_assets_static(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
@@ -416,13 +331,13 @@ fn terrain_rules(
   }
   if let Some(any_rule_set) = rule_sets.remove(&TerrainType::Any) {
     debug!(
-      "Found and removed [Any] terrain rule set with {} state(s) and will extend each of the other rule sets accordingly",
+      "Found and removed [Any] terrain rule set with [{}] state(s) and will extend each of the other rule sets accordingly",
       any_rule_set.len()
     );
     for (terrain, states) in rule_sets.iter_mut() {
       states.splice(0..0, any_rule_set.iter().cloned());
       debug!(
-        "Extended [{}] rule set by {}, it now has {} states",
+        "Extended [{}] rule set by [{}], it now has [{}] states",
         terrain,
         any_rule_set.len(),
         states.len()
@@ -438,7 +353,7 @@ fn tile_type_rules(
   tile_type_rule_set_assets: &mut ResMut<Assets<TileTypeRuleSet>>,
 ) -> HashMap<TileType, Vec<ObjectName>> {
   if let Some(rule_set) = tile_type_rule_set_assets.remove(&tile_type_rule_set_handle.0) {
-    debug!("Loaded: Tile type rule set for {} tiles", rule_set.states.len());
+    debug!("Loaded: Tile type rule set for [{}] tiles", rule_set.states.len());
     let mut rule_sets = HashMap::new();
     for state in rule_set.states {
       rule_sets.insert(state.tile_type, state.permitted_self);
@@ -447,4 +362,241 @@ fn tile_type_rules(
   }
 
   HashMap::new()
+}
+
+/// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
+/// their possible states.
+///
+/// Note:
+/// - [`TerrainType::Any`] is filtered out, as it is not a valid terrain type to be rendered and used to extend other
+///   terrain types. This [`TerrainType`] causes panics if it is used later in the generation logic.
+/// - [`TileType::Unknown`] is also filtered out, as it is not a valid tile type and is only used to signal
+///   an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
+///   single-coloured tile to indicate the error.
+fn resolve_rules_to_terrain_states_map(
+  terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
+  tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
+) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
+  let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
+  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
+    let relevant_terrain_rules = terrain_rules
+      .get(&terrain_type)
+      .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
+    let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
+      .filter(|&t| t != TileType::Unknown)
+      .map(|tile_type| {
+        let all_rules_for_tile_type = tile_type_rules
+          .get(&tile_type)
+          .expect(&format!("Failed to find rule set for [{:?}] tile type", tile_type));
+        let resolved_rules_for_tile_type = relevant_terrain_rules
+          .iter()
+          .filter(|rule| all_rules_for_tile_type.contains(&rule.name))
+          .cloned()
+          .collect();
+
+        (tile_type, resolved_rules_for_tile_type)
+      })
+      .collect();
+    trace!(
+      "Resolved [{}] rules for [{:?}] terrain type: {:?}",
+      resolved_rules_for_terrain.values().map(|ts| ts.len()).sum::<usize>(),
+      terrain_type,
+      resolved_rules_for_terrain
+        .iter()
+        .map(|(k, v)| (k, v.len()))
+        .collect::<HashMap<&TileType, usize>>()
+    );
+    terrain_state_map.insert(terrain_type, resolved_rules_for_terrain);
+  }
+  debug!(
+    "Resolved [{}] rules for [{}] terrain types",
+    terrain_state_map
+      .values()
+      .map(|tile_map| tile_map.values().map(|v| v.len()).sum::<usize>())
+      .sum::<usize>(),
+    terrain_state_map.len()
+  );
+
+  terrain_state_map
+}
+
+/// Validates the terrain state map in a basic way. This function checks for the following:
+/// - The map must not contain [`TerrainType::Any`]
+/// - The map must not contain [`TileType::Unknown`] for any [`TerrainType`]
+/// - Each state must not have asymmetric neighbour rules (i.e. a state that allows a neighbour in one direction
+///   but the neighbour state does not allow the original state in the opposite direction) - however, paths and
+///   [`ObjectName::Empty`] are ignored
+/// - Each state must not have duplicate neighbours in the same direction
+/// - Each state must not have duplicate [`Connection`]s (i.e. same direction defined multiple times)
+/// - Each state must not have missing [`Connection`] definitions
+fn validate_terrain_state_map(terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>) {
+  let mut errors = HashSet::new();
+  let state_lookup_map = build_state_lookup_map(terrain_state_map);
+  for (terrain, state_map) in terrain_state_map {
+    if let Err(error_msg) = validate_terrain_type(terrain) {
+      errors.insert(error_msg);
+      continue;
+    }
+    for (tile_type, states) in state_map {
+      if let Err(error_msg) = validate_tile_type(tile_type, terrain) {
+        errors.insert(error_msg);
+        continue;
+      }
+      for state in states {
+        validate_terrain_state(state, *terrain, &state_lookup_map, terrain_state_map, &mut errors);
+      }
+    }
+  }
+
+  if !errors.is_empty() {
+    error!("Found [{}] validation errors in terrain state map:", errors.len());
+    for (i, error) in errors.iter().enumerate() {
+      error!("- {}. {}", i + 1, error);
+    }
+    panic!("Terrain state map failed validation - please fix the errors above before proceeding");
+  } else if errors.is_empty() {
+    debug!("✅  Terrain state map passed validation");
+  }
+}
+
+/// Builds a lookup map for terrain states. This is used to quickly look up terrain states by their terrain type,
+/// tile type, and object name.
+fn build_state_lookup_map(
+  terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+) -> HashMap<(TerrainType, TileType, ObjectName), &TerrainState> {
+  terrain_state_map
+    .iter()
+    .flat_map(|(terrain, state_map)| {
+      state_map
+        .iter()
+        .flat_map(move |(tile_type, states)| states.iter().map(move |state| ((*terrain, *tile_type, state.name), state)))
+    })
+    .collect()
+}
+
+/// Validates the terrain type. Returns and error if the terrain type is [`TerrainType::Any`] since this terrain type
+/// must not be in the terrain state map. It is only used to extend other terrain types or as a placeholder value
+/// in the generation logic at runtime.
+fn validate_terrain_type(terrain: &TerrainType) -> Result<(), String> {
+  match terrain {
+    TerrainType::Any => Err("Found terrain type [Any], which is not allowed".to_string()),
+    _ => Ok(()),
+  }
+}
+
+/// Validates the tile type. Returns an error if the tile type is [`TileType::Unknown`] since this tile type is only
+/// used to signal an error in the generation logic and should not be present in the terrain state map.
+fn validate_tile_type(tile_type: &TileType, terrain: &TerrainType) -> Result<(), String> {
+  match tile_type {
+    TileType::Unknown => Err(format!(
+      "Found tile type [Unknown] for terrain [{:?}], which is not allowed",
+      terrain
+    )),
+    _ => Ok(()),
+  }
+}
+
+/// Validates the neighbours of a given terrain state. See documentation for functions called within this function
+/// for more details.
+fn validate_terrain_state(
+  state: &TerrainState,
+  terrain: TerrainType,
+  state_lookup: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
+  terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+  errors: &mut HashSet<String>,
+) {
+  validate_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
+  validate_duplicate_neighbours(state, terrain, errors);
+  validate_duplicate_connections(state, terrain, errors);
+  validate_missing_connections(state, terrain, errors);
+}
+
+/// Adds an error to `errors` for each asymmetric neighbour rules in the given terrain state. Asymmetry refers to
+/// a state allowing a neighbour in one direction, but the neighbour state not allowing the original state in the
+/// opposite direction.
+///
+/// This is only checked for non-path objects, as paths are allowed to have asymmetric connections
+/// because paths are calculated and "collapsed" before the wave function collapse algorithm even runs. As a result,
+/// only non-path objects need to know that they are allowed to be placed next to a path object and no rules for the
+/// opposite are required since they would never be evaluated.
+fn validate_asymmetric_rules(
+  state: &TerrainState,
+  terrain: TerrainType,
+  state_lookup_map: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
+  terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+  errors: &mut HashSet<String>,
+) {
+  let all_terrain_tile_combinations: Vec<(TerrainType, TileType)> = terrain_state_map
+    .iter()
+    .flat_map(|(terrain, state_map)| state_map.keys().map(move |tile_type| (*terrain, *tile_type)))
+    .collect();
+
+  for (connection, permitted_neighbours) in &state.permitted_neighbours {
+    let opposite_connection = connection.opposite();
+    for &neighbour_object_name in permitted_neighbours {
+      let has_reciprocal = all_terrain_tile_combinations
+        .iter()
+        .filter_map(|(terrain_type, tile_type)| state_lookup_map.get(&(*terrain_type, *tile_type, neighbour_object_name)))
+        .any(|neighbour_state| {
+          neighbour_state
+            .permitted_neighbours
+            .iter()
+            .any(|(c, neighbours)| *c == opposite_connection && neighbours.contains(&state.name))
+        });
+      if !has_reciprocal && !neighbour_object_name.is_path() {
+        errors.insert(format!(
+          "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
+          terrain,
+          state.name,
+          neighbour_object_name,
+          connection,
+          neighbour_object_name,
+          state.name,
+          opposite_connection
+        ));
+      }
+    }
+  }
+}
+
+/// Adds an error to `errors` if there are duplicate neighbours - i.e. [`ObjectName`]s - in
+/// [`TerrainState::permitted_neighbours`].
+fn validate_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+  for (connection, permitted_neighbours) in &state.permitted_neighbours {
+    let unique_neighbours: HashSet<&ObjectName> = permitted_neighbours.iter().collect();
+    if unique_neighbours.len() != permitted_neighbours.len() {
+      errors.insert(format!(
+        "Duplicate neighbours found in [{:?}] for [{:?}] [{:?}]",
+        terrain, state.name, connection,
+      ));
+    }
+  }
+}
+
+/// Adds an error to `errors` if there are duplicate [`Connection`]s in [`TerrainState::permitted_neighbours`].
+fn validate_duplicate_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+  let connections: Vec<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
+  let unique_connections: HashSet<_> = connections.iter().collect();
+
+  if unique_connections.len() != connections.len() {
+    errors.insert(format!(
+      "Duplicate connection directions found for [{:?}] [{:?}]: {:?}",
+      terrain, state.name, connections
+    ));
+  }
+}
+
+/// Adds an error to `errors` if not all four cardinal directions are defined as [`Connection`]s in
+/// [`TerrainState::permitted_neighbours`].
+fn validate_missing_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+  const ALL_CONNECTIONS: [Connection; 4] = [Connection::Top, Connection::Right, Connection::Bottom, Connection::Left];
+  let defined_connections: HashSet<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
+  for connection in &ALL_CONNECTIONS {
+    if !defined_connections.contains(connection) {
+      errors.insert(format!(
+        "Connection definition for [{:?}] is missing for [{:?}] [{:?}]",
+        connection, terrain, state.name
+      ));
+    }
+  }
 }

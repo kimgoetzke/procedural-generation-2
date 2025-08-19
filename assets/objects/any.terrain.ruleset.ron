@@ -4,7 +4,7 @@
     (
       index: 0,
       name: Empty,
-      weight: 100,
+      weight: 200,
       permitted_neighbours: [
         (
           Top,
@@ -32,6 +32,7 @@
             SandPathTop,
             SandPathRight,
             SandPathLeft,
+            SandPathHorizontal,
             SandStoneTopFill1,
             SandStoneTopFill2,
             SandStoneTopRightFill,
@@ -52,6 +53,7 @@
             SandPattern2,
             SandPattern3,
             SandPattern4,
+            SandPattern5,
             ForestTree1,
             ForestTree2,
             ForestTree3,
@@ -61,6 +63,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathHorizontal,
+            PathTop,
+            PathLeft,
+            PathTopRight,
+            PathTopLeft,
+            PathTopHorizontal,
           ]
         ),
         (
@@ -106,10 +115,9 @@
             SandStone6,
             SandGrassPatch1,
             SandGrassPatch2,
-            SandPattern1,
-            SandPattern2,
             SandPattern3,
             SandPattern4,
+            SandPattern5,
             ForestTree1,
             ForestTree2,
             ForestTree3,
@@ -119,6 +127,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathVertical,
+            PathBottom,
+            PathTop,
+            PathLeft,
+            PathTopLeft,
+            PathBottomLeft,
+            PathLeftVertical,
           ]
         ),
         (
@@ -165,9 +180,8 @@
             SandGrassPatch1,
             SandGrassPatch2,
             SandPattern1,
-            SandPattern2,
-            SandPattern3,
             SandPattern4,
+            SandPattern5,
             ForestTree1,
             ForestTree2,
             ForestTree3,
@@ -177,6 +191,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathVertical,
+            PathBottom,
+            PathTop,
+            PathTopRight,
+            PathBottomRight,
+            PathRightVertical,
           ]
         ),
         (
@@ -236,6 +257,13 @@
             ForestBush2,
             ForestBush3,
             ForestBush4,
+            PathRight,
+            PathHorizontal,
+            PathBottom,
+            PathLeft,
+            PathBottomRight,
+            PathBottomLeft,
+            PathBottomHorizontal,
           ]
         ),
       ]

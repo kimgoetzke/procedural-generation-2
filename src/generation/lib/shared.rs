@@ -1,6 +1,6 @@
 use crate::coords::Point;
 use crate::coords::point::ChunkGrid;
-use crate::generation::resources::GenerationResourcesCollection;
+use crate::generation::lib::GenerationResourcesCollection;
 use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::{Commands, Component, Entity, Query};

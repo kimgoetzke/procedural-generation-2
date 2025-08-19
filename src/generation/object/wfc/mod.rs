@@ -1,12 +1,11 @@
 use crate::generation::lib::shared;
-use crate::generation::object::lib::tile_data::TileData;
-use crate::generation::object::lib::{Cell, IterationResult, ObjectData, ObjectGrid};
-use crate::resources::Settings;
+use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::Rng;
 use rand::prelude::StdRng;
 
+/// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
 
 impl Plugin for WfcPlugin {
@@ -14,45 +13,54 @@ impl Plugin for WfcPlugin {
 }
 
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
-pub fn determine_objects_in_grid(
-  mut rng: &mut StdRng,
-  object_generation_data: &mut (ObjectGrid, Vec<TileData>),
-  _settings: &Settings,
-) -> Vec<ObjectData> {
+pub fn determine_decorative_objects(mut rng: &mut StdRng, grid: &mut ObjectGrid, is_decoration_enabled: bool) {
   let start_time = shared::get_time();
-  let grid = &mut object_generation_data.0;
-  let mut snapshots = vec![];
-  let mut iter_count = 1;
-  let mut has_entropy = true;
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
+  if is_decoration_enabled {
+    let mut snapshots = vec![];
+    let mut iter_count = 1;
+    let mut has_entropy = true;
 
-  while has_entropy {
-    match iterate(&mut rng, grid) {
-      IterationResult::Failure => handle_failure(
-        grid,
-        &mut snapshots,
-        &mut iter_count,
-        &mut snapshot_error_count,
-        &mut iter_error_count,
-        &mut total_error_count,
-      ),
-      result => handle_success(
-        grid,
-        &mut snapshots,
-        &mut iter_count,
-        &mut has_entropy,
-        &mut iter_error_count,
-        result,
-      ),
+    while has_entropy {
+      match iterate(&mut rng, grid) {
+        IterationResult::Failure => handle_failure(
+          grid,
+          &mut snapshots,
+          &mut iter_count,
+          &mut snapshot_error_count,
+          &mut iter_error_count,
+          &mut total_error_count,
+        ),
+        result => handle_success(
+          grid,
+          &mut snapshots,
+          &mut iter_count,
+          &mut has_entropy,
+          &mut iter_error_count,
+          result,
+        ),
+      }
     }
+  } else {
+    debug!("Skipped decoration generation for {} because it is disabled", grid.cg);
   }
 
-  let object_data = create_object_data(&object_generation_data.0, &object_generation_data.1);
-  log_summary(start_time, snapshot_error_count, total_error_count, &object_generation_data.0);
-
-  object_data
+  log_summary(
+    start_time,
+    snapshot_error_count,
+    total_error_count,
+    &grid,
+    is_decoration_enabled,
+  );
 }
 
+/// A single iteration over the object grid that performs the following steps:
+/// 1. **Observation**: Get the cells with the lowest entropy.
+/// 2. **Collapse**: Collapse a random cell from the cells with the lowest entropy.
+/// 3. **Propagation**: Update every neighbour's states and the grid, if possible.
+///
+/// This method is the central part of the wave function collapse algorithm and is called repeatedly until no more
+/// cells can be collapsed.
 fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   // Observation: Get the cells with the lowest entropy
   let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
@@ -74,7 +82,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   while let Some(cell) = stack.pop() {
     grid.set_cell(cell.clone());
     for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
-      if !neighbour.is_collapsed {
+      if !neighbour.is_collapsed() {
         if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
           if has_changed {
             stack.push(neighbour_cell);
@@ -136,22 +144,6 @@ fn handle_success(
   *iter_error_count = 0;
 }
 
-fn create_object_data(grid: &ObjectGrid, tile_data: &Vec<TileData>) -> Vec<ObjectData> {
-  let mut object_data = vec![];
-  object_data.extend(
-    tile_data
-      .iter()
-      .filter_map(|tile_data| {
-        grid
-          .get_cell(&tile_data.flat_tile.coords.internal_grid)
-          .filter(|cell| cell.index != 0) // Sprite index 0 is always transparent
-          .map(|cell| ObjectData::from_wfc_cell(tile_data, cell))
-      })
-      .collect::<Vec<ObjectData>>(),
-  );
-  object_data
-}
-
 fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mut usize, current_entropy: i32) {
   trace!(
     "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
@@ -176,9 +168,23 @@ fn log_failure(
   );
 }
 
-fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count: i32, grid: &ObjectGrid) {
-  match (total_error_count, snapshot_error_count) {
-    (0, 0) => {
+fn log_summary(
+  start_time: u128,
+  snapshot_error_count: usize,
+  total_error_count: i32,
+  grid: &ObjectGrid,
+  is_decoration_enabled: bool,
+) {
+  match (is_decoration_enabled, total_error_count, snapshot_error_count) {
+    (false, _, _) => {
+      trace!(
+        "Completed converting object grid to object data for {} in {} ms on {}",
+        grid.cg,
+        shared::get_time() - start_time,
+        shared::thread_name()
+      );
+    }
+    (true, 0, 0) => {
       trace!(
         "Completed wave function collapse for {} in {} ms on {}",
         grid.cg,
@@ -186,7 +192,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (1..15, 0) => {
+    (true, 1..15, 0) => {
       debug!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,
@@ -195,7 +201,7 @@ fn log_summary(start_time: u128, snapshot_error_count: usize, total_error_count:
         shared::thread_name()
       );
     }
-    (15.., 0) => {
+    (true, 15.., 0) => {
       warn!(
         "Completed wave function collapse for {} (resolving {} errors) in {} ms on {}",
         grid.cg,

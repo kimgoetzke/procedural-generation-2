@@ -13,7 +13,7 @@ impl Plugin for PostProcessorPlugin {
 
 pub(crate) fn process(mut chunk: Chunk, settings: &Settings) -> Chunk {
   let start_time = shared::get_time();
-  for layer in 1..TerrainType::length() {
+  for layer in (1..TerrainType::length()).rev() {
     let layer_name = TerrainType::from(layer);
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
       trace!("Skipped processing [{:?}] layer because it's disabled", layer_name);
@@ -31,10 +31,13 @@ pub(crate) fn process(mut chunk: Chunk, settings: &Settings) -> Chunk {
   chunk
 }
 
-/// Removing tiles with tile type `Single` that have no `Fill` tile below them because it will cause rendering issues
-/// e.g. a single grass tile may overlap with a water tile below it which doesn't look good.
+/// Removes tiles of [`TileType::Single`] that have no [`TileType::Fill`] tile below them because with the current tile
+/// set sprites this will cause rendering issues e.g. a single [`TerrainType::Land2`] grass tile be rendered on top of
+/// a single [`TerrainType::Land1`] "island" tile with water tile below it which doesn't look good. With a different
+/// tile set this may not be necessary.
 fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Chunk) {
   let mut tiles_to_clear: Vec<(Point<InternalGrid>, Option<TileType>)> = Vec::new();
+  let cg = chunk.coords.chunk_grid;
   if let (Some(this_plane), Some(plane_below)) = chunk.layered_plane.get_and_below_mut(layer) {
     tiles_to_clear = this_plane
       .data
@@ -48,10 +51,10 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
                 return Some((tile.coords.internal_grid, Some(tile_below.tile_type)));
               }
             } else if tile.terrain != TerrainType::ShallowWater {
-              // TODO: Find out why the below happening and fix it or remove the warning if intended
+              // TODO: Find out if the below still happens and why - it's not a problem in practice though
               warn!(
-                "{:?} tile {:?} {:?} removed because the layer below it was missing: {:?}",
-                tile.terrain, tile.coords.tile_grid, tile.coords.internal_grid, tile
+                "Removed [{:?}] [{:?}] tile {:?} {:?} because it did not exist on the layer below",
+                tile.terrain, tile.tile_type, tile.coords.tile_grid, tile.coords.internal_grid
               );
               return Some((tile.coords.internal_grid, None));
             }
@@ -66,18 +69,18 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
     }
   }
 
-  for (ig, tile_type) in &tiles_to_clear {
-    let tile_type = if tile_type.is_none() {
-      warn!(
-        "Tile below tile {} was missing, assuming tile type after lowering terrain should be [Fill]",
-        ig
-      );
-      TileType::Fill
+  for (ig, _) in &tiles_to_clear {
+    let (tile_type, terrain) = if let Some(tile) = chunk.layered_plane.get_tile_from_highest_layer(ig) {
+      (tile.tile_type, tile.terrain)
     } else {
-      tile_type.unwrap()
+      panic!("Tile below tile {} on chunk {} was missing", ig, cg);
     };
     if let Some(tile) = chunk.layered_plane.flat.get_tile_mut(ig) {
-      tile.lower_terrain_by_one(tile_type);
+      tile.update_to(tile_type, terrain);
     }
+    trace!(
+      "Updated tile {} on chunk {} to [{:?}] [{:?}] because a layer above it was cleared",
+      ig, cg, tile_type, terrain
+    );
   }
 }

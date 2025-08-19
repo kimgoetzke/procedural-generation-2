@@ -12,7 +12,7 @@ pub trait CoordType {
     Self: Sized;
 }
 
-/// Represents the world coordinates of the application. Like every `Point`, it stores the `x` and `y` values as `i32`.
+/// Represents the world coordinates of the application. Like every [`Point`], it stores the `x` and `y` values as `i32`.
 /// Each `x`-`y` value pair represents a pixel in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct World;
@@ -23,8 +23,8 @@ impl CoordType for World {
   }
 }
 
-/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `TileGrid`
-/// represents a tile of `TILE_SIZE` in the world.
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each [`Point`] of type [`TileGrid`]
+/// represents a tile of [`TILE_SIZE`] in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct TileGrid;
 
@@ -34,8 +34,8 @@ impl CoordType for TileGrid {
   }
 }
 
-/// Represents coordinates in the tile grid abstraction over the world coordinates. Each `Point` of type `ChunkGrid`
-/// represents a chunk of `TILE_SIZE` * `CHUNK_SIZE` in the world.
+/// Represents coordinates in the tile grid abstraction over the world coordinates. Each [`Point`] of type [`ChunkGrid`]
+/// represents a chunk of [`TILE_SIZE`] * [`CHUNK_SIZE`] in the world.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct ChunkGrid;
 
@@ -45,9 +45,9 @@ impl CoordType for ChunkGrid {
   }
 }
 
-/// Represents coordinates internal to any type of grid structure that uses them. `Point<InternalGrid>` differ from
-/// other `Point`s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
-/// values increase towards the bottom right corner, whereas all other `Point`s are based on the world coordinates i.e.
+/// Represents coordinates internal to any type of grid structure that uses them. [`Point<InternalGrid>`] differ from
+/// other [`Point`]s in that the top left corner of the structure in which they are used is (0, 0) and the `x` and `y`
+/// values increase towards the bottom right corner, whereas all other [`Point`]s are based on the world coordinates i.e.
 /// not linked to structure that uses them.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Reflect)]
 pub struct InternalGrid;
@@ -117,8 +117,7 @@ impl<T: CoordType> Point<T> {
     }
   }
 
-  // TODO: Consider changing implementation for InternalGrid point because top/bottom directions are flipped when used
-  pub fn from_direction(direction: &Direction) -> Self {
+  pub fn from_direction(direction: &Direction) -> Point<T> {
     let (i, j) = match direction {
       Direction::TopLeft => (-1, 1),
       Direction::Top => (0, 1),
@@ -130,11 +129,19 @@ impl<T: CoordType> Point<T> {
       Direction::Bottom => (0, -1),
       Direction::BottomRight => (1, -1),
     };
-    Self::new(i, j)
+
+    Self::new(i, if T::type_name() == "ig" { -j } else { j }) // Flip y for InternalGrid
   }
 
   pub fn distance_to(&self, other: &Point<T>) -> f32 {
     ((self.x - other.x).pow(2) as f32 + (self.y - other.y).pow(2) as f32).sqrt()
+  }
+
+  pub fn is_direct_cardinal_neighbour(&self, other: &Point<T>) -> bool {
+    let dx = (self.x - other.x).abs();
+    let dy = (self.y - other.y).abs();
+
+    (dx == 1 && dy == 0) || (dx == 0 && dy == 1)
   }
 
   pub fn to_vec2(&self) -> Vec2 {
@@ -147,7 +154,7 @@ impl Point<World> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` of type `World` with the `x` and `y` values rounded to the nearest integer to achieve this.
+  /// Returns a [`Point`] of type [`World`] with the `x` and `y` values rounded to the nearest integer to achieve this.
   pub fn new_world_from_world_vec2(w: Vec2) -> Self {
     Self::new(w.x.round() as i32, w.y.round() as i32)
   }
@@ -162,10 +169,14 @@ impl Point<World> {
 }
 
 impl Point<InternalGrid> {
-  /// Creates new `Point` of type `InternalGrid` whereby the top left corner of the grid is (0, 0) and x and y values
-  /// increase towards the bottom right corner.
+  /// Creates new [`Point`] of type [`InternalGrid`] whereby the top left corner of the grid is (0, 0) and x and y
+  /// values increase towards the bottom right corner.
   pub fn new_internal_grid(x: i32, y: i32) -> Self {
     Self::new(x, y)
+  }
+
+  pub fn is_touching_edge(&self) -> bool {
+    self.x == 0 || self.x == CHUNK_SIZE - 1 || self.y == 0 || self.y == CHUNK_SIZE - 1
   }
 }
 
@@ -174,8 +185,8 @@ impl Point<TileGrid> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this. Used
-  /// to convert world coordinates to tile grid coordinates.
+  /// Returns a [`Point`] on the tile grid with the `x` and `y` values rounded to the nearest tile to achieve this.
+  /// Used to convert world coordinates to tile grid coordinates.
   pub fn new_tile_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       ((w.x - (TILE_SIZE as f32 / 2.)) / TILE_SIZE as f32).round() as i32,
@@ -196,8 +207,8 @@ impl Point<ChunkGrid> {
     Self::new(x, y)
   }
 
-  /// Returns a `Point` on the chunk grid with the `x` and `y` values rounded to the nearest chunk to achieve this. Used
-  /// to convert world coordinates to chunk grid coordinates.
+  /// Returns a [`Point`] on the chunk grid with the `x` and `y` values rounded to the nearest chunk to achieve this.
+  /// Used to convert world coordinates to chunk grid coordinates.
   pub fn new_chunk_grid_from_world_vec2(w: Vec2) -> Self {
     Self::new(
       (w.x / (TILE_SIZE as f32 * CHUNK_SIZE as f32)).round() as i32,
@@ -219,7 +230,7 @@ mod tests {
   use bevy::prelude::Vec2;
 
   #[test]
-  fn internal_grid_point_creation() {
+  fn new_internal_grid() {
     let p = Point::new_internal_grid(5, 6);
     assert_eq!(p.x, 5);
     assert_eq!(p.y, 6);
@@ -227,7 +238,7 @@ mod tests {
   }
 
   #[test]
-  fn world_point_creation() {
+  fn new_world() {
     let p = Point::new_world(10, 20);
     assert_eq!(p.x, 10);
     assert_eq!(p.y, 20);
@@ -235,7 +246,7 @@ mod tests {
   }
 
   #[test]
-  fn tile_grid_point_creation() {
+  fn new_tile_grid() {
     let p = Point::new_tile_grid(2, 13);
     assert_eq!(p.x, 2);
     assert_eq!(p.y, 13);
@@ -243,28 +254,28 @@ mod tests {
   }
 
   #[test]
-  fn point_creation_from_direction_1() {
+  fn from_direction_for_internal_grid_point() {
+    let direction = Direction::TopLeft;
+    let point: Point<InternalGrid> = Point::from_direction(&direction);
+    assert_eq!(point, Point::new(-1, -1));
+  }
+
+  #[test]
+  fn from_direction_for_other_grid_points() {
     let direction = Direction::TopLeft;
     let point: Point<World> = Point::from_direction(&direction);
     assert_eq!(point, Point::new(-1, 1));
   }
 
   #[test]
-  fn point_creation_from_direction_2() {
-    let direction = Direction::TopLeft;
-    let point: Point<InternalGrid> = Point::from_direction(&direction);
-    assert_eq!(point, Point::new(-1, 1));
-  }
-
-  #[test]
-  fn tile_grid_point_creation_from_world() {
+  fn new_tile_grid_from_world() {
     let w = Point::new_world(TILE_SIZE as i32, TILE_SIZE as i32);
     let tg = Point::new_tile_grid_from_world(w);
     assert_eq!(tg, Point::new_tile_grid(1, 1));
   }
 
   #[test]
-  fn chunk_grid_point_creation_from_world() {
+  fn new_chunk_grid_from_world() {
     let w = Point::new_world(TILE_SIZE as i32 * CHUNK_SIZE * 2, TILE_SIZE as i32 * CHUNK_SIZE * 2);
     let cg = Point::new_chunk_grid_from_world(w);
     assert_eq!(cg, Point::new_chunk_grid(2, 2));
@@ -280,11 +291,38 @@ mod tests {
   }
 
   #[test]
-  fn point_distance() {
-    let p1: Point<TileGrid> = Point::new(0, 0);
-    let p2 = Point::new(3, 4);
-    let distance = p1.distance_to(&p2);
-    assert_eq!(distance, 5.0);
+  fn distance_to_same_point() {
+    let p1: Point<InternalGrid> = Point::new(3, 4);
+    let p2: Point<InternalGrid> = Point::new(3, 4);
+    assert_eq!(p1.distance_to(&p2), 0.0);
+  }
+
+  #[test]
+  fn distance_to_positive_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(0, 0);
+    let p2: Point<InternalGrid> = Point::new(3, 4);
+    assert_eq!(p1.distance_to(&p2), 5.0);
+  }
+
+  #[test]
+  fn distance_to_negative_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(-3, -4);
+    let p2: Point<InternalGrid> = Point::new(0, 0);
+    assert_eq!(p1.distance_to(&p2), 5.0);
+  }
+
+  #[test]
+  fn distance_to_mixed_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(-3, 4);
+    let p2: Point<InternalGrid> = Point::new(3, -4);
+    assert_eq!(p1.distance_to(&p2), 10.0);
+  }
+
+  #[test]
+  fn distance_to_large_coordinates() {
+    let p1: Point<InternalGrid> = Point::new(1000, 2000);
+    let p2: Point<InternalGrid> = Point::new(3000, 4000);
+    assert_eq!(p1.distance_to(&p2), 2828.4272);
   }
 
   #[test]
@@ -292,5 +330,76 @@ mod tests {
     let p: Point<ChunkGrid> = Point::new(1, 2);
     let vec = p.to_vec2();
     assert_eq!(vec, Vec2::new(1.0, 2.0));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_true_horizontal() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(2, 1);
+    assert!(p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_true_vertical() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(1, 2);
+    assert!(p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_diagonal() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(2, 2);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_far_away() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(3, 3);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_direct_cardinal_neighbour_false_same_point() {
+    let p1: Point<InternalGrid> = Point::new(1, 1);
+    let p2: Point<InternalGrid> = Point::new(1, 1);
+    assert!(!p1.is_direct_cardinal_neighbour(&p2));
+  }
+
+  #[test]
+  fn is_touching_edge_true_top_edge() {
+    let p = Point::new_internal_grid(5, 0);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_bottom_edge() {
+    let p = Point::new_internal_grid(5, CHUNK_SIZE - 1);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_left_edge() {
+    let p = Point::new_internal_grid(0, 5);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_true_right_edge() {
+    let p = Point::new_internal_grid(CHUNK_SIZE - 1, 5);
+    assert!(p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_false_inside_grid() {
+    let p = Point::new_internal_grid(5, 5);
+    assert!(!p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_touching_edge_false_outside_grid() {
+    let p = Point::new_internal_grid(CHUNK_SIZE, CHUNK_SIZE);
+    assert!(!p.is_touching_edge());
   }
 }

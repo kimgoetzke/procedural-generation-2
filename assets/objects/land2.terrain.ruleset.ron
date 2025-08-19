@@ -287,10 +287,10 @@
       name: GrassBush1,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -298,10 +298,10 @@
       name: GrassBush2,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -309,10 +309,10 @@
       name: GrassBush3,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -320,10 +320,10 @@
       name: GrassBush4,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -331,10 +331,10 @@
       name: GrassFlower1,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -342,10 +342,10 @@
       name: GrassFlower2,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
@@ -353,10 +353,10 @@
       name: GrassFlower3,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty ] ),
-        ( Left, [ Empty ] ),
-        ( Right, [ Empty ] ),
-        ( Bottom, [ Empty ] ),
+        ( Top, [ Empty, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Right, [ Empty, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Bottom, [ Empty, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
   ]
