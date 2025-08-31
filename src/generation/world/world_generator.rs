@@ -71,6 +71,7 @@ pub fn spawn_tiles(
 ) {
   let start_time = shared::get_time();
   let is_sprite_animation_disabled = !settings.general.animate_terrain_sprites;
+  let is_drawing_terrain_sprites_disabled = !settings.general.draw_terrain_sprites;
   for layer in 0..TerrainType::length() {
     if layer < settings.general.spawn_from_layer || layer > settings.general.spawn_up_to_layer {
       trace!(
@@ -81,8 +82,13 @@ pub fn spawn_tiles(
     }
 
     if let Some(plane) = chunk.layered_plane.get(layer) {
-      let texture_groups = prepare_texture_groups(resources, plane);
+      let texture_groups = prepare_texture_groups(resources, plane, is_drawing_terrain_sprites_disabled);
       for ((texture, has_animated_sprites, is_animated), tiles) in texture_groups {
+        let is_animated = if is_drawing_terrain_sprites_disabled || is_sprite_animation_disabled {
+          false
+        } else {
+          is_animated
+        };
         spawn_tile_mesh(
           commands,
           resources,
@@ -93,7 +99,8 @@ pub fn spawn_tiles(
           layer as f32,
           chunk_entity,
           has_animated_sprites,
-          if is_sprite_animation_disabled { false } else { is_animated },
+          is_animated,
+          is_drawing_terrain_sprites_disabled,
         );
       }
     }
@@ -112,6 +119,7 @@ pub fn spawn_tiles(
 fn prepare_texture_groups<'a>(
   resources: &GenerationResourcesCollection,
   plane: &'a Plane,
+  is_drawing_terrain_sprites_disabled: bool,
 ) -> HashMap<(Handle<Image>, bool, bool), Vec<&'a Tile>> {
   let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
   for row in plane.data.iter() {
@@ -119,15 +127,16 @@ fn prepare_texture_groups<'a>(
       let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
       let has_animated_sprites = asset_collection.anim.is_some();
       let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
-      let texture = match has_animated_sprites {
-        true => {
+      let texture = match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
+        (false, true) => {
           &asset_collection
             .anim
             .as_ref()
             .expect("Failed to get animated asset pack from resource collection")
             .texture
         }
-        false => &asset_collection.stat.texture,
+        (false, false) => &asset_collection.stat.texture,
+        (true, _) => &resources.placeholder.texture,
       };
 
       texture_groups
@@ -151,12 +160,18 @@ fn spawn_tile_mesh(
   parent_entity: Entity,
   has_animated_sprites: bool,
   is_animated: bool,
+  is_drawing_terrain_sprites_disabled: bool,
 ) {
   let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
   let tiles_cloned = tiles.clone();
   let cg = tiles[0].coords.chunk_grid;
-  let (vertices, indices, uvs, tile_sprite_indices, sprite_sheet_columns, sprite_sheet_rows) =
-    calculate_mesh_attributes(&resources, tiles, layer, has_animated_sprites);
+  let (vertices, indices, uvs, tile_sprite_indices, sprite_sheet_columns, sprite_sheet_rows) = calculate_mesh_attributes(
+    &resources,
+    tiles,
+    layer,
+    has_animated_sprites,
+    is_drawing_terrain_sprites_disabled,
+  );
 
   mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
   mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
@@ -172,7 +187,7 @@ fn spawn_tile_mesh(
           ..default()
         })),
         Transform::from_xyz(0.0, 0.0, layer),
-        Name::new(format!("{:?} Animated Mesh", TerrainType::from(layer as usize))),
+        Name::new(format!("{:?} Mesh", TerrainType::from(layer as usize))),
         TileMeshComponent::new(parent_entity, cg, tiles_cloned.into_iter().copied().collect()),
       ))
       .insert_if(
@@ -196,27 +211,22 @@ fn spawn_tile_mesh(
 }
 
 fn calculate_mesh_attributes(
-  resources: &&GenerationResourcesCollection,
+  resources: &GenerationResourcesCollection,
   tiles: Vec<&Tile>,
   layer: f32,
   has_animated_sprites: bool,
+  is_drawing_terrain_sprites_disabled: bool,
 ) -> (Vec<[f32; 3]>, Vec<u32>, Vec<[f32; 2]>, Vec<usize>, f32, f32) {
   let mut vertices = Vec::new();
   let mut indices = Vec::new();
   let mut uvs = Vec::new();
   let mut tile_indices = Vec::new();
   let tile_size = TILE_SIZE as f32;
-  let columns = if has_animated_sprites {
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32
-  } else {
-    DEFAULT_STATIC_TILE_SET_COLUMNS as f32
-  };
-  let rows = TILE_SET_ROWS as f32;
+  let columns = resolve_columns(has_animated_sprites, is_drawing_terrain_sprites_disabled);
+  let rows = resolve_rows(is_drawing_terrain_sprites_disabled);
 
   for &tile in tiles {
-    let sprite_index = tile
-      .tile_type
-      .calculate_sprite_index(&tile.terrain, &tile.climate, &resources);
+    let sprite_index = resolve_sprite_index(resources, &tile, is_drawing_terrain_sprites_disabled);
     let base_idx = vertices.len() as u32;
 
     // Tile index for animation (ignored if not animated)
@@ -247,4 +257,41 @@ fn calculate_mesh_attributes(
   }
 
   (vertices, indices, uvs, tile_indices, columns, rows)
+}
+
+/// Determines the number of columns in the sprite sheet based on whether terrain sprites are disabled
+/// and whether the asset collection contains animated sprites. The latter can only be true if terrain sprites
+/// are enabled.
+fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool) -> f32 {
+  match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
+    (true, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
+    (false, true) => DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, false) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
+  }
+}
+
+/// Determines the number of rows in the sprite sheet based on whether terrain sprites are disabled.
+fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
+  if is_drawing_terrain_sprites_disabled {
+    TILE_SET_PLACEHOLDER_ROWS as f32
+  } else {
+    TILE_SET_ROWS as f32
+  }
+}
+
+/// Determines the sprite index for a tile based on its terrain, climate, and type. If drawing terrain sprites
+/// is disabled, it simply returns the terrain type as the sprite index which corresponds to the placeholder sprite
+/// sheet.
+fn resolve_sprite_index(
+  resources: &GenerationResourcesCollection,
+  tile: &Tile,
+  is_drawing_terrain_sprites_disabled: bool,
+) -> usize {
+  if is_drawing_terrain_sprites_disabled {
+    return tile.terrain as usize;
+  }
+
+  tile
+    .tile_type
+    .calculate_sprite_index(&tile.terrain, &tile.climate, &resources)
 }
