@@ -1,4 +1,5 @@
-use crate::events::ToggleDebugInfo;
+use crate::events::ToggleDiagnostics;
+use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 use iyes_perf_ui::PerfUiPlugin;
@@ -18,8 +19,30 @@ impl Plugin for DiagnosticsUiPlugin {
       .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
       .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
       .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
-      .add_systems(Startup, add_perf_ui)
-      .add_systems(Update, toggle_ui.before(iyes_perf_ui::PerfUiSet::Setup));
+      .add_systems(Startup, add_perf_ui_system)
+      .add_systems(Update, toggle_ui_event.before(iyes_perf_ui::PerfUiSet::Setup));
+  }
+}
+
+fn add_perf_ui_system(commands: Commands, settings: Res<Settings>) {
+  if !settings.general.display_diagnostics {
+    return;
+  }
+  add_perf_ui(commands);
+}
+
+fn toggle_ui_event(
+  mut events: EventReader<ToggleDiagnostics>,
+  q_root: Query<Entity, With<PerfUiRoot>>,
+  mut commands: Commands,
+) {
+  let event_count = events.read().count();
+  if event_count > 0 {
+    if let Ok(e) = q_root.single() {
+      commands.entity(e).despawn();
+    } else {
+      add_perf_ui(commands);
+    }
   }
 }
 
@@ -35,15 +58,4 @@ fn add_perf_ui(mut commands: Commands) {
     PerfUiWidgetBar::new(PerfUiEntryCpuUsage::default()),
     PerfUiWidgetBar::new(PerfUiEntryMemUsage::default()),
   ));
-}
-
-fn toggle_ui(mut events: EventReader<ToggleDebugInfo>, q_root: Query<Entity, With<PerfUiRoot>>, mut commands: Commands) {
-  let event_count = events.read().count();
-  if event_count > 0 {
-    if let Ok(e) = q_root.single() {
-      commands.entity(e).despawn();
-    } else {
-      add_perf_ui(commands);
-    }
-  }
 }

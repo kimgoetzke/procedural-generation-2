@@ -1,4 +1,4 @@
-use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
+use crate::constants::*;
 use crate::events::{RefreshMetadata, ResetCameraEvent};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
@@ -11,7 +11,7 @@ use bevy::log::*;
 use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
 use bevy::window::PrimaryWindow;
 use bevy_inspector_egui::bevy_egui::EguiContext;
-use bevy_inspector_egui::egui::{Align, Align2, FontId, Layout, RichText, ScrollArea, Window};
+use bevy_inspector_egui::egui::{Align, Align2, Color32, FontId, Layout, RichText, ScrollArea, Window};
 
 pub struct SettingsUiPlugin;
 
@@ -86,7 +86,9 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
         ui.add_space(20.0);
         ui.push_id("generation_metadata", |ui| {
           ui.label(RichText::new("Generation Metadata").font(HEADING));
-          ui.label(RichText::new("Metadata settings can easily cause rendering issues if misconfigured, such as misaligned chunks. No safeguards have been implemented yet. Use with care.").font(COMMENT).italics());
+          ui.label(RichText::new("Metadata settings can easily cause rendering issues if misconfigured, such as misaligned chunks. No safeguards have been implemented yet. Use with care.")
+            .font(COMMENT)
+            .italics());
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<GenerationMetadataSettings>(world, ui);
         });
         ui.add_space(20.0);
@@ -99,6 +101,10 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
           ui.label(RichText::new("Object Generation").font(HEADING));
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<ObjectGenerationSettings>(world, ui);
         });
+        ui.add_space(20.0);
+        ui.label(RichText::new("You must hit [Regenerate] to apply any changes to the above.")
+          .font(COMMENT)
+          .italics());
         ui.separator();
         render_buttons(world, ui);
         ui.separator();
@@ -126,7 +132,10 @@ fn render_states_section(world: &mut World, ui: &mut bevy_inspector_egui::egui::
 }
 
 fn render_buttons(world: &mut World, ui: &mut bevy_inspector_egui::egui::Ui) {
+  let very_dark = crate::generation::lib::shared::to_colour_32(VERY_DARK);
+  let red = crate::generation::lib::shared::to_colour_32(RED);
   ui.horizontal(|ui| {
+    ui.style_mut().visuals.widgets.hovered.weak_bg_fill = red;
     if ui.button("Reset Settings")
       .on_hover_text("Resets all settings that can be changed at run-time and regenerates the world.")
       .clicked()
@@ -139,7 +148,9 @@ fn render_buttons(world: &mut World, ui: &mut bevy_inspector_egui::egui::Ui) {
     {
       world.resource_mut::<UiState>().trigger_action(UiAction::ResetCamera);
     }
+    ui.style_mut().visuals.widgets.hovered.weak_bg_fill = Color32::PLACEHOLDER;
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+      ui.style_mut().visuals.widgets.hovered.weak_bg_fill = very_dark;
       if ui.button("Generate Next")
         .on_hover_text("Increments the world generation seed and generates the new world without changing any other settings or the camera position/zoom level.")
         .clicked()
@@ -152,6 +163,7 @@ fn render_buttons(world: &mut World, ui: &mut bevy_inspector_egui::egui::Ui) {
       {
         world.resource_mut::<UiState>().trigger_action(UiAction::Regenerate);
       }
+      ui.style_mut().visuals.widgets.hovered.weak_bg_fill = Color32::PLACEHOLDER;
     });
   });
 }

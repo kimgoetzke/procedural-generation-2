@@ -1,6 +1,6 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo};
+use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo, ToggleDiagnostics};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -38,20 +38,19 @@ fn settings_controls_system(
   mut general_settings: ResMut<GeneralGenerationSettings>,
   mut object_settings: ResMut<ObjectGenerationSettings>,
   mut toggle_debug_info_event: EventWriter<ToggleDebugInfo>,
+  mut toggle_diagnostics_event: EventWriter<ToggleDiagnostics>,
 ) {
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
-    settings.general.draw_gizmos = !settings.general.draw_gizmos;
-    general_settings.draw_gizmos = settings.general.draw_gizmos;
-    info!("[Z] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
+    settings.general.display_diagnostics = !settings.general.display_diagnostics;
+    general_settings.display_diagnostics = settings.general.display_diagnostics;
+    info!("[Z] Set display diagnostics to [{}]", settings.general.display_diagnostics);
+    toggle_diagnostics_event.write(ToggleDiagnostics {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
-    settings.general.generate_neighbour_chunks = !settings.general.generate_neighbour_chunks;
-    general_settings.generate_neighbour_chunks = settings.general.generate_neighbour_chunks;
-    info!(
-      "[X] Set generating neighbour chunks to [{}]",
-      settings.general.generate_neighbour_chunks
-    );
+    settings.general.draw_gizmos = !settings.general.draw_gizmos;
+    general_settings.draw_gizmos = settings.general.draw_gizmos;
+    info!("[X] Set drawing gizmos to [{}]", settings.general.draw_gizmos);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyC) {
@@ -62,27 +61,36 @@ fn settings_controls_system(
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyV) {
-    settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
-    general_settings.draw_terrain_sprites = settings.general.draw_terrain_sprites;
+    settings.general.generate_neighbour_chunks = !settings.general.generate_neighbour_chunks;
+    general_settings.generate_neighbour_chunks = settings.general.generate_neighbour_chunks;
     info!(
-      "[V] Set drawing terrain sprites to [{}]",
-      settings.general.draw_terrain_sprites
+      "[V] Set generating neighbour chunks to [{}]",
+      settings.general.generate_neighbour_chunks
     );
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyB) {
-    settings.general.animate_terrain_sprites = !settings.general.animate_terrain_sprites;
-    general_settings.animate_terrain_sprites = settings.general.animate_terrain_sprites;
+    settings.general.draw_terrain_sprites = !settings.general.draw_terrain_sprites;
+    general_settings.draw_terrain_sprites = settings.general.draw_terrain_sprites;
     info!(
-      "[B] Set animating terrain sprites to [{}]",
-      settings.general.animate_terrain_sprites
+      "[B] Set drawing terrain sprites to [{}]",
+      settings.general.draw_terrain_sprites
     );
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyN) {
+    settings.general.animate_terrain_sprites = !settings.general.animate_terrain_sprites;
+    general_settings.animate_terrain_sprites = settings.general.animate_terrain_sprites;
+    info!(
+      "[N] Set animating terrain sprites to [{}]",
+      settings.general.animate_terrain_sprites
+    );
+  }
+
+  if keyboard_input.just_pressed(KeyCode::KeyM) {
     settings.general.enable_world_pruning = !settings.general.enable_world_pruning;
     general_settings.enable_world_pruning = settings.general.enable_world_pruning;
-    info!("[N] Set world pruning to [{}]", settings.general.enable_world_pruning);
+    info!("[M] Set world pruning to [{}]", settings.general.enable_world_pruning);
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyF) {

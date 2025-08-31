@@ -1,9 +1,11 @@
 use crate::coords::Point;
 use crate::coords::point::ChunkGrid;
 use crate::generation::lib::GenerationResourcesCollection;
+use bevy::color::Color;
 use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
 use bevy::prelude::{Commands, Component, Entity, Query};
+use bevy_inspector_egui::egui::Color32;
 use std::thread;
 use std::time::SystemTime;
 
@@ -47,4 +49,10 @@ pub fn calculate_seed(cg: Point<ChunkGrid>, seed: u32) -> u64 {
   let adjusted_y = cg.y as i64 + i32::MAX as i64;
 
   ((adjusted_x as u64) << 32) ^ (adjusted_y as u64) + seed as u64
+}
+
+pub fn to_colour_32(colour: Color) -> Color32 {
+  let colour = colour.to_srgba();
+
+  Color32::from_rgb((colour.red * 255.) as u8, (colour.green * 255.) as u8, (colour.blue * 255.) as u8)
 }

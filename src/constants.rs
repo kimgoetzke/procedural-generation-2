@@ -8,9 +8,10 @@ use std::ops::Range;
 
 // ------------------------------------------------------------------------------------------------------
 // Settings: General
+pub const DISPLAY_DIAGNOSTICS: bool = false;
 pub const DRAW_GIZMOS: bool = false;
-pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
 pub const ENABLE_TILE_DEBUGGING: bool = true;
+pub const GENERATE_NEIGHBOUR_CHUNKS: bool = true;
 pub const DRAW_TERRAIN_SPRITES: bool = true;
 pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;

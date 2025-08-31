@@ -55,15 +55,20 @@ impl Default for Settings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GeneralGenerationSettings {
+  /// Whether to display performance statistics for diagnostics in the top-right corner of the screen, such as FPS and
+  /// frame time.
+  pub display_diagnostics: bool,
+  /// Whether to generate the 8 neighbouring chunks around the current chunk. If set to `false`, only the current
+  /// chunk will be generated. Disabling this is only useful for debugging purposes.
   /// Whether to draw helper gizmos in the world, such as a grid indicating chunk boundaries and tile boundaries for
   /// the current chunk. Enabling this is only useful for debugging purposes.
   pub draw_gizmos: bool,
-  /// Whether to generate the 8 neighbouring chunks around the current chunk. If set to `false`, only the current
-  /// chunk will be generated. Disabling this is only useful for debugging purposes.
-  pub generate_neighbour_chunks: bool,
   /// Whether to enable tile debugging: when enabled, clicking on a tile will print its metadata to the console.
   /// Enabling this is only useful for debugging purposes.
   pub enable_tile_debugging: bool,
+  /// Whether to generate the 8 neighbouring chunks around the current chunk. If set to `false`, only the current
+  /// chunk will be generated. Disabling this is only useful for debugging purposes.
+  pub generate_neighbour_chunks: bool,
   /// Whether to draw terrain sprites. If set to `false`, only placeholder sprites indicating the terrain layer will be
   /// drawn. Disabling this will cause `animate_terrain_sprites` to be ignored. Disabling this is only useful for
   /// debugging purposes.
@@ -88,9 +93,10 @@ pub struct GeneralGenerationSettings {
 impl Default for GeneralGenerationSettings {
   fn default() -> Self {
     Self {
+      display_diagnostics: DISPLAY_DIAGNOSTICS,
       draw_gizmos: DRAW_GIZMOS,
-      generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       enable_tile_debugging: ENABLE_TILE_DEBUGGING,
+      generate_neighbour_chunks: GENERATE_NEIGHBOUR_CHUNKS,
       draw_terrain_sprites: DRAW_TERRAIN_SPRITES,
       animate_terrain_sprites: ANIMATE_TERRAIN_SPRITES,
       spawn_from_layer: SPAWN_FROM_LAYER,
