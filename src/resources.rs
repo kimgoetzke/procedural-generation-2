@@ -8,6 +8,7 @@ use bevy_inspector_egui::InspectorOptions;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
 
+/// A plugin that registers and initialises shared resources used across the entire application such as [`Settings`].
 pub struct SharedResourcesPlugin;
 
 impl Plugin for SharedResourcesPlugin {
@@ -54,15 +55,33 @@ impl Default for Settings {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct GeneralGenerationSettings {
+  /// Whether to draw helper gizmos in the world, such as a grid indicating chunk boundaries and tile boundaries for
+  /// the current chunk. Enabling this is only useful for debugging purposes.
   pub draw_gizmos: bool,
+  /// Whether to generate the 8 neighbouring chunks around the current chunk. If set to `false`, only the current
+  /// chunk will be generated. Disabling this is only useful for debugging purposes.
   pub generate_neighbour_chunks: bool,
+  /// Whether to enable tile debugging: when enabled, clicking on a tile will print its metadata to the console.
+  /// Enabling this is only useful for debugging purposes.
   pub enable_tile_debugging: bool,
+  /// Whether to draw terrain sprites. If set to `false`, only placeholder sprites indicating the terrain layer will be
+  /// drawn. Disabling this will cause `animate_terrain_sprites` to be ignored. Disabling this is only useful for
+  /// debugging purposes.
   pub draw_terrain_sprites: bool,
+  /// Whether to animate terrain sprites (if the resources collection contains animated sprite sheets for a given
+  /// terrain and tile type combination). If set to `false`, terrain sprites will be drawn as static images. If set to
+  /// `true`, water sprites, for example, will be animated.
   pub animate_terrain_sprites: bool,
+  /// The lowest terrain layer for which terrain meshes will be spawned. See [`crate::generation::lib::TerrainType`].
+  /// Setting this to a value higher than `0` is only useful for debugging purposes.
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_from_layer: usize,
+  /// The highest terrain layer for which terrain meshes will be spawned. See [`crate::generation::lib::TerrainType`].
+  /// Setting this to a value lower than the maximum is only useful for debugging purposes.
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
+  /// Whether to enable world pruning: when enabled, chunks that are far away from the current chunk will be despawned
+  /// for performance reasons. Disabling this will cause all generated chunks to remain in the world forever.
   pub enable_world_pruning: bool,
 }
 
@@ -88,7 +107,7 @@ pub struct GenerationMetadataSettings {
   /// chunks) the terrain oscillates between the highest and lowest terrain layers.
   #[inspector(min = 0.0, max = 0.2, display = NumberDisplay::Slider)]
   pub elevation_chunk_step_size: f64,
-  /// Shifts the ranges generated for the elevation metadata up/down. The higher the value the more the ranges
+  /// Shifts the ranges generated for the elevation metadata up / down. The higher the value the more the ranges
   /// will shift into negative values which causes lower terrain layers to be generated for chunks with the lowest
   /// ranges and less high terrain layers for chunks with the higher ranges.
   #[inspector(min = -1.0, max = 1.0, display = NumberDisplay::Slider)]
@@ -127,8 +146,8 @@ pub struct WorldGenerationSettings {
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   /// The scale: the higher the frequency, the smaller the terrain features. A parameter of [`noise::BasicMulti`].
   pub noise_frequency: f64,
-  /// The abruptness of changes in terrain: The higher the persistence, the rougher the terrain. A parameter of
-  /// [`noise::BasicMulti`].
+  /// The abruptness of changes in terrain: The higher the persistence, the rougher the terrain. A parameter
+  /// of [`noise::BasicMulti`].
   #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
   pub noise_persistence: f64,
   #[inspector(min = 0., max = 10., display = NumberDisplay::Slider)]

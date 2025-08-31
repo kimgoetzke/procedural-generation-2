@@ -24,6 +24,7 @@ impl Plugin for SettingsUiPlugin {
 }
 
 const HEADING: FontId = FontId::proportional(16.0);
+const COMMENT: FontId = FontId::proportional(12.0);
 
 #[derive(Default, Resource)]
 struct UiState {
@@ -60,6 +61,12 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     return;
   };
 
+  // Increase the default tooltip width in order to allow documentation comments to be displayed without double
+  // line-breaking - if this ever breaks the UI, remove it and use single line comments for settings instead
+  egui_context.get_mut().style_mut(|style| {
+    style.spacing.tooltip_width = 700.0;
+  });
+
   Window::new("Settings")
     .default_size([340.0, 600.0])
     .pivot(Align2::LEFT_BOTTOM)
@@ -89,6 +96,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
         ui.add_space(20.0);
         ui.push_id("generation_metadata", |ui| {
           ui.label(RichText::new("Generation Metadata").font(HEADING));
+          ui.label(RichText::new("Metadata settings can easily cause rendering issues if misconfigured, such as misaligned chunks. No safeguards have been implemented yet. Use with care.").font(COMMENT).italics());
           bevy_inspector_egui::bevy_inspector::ui_for_resource::<GenerationMetadataSettings>(world, ui);
         });
         ui.add_space(20.0);
