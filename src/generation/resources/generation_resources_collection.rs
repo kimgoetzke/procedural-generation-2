@@ -176,6 +176,13 @@ fn initialise_resources_system(
   asset_collection.objects.trees_humid.stat =
     AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
+  // Objects: Buildings
+  let static_buildings_layout =
+    TextureAtlasLayout::from_grid(BUILDINGS_OBJ_SIZE, BUILDINGS_OBJ_COLUMNS, BUILDINGS_OBJ_ROWS, None, None);
+  let static_buildings_atlas_layout = layouts.add(static_buildings_layout);
+  asset_collection.objects.buildings.stat =
+    AssetPack::new(asset_server.load(BUILDINGS_OBJ_PATH), static_buildings_atlas_layout.clone());
+
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
   asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, SHORE_OBJ_PATH);
