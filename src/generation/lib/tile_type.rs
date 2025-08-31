@@ -43,8 +43,8 @@ fn get_sprite_index_from(
   resources: &GenerationResourcesCollection,
 ) -> usize {
   match (terrain, climate) {
-    (TerrainType::DeepWater, _) => get_sprite_index(&tile_type, resources.deep_water.index_offset()),
-    (TerrainType::ShallowWater, _) => get_sprite_index(&tile_type, resources.shallow_water.index_offset()),
+    (TerrainType::Water, _) => get_sprite_index(&tile_type, resources.water.index_offset()),
+    (TerrainType::Shore, _) => get_sprite_index(&tile_type, resources.shore.index_offset()),
     (TerrainType::Land1, Climate::Dry) => get_sprite_index(&tile_type, resources.land_dry_l1.index_offset()),
     (TerrainType::Land1, Climate::Moderate) => get_sprite_index(&tile_type, resources.land_moderate_l1.index_offset()),
     (TerrainType::Land1, Climate::Humid) => get_sprite_index(&tile_type, resources.land_humid_l1.index_offset()),

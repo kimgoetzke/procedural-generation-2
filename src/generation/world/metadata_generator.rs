@@ -169,7 +169,7 @@ fn generate_biome_metadata(
     n if n > 0.75 => TerrainType::Land3,
     n if n > 0.5 => TerrainType::Land2,
     n if n > 0.25 => TerrainType::Land1,
-    _ => TerrainType::ShallowWater,
+    _ => TerrainType::Shore,
   };
   let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
   trace!("Generated: {:?}", bm);

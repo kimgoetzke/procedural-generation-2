@@ -709,12 +709,12 @@ mod tests {
   #[test]
   fn is_walkable_returns_false_for_any_water() {
     let mut cell = Cell::new(0, 0);
-    cell.terrain = TerrainType::ShallowWater;
+    cell.terrain = TerrainType::Shore;
     cell.tile_type = TileType::Fill;
     cell.calculate_is_walkable();
     assert!(!cell.is_walkable());
 
-    cell.terrain = TerrainType::DeepWater;
+    cell.terrain = TerrainType::Water;
     cell.calculate_is_walkable();
     assert!(!cell.is_walkable());
   }
@@ -788,7 +788,7 @@ mod tests {
     cell.tile_below = Some(TileBelow {
       terrain: TerrainType::Land1,
       tile_type: TileType::Unknown,
-      below: Some(Box::new(TileBelow::from(TerrainType::ShallowWater, TileType::Fill, None))),
+      below: Some(Box::new(TileBelow::from(TerrainType::Shore, TileType::Fill, None))),
     });
     assert!(!cell.is_valid_connection_point());
   }

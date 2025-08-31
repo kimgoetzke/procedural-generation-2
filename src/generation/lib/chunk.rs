@@ -102,8 +102,8 @@ fn generate_terrain_data(
         n if n > 0.75 => TerrainType::new(TerrainType::Land3, is_biome_edge),
         n if n > 0.6 => TerrainType::new(TerrainType::Land2, is_biome_edge),
         n if n > 0.45 => TerrainType::new(TerrainType::Land1, is_biome_edge),
-        n if n > 0.3 => TerrainType::new(TerrainType::ShallowWater, is_biome_edge),
-        _ => TerrainType::DeepWater,
+        n if n > 0.3 => TerrainType::new(TerrainType::Shore, is_biome_edge),
+        _ => TerrainType::Water,
       };
       let climate = biome_metadata.this.climate;
 

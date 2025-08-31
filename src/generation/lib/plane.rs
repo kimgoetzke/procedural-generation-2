@@ -77,7 +77,7 @@ fn determine_tile_types(draft_tiles: &Vec<Vec<Option<DraftTile>>>) -> Vec<Vec<Op
   for y in 0..y_len {
     for x in 0..x_len {
       if let Some(draft_tile) = draft_tiles[x][y].as_ref() {
-        if draft_tile.terrain == TerrainType::DeepWater {
+        if draft_tile.terrain == TerrainType::Water {
           let final_tile = Tile::from(draft_tile.clone(), TileType::Fill);
           final_tiles[draft_tile.coords.internal_grid.x as usize][draft_tile.coords.internal_grid.y as usize] =
             Some(final_tile);

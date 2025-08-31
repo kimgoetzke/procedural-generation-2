@@ -194,7 +194,7 @@ fn spawn_tile_mesh(
         AnimationMeshComponent {
           timer: AnimationTimer(Timer::from_seconds(
             match TerrainType::from(layer as usize) {
-              TerrainType::ShallowWater => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
+              TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
               _ => DEFAULT_ANIMATION_FRAME_DURATION,
             },
             TimerMode::Repeating,

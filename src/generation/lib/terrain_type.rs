@@ -5,8 +5,8 @@ use strum::EnumIter;
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, Reflect, EnumIter)]
 pub enum TerrainType {
-  DeepWater,
-  ShallowWater,
+  Water,
+  Shore,
   Land1,
   Land2,
   Land3,
@@ -33,8 +33,8 @@ impl TerrainType {
 
   pub fn from(i: usize) -> Self {
     match i {
-      0 => TerrainType::DeepWater,
-      1 => TerrainType::ShallowWater,
+      0 => TerrainType::Water,
+      1 => TerrainType::Shore,
       2 => TerrainType::Land1,
       3 => TerrainType::Land2,
       4 => TerrainType::Land3,
@@ -44,7 +44,7 @@ impl TerrainType {
 
   pub fn new(proposed: TerrainType, is_biome_edge: bool) -> Self {
     let max_layer: i32 = if is_biome_edge {
-      TerrainType::ShallowWater as i32
+      TerrainType::Shore as i32
     } else {
       TerrainType::length() as i32
     };

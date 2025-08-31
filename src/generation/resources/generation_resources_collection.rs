@@ -154,8 +154,8 @@ fn initialise_resources_system(
   asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  asset_collection.deep_water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
-  asset_collection.shallow_water = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH);
+  asset_collection.water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
+  asset_collection.shore = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH);
   asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH);
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);

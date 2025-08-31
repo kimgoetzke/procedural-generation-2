@@ -8,8 +8,8 @@ use bevy::prelude::Resource;
 #[derive(Resource, Default, Debug, Clone)]
 pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,
-  pub deep_water: AssetCollection,
-  pub shallow_water: AssetCollection,
+  pub water: AssetCollection,
+  pub shore: AssetCollection,
   pub land_dry_l1: AssetCollection,
   pub land_dry_l2: AssetCollection,
   pub land_dry_l3: AssetCollection,
@@ -25,8 +25,8 @@ pub struct GenerationResourcesCollection {
 impl GenerationResourcesCollection {
   pub fn get_terrain_collection(&self, terrain: TerrainType, climate: Climate) -> &AssetCollection {
     match (terrain, climate) {
-      (TerrainType::DeepWater, _) => &self.deep_water,
-      (TerrainType::ShallowWater, _) => &self.shallow_water,
+      (TerrainType::Water, _) => &self.water,
+      (TerrainType::Shore, _) => &self.shore,
       (TerrainType::Land1, Climate::Dry) => &self.land_dry_l1,
       (TerrainType::Land1, Climate::Moderate) => &self.land_moderate_l1,
       (TerrainType::Land1, Climate::Humid) => &self.land_humid_l1,
@@ -42,8 +42,8 @@ impl GenerationResourcesCollection {
 
   pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
     match (terrain, climate, is_large_sprite) {
-      (TerrainType::DeepWater, _, _) => &self.objects.water,
-      (TerrainType::ShallowWater, _, _) => &self.objects.shore,
+      (TerrainType::Water, _, _) => &self.objects.water,
+      (TerrainType::Shore, _, _) => &self.objects.shore,
       (TerrainType::Land1, Climate::Dry, _) => &self.objects.l1_dry,
       (TerrainType::Land1, Climate::Moderate, _) => &self.objects.l1_moderate,
       (TerrainType::Land1, Climate::Humid, _) => &self.objects.l1_humid,

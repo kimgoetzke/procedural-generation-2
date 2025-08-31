@@ -50,7 +50,7 @@ fn clear_single_tiles_from_chunk_with_no_fill_below(layer: usize, chunk: &mut Ch
               if tile_below.tile_type != TileType::Fill {
                 return Some((tile.coords.internal_grid, Some(tile_below.tile_type)));
               }
-            } else if tile.terrain != TerrainType::ShallowWater {
+            } else if tile.terrain != TerrainType::Shore {
               // TODO: Find out if the below still happens and why - it's not a problem in practice though
               warn!(
                 "Removed [{:?}] [{:?}] tile {:?} {:?} because it did not exist on the layer below",
