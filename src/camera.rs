@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
 use crate::coords::Point;
-use crate::events::UpdateWorldEvent;
+use crate::events::{ResetCameraEvent, UpdateWorldEvent};
 use crate::resources::CurrentChunk;
 use bevy::app::{App, Plugin, Startup};
 use bevy::core_pipeline::bloom::Bloom;
@@ -8,7 +8,8 @@ use bevy::prelude::*;
 use bevy::render::view::RenderLayers;
 use bevy_pancam::PanCam;
 
-pub const WORLD_LAYER: RenderLayers = RenderLayers::layer(0);
+const WORLD_LAYER: RenderLayers = RenderLayers::layer(0);
+const CAMERA_TRANSFORM_Z: f32 = 100000.;
 
 pub struct CameraPlugin;
 
@@ -17,7 +18,8 @@ impl Plugin for CameraPlugin {
     app
       .insert_resource(ClearColor(WATER_BLUE))
       .add_systems(Startup, setup_camera_system)
-      .add_systems(Update, camera_movement_system);
+      .add_systems(Update, camera_movement_system)
+      .add_systems(Update, reset_camera_event);
   }
 }
 
@@ -30,7 +32,7 @@ fn setup_camera_system(mut commands: Commands) {
     Camera2d,
     Camera { order: 2, ..default() },
     Msaa::Off,
-    Transform::from_xyz(0., 0., 100000.),
+    Transform::from_xyz(0., 0., CAMERA_TRANSFORM_Z),
     Projection::Orthographic(OrthographicProjection {
       near: -10000.0,
       far: 1000000.0,
@@ -74,4 +76,19 @@ fn camera_movement_system(
       w: current_world,
     });
   };
+}
+
+fn reset_camera_event(
+  mut camera: Query<(&Camera, &mut Projection, &mut Transform), With<WorldCamera>>,
+  mut events: EventReader<ResetCameraEvent>,
+) {
+  let event_count = events.read().count();
+  if event_count > 0 {
+    let (_, mut projection, mut camera_transform) = camera.single_mut().expect("Failed to find camera");
+    camera_transform.translation = Vec3::new(0., 0., CAMERA_TRANSFORM_Z);
+    if let Projection::Orthographic(ref mut orthographic_projection) = *projection {
+      orthographic_projection.scale = 1.0;
+    }
+    trace!("Camera position and zoom reset");
+  }
 }

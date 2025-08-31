@@ -9,6 +9,7 @@ impl Plugin for SharedEventsPlugin {
     app
       .add_event::<RefreshMetadata>()
       .add_event::<RegenerateWorldEvent>()
+      .add_event::<ResetCameraEvent>()
       .add_event::<ToggleDebugInfo>()
       .add_event::<MouseClickEvent>()
       .add_event::<UpdateWorldEvent>()
@@ -49,6 +50,10 @@ pub struct PruneWorldEvent {
   pub despawn_all_chunks: bool,
   pub update_world_after: bool,
 }
+
+/// An event that triggers resetting the camera to the default position and zoom level.
+#[derive(Event)]
+pub struct ResetCameraEvent {}
 
 #[derive(Event)]
 pub struct ToggleDebugInfo {}

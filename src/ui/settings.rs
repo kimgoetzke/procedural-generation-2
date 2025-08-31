@@ -1,5 +1,5 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
-use crate::events::RefreshMetadata;
+use crate::events::{RefreshMetadata, ResetCameraEvent};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
@@ -31,17 +31,31 @@ struct UiState {
   has_changed: bool,
   regenerate: bool,
   generate_next: bool,
+  reset_settings: bool,
+  reset_camera: bool,
 }
 
 impl UiState {
   fn trigger_regeneration(&mut self) {
-    self.regenerate = true;
     self.has_changed = true;
+    self.regenerate = true;
   }
 
   fn trigger_next_generation(&mut self) {
-    self.generate_next = true;
     self.has_changed = true;
+    self.generate_next = true;
+  }
+
+  fn trigger_settings_reset(&mut self) {
+    self.has_changed = true;
+    self.regenerate = true;
+    self.reset_settings = true;
+  }
+
+  fn trigger_camera_reset(&mut self) {
+    self.has_changed = true;
+    self.regenerate = true;
+    self.reset_camera = true;
   }
 }
 
@@ -68,7 +82,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
   });
 
   Window::new("Settings")
-    .default_size([340.0, 600.0])
+    .default_size([370.0, 600.0])
     .pivot(Align2::LEFT_BOTTOM)
     .anchor(Align2::LEFT_BOTTOM, [10.0, -10.0])
     .show(egui_context.get_mut(), |ui| {
@@ -111,14 +125,22 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
         });
         ui.separator();
         ui.horizontal(|ui| {
-          if ui.button("Regenerate").clicked() {
+          if ui.button("Reset Settings").on_hover_text("Resets all settings that can be changed at run-time and regenerates the world.").clicked() {
             let mut event_writer = world.resource_mut::<UiState>();
-            event_writer.trigger_regeneration();
+            event_writer.trigger_settings_reset();
+          }
+          if ui.button("Reset Camera").on_hover_text("Resets the camera position/zoom and regenerates the world without changing any settings.").clicked() {
+            let mut event_writer = world.resource_mut::<UiState>();
+            event_writer.trigger_camera_reset();
           }
           ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if ui.button("Generate Next").clicked() {
+            if ui.button("Generate Next").on_hover_text("Increments the world generation seed and generates the new world without changing any other settings or the camera position/zoom level.").clicked() {
               let mut event_writer = world.resource_mut::<UiState>();
               event_writer.trigger_next_generation();
+            }
+            if ui.button("Regenerate").on_hover_text("Regenerates the entire world without changing any settings or the camera position/zoom level.").clicked() {
+              let mut event_writer = world.resource_mut::<UiState>();
+              event_writer.trigger_regeneration();
             }
           });
         });
@@ -130,20 +152,39 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
 
 fn handle_ui_events_system(
   mut refresh_metadata_event: EventWriter<RefreshMetadata>,
+  mut reset_camera_event: EventWriter<ResetCameraEvent>,
   mut state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
-  general: Res<GeneralGenerationSettings>,
-  metadata_settings: Res<GenerationMetadataSettings>,
-  object: Res<ObjectGenerationSettings>,
+  mut general: ResMut<GeneralGenerationSettings>,
+  mut metadata_settings: ResMut<GenerationMetadataSettings>,
+  mut object: ResMut<ObjectGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
   current_chunk: Res<CurrentChunk>,
 ) {
   if state.has_changed {
     state.has_changed = false;
-    settings.general = general.clone();
-    settings.metadata = metadata_settings.clone();
-    settings.world = world_gen.clone();
-    settings.object = object.clone();
+
+    if state.reset_settings {
+      settings.general = GeneralGenerationSettings::default();
+      settings.metadata = GenerationMetadataSettings::default();
+      settings.world = WorldGenerationSettings::default();
+      settings.object = ObjectGenerationSettings::default();
+      *general = GeneralGenerationSettings::default();
+      *metadata_settings = GenerationMetadataSettings::default();
+      *world_gen = WorldGenerationSettings::default();
+      *object = ObjectGenerationSettings::default();
+      state.reset_settings = false;
+    } else {
+      settings.general = general.clone();
+      settings.metadata = metadata_settings.clone();
+      settings.world = world_gen.clone();
+      settings.object = object.clone();
+    }
+
+    if state.reset_camera {
+      reset_camera_event.write(ResetCameraEvent {});
+      state.reset_camera = false;
+    }
 
     if state.regenerate {
       send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
