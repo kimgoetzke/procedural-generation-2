@@ -9,7 +9,6 @@ pub struct ObjectData {
   pub name: Option<ObjectName>,
   pub sprite_index: i32,
   pub is_large_sprite: bool,
-  pub is_path_sprite: bool,
   pub tile_data: TileData,
 }
 
@@ -17,7 +16,6 @@ impl ObjectData {
   pub fn from(cell: &Cell, tile_data: &TileData) -> Self {
     let object_name = cell.get_possible_states()[0].name;
     let is_large_sprite = object_name.is_multi_tile();
-    let is_path_sprite = object_name.is_path();
     let sprite_index = cell.get_index();
     let possible_states_count = cell.get_possible_states().len();
     if sprite_index == -1 || possible_states_count > 1 || !cell.is_collapsed() {
@@ -35,7 +33,6 @@ impl ObjectData {
       tile_data: tile_data.clone(),
       sprite_index,
       is_large_sprite,
-      is_path_sprite,
       name: Some(object_name),
     }
   }

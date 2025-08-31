@@ -174,7 +174,6 @@ fn attach_object_spawn_task(
             tile_data.flat_tile.terrain,
             tile_data.flat_tile.climate,
             object_data.is_large_sprite,
-            object_data.is_path_sprite,
           )
           .clone()
       };

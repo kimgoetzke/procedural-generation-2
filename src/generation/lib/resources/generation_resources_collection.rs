@@ -40,34 +40,23 @@ impl GenerationResourcesCollection {
     }
   }
 
-  pub fn get_object_collection(
-    &self,
-    terrain: TerrainType,
-    climate: Climate,
-    is_large_sprite: bool,
-    is_path_sprite: bool,
-  ) -> &AssetCollection {
-    match (terrain, climate, is_large_sprite, is_path_sprite) {
-      (TerrainType::DeepWater, _, _, true) => &self.objects.paths_water,
-      (TerrainType::ShallowWater, _, _, true) => &self.objects.paths_shore,
-      (TerrainType::Land1, _, _, true) => &self.objects.paths_l1,
-      (TerrainType::Land2, _, _, true) => &self.objects.paths_l2,
-      (TerrainType::Land3, _, _, true) => &self.objects.paths_l3,
-      (TerrainType::DeepWater, _, _, _) => &self.objects.water,
-      (TerrainType::ShallowWater, _, _, _) => &self.objects.shore,
-      (TerrainType::Land1, Climate::Dry, _, _) => &self.objects.l1_dry,
-      (TerrainType::Land1, Climate::Moderate, _, _) => &self.objects.l1_moderate,
-      (TerrainType::Land1, Climate::Humid, _, _) => &self.objects.l1_humid,
-      (TerrainType::Land2, Climate::Dry, _, _) => &self.objects.l2_dry,
-      (TerrainType::Land2, Climate::Moderate, _, _) => &self.objects.l2_moderate,
-      (TerrainType::Land2, Climate::Humid, _, _) => &self.objects.l2_humid,
-      (TerrainType::Land3, Climate::Dry, true, _) => &self.objects.trees_dry,
-      (TerrainType::Land3, Climate::Moderate, true, _) => &self.objects.trees_moderate,
-      (TerrainType::Land3, Climate::Humid, true, _) => &self.objects.trees_humid,
-      (TerrainType::Land3, Climate::Dry, _, _) => &self.objects.l3_dry,
-      (TerrainType::Land3, Climate::Moderate, _, _) => &self.objects.l3_moderate,
-      (TerrainType::Land3, Climate::Humid, _, _) => &self.objects.l3_humid,
-      (TerrainType::Any, _, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
+  pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
+    match (terrain, climate, is_large_sprite) {
+      (TerrainType::DeepWater, _, _) => &self.objects.water,
+      (TerrainType::ShallowWater, _, _) => &self.objects.shore,
+      (TerrainType::Land1, Climate::Dry, _) => &self.objects.l1_dry,
+      (TerrainType::Land1, Climate::Moderate, _) => &self.objects.l1_moderate,
+      (TerrainType::Land1, Climate::Humid, _) => &self.objects.l1_humid,
+      (TerrainType::Land2, Climate::Dry, _) => &self.objects.l2_dry,
+      (TerrainType::Land2, Climate::Moderate, _) => &self.objects.l2_moderate,
+      (TerrainType::Land2, Climate::Humid, _) => &self.objects.l2_humid,
+      (TerrainType::Land3, Climate::Dry, true) => &self.objects.trees_dry,
+      (TerrainType::Land3, Climate::Moderate, true) => &self.objects.trees_moderate,
+      (TerrainType::Land3, Climate::Humid, true) => &self.objects.trees_humid,
+      (TerrainType::Land3, Climate::Dry, _) => &self.objects.l3_dry,
+      (TerrainType::Land3, Climate::Moderate, _) => &self.objects.l3_moderate,
+      (TerrainType::Land3, Climate::Humid, _) => &self.objects.l3_humid,
+      (TerrainType::Any, _, _) => panic!("You must not use TerrainType::Any when rendering tiles"),
     }
   }
 }

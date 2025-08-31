@@ -121,25 +121,28 @@ impl ObjectName {
     )
   }
 
-  /// Returns the correct index for the path sprite based on its name. Falls back to `12` for all invalid object names.
+  /// Returns the correct index for the path sprite based on its name. Falls back to `47` for all invalid object names.
+  /// Path sprites need to be determined separately because, even though on the same sprite sheet as "regular" objects,
+  /// paths do not have [`crate::generation::object::lib::TerrainState`]s (which themselves are derived from rule set
+  /// assets) associated with them.
   pub fn get_index_for_path(&self) -> i32 {
     match self {
-      ObjectName::PathRight => 1,
-      ObjectName::PathHorizontal => 2,
-      ObjectName::PathCross => 3,
-      ObjectName::PathVertical => 4,
-      ObjectName::PathBottom => 5,
-      ObjectName::PathTop => 6,
-      ObjectName::PathLeft => 7,
-      ObjectName::PathTopRight => 8,
-      ObjectName::PathTopLeft => 9,
-      ObjectName::PathBottomRight => 10,
-      ObjectName::PathBottomLeft => 11,
-      ObjectName::PathTopHorizontal => 12,
-      ObjectName::PathBottomHorizontal => 13,
-      ObjectName::PathLeftVertical => 14,
-      ObjectName::PathRightVertical => 15,
-      _ => 16,
+      ObjectName::PathRight => 32,
+      ObjectName::PathHorizontal => 33,
+      ObjectName::PathCross => 34,
+      ObjectName::PathVertical => 35,
+      ObjectName::PathBottom => 36,
+      ObjectName::PathTop => 37,
+      ObjectName::PathLeft => 38,
+      ObjectName::PathTopRight => 39,
+      ObjectName::PathTopLeft => 40,
+      ObjectName::PathBottomRight => 41,
+      ObjectName::PathBottomLeft => 42,
+      ObjectName::PathTopHorizontal => 43,
+      ObjectName::PathBottomHorizontal => 44,
+      ObjectName::PathLeftVertical => 45,
+      ObjectName::PathRightVertical => 46,
+      _ => 47,
     }
   }
 }

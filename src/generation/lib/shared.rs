@@ -54,5 +54,9 @@ pub fn calculate_seed(cg: Point<ChunkGrid>, seed: u32) -> u64 {
 pub fn to_colour_32(colour: Color) -> Color32 {
   let colour = colour.to_srgba();
 
-  Color32::from_rgb((colour.red * 255.) as u8, (colour.green * 255.) as u8, (colour.blue * 255.) as u8)
+  Color32::from_rgb(
+    (colour.red * 255.) as u8,
+    (colour.green * 255.) as u8,
+    (colour.blue * 255.) as u8,
+  )
 }

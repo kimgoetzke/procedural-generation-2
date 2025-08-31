@@ -72,7 +72,7 @@ pub const TILE_SET_PLACEHOLDER_ROWS: u32 = 1;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile sets
 pub const TS_WATER_PATH: &str = "tilesets/water-deep.png";
-pub const TS_SHORE_PATH: &str = "tilesets/water-shallow.png";
+pub const TS_SHORE_PATH: &str = "tilesets/water-shore.png";
 pub const TS_LAND_HUMID_L1_PATH: &str = "tilesets/land-humid-l1.png";
 pub const TS_LAND_HUMID_L2_PATH: &str = "tilesets/land-humid-l2.png";
 pub const TS_LAND_HUMID_L3_PATH: &str = "tilesets/land-humid-l3.png";
@@ -114,8 +114,8 @@ pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-dry.png";
 pub const TREES_OBJ_COLUMNS: u32 = 6;
 pub const TREES_OBJ_ROWS: u32 = 1;
 pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
-pub const WATER_DEEP_OBJ_PATH: &str = "objects/objects-water-deep.png";
-pub const WATER_SHALLOW_OBJ_PATH: &str = "objects/objects-water-shallow.png";
+pub const WATER_OBJ_PATH: &str = "objects/objects-water-deep.png";
+pub const SHORE_OBJ_PATH: &str = "objects/objects-water-shore.png";
 pub const OBJ_L1_DRY_PATH: &str = "objects/objects-l1-dry.png";
 pub const OBJ_L1_MODERATE_PATH: &str = "objects/objects-l1-moderate.png";
 pub const OBJ_L1_HUMID_PATH: &str = "objects/objects-l1-humid.png";
@@ -126,11 +126,8 @@ pub const OBJ_L3_DRY_PATH: &str = "objects/objects-l3-dry.png";
 pub const OBJ_L3_MODERATE_PATH: &str = "objects/objects-l3-moderate.png";
 pub const OBJ_L3_HUMID_PATH: &str = "objects/objects-l3-humid.png";
 pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
-pub const DEFAULT_OBJ_ROWS: u32 = 2;
+pub const DEFAULT_OBJ_ROWS: u32 = 3;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
-pub const PATHS_PATH: &str = "objects/paths.png";
-pub const PATHS_COLUMNS: u32 = 17;
-pub const PATHS_ROWS: u32 = 5;
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);
