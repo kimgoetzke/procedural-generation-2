@@ -13,7 +13,7 @@ techniques.
 
 [![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 
-_The above video has not been updated to feature paths yet._ 
+_The above video has not been updated to feature paths yet._
 
 ![Screenshot 1](assets/ignore/screenshot1.png)
 ![Screenshot 4](assets/ignore/screenshot4.png)
@@ -53,7 +53,7 @@ _The above video has not been updated to feature paths yet._
 
 ## How to develop
 
-### Haven't looked at the codebase in a while or looking at it for the first time?
+### Looking at the codebase for the first time or haven't looked at it in a while?
 
 - Start with the `GenerationStage` enum in conjunction with the `world_generation_system` in `GenerationPlugin` which is
   driving the generation process
@@ -62,6 +62,10 @@ _The above video has not been updated to feature paths yet._
   `crate::generation::object`
 - Resources used for both of the above can be found in `crate::generation::resources`
 - Structs and enums used across multiple modules sit in `crate::generation::lib`
+
+> [!NOTE]
+> When you start the application, the default settings will result in no land or objects being spawned at the
+> origin `cg(0, 0)`, so you'll have to move the camera in any direction to see something
 
 ### Using Nix Flakes, JetBrains RustRover & Direnv
 
