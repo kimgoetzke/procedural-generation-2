@@ -163,6 +163,7 @@ fn attach_object_spawn_task(
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
   let colour = get_randomised_colour(settings, &mut rng, &object_data);
+  let is_building = object_name.is_building();
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -174,6 +175,7 @@ fn attach_object_spawn_task(
             tile_data.flat_tile.terrain,
             tile_data.flat_tile.climate,
             object_data.is_large_sprite,
+            is_building,
           )
           .clone()
       };

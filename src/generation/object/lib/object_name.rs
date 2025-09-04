@@ -85,9 +85,48 @@ pub enum ObjectName {
   PathLeftVertical,
   PathRightVertical,
   PathUndefined,
+  HouseSmallRoofLeft,
+  HouseSmallRoofMiddle,
+  HouseSmallRoofRight,
+  HouseSmallWallLeft,
+  HouseSmallDoorBottom,
+  HouseSmallWallRight,
+  HouseSmallDoorLeft,
+  HouseSmallWallBottom,
+  HouseSmallDoorRight,
+  HouseMediumRoofLeft,
+  HouseMediumRoofMiddle,
+  HouseMediumRoofRight,
+  HouseMediumWallLeft,
+  HouseMediumDoorBottom,
+  HouseMediumWallRight,
+}
+
+enum ObjectKind {
+  Other,
+  Path,
+  Building,
 }
 
 impl ObjectName {
+  pub fn get_sprite_index(&self) -> i32 {
+    let object_kind = if self.is_path() {
+      ObjectKind::Path
+    } else if self.is_building() {
+      ObjectKind::Building
+    } else {
+      ObjectKind::Other
+    };
+
+    match object_kind {
+      ObjectKind::Path => self.get_index_for_path(),
+      ObjectKind::Building => self.get_index_for_building(),
+      ObjectKind::Other => {
+        panic!("You cannot determine the index of a non-path/non-building object by calling ObjectName::get_sprite_index()")
+      }
+    }
+  }
+
   pub fn is_multi_tile(&self) -> bool {
     matches!(
       self,
@@ -143,6 +182,48 @@ impl ObjectName {
       ObjectName::PathLeftVertical => 45,
       ObjectName::PathRightVertical => 46,
       _ => 47,
+    }
+  }
+
+  pub fn is_building(&self) -> bool {
+    matches!(
+      self,
+      ObjectName::HouseSmallRoofLeft
+        | ObjectName::HouseSmallRoofMiddle
+        | ObjectName::HouseSmallRoofRight
+        | ObjectName::HouseSmallWallLeft
+        | ObjectName::HouseSmallDoorBottom
+        | ObjectName::HouseSmallWallRight
+        | ObjectName::HouseSmallDoorLeft
+        | ObjectName::HouseSmallWallBottom
+        | ObjectName::HouseSmallDoorRight
+        | ObjectName::HouseMediumRoofLeft
+        | ObjectName::HouseMediumRoofMiddle
+        | ObjectName::HouseMediumRoofRight
+        | ObjectName::HouseMediumWallLeft
+        | ObjectName::HouseMediumDoorBottom
+        | ObjectName::HouseMediumWallRight
+    )
+  }
+
+  pub fn get_index_for_building(&self) -> i32 {
+    match self {
+      ObjectName::HouseSmallRoofLeft => 1,
+      ObjectName::HouseSmallRoofMiddle => 2,
+      ObjectName::HouseSmallRoofRight => 3,
+      ObjectName::HouseSmallWallLeft => 10,
+      ObjectName::HouseSmallDoorBottom => 11,
+      ObjectName::HouseSmallWallRight => 12,
+      ObjectName::HouseSmallDoorLeft => 19,
+      ObjectName::HouseSmallWallBottom => 20,
+      ObjectName::HouseSmallDoorRight => 21,
+      ObjectName::HouseMediumRoofLeft => 4,
+      ObjectName::HouseMediumRoofMiddle => 5,
+      ObjectName::HouseMediumRoofRight => 6,
+      ObjectName::HouseMediumWallLeft => 13,
+      ObjectName::HouseMediumDoorBottom => 14,
+      ObjectName::HouseMediumWallRight => 15,
+      _ => 0,
     }
   }
 }

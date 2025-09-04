@@ -70,6 +70,15 @@
             PathTopRight,
             PathTopLeft,
             PathTopHorizontal,
+            HouseSmallWallLeft,
+            HouseSmallDoorBottom,
+            HouseSmallWallRight,
+            HouseMediumWallLeft,
+            HouseMediumDoorBottom,
+            HouseMediumWallRight,
+            HouseSmallDoorLeft,
+            HouseSmallWallBottom,
+            HouseSmallDoorRight,
           ]
         ),
         (
@@ -134,6 +143,11 @@
             PathTopLeft,
             PathBottomLeft,
             PathLeftVertical,
+            HouseSmallRoofRight,
+            HouseSmallWallRight,
+            HouseMediumRoofRight,
+            HouseMediumWallRight,
+            HouseSmallDoorRight,
           ]
         ),
         (
@@ -198,6 +212,11 @@
             PathTopRight,
             PathBottomRight,
             PathRightVertical,
+            HouseSmallRoofLeft,
+            HouseSmallWallLeft,
+            HouseMediumRoofLeft,
+            HouseMediumWallLeft,
+            HouseSmallDoorLeft,
           ]
         ),
         (
@@ -264,6 +283,12 @@
             PathBottomRight,
             PathBottomLeft,
             PathBottomHorizontal,
+            HouseSmallRoofLeft,
+            HouseSmallRoofMiddle,
+            HouseSmallRoofRight,
+            HouseMediumRoofLeft,
+            HouseMediumRoofMiddle,
+            HouseMediumRoofRight,
           ]
         ),
       ]

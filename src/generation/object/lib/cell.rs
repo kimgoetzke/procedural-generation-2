@@ -290,7 +290,7 @@ impl Cell {
   /// Used outside the wave function collapse algorithm to set the [`Cell`] as collapsed with a single state.
   /// Must only be called prior to the wave function collapse algorithm starting.
   pub fn set_collapsed(&mut self, object_name: ObjectName) {
-    let i = object_name.get_index_for_path();
+    let i = object_name.get_sprite_index();
     self.index = i;
     self.is_collapsed = true;
     self.entropy = 0usize;

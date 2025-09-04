@@ -211,7 +211,7 @@ fn world_generation_system(
         stage_6_schedule_path_generation(&mut commands, &settings, &metadata, grid_generation_task, component_cg)
       }
       GenerationStage::Stage7(path_generation_task) => {
-        stage_7_schedule_generating_object_data(&mut commands, &settings, path_generation_task, component_cg)
+        stage_7_schedule_generating_object_data(&mut commands, &settings, &metadata, path_generation_task, component_cg)
       }
       GenerationStage::Stage8(object_generation_tasks) => {
         stage_8_schedule_spawning_objects(&mut commands, &settings, object_generation_tasks, component_cg)
@@ -472,6 +472,7 @@ fn stage_6_schedule_path_generation(
 fn stage_7_schedule_generating_object_data(
   commands: &mut Commands,
   settings: &Settings,
+  metadata: &Metadata,
   path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
@@ -481,10 +482,12 @@ fn stage_7_schedule_generating_object_data(
       for (chunk, chunk_entity, mut object_grid) in triplets.drain(..) {
         if commands.get_entity(chunk_entity).is_ok() {
           let settings = settings.clone();
+          let metadata = metadata.clone();
           let task_pool = AsyncComputeTaskPool::get();
           let task = task_pool.spawn(async move {
             let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
             let is_decoration_enabled = settings.object.generate_decoration;
+            object::buildings::determine_buildings(&settings, &metadata, &mut rng, &mut object_grid);
             object::wfc::determine_decorative_objects(&mut rng, &mut object_grid, is_decoration_enabled);
             object::generate_object_data(&settings, object_grid, chunk, chunk_entity)
           });
