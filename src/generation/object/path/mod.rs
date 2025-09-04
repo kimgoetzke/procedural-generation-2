@@ -1,4 +1,4 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
@@ -19,22 +19,18 @@ impl Plugin for PathGenerationPlugin {
   fn build(&self, _: &mut App) {}
 }
 
-pub fn calculate_paths(
-  settings: &Settings,
-  metadata: &Metadata,
-  mut object_grid: ObjectGrid,
-  mut rng: StdRng,
-) -> ObjectGrid {
+/// Determines paths using a simple path finding algorithm in the given [`ObjectGrid`] for further processing.
+pub fn determine_paths(settings: &Settings, metadata: &Metadata, mut object_grid: &mut ObjectGrid, mut rng: StdRng) {
   let cg = object_grid.cg;
   if !settings.object.generate_paths {
     debug!("Skipped path generation for {} because it is disabled", cg);
-    return object_grid;
+    return;
   }
   let start_time = shared::get_time();
-  let connection_points = get_valid_connection_points(&mut object_grid, &cg, metadata);
+  let connection_points = metadata.get_connection_points_for(&cg, &mut object_grid);
   if connection_points.is_empty() {
     debug!("Skipped path generation for chunk {} because it has no connection points", cg);
-    return object_grid;
+    return;
   }
   if connection_points.len() == 1 {
     if !connection_points[0].is_touching_edge() {
@@ -42,7 +38,7 @@ pub fn calculate_paths(
         "Skipped path generation for chunk {} because it has no edge connection points",
         cg
       );
-      return object_grid;
+      return;
     }
     let cell = object_grid
       .get_cell_mut(&connection_points[0])
@@ -54,7 +50,7 @@ pub fn calculate_paths(
       "Skipped path generation for chunk {} because it has only 1 connection point",
       cg
     );
-    return object_grid;
+    return;
   }
   trace!(
     "Generating path network for chunk {} which has [{}] connection points: {}",
@@ -82,55 +78,6 @@ pub fn calculate_paths(
     shared::get_time() - start_time,
     shared::thread_name()
   );
-
-  object_grid
-}
-
-fn get_valid_connection_points(
-  object_grid: &mut ObjectGrid,
-  cg: &Point<ChunkGrid>,
-  metadata: &Metadata,
-) -> Vec<Point<InternalGrid>> {
-  metadata
-    .connection_points
-    .get(cg)
-    .expect(format!("Failed to get connection points for {}", cg).as_str())
-    .iter()
-    .filter(|p| {
-      if let Some(cell) = object_grid.get_cell_mut(&p) {
-        if cell.is_valid_connection_point() {
-          // Uncomment below for debugging purposes
-          // if let Some(tile_below) = &cell.tile_below {
-          //   debug!("Keeping chunk {} connection point {:?} as a valid connection", cg, p,);
-          //   tile_below.log();
-          // }
-
-          return true;
-        }
-        trace!(
-          "Removing chunk {} connection point {:?} because is walkable={} & is_valid_connection_point={}",
-          cg,
-          p,
-          cell.is_walkable(),
-          cell.is_valid_connection_point()
-        );
-        if let Some(tile_below) = &cell.tile_below {
-          tile_below.log();
-        } else {
-          trace!("- No tile below for connection point {:?}", p);
-        }
-
-        return false;
-      }
-      debug!(
-        "Removing chunk {} connection point {:?} because there is no tile in the object grid",
-        cg, p
-      );
-
-      false
-    })
-    .cloned()
-    .collect::<Vec<_>>()
 }
 
 /// Calculates the path segments between the connection points in the chunk grid. The outcome is a number of collapsed
@@ -393,7 +340,7 @@ fn push_path_if_valid(cell: &CellRef, result: &mut Vec<(Point<InternalGrid>, Dir
 }
 
 fn get_cell_ig(cell: &CellRef) -> Point<InternalGrid> {
-  cell.lock().expect("Failed to lock cell").get_ig().clone()
+  cell.lock().expect(CELL_LOCK_ERROR).get_ig().clone()
 }
 
 /// Calculates the costs based on the distance between two points in the internal grid, adjusting the cost based on the
@@ -524,52 +471,6 @@ fn direction_to_neighbour_chunk(ig: &Point<InternalGrid>) -> Direction {
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  #[test]
-  #[should_panic(expected = "Failed to get connection points for cg(0, 0)")]
-  fn get_valid_connection_points_panics_when_there_are_no_points_for_cg() {
-    let cg = Point::new_chunk_grid(0, 0);
-    let mut object_grid = ObjectGrid::default(cg);
-    let metadata = Metadata::default(cg);
-    get_valid_connection_points(&mut object_grid, &cg, &metadata);
-  }
-
-  #[test]
-  fn get_valid_connection_points_returns_empty_list_when_no_connection_points_exist() {
-    let cg = Point::new_chunk_grid(0, 0);
-    let mut object_grid = ObjectGrid::default(cg);
-    let mut metadata = Metadata::default(cg);
-    metadata.connection_points.insert(cg.clone(), vec![]);
-    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
-    assert!(result.is_empty());
-  }
-
-  #[test]
-  fn get_valid_connection_points_filters_out_non_walkable_connection_points() {
-    let cg = Point::new_chunk_grid(0, 0);
-    let mut object_grid = ObjectGrid::default(cg);
-    object_grid.object_grid[1][1].calculate_is_walkable(); // Point (1, 1) is not walkable
-    let mut metadata = Metadata::default(cg);
-    metadata
-      .connection_points
-      .insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
-    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
-    assert_eq!(result, vec![]);
-  }
-
-  #[test]
-  fn get_valid_connection_points_returns_valid_connection_points() {
-    let cg = Point::new_chunk_grid(0, 0);
-    let mut object_grid = ObjectGrid::default_walkable(cg);
-    let mut metadata = Metadata::default(cg);
-    let expected_point1 = Point::new_internal_grid(1, 1);
-    let expected_point2 = Point::new_internal_grid(1, 2);
-    metadata
-      .connection_points
-      .insert(cg.clone(), vec![expected_point1, expected_point2]);
-    let result = get_valid_connection_points(&mut object_grid, &cg, &metadata);
-    assert_eq!(result, vec![expected_point1, expected_point2]);
-  }
 
   #[test]
   fn determine_path_object_name_top_right_for_top_and_right_directions() {

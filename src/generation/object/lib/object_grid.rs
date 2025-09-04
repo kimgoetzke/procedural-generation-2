@@ -1,4 +1,4 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
@@ -146,7 +146,7 @@ impl ObjectGrid {
       for y in 0..grid.len() {
         for x in 0..grid[y].len() {
           let cell_ref = &grid[y][x];
-          let ig = cell_ref.lock().expect("Failed to lock cell").ig;
+          let ig = cell_ref.lock().expect(CELL_LOCK_ERROR).ig;
           let mut neighbours: Vec<CellRef> = Vec::new();
 
           for (dx, dy) in [(0, 1), (-1, 0), (1, 0), (0, -1)] {
@@ -161,7 +161,7 @@ impl ObjectGrid {
             }
           }
 
-          let mut cell_guard = cell_ref.try_lock().expect("Failed to lock cell");
+          let mut cell_guard = cell_ref.try_lock().expect(CELL_LOCK_ERROR);
           cell_guard.add_neighbours(neighbours);
           cell_guard.calculate_is_walkable();
         }
@@ -212,7 +212,7 @@ impl ObjectGrid {
       .as_ref()?
       .iter()
       .flatten()
-      .find(|cell| cell.lock().expect("Failed to lock cell").ig == *point)
+      .find(|cell| cell.lock().expect(CELL_LOCK_ERROR).ig == *point)
   }
 
   pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {

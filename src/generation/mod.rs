@@ -445,10 +445,10 @@ fn stage_6_schedule_path_generation(
       let task_pool = AsyncComputeTaskPool::get();
       let task = task_pool.spawn(async move {
         let mut new_chunk_entity_grid_triplets = Vec::new();
-        for (chunk, chunk_entity, object_grid) in triplets.drain(..) {
+        for (chunk, chunk_entity, mut object_grid) in triplets.drain(..) {
           let rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-          let processed_object_grid = path::calculate_paths(&settings, &metadata, object_grid, rng);
-          new_chunk_entity_grid_triplets.push((chunk, chunk_entity, processed_object_grid))
+          path::determine_paths(&settings, &metadata, &mut object_grid, rng);
+          new_chunk_entity_grid_triplets.push((chunk, chunk_entity, object_grid))
         }
 
         new_chunk_entity_grid_triplets

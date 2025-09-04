@@ -1,6 +1,7 @@
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_direction_points};
+use crate::generation::object::lib::ObjectGrid;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::platform::collections::HashMap;
@@ -64,6 +65,51 @@ impl Metadata {
     trace!("Biome metadata for {}: {}", cg, biome_metadata_set);
 
     biome_metadata_set
+  }
+
+  /// Returns a list of valid connection points for the given [`Point<ChunkGrid>`] by filtering out any points that
+  /// are invalid in the provided [`ObjectGrid`]. See [`ObjectGrid::is_valid_connection_point`] for the criteria.
+  pub fn get_connection_points_for(&self, cg: &Point<ChunkGrid>, object_grid: &mut ObjectGrid) -> Vec<Point<InternalGrid>> {
+    self
+      .connection_points
+      .get(cg)
+      .expect(format!("Failed to get connection points for {}", cg).as_str())
+      .iter()
+      .filter(|p| {
+        if let Some(cell) = object_grid.get_cell_mut(&p) {
+          if cell.is_valid_connection_point() {
+            // Uncomment below for debugging purposes
+            // if let Some(tile_below) = &cell.tile_below {
+            //   debug!("Keeping chunk {} connection point {:?} as a valid connection", cg, p,);
+            //   tile_below.log();
+            // }
+
+            return true;
+          }
+          trace!(
+            "Removing chunk {} connection point {:?} because is walkable={} & is_valid_connection_point={}",
+            cg,
+            p,
+            cell.is_walkable(),
+            cell.is_valid_connection_point()
+          );
+          if let Some(tile_below) = &cell.tile_below {
+            tile_below.log();
+          } else {
+            trace!("- No tile below for connection point {:?}", p);
+          }
+
+          return false;
+        }
+        debug!(
+          "Removing chunk {} connection point {:?} because there is no tile in the object grid",
+          cg, p
+        );
+
+        false
+      })
+      .cloned()
+      .collect::<Vec<_>>()
   }
 }
 
@@ -310,6 +356,52 @@ mod tests {
       .insert(cg.clone(), BiomeMetadata::new(cg.clone(), false, 0.5, 10, Climate::Moderate));
 
     metadata.get_biome_metadata_for(&cg);
+  }
+
+  #[test]
+  #[should_panic(expected = "Failed to get connection points for cg(0, 0)")]
+  fn get_valid_connection_points_panics_when_there_are_no_points_for_cg() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let metadata = Metadata::default(cg);
+    metadata.get_connection_points_for(&cg, &mut object_grid);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_empty_list_when_no_connection_points_exist() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let mut metadata = Metadata::default(cg);
+    metadata.connection_points.insert(cg.clone(), vec![]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn get_valid_connection_points_filters_out_non_walkable_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    object_grid.object_grid[1][1].calculate_is_walkable(); // Point (1, 1) is not walkable
+    let mut metadata = Metadata::default(cg);
+    metadata
+      .connection_points
+      .insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert_eq!(result, vec![]);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_valid_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default_walkable(cg);
+    let mut metadata = Metadata::default(cg);
+    let expected_point1 = Point::new_internal_grid(1, 1);
+    let expected_point2 = Point::new_internal_grid(1, 2);
+    metadata
+      .connection_points
+      .insert(cg.clone(), vec![expected_point1, expected_point2]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert_eq!(result, vec![expected_point1, expected_point2]);
   }
 
   #[test]
