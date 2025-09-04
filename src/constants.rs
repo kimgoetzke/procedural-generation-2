@@ -66,8 +66,8 @@ pub const GRASS_LAYER: usize = 3;
 pub const FOREST_LAYER: usize = 4;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Placeholder tile set
-pub const TILE_SET_PLACEHOLDER_PATH: &str = "tilesets/default.png";
-pub const TILE_SET_PLACEHOLDER_COLUMNS: u32 = 5;
+pub const TILE_SET_PLACEHOLDER_PATH: &str = "tilesets/placeholders.png";
+pub const TILE_SET_PLACEHOLDER_COLUMNS: u32 = 6;
 pub const TILE_SET_PLACEHOLDER_ROWS: u32 = 1;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile sets
@@ -108,16 +108,6 @@ pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
 // Objects
-pub const TREES_HUMID_OBJ_PATH: &str = "objects/trees-humid.png";
-pub const TREES_MODERATE_OBJ_PATH: &str = "objects/trees-moderate.png";
-pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-dry.png";
-pub const TREES_OBJ_COLUMNS: u32 = 6;
-pub const TREES_OBJ_ROWS: u32 = 1;
-pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
-pub const BUILDINGS_OBJ_PATH: &str = "objects/buildings.png";
-pub const BUILDINGS_OBJ_COLUMNS: u32 = 3;
-pub const BUILDINGS_OBJ_ROWS: u32 = 1;
-pub const BUILDINGS_OBJ_SIZE: UVec2 = UVec2::new(96, 64);
 pub const WATER_OBJ_PATH: &str = "objects/objects-water-deep.png";
 pub const SHORE_OBJ_PATH: &str = "objects/objects-water-shore.png";
 pub const OBJ_L1_DRY_PATH: &str = "objects/objects-l1-dry.png";
@@ -129,9 +119,18 @@ pub const OBJ_L2_HUMID_PATH: &str = "objects/objects-l2-humid.png";
 pub const OBJ_L3_DRY_PATH: &str = "objects/objects-l3-dry.png";
 pub const OBJ_L3_MODERATE_PATH: &str = "objects/objects-l3-moderate.png";
 pub const OBJ_L3_HUMID_PATH: &str = "objects/objects-l3-humid.png";
+pub const TREES_HUMID_OBJ_PATH: &str = "objects/trees-humid.png";
+pub const TREES_MODERATE_OBJ_PATH: &str = "objects/trees-moderate.png";
+pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-dry.png";
+pub const BUILDINGS_OBJ_PATH: &str = "objects/buildings.png";
 pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
 pub const DEFAULT_OBJ_ROWS: u32 = 3;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const BUILDINGS_OBJ_COLUMNS: u32 = 9;
+pub const BUILDINGS_OBJ_ROWS: u32 = 3;
+pub const TREES_OBJ_COLUMNS: u32 = 6;
+pub const TREES_OBJ_ROWS: u32 = 1;
+pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
 // ------------------------------------------------------------------------------------------------------
 // Colours
 pub const RED: Color = Color::hsl(0.59, 0.32, 0.52);
@@ -155,3 +154,4 @@ pub const WINDOW_HEIGHT: f32 = 720.;
 // ------------------------------------------------------------------------------------------------------
 // Common errors
 pub const TERRAIN_TYPE_ERROR: &'static str = "Invalid terrain type for drawing a terrain sprite";
+pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";

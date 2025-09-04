@@ -178,7 +178,7 @@ fn initialise_resources_system(
 
   // Objects: Buildings
   let static_buildings_layout =
-    TextureAtlasLayout::from_grid(BUILDINGS_OBJ_SIZE, BUILDINGS_OBJ_COLUMNS, BUILDINGS_OBJ_ROWS, None, None);
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, BUILDINGS_OBJ_COLUMNS, BUILDINGS_OBJ_ROWS, None, None);
   let static_buildings_atlas_layout = layouts.add(static_buildings_layout);
   asset_collection.objects.buildings.stat =
     AssetPack::new(asset_server.load(BUILDINGS_OBJ_PATH), static_buildings_atlas_layout.clone());
