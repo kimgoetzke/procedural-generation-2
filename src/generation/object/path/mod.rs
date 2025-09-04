@@ -20,7 +20,7 @@ impl Plugin for PathGenerationPlugin {
 }
 
 /// Determines paths using a simple path finding algorithm in the given [`ObjectGrid`] for further processing.
-pub fn determine_paths(settings: &Settings, metadata: &Metadata, mut object_grid: &mut ObjectGrid, mut rng: StdRng) {
+pub fn place_paths_on_grid(mut object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, mut rng: StdRng) {
   let cg = object_grid.cg;
   if !settings.object.generate_paths {
     debug!("Skipped path generation for {} because it is disabled", cg);
@@ -45,7 +45,7 @@ pub fn determine_paths(settings: &Settings, metadata: &Metadata, mut object_grid
       .expect("Failed to get cell for connection point");
     let direction = direction_to_neighbour_chunk(&connection_points[0]);
     let object_name = determine_path_object_name_from_neighbours(HashSet::from([direction]), &connection_points[0]);
-    cell.set_collapsed(object_name);
+    cell.mark_as_collapsed(object_name);
     debug!(
       "Skipped path generation for chunk {} because it has only 1 connection point",
       cg
@@ -148,7 +148,7 @@ fn calculate_path_and_draft_object_names(
       let cell = object_grid
         .get_cell_mut(&point)
         .expect(format!("Failed to get cell at point {:?}", point).as_str());
-      cell.set_collapsed(object_name);
+      cell.mark_as_collapsed(object_name);
     }
     trace!(
       "Generated path segment for chunk {} from {:?} to {:?} with [{}] cells",
@@ -211,7 +211,7 @@ fn finalise_object_names_along_the_path(object_grid: &mut ObjectGrid, path: &mut
         .collect::<HashSet<_>>();
       let cell = object_grid.get_cell_mut(&point).expect("Cell not found");
       let object_name = determine_path_object_name_from_neighbours(neighbour_directions, &cell.ig);
-      cell.set_collapsed(object_name);
+      cell.mark_as_collapsed(object_name);
     }
   }
 }

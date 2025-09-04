@@ -447,7 +447,7 @@ fn stage_6_schedule_path_generation(
         let mut new_chunk_entity_grid_triplets = Vec::new();
         for (chunk, chunk_entity, mut object_grid) in triplets.drain(..) {
           let rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-          path::determine_paths(&settings, &metadata, &mut object_grid, rng);
+          path::place_paths_on_grid(&mut object_grid, &settings, &metadata, rng);
           new_chunk_entity_grid_triplets.push((chunk, chunk_entity, object_grid))
         }
 
@@ -486,9 +486,8 @@ fn stage_7_schedule_generating_object_data(
           let task_pool = AsyncComputeTaskPool::get();
           let task = task_pool.spawn(async move {
             let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-            let is_decoration_enabled = settings.object.generate_decoration;
-            object::buildings::determine_buildings(&settings, &metadata, &mut rng, &mut object_grid);
-            object::wfc::determine_decorative_objects(&mut rng, &mut object_grid, is_decoration_enabled);
+            object::buildings::place_buildings_on_grid(&mut object_grid, &settings, &metadata, &mut rng);
+            object::wfc::place_decorative_objects_on_grid(&mut object_grid, &settings, &mut rng);
             object::generate_object_data(&settings, object_grid, chunk, chunk_entity)
           });
           object_generation_tasks.push(task);

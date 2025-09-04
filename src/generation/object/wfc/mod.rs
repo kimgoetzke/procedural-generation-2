@@ -1,5 +1,6 @@
 use crate::generation::lib::shared;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
+use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::Rng;
@@ -13,18 +14,19 @@ impl Plugin for WfcPlugin {
 }
 
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
-pub fn determine_decorative_objects(mut rng: &mut StdRng, grid: &mut ObjectGrid, is_decoration_enabled: bool) {
+pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, mut rng: &mut StdRng) {
   let start_time = shared::get_time();
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
+  let is_decoration_enabled = settings.object.generate_decoration;
   if is_decoration_enabled {
     let mut snapshots = vec![];
     let mut iter_count = 1;
     let mut has_entropy = true;
 
     while has_entropy {
-      match iterate(&mut rng, grid) {
+      match iterate(&mut rng, object_grid) {
         IterationResult::Failure => handle_failure(
-          grid,
+          object_grid,
           &mut snapshots,
           &mut iter_count,
           &mut snapshot_error_count,
@@ -32,7 +34,7 @@ pub fn determine_decorative_objects(mut rng: &mut StdRng, grid: &mut ObjectGrid,
           &mut total_error_count,
         ),
         result => handle_success(
-          grid,
+          object_grid,
           &mut snapshots,
           &mut iter_count,
           &mut has_entropy,
@@ -42,14 +44,17 @@ pub fn determine_decorative_objects(mut rng: &mut StdRng, grid: &mut ObjectGrid,
       }
     }
   } else {
-    debug!("Skipped decoration generation for {} because it is disabled", grid.cg);
+    debug!(
+      "Skipped placing decorative objects for {} because it is disabled",
+      object_grid.cg
+    );
   }
 
   log_summary(
     start_time,
     snapshot_error_count,
     total_error_count,
-    &grid,
+    &object_grid,
     is_decoration_enabled,
   );
 }
