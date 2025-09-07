@@ -34,11 +34,10 @@ pub fn place_paths_on_grid(mut object_grid: &mut ObjectGrid, settings: &Settings
   }
   if connection_points.len() == 1 {
     if !connection_points[0].is_touching_edge() {
-      debug!(
-        "Skipped path generation for chunk {} because it has no edge connection points",
+      unreachable!(
+        "Metadata::get_connection_points_for returned a single, internal connection point for {} which must not happen",
         cg
       );
-      return;
     }
     let cell = object_grid
       .get_cell_mut(&connection_points[0])

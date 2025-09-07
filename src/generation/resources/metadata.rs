@@ -70,7 +70,7 @@ impl Metadata {
   /// Returns a list of valid connection points for the given [`Point<ChunkGrid>`] by filtering out any points that
   /// are invalid in the provided [`ObjectGrid`]. See [`ObjectGrid::is_valid_connection_point`] for the criteria.
   pub fn get_connection_points_for(&self, cg: &Point<ChunkGrid>, object_grid: &mut ObjectGrid) -> Vec<Point<InternalGrid>> {
-    self
+    let mut connection_points = self
       .connection_points
       .get(cg)
       .expect(format!("Failed to get connection points for {}", cg).as_str())
@@ -109,7 +109,15 @@ impl Metadata {
         false
       })
       .cloned()
-      .collect::<Vec<_>>()
+      .collect::<Vec<_>>();
+
+    if connection_points.len() == 1 {
+      if !connection_points[0].is_touching_edge() {
+        connection_points.clear();
+      }
+    }
+
+    connection_points
   }
 }
 
