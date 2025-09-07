@@ -196,6 +196,10 @@ pub struct ObjectGenerationSettings {
   /// Whether to generate buildings in the world. Will be ignored if `generate_paths` is `false` as buildings are
   /// generated along paths. Will be ignored if `generate_objects` is `false`.
   pub generate_buildings: bool,
+  /// The density of buildings within a settled chunk. The higher the value, the more buildings will be generated
+  /// within a settled chunk.
+  #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+  pub building_density: f64,
   /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc. Will be ignored if
   /// `generate_objects` is `false`.
   pub generate_decoration: bool,
@@ -209,6 +213,7 @@ impl Default for ObjectGenerationSettings {
       generate_objects: GENERATE_OBJECTS,
       generate_paths: GENERATE_PATHS,
       generate_buildings: GENERATE_BUILDINGS,
+      building_density: BUILDING_DENSITY,
       generate_decoration: GENERATE_DECORATION,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }

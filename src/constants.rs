@@ -41,6 +41,7 @@ pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 pub const GENERATE_OBJECTS: bool = true;
 pub const GENERATE_PATHS: bool = true;
 pub const GENERATE_BUILDINGS: bool = true;
+pub const BUILDING_DENSITY: f64 = 0.5;
 pub const GENERATE_DECORATION: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
