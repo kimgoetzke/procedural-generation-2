@@ -288,7 +288,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
           ObjectName::HouseSmallWallRight,
         ],
       ],
-      Point::new_internal_grid(1, 0),
+      Point::new_internal_grid(0, 1),
       Direction::Left,
     ),
     BuildingTemplate::new(
@@ -305,7 +305,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
           ObjectName::HouseSmallDoorRight,
         ],
       ],
-      Point::new_internal_grid(1, 2),
+      Point::new_internal_grid(2, 1),
       Direction::Right,
     ),
     BuildingTemplate::new(
