@@ -113,7 +113,7 @@ pub struct GenerationMetadataSettings {
   /// chunks) the terrain oscillates between the highest and lowest terrain layers.
   #[inspector(min = 0.0, max = 0.2, display = NumberDisplay::Slider)]
   pub elevation_chunk_step_size: f64,
-  /// Shifts the ranges generated for the elevation metadata up / down. The higher the value the more the ranges
+  /// Shifts the ranges generated for the elevation metadata up or down. The higher the value the more the ranges
   /// will shift into negative values which causes lower terrain layers to be generated for chunks with the lowest
   /// ranges and less high terrain layers for chunks with the higher ranges.
   #[inspector(min = -1.0, max = 1.0, display = NumberDisplay::Slider)]
@@ -122,6 +122,14 @@ pub struct GenerationMetadataSettings {
   /// features. A parameter of [`noise::BasicMulti<noise::Perlin>`].
   #[inspector(min = 0.0, max = 0.25, display = NumberDisplay::Slider)]
   pub biome_noise_frequency: f64,
+  /// The scale of the settled areas i.e. areas in which buildings can be generated: the higher the frequency, the
+  /// smaller the areas in which buildings are generated. A parameter of [`noise::BasicMulti<noise::Perlin>`].
+  #[inspector(min = 0.0, max = 0.8, display = NumberDisplay::Slider)]
+  pub settlement_noise_frequency: f64,
+  /// The likelihood of a chunk being considered "settled" and therefore eligible for building generation. Used to
+  /// determine the threshold from the settlement noise map above which a chunk is considered settled.
+  #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+  pub settlement_probability: f64,
 }
 
 impl Default for GenerationMetadataSettings {
@@ -130,6 +138,8 @@ impl Default for GenerationMetadataSettings {
       elevation_chunk_step_size: ELEVATION_CHUNK_STEP_SIZE,
       elevation_offset: ELEVATION_OFFSET,
       biome_noise_frequency: BIOME_NOISE_FREQUENCY,
+      settlement_noise_frequency: SETTLEMENT_NOISE_FREQUENCY,
+      settlement_probability: SETTLEMENT_PROBABILITY,
     }
   }
 }

@@ -123,7 +123,8 @@ impl BuildingTemplate {
   }
 }
 
-// TODO: Use metadata to cluster buildings in certain areas to create "villages"
+// TODO: Find out why building generation causes so many WFC errors and fix the issue
+// TODO: Add settings parameter to control building density for a settled chunk
 /// The entry point for determining buildings in the object grid.
 pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
   let start_time = shared::get_time();
@@ -135,10 +136,17 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
     );
     return;
   }
+  if !metadata.get_settlement_status_for(&cg) {
+    debug!(
+      "Skipped generating buildings for {} because it is not marked as settled in metadata",
+      cg
+    );
+    return;
+  }
+
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
   add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
   add_points_points_from_generated_path(&mut path_points, object_grid);
-
   let building_templates = get_building_templates();
   let available_grid_space = compute_available_space_map(object_grid);
   let mut occupied_grid_space = HashSet::new();

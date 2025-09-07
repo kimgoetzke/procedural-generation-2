@@ -76,16 +76,20 @@ fn refresh_metadata_event(
 fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: &Settings) {
   let start_time = shared::get_time();
   let metadata_settings = settings.metadata;
-  let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+  let biome_perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
     .set_frequency(metadata_settings.biome_noise_frequency);
+  let settlement_perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+    .set_octaves(1)
+    .set_frequency(metadata_settings.settlement_noise_frequency);
   metadata.index.clear();
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
-      generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
+      generate_biome_metadata(&mut metadata, &settings, &biome_perlin, cg);
       generate_connection_points(&mut metadata, &settings, cg);
+      generate_settlement_metadata(&mut metadata, &settings, &settlement_perlin, cg);
       metadata.index.push(cg);
     })
   });
@@ -178,7 +182,7 @@ fn generate_biome_metadata(
 
 fn generate_connection_points(metadata: &mut ResMut<Metadata>, settings: &Settings, cg: Point<ChunkGrid>) {
   let connection_points = calculate_connection_points_for_cg(settings, &cg);
-  metadata.connection_points.insert(cg, connection_points);
+  metadata.connection.insert(cg, connection_points);
 }
 
 fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
@@ -246,6 +250,24 @@ fn generate_hash(reference_cg: &Point<ChunkGrid>, neighbour_cg: &Point<ChunkGrid
   format!("{:?}:{:?}", smaller_point, larger_point).hash(&mut hasher);
 
   hasher.finish()
+}
+
+/// Determines whether a chunk should have a settlement based on its coordinates and the settings. If the chunk is
+/// considered to be settled, buildings can be generated on it.
+fn generate_settlement_metadata(
+  metadata: &mut ResMut<Metadata>,
+  settings: &Settings,
+  perlin: &BasicMulti<Perlin>,
+  cg: Point<ChunkGrid>,
+) {
+  let settlement_probability = settings.metadata.settlement_probability;
+  let noise = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
+  let is_settled = if noise >= settlement_probability { false } else { true };
+  debug!(
+    "Generated settlement status [{:?}] for {} because noise is {}",
+    is_settled, cg, noise
+  );
+  metadata.settlement.insert(cg, is_settled);
 }
 
 #[cfg(test)]

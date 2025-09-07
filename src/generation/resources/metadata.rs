@@ -33,7 +33,11 @@ pub struct Metadata {
   pub index: Vec<Point<ChunkGrid>>,
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
   pub biome: HashMap<Point<ChunkGrid>, BiomeMetadata>,
-  pub connection_points: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
+  /// Contains potential connection points between chunks. This influences path generation and therefore all other
+  /// object placement.
+  pub connection: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
+  /// Indicates whether a chunk is considered to be settled or not. This influences the generation of buildings.
+  pub settlement: HashMap<Point<ChunkGrid>, bool>,
 }
 
 impl Metadata {
@@ -71,7 +75,7 @@ impl Metadata {
   /// are invalid in the provided [`ObjectGrid`]. See [`ObjectGrid::is_valid_connection_point`] for the criteria.
   pub fn get_connection_points_for(&self, cg: &Point<ChunkGrid>, object_grid: &mut ObjectGrid) -> Vec<Point<InternalGrid>> {
     let mut connection_points = self
-      .connection_points
+      .connection
       .get(cg)
       .expect(format!("Failed to get connection points for {}", cg).as_str())
       .iter()
@@ -118,6 +122,10 @@ impl Metadata {
     }
 
     connection_points
+  }
+
+  pub fn get_settlement_status_for(&self, cg: &Point<ChunkGrid>) -> bool {
+    *self.settlement.get(cg).unwrap_or(&false)
   }
 }
 
@@ -182,6 +190,7 @@ impl ElevationMetadata {
 #[reflect(Resource)]
 pub struct BiomeMetadata {
   pub cg: Point<ChunkGrid>,
+  // TODO: Remove everything but climate
   pub is_rocky: bool,
   pub rainfall: f32,
   pub max_layer: i32,
@@ -310,7 +319,8 @@ mod tests {
         index: vec![],
         elevation: HashMap::new(),
         biome: HashMap::new(),
-        connection_points: HashMap::new(),
+        connection: HashMap::new(),
+        settlement: HashMap::new(),
       }
     }
   }
@@ -380,7 +390,7 @@ mod tests {
     let cg = Point::new_chunk_grid(0, 0);
     let mut object_grid = ObjectGrid::default(cg);
     let mut metadata = Metadata::default(cg);
-    metadata.connection_points.insert(cg.clone(), vec![]);
+    metadata.connection.insert(cg.clone(), vec![]);
     let result = metadata.get_connection_points_for(&cg, &mut object_grid);
     assert!(result.is_empty());
   }
@@ -393,9 +403,7 @@ mod tests {
       cell.calculate_is_walkable(); // Point (1, 1) is not walkable
     }
     let mut metadata = Metadata::default(cg);
-    metadata
-      .connection_points
-      .insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
+    metadata.connection.insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
     let result = metadata.get_connection_points_for(&cg, &mut object_grid);
     assert_eq!(result, vec![]);
   }
@@ -407,9 +415,7 @@ mod tests {
     let mut metadata = Metadata::default(cg);
     let expected_point1 = Point::new_internal_grid(1, 1);
     let expected_point2 = Point::new_internal_grid(1, 2);
-    metadata
-      .connection_points
-      .insert(cg.clone(), vec![expected_point1, expected_point2]);
+    metadata.connection.insert(cg.clone(), vec![expected_point1, expected_point2]);
     let result = metadata.get_connection_points_for(&cg, &mut object_grid);
     assert_eq!(result, vec![expected_point1, expected_point2]);
   }
