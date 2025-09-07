@@ -128,8 +128,11 @@ impl BuildingTemplate {
 pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
   let start_time = shared::get_time();
   let cg = object_grid.cg;
-  if !settings.object.generate_paths {
-    debug!("Skipped generating buildings for {} because path generation is disabled", cg);
+  if !settings.object.generate_paths || !settings.object.generate_buildings {
+    debug!(
+      "Skipped generating buildings for {} because it or path generation are disabled",
+      cg
+    );
     return;
   }
   let mut connection_points = metadata.get_connection_points_for(&cg, object_grid);
