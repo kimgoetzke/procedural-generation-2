@@ -389,7 +389,9 @@ mod tests {
   fn get_valid_connection_points_filters_out_non_walkable_connection_points() {
     let cg = Point::new_chunk_grid(0, 0);
     let mut object_grid = ObjectGrid::default(cg);
-    object_grid.object_grid[1][1].calculate_is_walkable(); // Point (1, 1) is not walkable
+    if let Some(cell) = object_grid.get_cell_mut(&Point::new_internal_grid(1, 1)) {
+      cell.calculate_is_walkable(); // Point (1, 1) is not walkable
+    }
     let mut metadata = Metadata::default(cg);
     metadata
       .connection_points

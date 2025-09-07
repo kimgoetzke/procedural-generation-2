@@ -65,6 +65,8 @@ pub fn place_paths_on_grid(mut object_grid: &mut ObjectGrid, settings: &Settings
   let mut path: Vec<(Point<InternalGrid>, Direction)> = Vec::new();
   calculate_path_and_draft_object_names(&mut object_grid, &mut rng, cg, &connection_points, &mut path);
   finalise_object_names_along_the_path(&mut object_grid, &mut path);
+  let path_points = path.iter().map(|(p, _)| *p).collect::<HashSet<Point<InternalGrid>>>();
+  object_grid.set_generated_path(path_points);
   debug!(
     "Generated path network for {} with [{}] cells connecting [{}] in {} ms on {}",
     cg,

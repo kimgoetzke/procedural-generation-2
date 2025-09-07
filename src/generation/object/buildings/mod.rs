@@ -73,22 +73,22 @@ impl BuildingTemplate {
 
   /// Calculates the absolute position of the door tile in internal grid coordinates based on the connection point and
   /// the connection direction.
-  fn calculate_absolute_door_ig(&self, connection_point: Point<InternalGrid>) -> Point<InternalGrid> {
+  fn calculate_absolute_door_ig(&self, path_ig: Point<InternalGrid>) -> Point<InternalGrid> {
     match self.connection_direction {
-      Direction::Top => Point::new_internal_grid(connection_point.x, connection_point.y + 1),
-      Direction::Bottom => Point::new_internal_grid(connection_point.x, connection_point.y - 1),
-      Direction::Left => Point::new_internal_grid(connection_point.x + 1, connection_point.y),
-      Direction::Right => Point::new_internal_grid(connection_point.x - 1, connection_point.y),
+      Direction::Top => Point::new_internal_grid(path_ig.x, path_ig.y + 1),
+      Direction::Bottom => Point::new_internal_grid(path_ig.x, path_ig.y - 1),
+      Direction::Left => Point::new_internal_grid(path_ig.x + 1, path_ig.y),
+      Direction::Right => Point::new_internal_grid(path_ig.x - 1, path_ig.y),
       _ => panic!("Invalid connection direction for building template"),
     }
   }
 
   fn is_placeable_at_connection(
     &self,
-    connection_point: Point<InternalGrid>,
+    path_ig: Point<InternalGrid>,
     available_space: &HashSet<Point<InternalGrid>>,
   ) -> bool {
-    let building_origin_ig = self.calculate_origin_ig_from_connection_point(connection_point);
+    let building_origin_ig = self.calculate_origin_ig_from_connection_point(path_ig);
 
     // Don't allow buildings to be placed out of bounds
     if building_origin_ig.x < 0
@@ -116,8 +116,8 @@ impl BuildingTemplate {
     );
     let connection_point_direction: Point<InternalGrid> = self.connection_direction.to_opposite().to_point();
     let expected_door_ig = Point::new_internal_grid(
-      connection_point.x + connection_point_direction.x,
-      connection_point.y + connection_point_direction.y,
+      path_ig.x + connection_point_direction.x,
+      path_ig.y + connection_point_direction.y,
     );
     door_ig == expected_door_ig
   }
@@ -135,43 +135,27 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
     );
     return;
   }
-  let mut connection_points = metadata.get_connection_points_for(&cg, object_grid);
-  if connection_points.len() > 1 {
-    connection_points = connection_points
-      .iter_mut()
-      .filter(|cp| !cp.is_touching_edge())
-      .map(|cp| *cp)
-      .collect::<Vec<Point<InternalGrid>>>();
-  }
-  if connection_points.is_empty() {
-    debug!(
-      "No internal connection points found for {} - skipping building generation",
-      cg
-    );
-    return;
-  }
+  let mut path_points: Vec<Point<InternalGrid>> = vec![];
+  add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
+  add_points_points_from_generated_path(&mut path_points, object_grid);
 
   let building_templates = get_building_templates();
   let available_grid_space = compute_available_space_map(object_grid);
   let mut occupied_grid_space = HashSet::new();
   let mut buildings_placed = 0;
-  for connection_point in connection_points {
-    if let Some(template) = select_fitting_building(
-      &building_templates,
-      connection_point,
-      &available_grid_space,
-      &occupied_grid_space,
-      rng,
-    ) {
-      let absolute_door_ig = template.calculate_absolute_door_ig(connection_point);
+  for path_ig in path_points {
+    if let Some(template) =
+      select_fitting_building(&building_templates, path_ig, &available_grid_space, &occupied_grid_space, rng)
+    {
+      let absolute_door_ig = template.calculate_absolute_door_ig(path_ig);
       let building_origin_ig = template.calculate_origin_ig_from_absolute_door(absolute_door_ig);
       if place_building(&template, building_origin_ig, object_grid, &mut occupied_grid_space) {
         buildings_placed += 1;
         debug!(
           "Placed [{}] at computed origin {:?} for connection point {:?} on {}",
-          template.name, building_origin_ig, connection_point, cg
+          template.name, building_origin_ig, path_ig, cg
         );
-        update_path_in_front_of_door(&connection_point, &absolute_door_ig, object_grid);
+        update_path_in_front_of_door(&path_ig, &absolute_door_ig, object_grid);
       } else {
         warn!(
           "Failed to place [{}] at computed origin {:?} on {}",
@@ -179,10 +163,7 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
         );
       }
     } else {
-      debug!(
-        "No suitable building found for connection point {:?} on {}",
-        connection_point, cg
-      );
+      debug!("No suitable building found for connection point {:?} on {}", path_ig, cg);
     }
   }
 
@@ -193,6 +174,36 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
     shared::get_time() - start_time,
     shared::thread_name()
   );
+}
+
+fn add_points_points_from_generated_path(path_points: &mut Vec<Point<InternalGrid>>, object_grid: &mut ObjectGrid) {
+  let final_path = object_grid.get_generated_path();
+  if final_path.is_empty() {
+    debug!("No generated path found for {}", object_grid.cg);
+    return;
+  }
+
+  path_points.extend(final_path.iter());
+}
+
+fn add_valid_connection_points(
+  proposed_points: &mut Vec<Point<InternalGrid>>,
+  object_grid: &mut ObjectGrid,
+  metadata: &Metadata,
+  cg: &Point<ChunkGrid>,
+) {
+  let mut connection_points = metadata.get_connection_points_for(&cg, object_grid);
+  if connection_points.len() > 1 {
+    connection_points = connection_points
+      .iter_mut()
+      .filter(|cp| !cp.is_touching_edge())
+      .map(|cp| *cp)
+      .collect::<Vec<Point<InternalGrid>>>();
+  }
+  if connection_points.is_empty() {
+    debug!("No valid connection points found for {}", cg);
+  }
+  proposed_points.extend(connection_points.iter());
 }
 
 /// Returns a map of space available for placing buildings.
@@ -278,18 +289,18 @@ fn place_building(
 /// Updates the object name of the cell at the given connection point to ensure the path connects to the door
 /// correctly. Without this, there would be a gap in the path leading to the door.
 fn update_path_in_front_of_door(
-  connection_point: &Point<InternalGrid>,
+  path_ig: &Point<InternalGrid>,
   absolute_door_ig: &Point<InternalGrid>,
   object_grid: &mut ObjectGrid,
 ) {
   let cg = object_grid.cg;
-  if let Some(cell) = object_grid.get_cell_mut(connection_point) {
-    let object_name = determine_updated_object_name(cell, connection_point, absolute_door_ig, &cg);
+  if let Some(cell) = object_grid.get_cell_mut(path_ig) {
+    let object_name = determine_updated_object_name(cell, path_ig, absolute_door_ig, &cg);
     cell.mark_as_collapsed(object_name);
   } else {
     error!(
       "Failed to get cell at connection point {:?} on {} to update path in front of door at {:?}",
-      connection_point, cg, absolute_door_ig
+      path_ig, cg, absolute_door_ig
     );
   }
 }
@@ -298,7 +309,7 @@ fn update_path_in_front_of_door(
 /// direction to the door.
 fn determine_updated_object_name(
   cell: &mut Cell,
-  connection_point: &Point<InternalGrid>,
+  path_ig: &Point<InternalGrid>,
   absolute_door_ig: &Point<InternalGrid>,
   cg: &Point<ChunkGrid>,
 ) -> ObjectName {
@@ -306,7 +317,7 @@ fn determine_updated_object_name(
   if !cell.is_collapsed() || terrain_states.len() != 1 {
     error!(
       "Expected collapsed path tile at connection point {:?} on {} but found: {:?} ",
-      connection_point, cg, cell
+      path_ig, cg, cell
     );
     return ObjectName::PathUndefined;
   }
@@ -314,12 +325,12 @@ fn determine_updated_object_name(
   if !terrain_state.name.is_path() {
     error!(
       "Expected path tile at connection point {:?} on {} but found: {:?}",
-      connection_point, cg, cell
+      path_ig, cg, cell
     );
     return ObjectName::PathUndefined;
   }
 
-  let missing_direction = Direction::from_points(connection_point, absolute_door_ig);
+  let missing_direction = Direction::from_points(path_ig, absolute_door_ig);
   let new_object_name = match (terrain_state.name, missing_direction) {
     (ObjectName::PathTop, Direction::Left) => ObjectName::PathTopLeft,
     (ObjectName::PathTop, Direction::Right) => ObjectName::PathTopRight,
@@ -330,6 +341,14 @@ fn determine_updated_object_name(
     (ObjectName::PathBottom, Direction::Left) => ObjectName::PathBottomLeft,
     (ObjectName::PathBottom, Direction::Right) => ObjectName::PathBottomRight,
     (ObjectName::PathBottom, _) => ObjectName::PathVertical,
+    (ObjectName::PathTopRight, Direction::Bottom) => ObjectName::PathRightVertical,
+    (ObjectName::PathTopRight, Direction::Left) => ObjectName::PathTopHorizontal,
+    (ObjectName::PathTopLeft, Direction::Bottom) => ObjectName::PathLeftVertical,
+    (ObjectName::PathTopLeft, Direction::Right) => ObjectName::PathTopHorizontal,
+    (ObjectName::PathBottomLeft, Direction::Top) => ObjectName::PathLeftVertical,
+    (ObjectName::PathBottomLeft, Direction::Right) => ObjectName::PathBottomHorizontal,
+    (ObjectName::PathBottomRight, Direction::Top) => ObjectName::PathRightVertical,
+    (ObjectName::PathBottomRight, Direction::Left) => ObjectName::PathBottomHorizontal,
     (ObjectName::PathLeft, Direction::Top) => ObjectName::PathTopLeft,
     (ObjectName::PathLeft, Direction::Bottom) => ObjectName::PathBottomLeft,
     (ObjectName::PathLeft, _) => ObjectName::PathHorizontal,
@@ -347,12 +366,12 @@ fn determine_updated_object_name(
   if new_object_name == terrain_state.name {
     panic!(
       "Failed to determine missing connection direction for [{:?}] tile at connection point {:?} on {} with missing direction [{:?}] and door at {} - update the match statement!",
-      terrain_state.name, connection_point, cg, missing_direction, absolute_door_ig
+      terrain_state.name, path_ig, cg, missing_direction, absolute_door_ig
     );
   }
   debug!(
     "Updated the object name of cell {} on {} from [{:?}] to [{:?}] because a building with a door at {} was placed",
-    connection_point, cg, terrain_state.name, new_object_name, absolute_door_ig
+    path_ig, cg, terrain_state.name, new_object_name, absolute_door_ig
   );
 
   new_object_name

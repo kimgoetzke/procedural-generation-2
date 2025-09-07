@@ -5,7 +5,7 @@ use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
 use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
 use bevy::log::*;
-use bevy::platform::collections::HashMap;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
 use std::sync::{Arc, Mutex};
 
@@ -18,8 +18,9 @@ use std::sync::{Arc, Mutex};
 pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
-  pub path_grid: Option<Vec<Vec<CellRef>>>,
-  pub object_grid: Vec<Vec<Cell>>,
+  path_grid: Option<Vec<Vec<CellRef>>>,
+  path: HashSet<Point<InternalGrid>>,
+  object_grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
   /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
   /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
@@ -37,6 +38,7 @@ impl ObjectGrid {
     ObjectGrid {
       cg,
       path_grid: None,
+      path: HashSet::new(),
       object_grid,
       no_neighbours_tile,
     }
@@ -124,7 +126,7 @@ impl ObjectGrid {
 
   /// Initialises the path finding grid by populating it with strong references to the respective [`Cell`]s, if
   /// it has not been initialised yet. Then, populates the neighbours for each cell.
-  pub(crate) fn initialise_path_grid(&mut self) {
+  pub fn initialise_path_grid(&mut self) {
     if self.path_grid.is_none() {
       self.path_grid = Some(
         (0..CHUNK_SIZE)
@@ -184,6 +186,16 @@ impl ObjectGrid {
         }
       }
     }
+  }
+
+  /// Sets the final path found by the pathfinding algorithm. This can be used by subsequent generation steps.
+  pub fn set_generated_path(&mut self, path: HashSet<Point<InternalGrid>>) {
+    self.path = path;
+  }
+
+  /// Returns a reference to the final path found by the pathfinding algorithm.
+  pub fn get_generated_path(&self) -> &HashSet<Point<InternalGrid>> {
+    &self.path
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
