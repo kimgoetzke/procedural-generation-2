@@ -43,7 +43,7 @@ fn setup_camera_system(mut commands: Commands) {
     Bloom::SCREEN_BLUR,
     SpatialListener::new(10.),
     PanCam {
-      grab_buttons: vec![MouseButton::Right, MouseButton::Middle],
+      grab_buttons: vec![MouseButton::Left, MouseButton::Middle],
       speed: 600.,
       zoom_to_cursor: false,
       min_scale: 0.15,

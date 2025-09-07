@@ -127,6 +127,8 @@ impl Metadata {
     connection_points
   }
 
+  /// Returns whether the given [`Point<ChunkGrid>`] is considered to be settled or not. Defaults to `false` if no
+  /// data is available.
   pub fn get_settlement_status_for(&self, cg: &Point<ChunkGrid>) -> bool {
     *self.settlement.get(cg).unwrap_or(&false)
   }

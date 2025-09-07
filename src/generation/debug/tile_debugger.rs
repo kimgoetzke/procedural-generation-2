@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::events::{MouseClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
+use crate::events::{MouseRightClickEvent, RegenerateWorldEvent, ToggleDebugInfo};
 use crate::generation::lib::{GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent};
 use crate::generation::resources::ChunkComponentIndex;
 use crate::resources::Settings;
@@ -84,8 +84,8 @@ fn spawn_observers_system(world: &mut bevy::ecs::world::World) {
       Name::new("Observer: Remove TileMeshComponent"),
     ),
     (
-      Observer::new(IntoSystem::into_system(on_left_mouse_click_trigger)),
-      Name::new("Observer: MouseClickEvent"),
+      Observer::new(IntoSystem::into_system(on_right_mouse_click_trigger)),
+      Name::new("Observer: MouseRightClickEvent"),
     ),
   ]);
 }
@@ -128,8 +128,8 @@ fn on_remove_tile_mesh_component_trigger(
   });
 }
 
-fn on_left_mouse_click_trigger(
-  trigger: Trigger<MouseClickEvent>,
+fn on_right_mouse_click_trigger(
+  trigger: Trigger<MouseRightClickEvent>,
   object_index: Res<ObjectComponentIndex>,
   tile_index: Res<TileMeshComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
