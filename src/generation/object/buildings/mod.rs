@@ -83,7 +83,7 @@ impl BuildingTemplate {
     }
   }
 
-  fn can_place_at_connection(
+  fn is_placeable_at_connection(
     &self,
     connection_point: Point<InternalGrid>,
     available_space: &HashSet<Point<InternalGrid>>,
@@ -195,6 +195,86 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
   );
 }
 
+/// Returns a map of space available for placing buildings.
+fn compute_available_space_map(object_grid: &mut ObjectGrid) -> HashSet<Point<InternalGrid>> {
+  let mut available_space = HashSet::new();
+  for y in 0..CHUNK_SIZE {
+    for x in 0..CHUNK_SIZE {
+      let ig = Point::new_internal_grid(x, y);
+      if let Some(cell) = object_grid.get_cell_mut(&ig) {
+        if !cell.is_collapsed() && cell.is_suitable_for_building_placement() {
+          available_space.insert(ig);
+        }
+      }
+    }
+  }
+
+  available_space
+}
+
+fn select_fitting_building(
+  templates: &[BuildingTemplate],
+  connection_point: Point<InternalGrid>,
+  available_space: &HashSet<Point<InternalGrid>>,
+  occupied_space: &HashSet<Point<InternalGrid>>,
+  rng: &mut StdRng,
+) -> Option<BuildingTemplate> {
+  let mut fitting_building_templates = Vec::new();
+  for template in templates {
+    if template.is_placeable_at_connection(connection_point, available_space) {
+      let origin_ig = template.calculate_origin_ig_from_connection_point(connection_point);
+      let mut is_overlapping = false;
+      for y in 0..template.height {
+        for x in 0..template.width {
+          let ig = Point::new_internal_grid(origin_ig.x + x, origin_ig.y + y);
+          if occupied_space.contains(&ig) {
+            is_overlapping = true;
+            break;
+          }
+        }
+        if is_overlapping {
+          break;
+        }
+      }
+      if !is_overlapping {
+        fitting_building_templates.push(template.clone());
+      }
+    }
+  }
+  if fitting_building_templates.is_empty() {
+    return None;
+  }
+  let index = rng.random_range(0..fitting_building_templates.len());
+
+  Some(fitting_building_templates[index].clone())
+}
+
+fn place_building(
+  template: &BuildingTemplate,
+  building_origin_ig: Point<InternalGrid>,
+  object_grid: &mut ObjectGrid,
+  occupied_space: &mut HashSet<Point<InternalGrid>>,
+) -> bool {
+  for y in 0..template.height {
+    for x in 0..template.width {
+      let ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
+      let object_name = template.tiles[y as usize][x as usize];
+      if let Some(cell) = object_grid.get_cell_mut(&ig) {
+        cell.mark_as_collapsed(object_name);
+        occupied_space.insert(ig);
+      } else {
+        error!(
+          "Failed to get cell at {:?} for building placement on object grid for {}",
+          ig, object_grid.cg
+        );
+        return false;
+      }
+    }
+  }
+
+  true
+}
+
 /// Updates the object name of the cell at the given connection point to ensure the path connects to the door
 /// correctly. Without this, there would be a gap in the path leading to the door.
 fn update_path_in_front_of_door(
@@ -276,86 +356,6 @@ fn determine_updated_object_name(
   );
 
   new_object_name
-}
-
-/// Returns a map of space available for placing buildings.
-fn compute_available_space_map(object_grid: &ObjectGrid) -> HashSet<Point<InternalGrid>> {
-  let mut available_space = HashSet::new();
-  for y in 0..CHUNK_SIZE {
-    for x in 0..CHUNK_SIZE {
-      let ig = Point::new_internal_grid(x, y);
-      if let Some(cell) = object_grid.get_cell(&ig) {
-        if cell.is_walkable() && !cell.is_collapsed() {
-          available_space.insert(ig);
-        }
-      }
-    }
-  }
-
-  available_space
-}
-
-fn select_fitting_building(
-  templates: &[BuildingTemplate],
-  connection_point: Point<InternalGrid>,
-  available_space: &HashSet<Point<InternalGrid>>,
-  occupied_space: &HashSet<Point<InternalGrid>>,
-  rng: &mut StdRng,
-) -> Option<BuildingTemplate> {
-  let mut fitting_building_templates = Vec::new();
-  for template in templates {
-    if template.can_place_at_connection(connection_point, available_space) {
-      let origin_ig = template.calculate_origin_ig_from_connection_point(connection_point);
-      let mut is_overlapping = false;
-      for y in 0..template.height {
-        for x in 0..template.width {
-          let ig = Point::new_internal_grid(origin_ig.x + x, origin_ig.y + y);
-          if occupied_space.contains(&ig) {
-            is_overlapping = true;
-            break;
-          }
-        }
-        if is_overlapping {
-          break;
-        }
-      }
-      if !is_overlapping {
-        fitting_building_templates.push(template.clone());
-      }
-    }
-  }
-  if fitting_building_templates.is_empty() {
-    return None;
-  }
-  let index = rng.random_range(0..fitting_building_templates.len());
-
-  Some(fitting_building_templates[index].clone())
-}
-
-fn place_building(
-  template: &BuildingTemplate,
-  building_origin_ig: Point<InternalGrid>,
-  object_grid: &mut ObjectGrid,
-  occupied_space: &mut HashSet<Point<InternalGrid>>,
-) -> bool {
-  for y in 0..template.height {
-    for x in 0..template.width {
-      let ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
-      let object_name = template.tiles[y as usize][x as usize];
-      if let Some(cell) = object_grid.get_cell_mut(&ig) {
-        cell.mark_as_collapsed(object_name);
-        occupied_space.insert(ig);
-      } else {
-        error!(
-          "Failed to get cell at {:?} for building placement on object grid for {}",
-          ig, object_grid.cg
-        );
-        return false;
-      }
-    }
-  }
-
-  true
 }
 
 // TODO: Move to RON file at some point

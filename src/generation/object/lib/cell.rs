@@ -249,6 +249,25 @@ impl Cell {
     })
   }
 
+  /// Returns whether this cell is suitable for a building to be placed on it based on its terrain type and tile
+  /// type.
+  pub fn is_suitable_for_building_placement(&self) -> bool {
+    if self.terrain.lt(&TerrainType::Land1) || self.terrain == TerrainType::Any {
+      return false;
+    }
+
+    self.tile_below.as_ref().map_or(false, |tile_below| {
+      let mut current = Some(tile_below);
+      while let Some(below) = current {
+        if below.terrain == TerrainType::Land1 && below.tile_type == TileType::Fill {
+          return true;
+        }
+        current = below.below.as_deref();
+      }
+      false
+    })
+  }
+
   pub fn log_tiles_below(&self) {
     if let Some(tile_below) = &self.tile_below {
       tile_below.log();
