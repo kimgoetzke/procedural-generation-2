@@ -30,8 +30,11 @@ impl Plugin for MetadataPlugin {
 #[reflect(Resource)]
 pub struct Metadata {
   pub current_chunk_cg: Point<ChunkGrid>,
+  /// A list of all chunk coordinates that have metadata associated with them.
   pub index: Vec<Point<ChunkGrid>>,
+  /// Contains data about cross-chunk elevation changes. This influences terrain generation.
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
+  /// Contains biome metadata for each chunk such as climate. This influences which sprite sets are used.
   pub biome: HashMap<Point<ChunkGrid>, BiomeMetadata>,
   /// Contains potential connection points between chunks. This influences path generation and therefore all other
   /// object placement.
@@ -190,22 +193,12 @@ impl ElevationMetadata {
 #[reflect(Resource)]
 pub struct BiomeMetadata {
   pub cg: Point<ChunkGrid>,
-  // TODO: Remove everything but climate
-  pub is_rocky: bool,
-  pub rainfall: f32,
-  pub max_layer: i32,
   pub climate: Climate,
 }
 
 impl BiomeMetadata {
-  pub fn new(cg: Point<ChunkGrid>, is_rocky: bool, rainfall: f32, max_layer: i32, climate: Climate) -> Self {
-    Self {
-      cg,
-      is_rocky,
-      rainfall,
-      max_layer,
-      climate,
-    }
+  pub fn new(cg: Point<ChunkGrid>, climate: Climate) -> Self {
+    Self { cg, climate }
   }
 }
 
@@ -334,31 +327,22 @@ mod tests {
     for (direction, point) in get_direction_points(&cg) {
       metadata
         .biome
-        .insert(point.clone(), BiomeMetadata::new(point, false, 0.5, 5, Climate::Moderate));
+        .insert(point.clone(), BiomeMetadata::new(point, Climate::Moderate));
       if direction == Direction::Top {
-        metadata
-          .biome
-          .insert(point.clone(), BiomeMetadata::new(point, false, 0.1, 10, Climate::Dry));
+        metadata.biome.insert(point.clone(), BiomeMetadata::new(point, Climate::Dry));
       } else if direction == Direction::BottomLeft {
         metadata
           .biome
-          .insert(point.clone(), BiomeMetadata::new(point, false, 0.8, 11, Climate::Humid));
+          .insert(point.clone(), BiomeMetadata::new(point, Climate::Humid));
       }
     }
 
     let result = metadata.get_biome_metadata_for(&cg);
 
     assert_eq!(result.this.cg, cg);
-    assert_eq!(result.this.is_rocky, false);
-    assert_eq!(result.top_right.rainfall, 0.5);
-    assert_eq!(result.top_right.max_layer, 5);
     assert_eq!(result.top_right.climate, Climate::Moderate);
     assert_eq!(result.top.cg, Point::new(0, 1));
-    assert_eq!(result.top.is_rocky, false);
-    assert_eq!(result.top.rainfall, 0.1);
-    assert_eq!(result.top.max_layer, 10);
     assert_eq!(result.bottom_left.cg, Point::new(-1, -1));
-    assert_eq!(result.bottom_left.rainfall, 0.8);
     assert_eq!(result.bottom_left.climate, Climate::Humid);
   }
 
@@ -371,7 +355,7 @@ mod tests {
     // Given incomplete metadata
     metadata
       .biome
-      .insert(cg.clone(), BiomeMetadata::new(cg.clone(), false, 0.5, 10, Climate::Moderate));
+      .insert(cg.clone(), BiomeMetadata::new(cg.clone(), Climate::Moderate));
 
     metadata.get_biome_metadata_for(&cg);
   }

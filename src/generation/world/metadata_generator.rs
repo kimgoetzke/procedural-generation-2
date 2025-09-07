@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
-use crate::generation::lib::{Direction, TerrainType, get_cardinal_direction_points, shared};
+use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
@@ -87,7 +87,7 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
-      generate_biome_metadata(&mut metadata, &settings, &biome_perlin, cg);
+      generate_biome_metadata(&mut metadata, &biome_perlin, cg);
       generate_connection_points(&mut metadata, &settings, cg);
       generate_settlement_metadata(&mut metadata, &settings, &settlement_perlin, cg);
       metadata.index.push(cg);
@@ -159,23 +159,10 @@ fn step_size(range_start: f64, range_end: f64, grid_size: f64, is_positive: bool
   ((range_end - range_start) / grid_size) * modifier
 }
 
-fn generate_biome_metadata(
-  metadata: &mut ResMut<Metadata>,
-  settings: &Settings,
-  perlin: &BasicMulti<Perlin>,
-  cg: Point<ChunkGrid>,
-) {
-  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
+fn generate_biome_metadata(metadata: &mut ResMut<Metadata>, perlin: &BasicMulti<Perlin>, cg: Point<ChunkGrid>) {
   let rainfall = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
   let climate = Climate::from(rainfall);
-  let is_rocky = rng.random_bool(BIOME_IS_ROCKY_PROBABILITY);
-  let max_layer = match rainfall {
-    n if n > 0.75 => TerrainType::Land3,
-    n if n > 0.5 => TerrainType::Land2,
-    n if n > 0.25 => TerrainType::Land1,
-    _ => TerrainType::Shore,
-  };
-  let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
+  let bm = BiomeMetadata::new(cg, climate);
   trace!("Generated: {:?}", bm);
   metadata.biome.insert(cg, bm);
 }
