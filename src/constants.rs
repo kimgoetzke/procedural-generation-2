@@ -25,7 +25,7 @@ pub const ELEVATION_OFFSET: f64 = 0.6;
 pub const BIOME_NOISE_FREQUENCY: f64 = 0.1;
 pub const BIOME_IS_ROCKY_PROBABILITY: f64 = 0.3;
 pub const SETTLEMENT_NOISE_FREQUENCY: f64 = 0.7;
-pub const SETTLEMENT_PROBABILITY: f64 = 0.2;
+pub const SETTLEMENT_PROBABILITY: f64 = 0.4;
 // ------------------------------------------------------------------------------------------------------
 // Settings: World
 pub const NOISE_SEED: u32 = 1;

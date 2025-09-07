@@ -83,11 +83,7 @@ impl BuildingTemplate {
     }
   }
 
-  fn is_placeable_at_connection(
-    &self,
-    path_ig: Point<InternalGrid>,
-    available_space: &HashSet<Point<InternalGrid>>,
-  ) -> bool {
+  fn is_placeable_at_path(&self, path_ig: Point<InternalGrid>, available_space: &HashSet<Point<InternalGrid>>) -> bool {
     let building_origin_ig = self.calculate_origin_ig_from_connection_point(path_ig);
 
     // Don't allow buildings to be placed out of bounds
@@ -124,7 +120,6 @@ impl BuildingTemplate {
 }
 
 // TODO: Find out why building generation causes so many WFC errors and fix the issue
-// TODO: Add settings parameter to control building density for a settled chunk
 /// The entry point for determining buildings in the object grid.
 pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
   let start_time = shared::get_time();
@@ -146,32 +141,40 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
 
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
   add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
-  add_points_points_from_generated_path(&mut path_points, object_grid);
+  add_points_points_from_generated_path(&mut path_points, object_grid, settings, rng, &cg);
+  if path_points.is_empty() {
+    debug!(
+      "Skipped generating buildings because there are no valid path points for {}",
+      cg
+    );
+    return;
+  }
+
   let building_templates = get_building_templates();
   let available_grid_space = compute_available_space_map(object_grid);
   let mut occupied_grid_space = HashSet::new();
   let mut buildings_placed = 0;
   for path_ig in path_points {
-    if let Some(template) =
+    if let Some(building_template) =
       select_fitting_building(&building_templates, path_ig, &available_grid_space, &occupied_grid_space, rng)
     {
-      let absolute_door_ig = template.calculate_absolute_door_ig(path_ig);
-      let building_origin_ig = template.calculate_origin_ig_from_absolute_door(absolute_door_ig);
-      if place_building(&template, building_origin_ig, object_grid, &mut occupied_grid_space) {
+      let absolute_door_ig = building_template.calculate_absolute_door_ig(path_ig);
+      let building_origin_ig = building_template.calculate_origin_ig_from_absolute_door(absolute_door_ig);
+      if place_building(&building_template, building_origin_ig, object_grid, &mut occupied_grid_space) {
         buildings_placed += 1;
-        debug!(
-          "Placed [{}] at computed origin {:?} for connection point {:?} on {}",
-          template.name, building_origin_ig, path_ig, cg
+        trace!(
+          "Placed [{}] with origin {:?} for path point {:?} on {}",
+          building_template.name, building_origin_ig, path_ig, cg
         );
         update_path_in_front_of_door(&path_ig, &absolute_door_ig, object_grid);
       } else {
         warn!(
-          "Failed to place [{}] at computed origin {:?} on {}",
-          template.name, building_origin_ig, cg
+          "Failed to place [{}] with origin {:?} on {}",
+          building_template.name, building_origin_ig, cg
         );
       }
     } else {
-      debug!("No suitable building found for connection point {:?} on {}", path_ig, cg);
+      trace!("No suitable building found for path point {:?} on {}", path_ig, cg);
     }
   }
 
@@ -184,14 +187,28 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
   );
 }
 
-fn add_points_points_from_generated_path(path_points: &mut Vec<Point<InternalGrid>>, object_grid: &mut ObjectGrid) {
-  let final_path = object_grid.get_generated_path();
-  if final_path.is_empty() {
-    debug!("No generated path found for {}", object_grid.cg);
-    return;
-  }
-
-  path_points.extend(final_path.iter());
+fn add_points_points_from_generated_path(
+  path_points: &mut Vec<Point<InternalGrid>>,
+  object_grid: &mut ObjectGrid,
+  settings: &Settings,
+  rng: &mut StdRng,
+  cg: &Point<ChunkGrid>,
+) {
+  let building_density = settings.object.building_density;
+  let mut points_from_generated_path_to_add: Vec<Point<InternalGrid>> = object_grid
+    .get_generated_path()
+    .iter()
+    .filter(|_| rng.random_range(0.0..1.0) <= building_density)
+    .cloned()
+    .collect();
+  trace!(
+    "Adding [{}/{}] path points from the generated path for {} based on building density of [{:.2}]",
+    points_from_generated_path_to_add.len(),
+    object_grid.get_generated_path().len(),
+    cg,
+    building_density
+  );
+  path_points.append(&mut points_from_generated_path_to_add);
 }
 
 fn add_valid_connection_points(
@@ -209,9 +226,9 @@ fn add_valid_connection_points(
       .collect::<Vec<Point<InternalGrid>>>();
   }
   if connection_points.is_empty() {
-    debug!("No valid connection points found for {}", cg);
+    trace!("No valid connection points found for {}", cg);
   }
-  proposed_points.extend(connection_points.iter());
+  proposed_points.append(&mut connection_points);
 }
 
 /// Returns a map of space available for placing buildings.
@@ -231,17 +248,19 @@ fn compute_available_space_map(object_grid: &mut ObjectGrid) -> HashSet<Point<In
   available_space
 }
 
+/// Selects a building template that fits at the given path connection point without overlapping any occupied space.
+/// If multiple templates fit, one is chosen at random. If none fit, `None` is returned.
 fn select_fitting_building(
   templates: &[BuildingTemplate],
-  connection_point: Point<InternalGrid>,
+  path_ig: Point<InternalGrid>,
   available_space: &HashSet<Point<InternalGrid>>,
   occupied_space: &HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
 ) -> Option<BuildingTemplate> {
   let mut fitting_building_templates = Vec::new();
   for template in templates {
-    if template.is_placeable_at_connection(connection_point, available_space) {
-      let origin_ig = template.calculate_origin_ig_from_connection_point(connection_point);
+    if template.is_placeable_at_path(path_ig, available_space) {
+      let origin_ig = template.calculate_origin_ig_from_connection_point(path_ig);
       let mut is_overlapping = false;
       for y in 0..template.height {
         for x in 0..template.width {
@@ -377,8 +396,8 @@ fn determine_updated_object_name(
       terrain_state.name, path_ig, cg, missing_direction, absolute_door_ig
     );
   }
-  debug!(
-    "Updated the object name of cell {} on {} from [{:?}] to [{:?}] because a building with a door at {} was placed",
+  trace!(
+    "Updated object name of cell {} on {} from [{:?}] to [{:?}] because a building with a door at {} was placed",
     path_ig, cg, terrain_state.name, new_object_name, absolute_door_ig
   );
 
