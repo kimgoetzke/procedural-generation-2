@@ -247,12 +247,12 @@ fn generate_settlement_metadata(
   perlin: &BasicMulti<Perlin>,
   cg: Point<ChunkGrid>,
 ) {
-  let settlement_probability = settings.metadata.settlement_probability;
-  let noise = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
-  let is_settled = if noise >= settlement_probability { false } else { true };
-  debug!(
-    "Generated settlement status [{:?}] for {} because noise is {}",
-    is_settled, cg, noise
+  let noise_value = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
+  let settlement_threshold = settings.metadata.settlement_probability;
+  let is_settled = if noise_value >= settlement_threshold { false } else { true };
+  trace!(
+    "Generated settled status [{:?}] for {} because noise value is [{:.2}] at a threshold of [{:.2}]",
+    is_settled, cg, noise_value, settlement_threshold
   );
   metadata.settlement.insert(cg, is_settled);
 }
