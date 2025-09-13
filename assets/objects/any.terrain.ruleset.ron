@@ -76,9 +76,16 @@
             HouseMediumWallLeft,
             HouseMediumDoorBottom,
             HouseMediumWallRight,
-            HouseSmallDoorLeft,
+            HouseSmallDoorLeft1,
+            HouseSmallDoorLeft2,
             HouseSmallWallBottom,
-            HouseSmallDoorRight,
+            HouseSmallDoorRight1,
+            HouseSmallDoorRight2,
+            HouseMediumDoorLeft1,
+            HouseMediumDoorLeft2,
+            HouseMediumWallBottom,
+            HouseMediumDoorRight1,
+            HouseMediumDoorRight2,
           ]
         ),
         (
@@ -147,7 +154,10 @@
             HouseSmallWallRight,
             HouseMediumRoofRight,
             HouseMediumWallRight,
-            HouseSmallDoorRight,
+            HouseSmallDoorRight1,
+            HouseSmallDoorRight2,
+            HouseMediumDoorRight1,
+            HouseMediumDoorRight2,
           ]
         ),
         (
@@ -216,7 +226,10 @@
             HouseSmallWallLeft,
             HouseMediumRoofLeft,
             HouseMediumWallLeft,
-            HouseSmallDoorLeft,
+            HouseSmallDoorLeft1,
+            HouseSmallDoorLeft2,
+            HouseMediumDoorLeft1,
+            HouseMediumDoorLeft2,
           ]
         ),
         (

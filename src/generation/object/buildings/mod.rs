@@ -425,7 +425,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
       Direction::Bottom,
     ),
     BuildingTemplate::new(
-      "Small House Facing West",
+      "Small House Facing West 1",
       vec![
         vec![
           ObjectName::HouseSmallRoofLeft,
@@ -433,7 +433,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
           ObjectName::HouseSmallRoofRight,
         ],
         vec![
-          ObjectName::HouseSmallDoorLeft,
+          ObjectName::HouseSmallDoorLeft1,
           ObjectName::HouseSmallWallBottom,
           ObjectName::HouseSmallWallRight,
         ],
@@ -442,7 +442,24 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
       Direction::Left,
     ),
     BuildingTemplate::new(
-      "Small House Facing East",
+      "Small House Facing West 2",
+      vec![
+        vec![
+          ObjectName::HouseSmallRoofLeft,
+          ObjectName::HouseSmallRoofMiddle,
+          ObjectName::HouseSmallRoofRight,
+        ],
+        vec![
+          ObjectName::HouseSmallDoorLeft2,
+          ObjectName::HouseSmallWallBottom,
+          ObjectName::HouseSmallWallRight,
+        ],
+      ],
+      Point::new_internal_grid(0, 1), // Reminder: First column then row
+      Direction::Left,
+    ),
+    BuildingTemplate::new(
+      "Small House Facing East 1",
       vec![
         vec![
           ObjectName::HouseSmallRoofLeft,
@@ -452,7 +469,24 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
         vec![
           ObjectName::HouseSmallWallLeft,
           ObjectName::HouseSmallWallBottom,
-          ObjectName::HouseSmallDoorRight,
+          ObjectName::HouseSmallDoorRight1,
+        ],
+      ],
+      Point::new_internal_grid(2, 1), // Reminder: Column 2, row 1
+      Direction::Right,
+    ),
+    BuildingTemplate::new(
+      "Small House Facing East 2",
+      vec![
+        vec![
+          ObjectName::HouseSmallRoofLeft,
+          ObjectName::HouseSmallRoofMiddle,
+          ObjectName::HouseSmallRoofRight,
+        ],
+        vec![
+          ObjectName::HouseSmallWallLeft,
+          ObjectName::HouseSmallWallBottom,
+          ObjectName::HouseSmallDoorRight2,
         ],
       ],
       Point::new_internal_grid(2, 1), // Reminder: Column 2, row 1
@@ -474,6 +508,74 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
       ],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
+    ),
+    BuildingTemplate::new(
+      "Medium House Facing West 1",
+      vec![
+        vec![
+          ObjectName::HouseMediumRoofLeft,
+          ObjectName::HouseMediumRoofMiddle,
+          ObjectName::HouseMediumRoofRight,
+        ],
+        vec![
+          ObjectName::HouseMediumDoorLeft1,
+          ObjectName::HouseMediumWallBottom,
+          ObjectName::HouseMediumWallRight,
+        ],
+      ],
+      Point::new_internal_grid(0, 1), // Reminder: First column then row
+      Direction::Right,
+    ),
+    BuildingTemplate::new(
+      "Medium House Facing West 2",
+      vec![
+        vec![
+          ObjectName::HouseMediumRoofLeft,
+          ObjectName::HouseMediumRoofMiddle,
+          ObjectName::HouseMediumRoofRight,
+        ],
+        vec![
+          ObjectName::HouseMediumDoorLeft2,
+          ObjectName::HouseMediumWallBottom,
+          ObjectName::HouseMediumWallRight,
+        ],
+      ],
+      Point::new_internal_grid(0, 1), // Reminder: First column then row
+      Direction::Right,
+    ),
+    BuildingTemplate::new(
+      "Medium House Facing East 1",
+      vec![
+        vec![
+          ObjectName::HouseMediumRoofLeft,
+          ObjectName::HouseMediumRoofMiddle,
+          ObjectName::HouseMediumRoofRight,
+        ],
+        vec![
+          ObjectName::HouseMediumWallLeft,
+          ObjectName::HouseMediumWallBottom,
+          ObjectName::HouseMediumDoorRight1,
+        ],
+      ],
+      Point::new_internal_grid(2, 1), // Reminder: First column then row
+      Direction::Left,
+    ),
+    BuildingTemplate::new(
+      "Medium House Facing East 2",
+      vec![
+        vec![
+          ObjectName::HouseMediumRoofLeft,
+          ObjectName::HouseMediumRoofMiddle,
+          ObjectName::HouseMediumRoofRight,
+        ],
+        vec![
+          ObjectName::HouseMediumWallLeft,
+          ObjectName::HouseMediumWallBottom,
+          ObjectName::HouseMediumDoorRight2,
+        ],
+      ],
+      Point::new_internal_grid(2, 1), // Reminder: First column then row
+      Direction::Left,
     ),
   ]
 }

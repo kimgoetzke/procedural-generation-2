@@ -91,15 +91,22 @@ pub enum ObjectName {
   HouseSmallWallLeft,
   HouseSmallDoorBottom,
   HouseSmallWallRight,
-  HouseSmallDoorLeft,
+  HouseSmallDoorLeft1,
+  HouseSmallDoorLeft2,
   HouseSmallWallBottom,
-  HouseSmallDoorRight,
+  HouseSmallDoorRight1,
+  HouseSmallDoorRight2,
   HouseMediumRoofLeft,
   HouseMediumRoofMiddle,
   HouseMediumRoofRight,
   HouseMediumWallLeft,
   HouseMediumDoorBottom,
   HouseMediumWallRight,
+  HouseMediumDoorLeft1,
+  HouseMediumDoorLeft2,
+  HouseMediumWallBottom,
+  HouseMediumDoorRight1,
+  HouseMediumDoorRight2,
 }
 
 enum ObjectKind {
@@ -194,15 +201,22 @@ impl ObjectName {
         | ObjectName::HouseSmallWallLeft
         | ObjectName::HouseSmallDoorBottom
         | ObjectName::HouseSmallWallRight
-        | ObjectName::HouseSmallDoorLeft
+        | ObjectName::HouseSmallDoorLeft1
+        | ObjectName::HouseSmallDoorLeft2
         | ObjectName::HouseSmallWallBottom
-        | ObjectName::HouseSmallDoorRight
+        | ObjectName::HouseSmallDoorRight1
+        | ObjectName::HouseSmallDoorRight2
         | ObjectName::HouseMediumRoofLeft
         | ObjectName::HouseMediumRoofMiddle
         | ObjectName::HouseMediumRoofRight
         | ObjectName::HouseMediumWallLeft
         | ObjectName::HouseMediumDoorBottom
         | ObjectName::HouseMediumWallRight
+        | ObjectName::HouseMediumDoorLeft1
+        | ObjectName::HouseMediumDoorLeft2
+        | ObjectName::HouseMediumWallBottom
+        | ObjectName::HouseMediumDoorRight1
+        | ObjectName::HouseMediumDoorRight2
     )
   }
 
@@ -214,15 +228,22 @@ impl ObjectName {
       ObjectName::HouseSmallWallLeft => 10,
       ObjectName::HouseSmallDoorBottom => 11,
       ObjectName::HouseSmallWallRight => 12,
-      ObjectName::HouseSmallDoorLeft => 19,
+      ObjectName::HouseSmallDoorLeft1 => 19,
+      ObjectName::HouseSmallDoorLeft2 => 37,
       ObjectName::HouseSmallWallBottom => 20,
-      ObjectName::HouseSmallDoorRight => 21,
+      ObjectName::HouseSmallDoorRight1 => 21,
+      ObjectName::HouseSmallDoorRight2 => 39,
       ObjectName::HouseMediumRoofLeft => 4,
       ObjectName::HouseMediumRoofMiddle => 5,
       ObjectName::HouseMediumRoofRight => 6,
       ObjectName::HouseMediumWallLeft => 13,
       ObjectName::HouseMediumDoorBottom => 14,
       ObjectName::HouseMediumWallRight => 15,
+      ObjectName::HouseMediumDoorLeft1 => 22,
+      ObjectName::HouseMediumDoorLeft2 => 40,
+      ObjectName::HouseMediumWallBottom => 23,
+      ObjectName::HouseMediumDoorRight1 => 24,
+      ObjectName::HouseMediumDoorRight2 => 42,
       _ => 0,
     }
   }
