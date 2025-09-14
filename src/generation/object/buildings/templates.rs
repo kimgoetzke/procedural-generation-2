@@ -1,160 +1,177 @@
+use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
+use crate::coords::point::InternalGrid;
 use crate::generation::lib::Direction;
-use crate::generation::object::buildings::{BuildingLevel, BuildingTemplate, BuildingType, Level, StructureType, Variants};
+use crate::generation::object::buildings::registry::BuildingComponentRegistry;
 use crate::generation::object::lib::ObjectName;
-use bevy::platform::collections::HashMap;
+use bevy::platform::collections::HashSet;
+use rand::Rng;
+use rand::prelude::StdRng;
 
-#[derive(PartialEq, Eq)]
-pub struct BuildingComponentRegistry {
-  variants: HashMap<(BuildingType, Level, StructureType), Variants>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BuildingType {
+  SmallHouse,
+  MediumHouse,
 }
 
-impl BuildingComponentRegistry {
-  pub fn default() -> Self {
-    BuildingComponentRegistry {
-      variants: HashMap::new(),
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Level {
+  GroundFloor,
+  Roof,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StructureType {
+  Left,
+  Middle,
+  Right,
+  LeftDoor,
+  MiddleDoor,
+  RightDoor,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BuildingLevel {
+  pub level: Level,
+  pub structures: Vec<StructureType>,
+}
+
+impl BuildingLevel {
+  pub fn standard(level: Level) -> Self {
+    Self {
+      level,
+      structures: vec![StructureType::Left, StructureType::Middle, StructureType::Right],
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct BuildingTemplate {
+  pub(crate) name: String,
+  building_type: BuildingType,
+  pub(crate) width: i32,
+  pub(crate) height: i32,
+  layout: Vec<BuildingLevel>,
+  /// The position of the door tile relative to the building's top-left corner in internal grid coordinates.  Remember
+  /// that `x` is the column number and `y` is the row number of the door's position in the `tiles` 2D array.
+  relative_door_ig: Point<InternalGrid>,
+  connection_direction: Direction,
+}
+
+impl BuildingTemplate {
+  pub fn new(
+    name: &str,
+    building_type: BuildingType,
+    layout: Vec<BuildingLevel>,
+    relative_door_ig: Point<InternalGrid>,
+    connection_direction: Direction,
+  ) -> Self {
+    let height = layout.len() as i32;
+    let width = if height > 0 { layout[0].structures.len() as i32 } else { 0 };
+
+    Self {
+      name: name.to_string(),
+      building_type,
+      width,
+      height,
+      layout,
+      relative_door_ig,
+      connection_direction,
     }
   }
 
-  pub fn new_initialised() -> Self {
-    let mut registry = BuildingComponentRegistry::default();
+  /// Calculates where the building's top-left corner should be placed given a connection point which is one tile away
+  /// from connection point in the opposite direction.
+  pub(crate) fn calculate_origin_ig_from_connection_point(&self, connection_ig: Point<InternalGrid>) -> Point<InternalGrid> {
+    let absolute_door_ig = self.calculate_absolute_door_ig(connection_ig);
 
-    // Small house - Ground floor doors
-    registry.insert_doors_with_3_structures(
-      BuildingType::SmallHouse,
-      Level::GroundFloor,
-      vec![ObjectName::HouseSmallDoorLeft1, ObjectName::HouseSmallDoorLeft2],
-      vec![ObjectName::HouseSmallDoorMiddle],
-      vec![ObjectName::HouseSmallDoorRight1, ObjectName::HouseSmallDoorRight2],
-    );
-
-    // Small house - Ground floor walls
-    registry.insert_level_with_3_structures(
-      BuildingType::SmallHouse,
-      Level::GroundFloor,
-      vec![ObjectName::HouseSmallWallLeft],
-      vec![ObjectName::HouseSmallWallMiddle1, ObjectName::HouseSmallWallMiddle2],
-      vec![ObjectName::HouseSmallWallRight],
-    );
-
-    // Small house - Roof
-    registry.insert_level_with_3_structures(
-      BuildingType::SmallHouse,
-      Level::Roof,
-      vec![
-        ObjectName::HouseSmallRoofLeft1,
-        ObjectName::HouseSmallRoofLeft2,
-        ObjectName::HouseSmallRoofLeft3,
-      ],
-      vec![
-        ObjectName::HouseSmallRoofMiddle1,
-        ObjectName::HouseSmallRoofMiddle2,
-        ObjectName::HouseSmallRoofMiddle3,
-      ],
-      vec![
-        ObjectName::HouseSmallRoofRight1,
-        ObjectName::HouseSmallRoofRight2,
-        ObjectName::HouseSmallRoofRight3,
-      ],
-    );
-
-    // Medium house - Ground floor doors
-    registry.insert_doors_with_3_structures(
-      BuildingType::MediumHouse,
-      Level::GroundFloor,
-      vec![ObjectName::HouseMediumDoorLeft1, ObjectName::HouseMediumDoorLeft2],
-      vec![ObjectName::HouseMediumDoorMiddle],
-      vec![ObjectName::HouseMediumDoorRight1, ObjectName::HouseMediumDoorRight2],
-    );
-
-    // Medium house - Ground floor walls
-    registry.insert_level_with_3_structures(
-      BuildingType::MediumHouse,
-      Level::GroundFloor,
-      vec![ObjectName::HouseMediumWallLeft],
-      vec![ObjectName::HouseMediumWallMiddle1, ObjectName::HouseMediumWallMiddle2],
-      vec![ObjectName::HouseMediumWallRight],
-    );
-
-    // Medium house - Roof
-    registry.insert_level_with_3_structures(
-      BuildingType::MediumHouse,
-      Level::Roof,
-      vec![
-        ObjectName::HouseMediumRoofLeft1,
-        ObjectName::HouseMediumRoofLeft2,
-        ObjectName::HouseMediumRoofLeft3,
-      ],
-      vec![
-        ObjectName::HouseMediumRoofMiddle1,
-        ObjectName::HouseMediumRoofMiddle2,
-        ObjectName::HouseMediumRoofMiddle3,
-      ],
-      vec![
-        ObjectName::HouseMediumRoofRight1,
-        ObjectName::HouseMediumRoofRight2,
-        ObjectName::HouseMediumRoofRight3,
-      ],
-    );
-
-    registry
+    Point::new_internal_grid(
+      absolute_door_ig.x - self.relative_door_ig.x,
+      absolute_door_ig.y - self.relative_door_ig.y,
+    )
   }
 
-  fn insert_level_with_3_structures(
-    &mut self,
-    building_type: BuildingType,
-    level: Level,
-    left: Vec<ObjectName>,
-    middle: Vec<ObjectName>,
-    right: Vec<ObjectName>,
-  ) {
-    self
-      .variants
-      .insert((building_type, level, StructureType::Left), Variants::new(left));
-    self
-      .variants
-      .insert((building_type, level, StructureType::Middle), Variants::new(middle));
-    self
-      .variants
-      .insert((building_type, level, StructureType::Right), Variants::new(right));
+  /// Calculates where the building's top-left corner should be placed given the absolute position of the door tile in
+  /// internal grid coordinates.
+  pub(crate) fn calculate_origin_ig_from_absolute_door(&self, absolute_door_ig: Point<InternalGrid>) -> Point<InternalGrid> {
+    Point::new_internal_grid(
+      absolute_door_ig.x - self.relative_door_ig.x,
+      absolute_door_ig.y - self.relative_door_ig.y,
+    )
   }
 
-  fn insert_doors_with_3_structures(
-    &mut self,
-    building_type: BuildingType,
-    level: Level,
-    left: Vec<ObjectName>,
-    middle: Vec<ObjectName>,
-    right: Vec<ObjectName>,
-  ) {
-    self
-      .variants
-      .insert((building_type, level, StructureType::LeftDoor), Variants::new(left));
-    self
-      .variants
-      .insert((building_type, level, StructureType::MiddleDoor), Variants::new(middle));
-    self
-      .variants
-      .insert((building_type, level, StructureType::RightDoor), Variants::new(right));
+  /// Calculates the absolute position of the door tile in internal grid coordinates based on the connection point and
+  /// the connection direction.
+  pub(crate) fn calculate_absolute_door_ig(&self, path_ig: Point<InternalGrid>) -> Point<InternalGrid> {
+    match self.connection_direction {
+      Direction::Top => Point::new_internal_grid(path_ig.x, path_ig.y + 1),
+      Direction::Bottom => Point::new_internal_grid(path_ig.x, path_ig.y - 1),
+      Direction::Left => Point::new_internal_grid(path_ig.x + 1, path_ig.y),
+      Direction::Right => Point::new_internal_grid(path_ig.x - 1, path_ig.y),
+      _ => panic!("Invalid connection direction for building template"),
+    }
   }
 
-  pub fn get_variants_for(
+  pub(crate) fn is_placeable_at_path(
     &self,
-    building_type: &BuildingType,
-    level_type: &Level,
-    structure_type: &StructureType,
-  ) -> Vec<ObjectName> {
-    self
-      .variants
-      .get(&(*building_type, *level_type, *structure_type))
-      .unwrap_or(&Variants::empty())
-      .variants
-      .clone()
+    path_ig: Point<InternalGrid>,
+    available_space: &HashSet<Point<InternalGrid>>,
+  ) -> bool {
+    let building_origin_ig = self.calculate_origin_ig_from_connection_point(path_ig);
+
+    // Don't allow buildings to be placed out of bounds
+    if building_origin_ig.x < 0
+      || building_origin_ig.y < 0
+      || building_origin_ig.x + self.width > CHUNK_SIZE
+      || building_origin_ig.y + self.height > CHUNK_SIZE
+    {
+      return false;
+    }
+
+    // Make sure all tiles the building will occupy are available
+    for y in 0..self.height {
+      for x in 0..self.width {
+        let tile_ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
+        if !available_space.contains(&tile_ig) {
+          return false;
+        }
+      }
+    }
+
+    // Ensure that the door is next to the connection point and facing it
+    let door_ig = Point::new_internal_grid(
+      building_origin_ig.x + self.relative_door_ig.x,
+      building_origin_ig.y + self.relative_door_ig.y,
+    );
+    let connection_point_direction: Point<InternalGrid> = self.connection_direction.to_opposite().to_point();
+    let expected_door_ig = Point::new_internal_grid(
+      path_ig.x + connection_point_direction.x,
+      path_ig.y + connection_point_direction.y,
+    );
+    door_ig == expected_door_ig
+  }
+
+  pub(crate) fn generate_tiles(&self, registry: &BuildingComponentRegistry, rng: &mut StdRng) -> Vec<Vec<ObjectName>> {
+    let mut tiles = vec![vec![ObjectName::Empty; self.width as usize]; self.height as usize];
+    for (y, level) in self.layout.iter().enumerate() {
+      for (x, structure_type) in level.structures.iter().enumerate() {
+        let variants = registry.get_variants_for(&self.building_type, &level.level, structure_type);
+        if variants.is_empty() {
+          panic!(
+            "No variants found for building type [{:?}], level [{:?}], component type [{:?}] in building template [{}] - this indicates a configuration error in the BuildingComponentRegistry",
+            self.building_type, level.level, structure_type, self.name
+          );
+        }
+        let selected_variant = rng.random_range(0..variants.len());
+        tiles[y][x] = variants[selected_variant];
+      }
+    }
+
+    tiles
   }
 }
 
-// TODO: Consider moving this (or even more of this class) to some form of resource file after moving away from RON files
-pub fn get_building_templates() -> Vec<BuildingTemplate> {
+pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
   vec![
     BuildingTemplate::new(
       "Small House Facing North",

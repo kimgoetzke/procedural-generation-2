@@ -1,10 +1,10 @@
+mod registry;
 mod templates;
 
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, shared};
-use crate::generation::object::buildings::templates::BuildingComponentRegistry;
 use crate::generation::object::lib::{Cell, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;
 use crate::resources::Settings;
@@ -22,183 +22,7 @@ impl Plugin for BuildingGenerationPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Variants {
-  variants: Vec<ObjectName>,
-}
-
-impl Variants {
-  pub fn empty() -> Self {
-    Self { variants: vec![] }
-  }
-
-  pub fn new(variants: Vec<ObjectName>) -> Self {
-    Self { variants }
-  }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum BuildingType {
-  SmallHouse,
-  MediumHouse,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Level {
-  GroundFloor,
-  Roof,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum StructureType {
-  Left,
-  Middle,
-  Right,
-  LeftDoor,
-  MiddleDoor,
-  RightDoor,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct BuildingLevel {
-  pub level: Level,
-  pub structures: Vec<StructureType>,
-}
-
-impl BuildingLevel {
-  pub fn standard(level: Level) -> Self {
-    Self {
-      level,
-      structures: vec![StructureType::Left, StructureType::Middle, StructureType::Right],
-    }
-  }
-}
-
-#[derive(Debug, Clone)]
-struct BuildingTemplate {
-  name: String,
-  building_type: BuildingType,
-  width: i32,
-  height: i32,
-  layout: Vec<BuildingLevel>,
-  /// The position of the door tile relative to the building's top-left corner in internal grid coordinates.  Remember
-  /// that `x` is the column number and `y` is the row number of the door's position in the `tiles` 2D array.
-  relative_door_ig: Point<InternalGrid>,
-  connection_direction: Direction,
-}
-
-impl BuildingTemplate {
-  pub fn new(
-    name: &str,
-    building_type: BuildingType,
-    layout: Vec<BuildingLevel>,
-    relative_door_ig: Point<InternalGrid>,
-    connection_direction: Direction,
-  ) -> Self {
-    let height = layout.len() as i32;
-    let width = if height > 0 { layout[0].structures.len() as i32 } else { 0 };
-
-    Self {
-      name: name.to_string(),
-      building_type,
-      width,
-      height,
-      layout,
-      relative_door_ig,
-      connection_direction,
-    }
-  }
-
-  /// Calculates where the building's top-left corner should be placed given a connection point which is one tile away
-  /// from connection point in the opposite direction.
-  fn calculate_origin_ig_from_connection_point(&self, connection_point: Point<InternalGrid>) -> Point<InternalGrid> {
-    let absolute_door_ig = self.calculate_absolute_door_ig(connection_point);
-
-    Point::new_internal_grid(
-      absolute_door_ig.x - self.relative_door_ig.x,
-      absolute_door_ig.y - self.relative_door_ig.y,
-    )
-  }
-
-  /// Calculates where the building's top-left corner should be placed given the absolute position of the door tile in
-  /// internal grid coordinates.
-  fn calculate_origin_ig_from_absolute_door(&self, absolute_door_ig: Point<InternalGrid>) -> Point<InternalGrid> {
-    Point::new_internal_grid(
-      absolute_door_ig.x - self.relative_door_ig.x,
-      absolute_door_ig.y - self.relative_door_ig.y,
-    )
-  }
-
-  /// Calculates the absolute position of the door tile in internal grid coordinates based on the connection point and
-  /// the connection direction.
-  fn calculate_absolute_door_ig(&self, path_ig: Point<InternalGrid>) -> Point<InternalGrid> {
-    match self.connection_direction {
-      Direction::Top => Point::new_internal_grid(path_ig.x, path_ig.y + 1),
-      Direction::Bottom => Point::new_internal_grid(path_ig.x, path_ig.y - 1),
-      Direction::Left => Point::new_internal_grid(path_ig.x + 1, path_ig.y),
-      Direction::Right => Point::new_internal_grid(path_ig.x - 1, path_ig.y),
-      _ => panic!("Invalid connection direction for building template"),
-    }
-  }
-
-  fn is_placeable_at_path(&self, path_ig: Point<InternalGrid>, available_space: &HashSet<Point<InternalGrid>>) -> bool {
-    let building_origin_ig = self.calculate_origin_ig_from_connection_point(path_ig);
-
-    // Don't allow buildings to be placed out of bounds
-    if building_origin_ig.x < 0
-      || building_origin_ig.y < 0
-      || building_origin_ig.x + self.width > CHUNK_SIZE
-      || building_origin_ig.y + self.height > CHUNK_SIZE
-    {
-      return false;
-    }
-
-    // Make sure all tiles the building will occupy are available
-    for y in 0..self.height {
-      for x in 0..self.width {
-        let tile_ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
-        if !available_space.contains(&tile_ig) {
-          return false;
-        }
-      }
-    }
-
-    // Ensure that the door is next to the connection point and facing it
-    let door_ig = Point::new_internal_grid(
-      building_origin_ig.x + self.relative_door_ig.x,
-      building_origin_ig.y + self.relative_door_ig.y,
-    );
-    let connection_point_direction: Point<InternalGrid> = self.connection_direction.to_opposite().to_point();
-    let expected_door_ig = Point::new_internal_grid(
-      path_ig.x + connection_point_direction.x,
-      path_ig.y + connection_point_direction.y,
-    );
-    door_ig == expected_door_ig
-  }
-
-  pub fn generate_tiles(&self, registry: &BuildingComponentRegistry, rng: &mut StdRng) -> Vec<Vec<ObjectName>> {
-    let mut tiles = vec![vec![ObjectName::Empty; self.width as usize]; self.height as usize];
-    for (y, level) in self.layout.iter().enumerate() {
-      for (x, structure_type) in level.structures.iter().enumerate() {
-        let variants = registry.get_variants_for(&self.building_type, &level.level, structure_type);
-        if variants.is_empty() {
-          panic!(
-            "No variants found for building type [{:?}], level [{:?}], component type [{:?}] in building template [{}] - this indicates a configuration error in the BuildingComponentRegistry",
-            self.building_type, level.level, structure_type, self.name
-          );
-        }
-        let selected_variant = rng.random_range(0..variants.len());
-        tiles[y][x] = variants[selected_variant];
-      }
-    }
-
-    warn!("Generated tiles for building template [{}]: {:?}", self.name, tiles);
-
-    tiles
-  }
-}
-
-// TODO: Find out why building generation causes so many WFC errors and fix the issue
+// TODO: Consider moving template and registry values to resource file (after moving away from RON files)
 /// The entry point for determining buildings in the object grid.
 pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
   let start_time = shared::get_time();
@@ -230,7 +54,7 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
   }
 
   let building_templates = templates::get_building_templates();
-  let component_registry = BuildingComponentRegistry::new_initialised();
+  let component_registry = registry::BuildingComponentRegistry::new_initialised();
   let available_grid_space = compute_available_space_map(object_grid);
   let mut occupied_grid_space = HashSet::new();
   let mut buildings_placed = 0;
@@ -338,16 +162,16 @@ fn compute_available_space_map(object_grid: &mut ObjectGrid) -> HashSet<Point<In
 /// Selects a building template that fits at the given path connection point without overlapping any occupied space.
 /// If multiple templates fit, one is chosen at random. If none fit, `None` is returned.
 fn select_fitting_building(
-  templates: &[BuildingTemplate],
-  path_ig: Point<InternalGrid>,
+  building_templates: &[templates::BuildingTemplate],
+  path_connection_ig: Point<InternalGrid>,
   available_space: &HashSet<Point<InternalGrid>>,
   occupied_space: &HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
-) -> Option<BuildingTemplate> {
+) -> Option<templates::BuildingTemplate> {
   let mut fitting_building_templates = Vec::new();
-  for template in templates {
-    if template.is_placeable_at_path(path_ig, available_space) {
-      let origin_ig = template.calculate_origin_ig_from_connection_point(path_ig);
+  for template in building_templates {
+    if template.is_placeable_at_path(path_connection_ig, available_space) {
+      let origin_ig = template.calculate_origin_ig_from_connection_point(path_connection_ig);
       let mut is_overlapping = false;
       for y in 0..template.height {
         for x in 0..template.width {
@@ -375,16 +199,16 @@ fn select_fitting_building(
 }
 
 fn place_building(
-  template: &BuildingTemplate,
-  component_registry: &BuildingComponentRegistry,
+  building_template: &templates::BuildingTemplate,
+  component_registry: &registry::BuildingComponentRegistry,
   rng: &mut StdRng,
   building_origin_ig: Point<InternalGrid>,
   object_grid: &mut ObjectGrid,
   occupied_space: &mut HashSet<Point<InternalGrid>>,
 ) -> bool {
-  let tiles = template.generate_tiles(component_registry, rng);
-  for y in 0..template.height {
-    for x in 0..template.width {
+  let tiles = building_template.generate_tiles(component_registry, rng);
+  for y in 0..building_template.height {
+    for x in 0..building_template.width {
       let ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
       let object_name = tiles[y as usize][x as usize];
       if let Some(cell) = object_grid.get_cell_mut(&ig) {
@@ -406,18 +230,18 @@ fn place_building(
 /// Updates the object name of the cell at the given connection point to ensure the path connects to the door
 /// correctly. Without this, there would be a gap in the path leading to the door.
 fn update_path_in_front_of_door(
-  path_ig: &Point<InternalGrid>,
+  path_connection_ig: &Point<InternalGrid>,
   absolute_door_ig: &Point<InternalGrid>,
   object_grid: &mut ObjectGrid,
 ) {
   let cg = object_grid.cg;
-  if let Some(cell) = object_grid.get_cell_mut(path_ig) {
-    let object_name = determine_updated_object_name(cell, path_ig, absolute_door_ig, &cg);
+  if let Some(cell) = object_grid.get_cell_mut(path_connection_ig) {
+    let object_name = determine_updated_object_name(cell, path_connection_ig, absolute_door_ig, &cg);
     cell.mark_as_collapsed(object_name);
   } else {
     error!(
       "Failed to get cell at connection point {:?} on {} to update path in front of door at {:?}",
-      path_ig, cg, absolute_door_ig
+      path_connection_ig, cg, absolute_door_ig
     );
   }
 }
@@ -426,7 +250,7 @@ fn update_path_in_front_of_door(
 /// direction to the door.
 fn determine_updated_object_name(
   cell: &mut Cell,
-  path_ig: &Point<InternalGrid>,
+  path_connection_ig: &Point<InternalGrid>,
   absolute_door_ig: &Point<InternalGrid>,
   cg: &Point<ChunkGrid>,
 ) -> ObjectName {
@@ -434,7 +258,7 @@ fn determine_updated_object_name(
   if !cell.is_collapsed() || terrain_states.len() != 1 {
     error!(
       "Expected collapsed path tile at connection point {:?} on {} but found: {:?} ",
-      path_ig, cg, cell
+      path_connection_ig, cg, cell
     );
     return ObjectName::PathUndefined;
   }
@@ -442,12 +266,12 @@ fn determine_updated_object_name(
   if !terrain_state.name.is_path() {
     error!(
       "Expected path tile at connection point {:?} on {} but found: {:?}",
-      path_ig, cg, cell
+      path_connection_ig, cg, cell
     );
     return ObjectName::PathUndefined;
   }
 
-  let missing_direction = Direction::from_points(path_ig, absolute_door_ig);
+  let missing_direction = Direction::from_points(path_connection_ig, absolute_door_ig);
   let new_object_name = match (terrain_state.name, missing_direction) {
     (ObjectName::PathTop, Direction::Left) => ObjectName::PathTopLeft,
     (ObjectName::PathTop, Direction::Right) => ObjectName::PathTopRight,
@@ -483,12 +307,12 @@ fn determine_updated_object_name(
   if new_object_name == terrain_state.name {
     panic!(
       "Failed to determine missing connection direction for [{:?}] tile at connection point {:?} on {} with missing direction [{:?}] and door at {} - update the match statement!",
-      terrain_state.name, path_ig, cg, missing_direction, absolute_door_ig
+      terrain_state.name, path_connection_ig, cg, missing_direction, absolute_door_ig
     );
   }
   trace!(
     "Updated object name of cell {} on {} from [{:?}] to [{:?}] because a building with a door at {} was placed",
-    path_ig, cg, terrain_state.name, new_object_name, absolute_door_ig
+    path_connection_ig, cg, terrain_state.name, new_object_name, absolute_door_ig
   );
 
   new_object_name
