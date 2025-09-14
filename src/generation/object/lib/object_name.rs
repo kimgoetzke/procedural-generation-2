@@ -85,27 +85,41 @@ pub enum ObjectName {
   PathLeftVertical,
   PathRightVertical,
   PathUndefined,
-  HouseSmallRoofLeft,
-  HouseSmallRoofMiddle,
-  HouseSmallRoofRight,
+  HouseSmallRoofLeft1,
+  HouseSmallRoofMiddle1,
+  HouseSmallRoofRight1,
   HouseSmallWallLeft,
-  HouseSmallDoorBottom,
+  HouseSmallDoorMiddle,
   HouseSmallWallRight,
+  HouseSmallRoofLeft2,
+  HouseSmallRoofMiddle2,
+  HouseSmallRoofRight2,
   HouseSmallDoorLeft1,
-  HouseSmallDoorLeft2,
-  HouseSmallWallBottom,
+  HouseSmallWallMiddle1,
   HouseSmallDoorRight1,
+  HouseSmallRoofLeft3,
+  HouseSmallRoofMiddle3,
+  HouseSmallRoofRight3,
+  HouseSmallDoorLeft2,
+  HouseSmallWallMiddle2,
   HouseSmallDoorRight2,
-  HouseMediumRoofLeft,
-  HouseMediumRoofMiddle,
-  HouseMediumRoofRight,
+  HouseMediumRoofLeft1,
+  HouseMediumRoofMiddle1,
+  HouseMediumRoofRight1,
   HouseMediumWallLeft,
-  HouseMediumDoorBottom,
+  HouseMediumDoorMiddle,
   HouseMediumWallRight,
+  HouseMediumRoofLeft2,
+  HouseMediumRoofMiddle2,
+  HouseMediumRoofRight2,
   HouseMediumDoorLeft1,
-  HouseMediumDoorLeft2,
-  HouseMediumWallBottom,
+  HouseMediumWallMiddle1,
   HouseMediumDoorRight1,
+  HouseMediumRoofLeft3,
+  HouseMediumRoofMiddle3,
+  HouseMediumRoofRight3,
+  HouseMediumDoorLeft2,
+  HouseMediumWallMiddle2,
   HouseMediumDoorRight2,
 }
 
@@ -195,55 +209,83 @@ impl ObjectName {
   pub fn is_building(&self) -> bool {
     matches!(
       self,
-      ObjectName::HouseSmallRoofLeft
-        | ObjectName::HouseSmallRoofMiddle
-        | ObjectName::HouseSmallRoofRight
+      ObjectName::HouseSmallRoofLeft1
+        | ObjectName::HouseSmallRoofMiddle1
+        | ObjectName::HouseSmallRoofRight1
         | ObjectName::HouseSmallWallLeft
-        | ObjectName::HouseSmallDoorBottom
+        | ObjectName::HouseSmallDoorMiddle
         | ObjectName::HouseSmallWallRight
+        | ObjectName::HouseSmallRoofLeft2
+        | ObjectName::HouseSmallRoofMiddle2
+        | ObjectName::HouseSmallRoofRight2
         | ObjectName::HouseSmallDoorLeft1
-        | ObjectName::HouseSmallDoorLeft2
-        | ObjectName::HouseSmallWallBottom
+        | ObjectName::HouseSmallWallMiddle1
         | ObjectName::HouseSmallDoorRight1
+        | ObjectName::HouseSmallRoofLeft3
+        | ObjectName::HouseSmallRoofMiddle3
+        | ObjectName::HouseSmallRoofRight3
+        | ObjectName::HouseSmallDoorLeft2
+        | ObjectName::HouseSmallWallMiddle2
         | ObjectName::HouseSmallDoorRight2
-        | ObjectName::HouseMediumRoofLeft
-        | ObjectName::HouseMediumRoofMiddle
-        | ObjectName::HouseMediumRoofRight
+        | ObjectName::HouseMediumRoofLeft1
+        | ObjectName::HouseMediumRoofMiddle1
+        | ObjectName::HouseMediumRoofRight1
         | ObjectName::HouseMediumWallLeft
-        | ObjectName::HouseMediumDoorBottom
+        | ObjectName::HouseMediumDoorMiddle
         | ObjectName::HouseMediumWallRight
+        | ObjectName::HouseMediumRoofLeft2
+        | ObjectName::HouseMediumRoofMiddle2
+        | ObjectName::HouseMediumRoofRight2
         | ObjectName::HouseMediumDoorLeft1
-        | ObjectName::HouseMediumDoorLeft2
-        | ObjectName::HouseMediumWallBottom
+        | ObjectName::HouseMediumWallMiddle1
         | ObjectName::HouseMediumDoorRight1
+        | ObjectName::HouseMediumRoofLeft3
+        | ObjectName::HouseMediumRoofMiddle3
+        | ObjectName::HouseMediumRoofRight3
+        | ObjectName::HouseMediumDoorLeft2
+        | ObjectName::HouseMediumWallMiddle2
         | ObjectName::HouseMediumDoorRight2
     )
   }
 
   pub fn get_index_for_building(&self) -> i32 {
     match self {
-      ObjectName::HouseSmallRoofLeft => 1,
-      ObjectName::HouseSmallRoofMiddle => 2,
-      ObjectName::HouseSmallRoofRight => 3,
+      ObjectName::HouseSmallRoofLeft1 => 1,
+      ObjectName::HouseSmallRoofMiddle1 => 2,
+      ObjectName::HouseSmallRoofRight1 => 3,
       ObjectName::HouseSmallWallLeft => 10,
-      ObjectName::HouseSmallDoorBottom => 11,
+      ObjectName::HouseSmallDoorMiddle => 11,
       ObjectName::HouseSmallWallRight => 12,
-      ObjectName::HouseSmallDoorLeft1 => 19,
-      ObjectName::HouseSmallDoorLeft2 => 37,
-      ObjectName::HouseSmallWallBottom => 20,
-      ObjectName::HouseSmallDoorRight1 => 21,
-      ObjectName::HouseSmallDoorRight2 => 39,
-      ObjectName::HouseMediumRoofLeft => 4,
-      ObjectName::HouseMediumRoofMiddle => 5,
-      ObjectName::HouseMediumRoofRight => 6,
+      ObjectName::HouseSmallRoofLeft2 => 19,
+      ObjectName::HouseSmallRoofMiddle2 => 20,
+      ObjectName::HouseSmallRoofRight2 => 21,
+      ObjectName::HouseSmallDoorLeft1 => 28,
+      ObjectName::HouseSmallWallMiddle1 => 29,
+      ObjectName::HouseSmallDoorRight1 => 30,
+      ObjectName::HouseSmallRoofLeft3 => 37,
+      ObjectName::HouseSmallRoofMiddle3 => 38,
+      ObjectName::HouseSmallRoofRight3 => 39,
+      ObjectName::HouseSmallDoorLeft2 => 46,
+      ObjectName::HouseSmallWallMiddle2 => 47,
+      ObjectName::HouseSmallDoorRight2 => 48,
+      ObjectName::HouseMediumRoofLeft1 => 4,
+      ObjectName::HouseMediumRoofMiddle1 => 5,
+      ObjectName::HouseMediumRoofRight1 => 6,
       ObjectName::HouseMediumWallLeft => 13,
-      ObjectName::HouseMediumDoorBottom => 14,
+      ObjectName::HouseMediumDoorMiddle => 14,
       ObjectName::HouseMediumWallRight => 15,
-      ObjectName::HouseMediumDoorLeft1 => 22,
-      ObjectName::HouseMediumDoorLeft2 => 40,
-      ObjectName::HouseMediumWallBottom => 23,
-      ObjectName::HouseMediumDoorRight1 => 24,
-      ObjectName::HouseMediumDoorRight2 => 42,
+      ObjectName::HouseMediumRoofLeft2 => 22,
+      ObjectName::HouseMediumRoofMiddle2 => 23,
+      ObjectName::HouseMediumRoofRight2 => 24,
+      ObjectName::HouseMediumDoorLeft1 => 31,
+      ObjectName::HouseMediumWallMiddle1 => 32,
+      ObjectName::HouseMediumDoorRight1 => 33,
+      ObjectName::HouseMediumRoofLeft3 => 40,
+      ObjectName::HouseMediumRoofMiddle3 => 41,
+      ObjectName::HouseMediumRoofRight3 => 42,
+      ObjectName::HouseMediumDoorLeft2 => 49,
+      ObjectName::HouseMediumWallMiddle2 => 50,
+      ObjectName::HouseMediumDoorRight2 => 51,
       _ => 0,
     }
   }

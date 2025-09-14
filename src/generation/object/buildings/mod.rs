@@ -1,7 +1,10 @@
+mod templates;
+
 use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, shared};
+use crate::generation::object::buildings::templates::BuildingComponentRegistry;
 use crate::generation::object::lib::{Cell, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;
 use crate::resources::Settings;
@@ -19,12 +22,65 @@ impl Plugin for BuildingGenerationPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Variants {
+  variants: Vec<ObjectName>,
+}
+
+impl Variants {
+  pub fn empty() -> Self {
+    Self { variants: vec![] }
+  }
+
+  pub fn new(variants: Vec<ObjectName>) -> Self {
+    Self { variants }
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BuildingType {
+  SmallHouse,
+  MediumHouse,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Level {
+  GroundFloor,
+  Roof,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StructureType {
+  Left,
+  Middle,
+  Right,
+  LeftDoor,
+  MiddleDoor,
+  RightDoor,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BuildingLevel {
+  pub level: Level,
+  pub structures: Vec<StructureType>,
+}
+
+impl BuildingLevel {
+  pub fn standard(level: Level) -> Self {
+    Self {
+      level,
+      structures: vec![StructureType::Left, StructureType::Middle, StructureType::Right],
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 struct BuildingTemplate {
   name: String,
+  building_type: BuildingType,
   width: i32,
   height: i32,
-  tiles: Vec<Vec<ObjectName>>,
+  layout: Vec<BuildingLevel>,
   /// The position of the door tile relative to the building's top-left corner in internal grid coordinates.  Remember
   /// that `x` is the column number and `y` is the row number of the door's position in the `tiles` 2D array.
   relative_door_ig: Point<InternalGrid>,
@@ -34,18 +90,20 @@ struct BuildingTemplate {
 impl BuildingTemplate {
   pub fn new(
     name: &str,
-    tiles: Vec<Vec<ObjectName>>,
+    building_type: BuildingType,
+    layout: Vec<BuildingLevel>,
     relative_door_ig: Point<InternalGrid>,
     connection_direction: Direction,
   ) -> Self {
-    let height = tiles.len() as i32;
-    let width = if height > 0 { tiles[0].len() as i32 } else { 0 };
+    let height = layout.len() as i32;
+    let width = if height > 0 { layout[0].structures.len() as i32 } else { 0 };
 
     Self {
       name: name.to_string(),
+      building_type,
       width,
       height,
-      tiles,
+      layout,
       relative_door_ig,
       connection_direction,
     }
@@ -117,6 +175,27 @@ impl BuildingTemplate {
     );
     door_ig == expected_door_ig
   }
+
+  pub fn generate_tiles(&self, registry: &BuildingComponentRegistry, rng: &mut StdRng) -> Vec<Vec<ObjectName>> {
+    let mut tiles = vec![vec![ObjectName::Empty; self.width as usize]; self.height as usize];
+    for (y, level) in self.layout.iter().enumerate() {
+      for (x, structure_type) in level.structures.iter().enumerate() {
+        let variants = registry.get_variants_for(&self.building_type, &level.level, structure_type);
+        if variants.is_empty() {
+          panic!(
+            "No variants found for building type [{:?}], level [{:?}], component type [{:?}] in building template [{}] - this indicates a configuration error in the BuildingComponentRegistry",
+            self.building_type, level.level, structure_type, self.name
+          );
+        }
+        let selected_variant = rng.random_range(0..variants.len());
+        tiles[y][x] = variants[selected_variant];
+      }
+    }
+
+    warn!("Generated tiles for building template [{}]: {:?}", self.name, tiles);
+
+    tiles
+  }
 }
 
 // TODO: Find out why building generation causes so many WFC errors and fix the issue
@@ -150,7 +229,8 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
     return;
   }
 
-  let building_templates = get_building_templates();
+  let building_templates = templates::get_building_templates();
+  let component_registry = BuildingComponentRegistry::new_initialised();
   let available_grid_space = compute_available_space_map(object_grid);
   let mut occupied_grid_space = HashSet::new();
   let mut buildings_placed = 0;
@@ -160,7 +240,14 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
     {
       let absolute_door_ig = building_template.calculate_absolute_door_ig(path_ig);
       let building_origin_ig = building_template.calculate_origin_ig_from_absolute_door(absolute_door_ig);
-      if place_building(&building_template, building_origin_ig, object_grid, &mut occupied_grid_space) {
+      if place_building(
+        &building_template,
+        &component_registry,
+        rng,
+        building_origin_ig,
+        object_grid,
+        &mut occupied_grid_space,
+      ) {
         buildings_placed += 1;
         trace!(
           "Placed [{}] with origin {:?} for path point {:?} on {}",
@@ -289,14 +376,17 @@ fn select_fitting_building(
 
 fn place_building(
   template: &BuildingTemplate,
+  component_registry: &BuildingComponentRegistry,
+  rng: &mut StdRng,
   building_origin_ig: Point<InternalGrid>,
   object_grid: &mut ObjectGrid,
   occupied_space: &mut HashSet<Point<InternalGrid>>,
 ) -> bool {
+  let tiles = template.generate_tiles(component_registry, rng);
   for y in 0..template.height {
     for x in 0..template.width {
       let ig = Point::new_internal_grid(building_origin_ig.x + x, building_origin_ig.y + y);
-      let object_name = template.tiles[y as usize][x as usize];
+      let object_name = tiles[y as usize][x as usize];
       if let Some(cell) = object_grid.get_cell_mut(&ig) {
         cell.mark_as_collapsed(object_name);
         occupied_space.insert(ig);
@@ -402,180 +492,4 @@ fn determine_updated_object_name(
   );
 
   new_object_name
-}
-
-// TODO: Move to RON file at some point
-fn get_building_templates() -> Vec<BuildingTemplate> {
-  vec![
-    BuildingTemplate::new(
-      "Small House Facing North",
-      vec![
-        vec![
-          ObjectName::HouseSmallRoofLeft,
-          ObjectName::HouseSmallRoofMiddle,
-          ObjectName::HouseSmallRoofRight,
-        ],
-        vec![
-          ObjectName::HouseSmallWallLeft,
-          ObjectName::HouseSmallDoorBottom,
-          ObjectName::HouseSmallWallRight,
-        ],
-      ],
-      Point::new_internal_grid(1, 1),
-      Direction::Bottom,
-    ),
-    BuildingTemplate::new(
-      "Small House Facing West 1",
-      vec![
-        vec![
-          ObjectName::HouseSmallRoofLeft,
-          ObjectName::HouseSmallRoofMiddle,
-          ObjectName::HouseSmallRoofRight,
-        ],
-        vec![
-          ObjectName::HouseSmallDoorLeft1,
-          ObjectName::HouseSmallWallBottom,
-          ObjectName::HouseSmallWallRight,
-        ],
-      ],
-      Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Left,
-    ),
-    BuildingTemplate::new(
-      "Small House Facing West 2",
-      vec![
-        vec![
-          ObjectName::HouseSmallRoofLeft,
-          ObjectName::HouseSmallRoofMiddle,
-          ObjectName::HouseSmallRoofRight,
-        ],
-        vec![
-          ObjectName::HouseSmallDoorLeft2,
-          ObjectName::HouseSmallWallBottom,
-          ObjectName::HouseSmallWallRight,
-        ],
-      ],
-      Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Left,
-    ),
-    BuildingTemplate::new(
-      "Small House Facing East 1",
-      vec![
-        vec![
-          ObjectName::HouseSmallRoofLeft,
-          ObjectName::HouseSmallRoofMiddle,
-          ObjectName::HouseSmallRoofRight,
-        ],
-        vec![
-          ObjectName::HouseSmallWallLeft,
-          ObjectName::HouseSmallWallBottom,
-          ObjectName::HouseSmallDoorRight1,
-        ],
-      ],
-      Point::new_internal_grid(2, 1), // Reminder: Column 2, row 1
-      Direction::Right,
-    ),
-    BuildingTemplate::new(
-      "Small House Facing East 2",
-      vec![
-        vec![
-          ObjectName::HouseSmallRoofLeft,
-          ObjectName::HouseSmallRoofMiddle,
-          ObjectName::HouseSmallRoofRight,
-        ],
-        vec![
-          ObjectName::HouseSmallWallLeft,
-          ObjectName::HouseSmallWallBottom,
-          ObjectName::HouseSmallDoorRight2,
-        ],
-      ],
-      Point::new_internal_grid(2, 1), // Reminder: Column 2, row 1
-      Direction::Right,
-    ),
-    BuildingTemplate::new(
-      "Medium House Facing North",
-      vec![
-        vec![
-          ObjectName::HouseMediumRoofLeft,
-          ObjectName::HouseMediumRoofMiddle,
-          ObjectName::HouseMediumRoofRight,
-        ],
-        vec![
-          ObjectName::HouseMediumWallLeft,
-          ObjectName::HouseMediumDoorBottom,
-          ObjectName::HouseMediumWallRight,
-        ],
-      ],
-      Point::new_internal_grid(1, 1),
-      Direction::Bottom,
-    ),
-    BuildingTemplate::new(
-      "Medium House Facing West 1",
-      vec![
-        vec![
-          ObjectName::HouseMediumRoofLeft,
-          ObjectName::HouseMediumRoofMiddle,
-          ObjectName::HouseMediumRoofRight,
-        ],
-        vec![
-          ObjectName::HouseMediumDoorLeft1,
-          ObjectName::HouseMediumWallBottom,
-          ObjectName::HouseMediumWallRight,
-        ],
-      ],
-      Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Left,
-    ),
-    BuildingTemplate::new(
-      "Medium House Facing West 2",
-      vec![
-        vec![
-          ObjectName::HouseMediumRoofLeft,
-          ObjectName::HouseMediumRoofMiddle,
-          ObjectName::HouseMediumRoofRight,
-        ],
-        vec![
-          ObjectName::HouseMediumDoorLeft2,
-          ObjectName::HouseMediumWallBottom,
-          ObjectName::HouseMediumWallRight,
-        ],
-      ],
-      Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Left,
-    ),
-    BuildingTemplate::new(
-      "Medium House Facing East 1",
-      vec![
-        vec![
-          ObjectName::HouseMediumRoofLeft,
-          ObjectName::HouseMediumRoofMiddle,
-          ObjectName::HouseMediumRoofRight,
-        ],
-        vec![
-          ObjectName::HouseMediumWallLeft,
-          ObjectName::HouseMediumWallBottom,
-          ObjectName::HouseMediumDoorRight1,
-        ],
-      ],
-      Point::new_internal_grid(2, 1), // Reminder: First column then row
-      Direction::Right,
-    ),
-    BuildingTemplate::new(
-      "Medium House Facing East 2",
-      vec![
-        vec![
-          ObjectName::HouseMediumRoofLeft,
-          ObjectName::HouseMediumRoofMiddle,
-          ObjectName::HouseMediumRoofRight,
-        ],
-        vec![
-          ObjectName::HouseMediumWallLeft,
-          ObjectName::HouseMediumWallBottom,
-          ObjectName::HouseMediumDoorRight2,
-        ],
-      ],
-      Point::new_internal_grid(2, 1), // Reminder: First column then row
-      Direction::Right,
-    ),
-  ]
 }

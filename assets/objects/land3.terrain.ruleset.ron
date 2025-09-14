@@ -333,7 +333,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Right, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4,  HouseSmallRoofLeft, HouseSmallRoofMiddle, HouseSmallRoofRight, HouseMediumRoofLeft, HouseMediumRoofMiddle, HouseMediumRoofRight, ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Left, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
       ]
     ),
@@ -344,7 +344,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Right, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, HouseSmallRoofLeft, HouseSmallRoofMiddle, HouseSmallRoofRight, HouseMediumRoofLeft, HouseMediumRoofMiddle, HouseMediumRoofRight, ] ),
+        ( Bottom, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Left, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
       ]
     ),
@@ -355,7 +355,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, HouseSmallRoofLeft, HouseSmallRoofMiddle, HouseSmallRoofRight, HouseMediumRoofLeft, HouseMediumRoofMiddle, HouseMediumRoofRight, ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
       ]
     ),
@@ -366,7 +366,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, HouseSmallRoofLeft, HouseSmallRoofMiddle, HouseSmallRoofRight, HouseMediumRoofLeft, HouseMediumRoofMiddle, HouseMediumRoofRight, ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, ] ),
       ]
     ),
@@ -377,7 +377,7 @@
       permitted_neighbours: [
         ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, HouseSmallRoofLeft, HouseSmallRoofMiddle, HouseSmallRoofRight, HouseMediumRoofLeft, HouseMediumRoofMiddle, HouseMediumRoofRight, ] ),
+        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, ] ),
         ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, ] ),
       ]
     ),

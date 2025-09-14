@@ -259,7 +259,7 @@ impl ObjectGrid {
         }
       }
     }
-    debug!("Validated object grid {} and made [{}] updates to cell's states", cg, i);
+    trace!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
