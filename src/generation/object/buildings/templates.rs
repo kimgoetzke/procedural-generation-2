@@ -183,7 +183,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::Left, StructureType::MiddleDoor, StructureType::Right],
         },
       ],
-      Point::new_internal_grid(1, 1),
+      Point::new_internal_grid(1, 1), // Reminder: x is column, y is row
       Direction::Bottom,
     ),
     BuildingTemplate::new(
@@ -196,7 +196,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::Left, StructureType::Middle, StructureType::RightDoor],
         },
       ],
-      Point::new_internal_grid(2, 1),
+      Point::new_internal_grid(2, 1), // Reminder: x is column, y is row
       Direction::Right,
     ),
     BuildingTemplate::new(
@@ -209,7 +209,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::LeftDoor, StructureType::Middle, StructureType::Right],
         },
       ],
-      Point::new_internal_grid(0, 1),
+      Point::new_internal_grid(0, 1), // Reminder: x is column, y is row
       Direction::Left,
     ),
     BuildingTemplate::new(
@@ -222,7 +222,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::Left, StructureType::MiddleDoor, StructureType::Right],
         },
       ],
-      Point::new_internal_grid(1, 1),
+      Point::new_internal_grid(1, 1), // Reminder: x is column, y is row
       Direction::Bottom,
     ),
     BuildingTemplate::new(
@@ -235,7 +235,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::Left, StructureType::Middle, StructureType::RightDoor],
         },
       ],
-      Point::new_internal_grid(2, 1),
+      Point::new_internal_grid(2, 1), // Reminder: x is column, y is row
       Direction::Right,
     ),
     BuildingTemplate::new(
@@ -248,8 +248,134 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
           structures: vec![StructureType::LeftDoor, StructureType::Middle, StructureType::Right],
         },
       ],
-      Point::new_internal_grid(0, 1),
+      Point::new_internal_grid(0, 1), // Reminder: x is column, y is row
       Direction::Left,
     ),
   ]
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::coords::Point;
+  use crate::generation::lib::Direction;
+  use bevy::platform::collections::HashSet;
+  use rand::SeedableRng;
+  use rand::rngs::StdRng;
+
+  #[test]
+  fn calculate_origin_ig_from_connection_point_correctly_calculates_origin() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let connection_ig = Point::new_internal_grid(5, 5);
+    let origin_ig = template.calculate_origin_ig_from_connection_point(connection_ig);
+    assert_eq!(origin_ig, Point::new_internal_grid(4, 3)); // Because building is 1x1 and door is touching connection point
+  }
+
+  #[test]
+  fn calculate_origin_ig_from_absolute_door_correctly_calculates_origin() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let absolute_door = Point::new_internal_grid(6, 6);
+    let origin = template.calculate_origin_ig_from_absolute_door(absolute_door);
+    assert_eq!(origin, Point::new_internal_grid(5, 5)); // Because building is 1x1 and door is assumed at (6, 6)
+  }
+
+  #[test]
+  fn calculate_absolute_door_ig_correctly_calculates_door_position() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let connection_point = Point::new_internal_grid(5, 5);
+    let door_position = template.calculate_absolute_door_ig(connection_point);
+    assert_eq!(door_position, Point::new_internal_grid(5, 4));
+  }
+
+  #[test]
+  fn is_placeable_at_path_returns_true_for_valid_placement() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(0, 1),
+      Direction::Top,
+    );
+    let connection_point = Point::new_internal_grid(0, 0);
+    let mut available_space = HashSet::new();
+    for x in 0..3 {
+      // 3 because the building is 3 tiles wide and the door is at (0, 1)
+      for y in 0..1 {
+        // 1 because the building is 1 tile tall
+        available_space.insert(Point::new_internal_grid(x, y));
+      }
+    }
+    assert!(template.is_placeable_at_path(connection_point, &available_space));
+  }
+
+  #[test]
+  fn is_placeable_at_path_returns_false_for_out_of_bounds() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let connection_point = Point::new_internal_grid(-1, -1);
+    let available_space = HashSet::new();
+    assert!(!template.is_placeable_at_path(connection_point, &available_space));
+  }
+
+  #[test]
+  fn is_placeable_at_path_returns_false_if_space_is_unavailable() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![BuildingLevel::standard(Level::GroundFloor)],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let connection_point = Point::new_internal_grid(5, 5);
+    let available_space = HashSet::new();
+    assert!(!template.is_placeable_at_path(connection_point, &available_space));
+  }
+
+  #[test]
+  fn generate_tiles_creates_correct_tile_layout() {
+    let template = BuildingTemplate::new(
+      "Test Building",
+      BuildingType::SmallHouse,
+      vec![
+        BuildingLevel::standard(Level::GroundFloor),
+        BuildingLevel::standard(Level::Roof),
+      ],
+      Point::new_internal_grid(1, 1),
+      Direction::Bottom,
+    );
+    let mut rng = StdRng::seed_from_u64(42);
+    let registry = BuildingComponentRegistry::new_initialised();
+    let tiles = template.generate_tiles(&registry, &mut rng);
+    assert_eq!(tiles.len(), template.height as usize);
+    assert_eq!(tiles[0].len(), template.width as usize);
+    assert_eq!(tiles[0][0], ObjectName::HouseSmallWallLeft);
+    assert_eq!(tiles[0][1], ObjectName::HouseSmallWallMiddle2);
+    assert_eq!(tiles[0][2], ObjectName::HouseSmallWallRight);
+    assert_eq!(tiles[1][0], ObjectName::HouseSmallRoofLeft2);
+    assert_eq!(tiles[1][1], ObjectName::HouseSmallRoofMiddle3);
+    assert_eq!(tiles[1][2], ObjectName::HouseSmallRoofRight2);
+  }
 }
