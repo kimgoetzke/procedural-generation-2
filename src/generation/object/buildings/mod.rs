@@ -524,7 +524,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
         ],
       ],
       Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Right,
+      Direction::Left,
     ),
     BuildingTemplate::new(
       "Medium House Facing West 2",
@@ -541,7 +541,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
         ],
       ],
       Point::new_internal_grid(0, 1), // Reminder: First column then row
-      Direction::Right,
+      Direction::Left,
     ),
     BuildingTemplate::new(
       "Medium House Facing East 1",
@@ -558,7 +558,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
         ],
       ],
       Point::new_internal_grid(2, 1), // Reminder: First column then row
-      Direction::Left,
+      Direction::Right,
     ),
     BuildingTemplate::new(
       "Medium House Facing East 2",
@@ -575,7 +575,7 @@ fn get_building_templates() -> Vec<BuildingTemplate> {
         ],
       ],
       Point::new_internal_grid(2, 1), // Reminder: First column then row
-      Direction::Left,
+      Direction::Right,
     ),
   ]
 }
