@@ -7,6 +7,7 @@ use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, Terr
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 // TODO: Refactor ObjectGrid to not require two separate grids e.g. only use `CellRef` for pathfinding and wave function collapse
@@ -171,6 +172,19 @@ impl ObjectGrid {
     }
   }
 
+  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
+    if self.path_grid.is_none() {
+      error!("You're trying to get a cell reference from an uninitialised path grid - this is a bug!");
+      return None;
+    }
+    self
+      .path_grid
+      .as_ref()?
+      .iter()
+      .flatten()
+      .find(|cell| cell.lock().expect(CELL_LOCK_ERROR).ig == *point)
+  }
+
   // TODO: Use weak references in Cell to make future memory leak less likely
   /// Resets the path grid by clearing all references in each cell. This is required but not sufficient for the grid to
   /// be reused for a new pathfinding operation. The path finding grid will have to be re-initialised again.
@@ -198,6 +212,56 @@ impl ObjectGrid {
     &self.path
   }
 
+  /// Validates the object grid to ensure it is in a consistent state. Assumed to be called prior to starting the wave
+  /// function collapse algorithm. Specifically, this method updates all neighbours of already collapsed cells (and
+  /// recurses over all neighbours of any updated the neighbour) to ensure their states are valid. This is important
+  /// because we're allowing some cells to be pre-collapsed (e.g. for paths) and we need to ensure the rest of the
+  /// grid is valid before starting the wave function collapse algorithm.
+  /// # Panics
+  /// If a cell must be updated but the update fails, this method will panic.
+  pub fn validate(&mut self) {
+    let mut queue: VecDeque<Cell> = self
+      .object_grid
+      .iter()
+      .flatten()
+      .filter(|c| c.is_collapsed())
+      .cloned()
+      .collect();
+    let cg = self.cg;
+    let mut i = 0;
+    while let Some(cell) = queue.pop_front() {
+      for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
+        if let Some(neighbour) = self.get_cell(&neighbour_ig) {
+          if neighbour.is_collapsed() {
+            continue;
+          }
+          match neighbour.clone_and_reduce(&cell, &connection) {
+            Ok((true, updated_neighbour)) => {
+              trace!(
+                "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
+                cg,
+                neighbour_ig,
+                neighbour.get_possible_states().len(),
+                updated_neighbour.get_possible_states().len(),
+              );
+              self.set_cell(updated_neighbour.clone());
+              queue.push_back(updated_neighbour);
+              i += 1;
+            }
+            Ok((false, _)) => {}
+            Err(_) => {
+              panic!(
+                "Validating object grid {}: Failed to reduce neighbour at {:?} of collapsed cell at {:?}",
+                cg, neighbour_ig, cell.ig,
+              );
+            }
+          }
+        }
+      }
+    }
+    debug!("Validated object grid {} and made [{}] updates to cell's states", cg, i);
+  }
+
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
     let point = cell.ig;
     let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&point).into_iter().collect();
@@ -209,22 +273,8 @@ impl ObjectGrid {
         neighbours.push((direction, &self.no_neighbours_tile));
       }
     }
-    trace!("Found [{}] neighbours for {:?}", neighbours.len(), point);
 
     neighbours
-  }
-
-  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
-    if self.path_grid.is_none() {
-      error!("You're trying to get a cell reference from an uninitialised path grid - this is a bug!");
-      return None;
-    }
-    self
-      .path_grid
-      .as_ref()?
-      .iter()
-      .flatten()
-      .find(|cell| cell.lock().expect(CELL_LOCK_ERROR).ig == *point)
   }
 
   pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {

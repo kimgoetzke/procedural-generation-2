@@ -16,6 +16,7 @@ impl Plugin for WfcPlugin {
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, mut rng: &mut StdRng) {
   let start_time = shared::get_time();
+  object_grid.validate();
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
   let is_decoration_enabled = settings.object.generate_decoration;
   if is_decoration_enabled {
