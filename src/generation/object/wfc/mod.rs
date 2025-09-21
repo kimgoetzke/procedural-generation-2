@@ -195,7 +195,7 @@ fn increase_logging_or_short_circuit(
   snapshots: &mut Vec<ObjectGrid>,
 ) {
   if grid.is_failure_log_level_increased() && *iter_error_count < 5 && *iter_count > 40_000 {
-    error!(
+    warn!(
       "Attempting to short-circuiting wave function collapse for {} after {} iterations and {} error(s) by clearing all snapshots",
       grid.cg, iter_count, iter_error_count
     );

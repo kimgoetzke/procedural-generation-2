@@ -69,7 +69,7 @@ impl ObjectGrid {
       let terrain = tile.terrain;
       let tile_type = tile.tile_type;
       // Uncomment is_monitored below for debugging purposes
-      // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(0, 0) && ig == Point::new(16, 16);
+      // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(15, 13) && ig == Point::new(15, 0);
       let is_monitored = false;
       if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
