@@ -1,3 +1,4 @@
+use bevy::log::*;
 use bevy::reflect::Reflect;
 use strum::EnumIter;
 
@@ -138,33 +139,7 @@ pub enum ObjectName {
   HouseLargeDoorMiddle2,
 }
 
-enum ObjectKind {
-  Other,
-  Path,
-  Building,
-}
-
 impl ObjectName {
-  // TODO: Clean this up by merging get_index_for_building() and get_index_for_path()
-  // TODO: Update README with this information after cleaning up
-  pub fn get_sprite_index(&self) -> i32 {
-    let object_kind = if self.is_path() {
-      ObjectKind::Path
-    } else if self.is_building() {
-      ObjectKind::Building
-    } else {
-      ObjectKind::Other
-    };
-
-    match object_kind {
-      ObjectKind::Path => self.get_index_for_path(),
-      ObjectKind::Building => self.get_index_for_building(),
-      ObjectKind::Other => {
-        panic!("You cannot determine the index of a non-path/non-building object by calling ObjectName::get_sprite_index()")
-      }
-    }
-  }
-
   pub fn is_multi_tile(&self) -> bool {
     matches!(
       self,
@@ -196,31 +171,6 @@ impl ObjectName {
         | ObjectName::PathLeftVertical
         | ObjectName::PathRightVertical
     )
-  }
-
-  /// Returns the correct index for the path sprite based on its name. Falls back to `0` for all invalid object names.
-  /// Path sprites need to be determined separately because, even though on the same sprite sheet as "regular" objects,
-  /// paths do not have [`crate::generation::object::lib::TerrainState`]s (which themselves are derived from rule set
-  /// assets) associated with them.
-  pub fn get_index_for_path(&self) -> i32 {
-    match self {
-      ObjectName::PathRight => 32,
-      ObjectName::PathHorizontal => 33,
-      ObjectName::PathCross => 34,
-      ObjectName::PathVertical => 35,
-      ObjectName::PathBottom => 36,
-      ObjectName::PathTop => 37,
-      ObjectName::PathLeft => 38,
-      ObjectName::PathTopRight => 39,
-      ObjectName::PathTopLeft => 40,
-      ObjectName::PathBottomRight => 41,
-      ObjectName::PathBottomLeft => 42,
-      ObjectName::PathTopHorizontal => 43,
-      ObjectName::PathBottomHorizontal => 44,
-      ObjectName::PathLeftVertical => 45,
-      ObjectName::PathRightVertical => 46,
-      _ => 0,
-    }
   }
 
   pub fn is_building(&self) -> bool {
@@ -279,8 +229,45 @@ impl ObjectName {
     )
   }
 
-  pub fn get_index_for_building(&self) -> i32 {
+  /// Returns the correct index for a non-decorative object (such as paths and buildings) sprite based on its name.
+  /// Falls back to `0` for all invalid object names. Non-decorative object sprites need to be determined separately
+  /// because, even though some of them (such as paths) may be on the same sprite sheet as "regular" objects, they do
+  /// not have [`crate::generation::object::lib::TerrainState`]s (which themselves are derived from rule set assets)
+  /// associated with them.
+  /// # Panics
+  /// If called on a decorative object (such as bushes, flowers, trees, etc.), this function will panic.
+  pub fn get_sprite_index(&self) -> i32 {
+    let index = self.get_index();
+
+    match index {
+      0 => {
+        warn!("You are trying to determine the sprite index of [{:?}]", self);
+        if self.is_path() {
+          return 0;
+        }
+        panic!("You cannot determine the index of a decorative object by calling ObjectName::get_sprite_index()")
+      }
+      _ => self.get_index(),
+    }
+  }
+
+  fn get_index(&self) -> i32 {
     match self {
+      ObjectName::PathRight => 32,
+      ObjectName::PathHorizontal => 33,
+      ObjectName::PathCross => 34,
+      ObjectName::PathVertical => 35,
+      ObjectName::PathBottom => 36,
+      ObjectName::PathTop => 37,
+      ObjectName::PathLeft => 38,
+      ObjectName::PathTopRight => 39,
+      ObjectName::PathTopLeft => 40,
+      ObjectName::PathBottomRight => 41,
+      ObjectName::PathBottomLeft => 42,
+      ObjectName::PathTopHorizontal => 43,
+      ObjectName::PathBottomHorizontal => 44,
+      ObjectName::PathLeftVertical => 45,
+      ObjectName::PathRightVertical => 46,
       ObjectName::HouseMediumRoofLeft1 => 1,
       ObjectName::HouseMediumRoofMiddle1 => 2,
       ObjectName::HouseMediumRoofRight1 => 3,
@@ -342,25 +329,33 @@ mod tests {
   use strum::IntoEnumIterator;
 
   #[test]
-  fn building_variants_have_nonzero_index() {
+  fn get_index_for_building_variants_returns_nonzero_index() {
     for obj in ObjectName::iter() {
       if obj.is_building() {
         // If this fails, you probably forgot to update the index mapping in `get_index_for_building()`
-        assert_ne!(obj.get_index_for_building(), 0, "[{:?}] returns 0 index", obj);
+        assert_ne!(obj.get_index(), 0, "[{:?}] returns 0 index", obj);
       }
     }
   }
 
   #[test]
-  fn path_variants_have_nonzero_index() {
+  fn get_index_for_path_variants_returns_nonzero_index() {
     for obj in ObjectName::iter() {
       if obj.is_path() {
         if obj == ObjectName::PathUndefined {
           continue;
         }
         // If this fails, you probably forgot to update the index mapping in `get_index_for_path()`
-        assert_ne!(obj.get_index_for_path(), 0, "[{:?}] returns 0 index", obj);
+        assert_ne!(obj.get_index(), 0, "[{:?}] returns 0 index", obj);
       }
     }
+  }
+
+  #[test]
+  #[should_panic(
+    expected = "You cannot determine the index of a decorative object by calling ObjectName::get_sprite_index()"
+  )]
+  fn get_sprite_index_for_non_path_or_building_panics() {
+    let _ = ObjectName::GrassBush1.get_sprite_index();
   }
 }
