@@ -72,7 +72,7 @@ impl BuildingComponentRegistry {
       BuildingType::MediumHouse,
       Level::GroundFloor,
       vec![ObjectName::HouseMediumDoorLeft1, ObjectName::HouseMediumDoorLeft2],
-      Some(vec![ObjectName::HouseMediumDoorMiddle]),
+      Some(vec![ObjectName::HouseMediumDoorMiddle1, ObjectName::HouseMediumDoorMiddle2]),
       vec![ObjectName::HouseMediumDoorRight1, ObjectName::HouseMediumDoorRight2],
     );
 
@@ -111,7 +111,7 @@ impl BuildingComponentRegistry {
       BuildingType::LargeHouse,
       Level::GroundFloor,
       vec![ObjectName::HouseLargeDoorLeft1, ObjectName::HouseLargeDoorLeft2],
-      Some(vec![ObjectName::HouseLargeDoorMiddle]),
+      Some(vec![ObjectName::HouseLargeDoorMiddle1, ObjectName::HouseLargeDoorMiddle2]),
       vec![ObjectName::HouseLargeDoorRight1, ObjectName::HouseLargeDoorRight2],
     );
 
@@ -280,7 +280,7 @@ mod tests {
     let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
     let left = vec![ObjectName::HouseMediumDoorLeft1];
-    let middle = vec![ObjectName::HouseMediumDoorMiddle];
+    let middle = vec![ObjectName::HouseMediumDoorMiddle1];
     let right = vec![ObjectName::HouseMediumDoorRight1];
 
     registry.insert_doors(building_type, level, left.clone(), Some(middle.clone()), right.clone());

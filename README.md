@@ -98,14 +98,29 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 
 ### Reminders
 
-#### How to add object sprite assets
+#### How to add decorative object sprite assets
 
 1. Add the sprite to the relevant sprite sheet in `assets/objects/`
 2. Add a new option to the `ObjectName` enum
 3. Add the object name to the `any.terrain.ruleset.ron` file (top, right, bottom, left)
 4. Add the object name to the `all.tile-type.ruleset.ron` file (like just `Fill`)
 5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
-6. Optional: if this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
+6. Optional: If this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
+
+#### How to add building or path sprite assets
+
+1. Add the sprite to the relevant sprite sheet in `assets/objects/`
+2. Update the column and row values in `constants.rs` for buildings/paths, if necessary
+3. Add the new option(s) to the `ObjectName` enum
+4. Add the object name(s) to the `is_building()` or `is_path()` function in `object_name.rs`
+5. Add the object name(s) to the `get_index_for_building()` or `get_index_for_path()` function in `object_name.rs`
+6. Add the object name(s) to the `any.terrain.ruleset.ron` file where appropriate (top, right, bottom, left)
+7. If building sprite: Add the object name(s) to relevant `BuildingType` in the `BuildingComponentRegistry`
+
+You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects
+and therefore don't need to be considered in the wave function collapse algorithm which uses these rulesets. However,
+the addition to the "any ruleset" file results in the neighbouring tile of the new sprite to be empty 
+(`ObjectName::Empty`). Without this, you'll see errors in the wave function collapse algorithm.
 
 #### How to use cargo-flamegraph
 

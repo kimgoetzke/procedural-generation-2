@@ -1,6 +1,7 @@
 use bevy::reflect::Reflect;
+use strum::EnumIter;
 
-#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash)]
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumIter)]
 pub enum ObjectName {
   Empty,
   SandStone1,
@@ -101,7 +102,7 @@ pub enum ObjectName {
   HouseMediumRoofMiddle1,
   HouseMediumRoofRight1,
   HouseMediumWallLeft,
-  HouseMediumDoorMiddle,
+  HouseMediumDoorMiddle1,
   HouseMediumWallRight,
   HouseMediumRoofLeft2,
   HouseMediumRoofMiddle2,
@@ -115,11 +116,12 @@ pub enum ObjectName {
   HouseMediumDoorLeft2,
   HouseMediumWallMiddle2,
   HouseMediumDoorRight2,
+  HouseMediumDoorMiddle2,
   HouseLargeRoofLeft1,
   HouseLargeRoofMiddle1,
   HouseLargeRoofRight1,
   HouseLargeWallLeft,
-  HouseLargeDoorMiddle,
+  HouseLargeDoorMiddle1,
   HouseLargeWallRight,
   HouseLargeRoofLeft2,
   HouseLargeRoofMiddle2,
@@ -133,6 +135,7 @@ pub enum ObjectName {
   HouseLargeDoorLeft2,
   HouseLargeWallMiddle2,
   HouseLargeDoorRight2,
+  HouseLargeDoorMiddle2,
 }
 
 enum ObjectKind {
@@ -142,6 +145,8 @@ enum ObjectKind {
 }
 
 impl ObjectName {
+  // TODO: Clean this up by merging get_index_for_building() and get_index_for_path()
+  // TODO: Update README with this information after cleaning up
   pub fn get_sprite_index(&self) -> i32 {
     let object_kind = if self.is_path() {
       ObjectKind::Path
@@ -193,7 +198,7 @@ impl ObjectName {
     )
   }
 
-  /// Returns the correct index for the path sprite based on its name. Falls back to `47` for all invalid object names.
+  /// Returns the correct index for the path sprite based on its name. Falls back to `0` for all invalid object names.
   /// Path sprites need to be determined separately because, even though on the same sprite sheet as "regular" objects,
   /// paths do not have [`crate::generation::object::lib::TerrainState`]s (which themselves are derived from rule set
   /// assets) associated with them.
@@ -214,7 +219,7 @@ impl ObjectName {
       ObjectName::PathBottomHorizontal => 44,
       ObjectName::PathLeftVertical => 45,
       ObjectName::PathRightVertical => 46,
-      _ => 47,
+      _ => 0,
     }
   }
 
@@ -237,7 +242,7 @@ impl ObjectName {
         | ObjectName::HouseMediumRoofMiddle1
         | ObjectName::HouseMediumRoofRight1
         | ObjectName::HouseMediumWallLeft
-        | ObjectName::HouseMediumDoorMiddle
+        | ObjectName::HouseMediumDoorMiddle1
         | ObjectName::HouseMediumWallRight
         | ObjectName::HouseMediumRoofLeft2
         | ObjectName::HouseMediumRoofMiddle2
@@ -251,11 +256,12 @@ impl ObjectName {
         | ObjectName::HouseMediumDoorLeft2
         | ObjectName::HouseMediumWallMiddle2
         | ObjectName::HouseMediumDoorRight2
+        | ObjectName::HouseMediumDoorMiddle2
         | ObjectName::HouseLargeRoofLeft1
         | ObjectName::HouseLargeRoofMiddle1
         | ObjectName::HouseLargeRoofRight1
         | ObjectName::HouseLargeWallLeft
-        | ObjectName::HouseLargeDoorMiddle
+        | ObjectName::HouseLargeDoorMiddle1
         | ObjectName::HouseLargeWallRight
         | ObjectName::HouseLargeRoofLeft2
         | ObjectName::HouseLargeRoofMiddle2
@@ -269,6 +275,7 @@ impl ObjectName {
         | ObjectName::HouseLargeDoorLeft2
         | ObjectName::HouseLargeWallMiddle2
         | ObjectName::HouseLargeDoorRight2
+        | ObjectName::HouseLargeDoorMiddle2
     )
   }
 
@@ -277,8 +284,9 @@ impl ObjectName {
       ObjectName::HouseMediumRoofLeft1 => 1,
       ObjectName::HouseMediumRoofMiddle1 => 2,
       ObjectName::HouseMediumRoofRight1 => 3,
+      ObjectName::HouseMediumDoorMiddle2 => 9,
       ObjectName::HouseMediumWallLeft => 10,
-      ObjectName::HouseMediumDoorMiddle => 11,
+      ObjectName::HouseMediumDoorMiddle1 => 11,
       ObjectName::HouseMediumWallRight => 12,
       ObjectName::HouseMediumRoofLeft2 => 19,
       ObjectName::HouseMediumRoofMiddle2 => 20,
@@ -296,8 +304,9 @@ impl ObjectName {
       ObjectName::HouseLargeRoofMiddle1 => 5,
       ObjectName::HouseLargeRoofRight1 => 6,
       ObjectName::HouseLargeWallLeft => 13,
-      ObjectName::HouseLargeDoorMiddle => 14,
+      ObjectName::HouseLargeDoorMiddle1 => 14,
       ObjectName::HouseLargeWallRight => 15,
+      ObjectName::HouseLargeDoorMiddle2 => 18,
       ObjectName::HouseLargeRoofLeft2 => 22,
       ObjectName::HouseLargeRoofMiddle2 => 23,
       ObjectName::HouseLargeRoofRight2 => 24,
@@ -323,6 +332,35 @@ impl ObjectName {
       ObjectName::HouseSmallWallLeft2 => 52,
       ObjectName::HouseSmallWallRight2 => 53,
       _ => 0,
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use strum::IntoEnumIterator;
+
+  #[test]
+  fn building_variants_have_nonzero_index() {
+    for obj in ObjectName::iter() {
+      if obj.is_building() {
+        // If this fails, you probably forgot to update the index mapping in `get_index_for_building()`
+        assert_ne!(obj.get_index_for_building(), 0, "[{:?}] returns 0 index", obj);
+      }
+    }
+  }
+
+  #[test]
+  fn path_variants_have_nonzero_index() {
+    for obj in ObjectName::iter() {
+      if obj.is_path() {
+        if obj == ObjectName::PathUndefined {
+          continue;
+        }
+        // If this fails, you probably forgot to update the index mapping in `get_index_for_path()`
+        assert_ne!(obj.get_index_for_path(), 0, "[{:?}] returns 0 index", obj);
+      }
     }
   }
 }
