@@ -71,7 +71,7 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
   debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
-    Name::new(format!("World Generation Component {}", w)),
+    Name::new(format!("World Generation Component {}", cg)),
     WorldGenerationComponent::new(w, cg, false, shared::get_time()),
   ));
   commands.spawn((
@@ -131,7 +131,7 @@ fn update_world_event(
     let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
-      Name::new(format!("World Generation Component {}", new_parent_w)),
+      Name::new(format!("World Generation Component {}", new_parent_cg)),
       WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);

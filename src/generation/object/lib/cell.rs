@@ -86,15 +86,12 @@ impl Cell {
     tile_type: TileType,
     states: &Vec<TerrainState>,
     lower_layer_info: Vec<(TerrainType, TileType)>,
+    is_monitored: bool,
   ) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
-    // Uncomment the below to monitor specific cells
-    // let points = vec![Point::new_internal_grid(9, 6)];
-    // if points.contains(&self.ig) {
-    //   self.is_being_monitored = true;
-    // }
+    self.is_being_monitored = is_monitored;
     if self.is_being_monitored {
       debug!(
         "Initialising {:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
@@ -324,6 +321,7 @@ impl Cell {
     &self,
     reference_cell: &Cell,
     where_is_reference: &Connection,
+    is_failure_log_level_increased: bool,
   ) -> Result<(bool, Self), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
@@ -346,6 +344,7 @@ impl Cell {
       self,
       &mut clone,
       &permitted_state_names,
+      is_failure_log_level_increased,
     );
 
     match clone.possible_states.len() {
@@ -412,7 +411,12 @@ impl Cell {
   /// invalid states that would not be allowed by the rules defined in the reference cell.
   /// # Errors
   /// If the current state of this [`Cell`] is not valid.
-  pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<(), PropagationFailure> {
+  pub fn verify(
+    &self,
+    reference_cell: &Cell,
+    where_is_reference: &Connection,
+    is_failure_log_level_increased: bool,
+  ) -> Result<(), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
 
@@ -425,6 +429,7 @@ impl Cell {
         self,
         &mut self.clone(),
         &permitted_state_names,
+        is_failure_log_level_increased,
       );
       Err(PropagationFailure {})
     } else {
@@ -500,8 +505,9 @@ fn log_result(
   old_cell: &Cell,
   new_cell: &mut Cell,
   new_permitted_states: &Vec<ObjectName>,
+  is_failure_log_level_increased: bool,
 ) {
-  if !new_cell.is_being_monitored && !reference_cell.is_being_monitored {
+  if !new_cell.is_being_monitored && !reference_cell.is_being_monitored && !is_failure_log_level_increased {
     return;
   }
 
@@ -535,7 +541,7 @@ fn log_result(
     );
   }
 
-  if new_possible_states_count <= 1 {
+  if (new_possible_states_count == 1 && !is_failure_log_level_increased) || new_possible_states_count == 0 {
     debug!(
       "┌─|| Summary of the [{}] process for {:?}",
       if is_update { "update" } else { "verification" },

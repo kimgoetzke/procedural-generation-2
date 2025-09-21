@@ -26,6 +26,7 @@ pub struct ObjectGrid {
   /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
   /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
   no_neighbours_tile: Cell,
+  is_failure_log_level_increased: bool,
 }
 
 impl ObjectGrid {
@@ -42,6 +43,7 @@ impl ObjectGrid {
       path: HashSet::new(),
       object_grid,
       no_neighbours_tile,
+      is_failure_log_level_increased: false,
     }
   }
 
@@ -100,7 +102,7 @@ impl ObjectGrid {
           })
           .filter_map(|plane| plane.get_tile(ig).and_then(|t| Some((t.terrain, t.tile_type))))
           .collect::<Vec<(TerrainType, TileType)>>();
-        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone());
+        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone(), is_monitored);
         if is_monitored {
           debug!(
             "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
@@ -235,7 +237,7 @@ impl ObjectGrid {
           if neighbour.is_collapsed() {
             continue;
           }
-          match neighbour.clone_and_reduce(&cell, &connection) {
+          match neighbour.clone_and_reduce(&cell, &connection, false) {
             Ok((true, updated_neighbour)) => {
               trace!(
                 "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
@@ -324,6 +326,14 @@ impl ObjectGrid {
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
     self.object_grid = other.object_grid.clone();
   }
+
+  pub fn is_failure_log_level_increased(&self) -> bool {
+    self.is_failure_log_level_increased
+  }
+
+  pub fn increase_failure_log_level(&mut self) {
+    self.is_failure_log_level_increased = true;
+  }
 }
 
 #[cfg(test)]
@@ -335,7 +345,7 @@ mod tests {
       let mut grid = ObjectGrid::default(cg);
       for row in &mut grid.object_grid {
         for cell in row {
-          cell.initialise(TerrainType::Land2, TileType::Fill, &vec![], vec![]);
+          cell.initialise(TerrainType::Land2, TileType::Fill, &vec![], vec![], false);
         }
       }
 

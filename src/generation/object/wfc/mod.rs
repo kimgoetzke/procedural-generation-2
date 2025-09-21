@@ -6,6 +6,9 @@ use bevy::log::*;
 use rand::Rng;
 use rand::prelude::StdRng;
 
+/// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
+const WARNING_FREQUENCY: u128 = 2_000;
+
 /// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
 
@@ -16,6 +19,7 @@ impl Plugin for WfcPlugin {
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, mut rng: &mut StdRng) {
   let start_time = shared::get_time();
+  let mut next_warning_time = start_time + WARNING_FREQUENCY;
   object_grid.validate();
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
   let is_decoration_enabled = settings.object.generate_decoration;
@@ -33,6 +37,8 @@ pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: 
           &mut snapshot_error_count,
           &mut iter_error_count,
           &mut total_error_count,
+          &mut next_warning_time,
+          start_time,
         ),
         result => handle_success(
           object_grid,
@@ -85,11 +91,14 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
 
   // Propagation: Update every neighbours' states and the grid
   let mut stack: Vec<Cell> = vec![random_cell_clone];
+  let is_failure_log_level_increased = grid.is_failure_log_level_increased();
   while let Some(cell) = stack.pop() {
     grid.set_cell(cell.clone());
     for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
       if !neighbour.is_collapsed() {
-        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection) {
+        if let Ok((has_changed, neighbour_cell)) =
+          neighbour.clone_and_reduce(&cell, &connection, is_failure_log_level_increased)
+        {
           if has_changed {
             stack.push(neighbour_cell);
           }
@@ -97,7 +106,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
           return IterationResult::Failure;
         }
       } else {
-        if let Err(_) = neighbour.verify(&cell, &connection) {
+        if let Err(_) = neighbour.verify(&cell, &connection, is_failure_log_level_increased) {
           return IterationResult::Failure;
         }
       }
@@ -114,6 +123,8 @@ fn handle_failure(
   snapshot_error_count: &mut usize,
   iter_error_count: &mut usize,
   total_error_count: &mut i32,
+  next_warning_time: &mut u128,
+  start_time: u128,
 ) {
   *iter_error_count += 1;
   *total_error_count += 1;
@@ -121,7 +132,18 @@ fn handle_failure(
   let snapshot = snapshots.get(snapshot_index);
   if let Some(snapshot) = snapshot {
     grid.restore_from_snapshot(snapshot);
-    log_failure(grid, &snapshots, iter_count, iter_error_count, snapshot_index);
+    let now = shared::get_time();
+    increase_logging_or_short_circuit(&now, next_warning_time, grid, iter_count, iter_error_count, snapshots);
+    log_failure(
+      grid,
+      &snapshots,
+      iter_count,
+      iter_error_count,
+      snapshot_index,
+      start_time,
+      now,
+      next_warning_time,
+    );
   } else {
     error!(
       "Failed (#{}) to reduce entropy in object grid {} during iteration {} - no snapshot available",
@@ -157,12 +179,43 @@ fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mu
   );
 }
 
+/// This function will initially increase the logging level for failures on the grid for debugging purposes. If the log
+/// level has already been increased and there is 1) a low error count and 2) a high iteration count, it will
+/// short-circuit the wave function collapse by clearing all snapshots. This is a last resort to avoid infinite loops.
+/// If this happens, it may indicate that the implementation of the wave function collapse algorithm is flawed or that
+/// the constraints or rulesets provided to the algorithm are unsolvable. However, it can also mean that you simply got
+/// unlucky and the randomly selected state to which a cell was collapsed to kept selecting unsolvable states over and
+/// over and over.
+fn increase_logging_or_short_circuit(
+  now: &u128,
+  next_warning_time: &mut u128,
+  grid: &mut ObjectGrid,
+  iter_count: &mut i32,
+  iter_error_count: &mut usize,
+  snapshots: &mut Vec<ObjectGrid>,
+) {
+  if grid.is_failure_log_level_increased() && *iter_error_count < 5 && *iter_count > 40_000 {
+    error!(
+      "Attempting to short-circuiting wave function collapse for {} after {} iterations and {} error(s) by clearing all snapshots",
+      grid.cg, iter_count, iter_error_count
+    );
+    snapshots.clear();
+    return;
+  }
+  if now >= next_warning_time {
+    grid.increase_failure_log_level();
+  }
+}
+
 fn log_failure(
   grid: &mut ObjectGrid,
   snapshots: &Vec<ObjectGrid>,
   iteration_count: &i32,
   iteration_error_count: &usize,
   snapshot_index: usize,
+  start_time: u128,
+  now: u128,
+  next_warning_time: &mut u128,
 ) {
   trace!(
     "Failed (#{}) to reduce entropy in object grid {} during iteration {} - restored snapshot {} out of {}",
@@ -172,6 +225,18 @@ fn log_failure(
     snapshot_index,
     snapshots.len()
   );
+  if now >= *next_warning_time {
+    let elapsed = (now - start_time) / 1_000;
+    warn!(
+      "Wave function collapse for {} has been running for {} seconds (iteration #{}, error count #{}, {} snapshots)...",
+      grid.cg,
+      elapsed,
+      iteration_count,
+      iteration_error_count,
+      snapshots.len()
+    );
+    *next_warning_time = now + WARNING_FREQUENCY;
+  }
 }
 
 fn log_summary(
