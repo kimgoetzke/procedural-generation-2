@@ -33,25 +33,25 @@ impl BuildingComponentRegistry {
     let mut registry = BuildingComponentRegistry::default();
 
     // Small house - Ground floor doors
-    registry.insert_doors_with_3_structures(
+    registry.insert_doors(
       BuildingType::SmallHouse,
       Level::GroundFloor,
-      vec![ObjectName::HouseSmallDoorLeft1, ObjectName::HouseSmallDoorLeft2],
-      vec![ObjectName::HouseSmallDoorMiddle],
-      vec![ObjectName::HouseSmallDoorRight1, ObjectName::HouseSmallDoorRight2],
+      vec![ObjectName::HouseSmallDoorLeft],
+      None,
+      vec![ObjectName::HouseSmallDoorRight],
     );
 
     // Small house - Ground floor walls
-    registry.insert_level_with_3_structures(
+    registry.insert_level(
       BuildingType::SmallHouse,
       Level::GroundFloor,
-      vec![ObjectName::HouseSmallWallLeft],
-      vec![ObjectName::HouseSmallWallMiddle1, ObjectName::HouseSmallWallMiddle2],
-      vec![ObjectName::HouseSmallWallRight],
+      vec![ObjectName::HouseSmallWallLeft1, ObjectName::HouseSmallWallLeft2],
+      None,
+      vec![ObjectName::HouseSmallWallRight1, ObjectName::HouseSmallWallRight2],
     );
 
     // Small house - Roof
-    registry.insert_level_with_3_structures(
+    registry.insert_level(
       BuildingType::SmallHouse,
       Level::Roof,
       vec![
@@ -59,11 +59,7 @@ impl BuildingComponentRegistry {
         ObjectName::HouseSmallRoofLeft2,
         ObjectName::HouseSmallRoofLeft3,
       ],
-      vec![
-        ObjectName::HouseSmallRoofMiddle1,
-        ObjectName::HouseSmallRoofMiddle2,
-        ObjectName::HouseSmallRoofMiddle3,
-      ],
+      None,
       vec![
         ObjectName::HouseSmallRoofRight1,
         ObjectName::HouseSmallRoofRight2,
@@ -72,25 +68,25 @@ impl BuildingComponentRegistry {
     );
 
     // Medium house - Ground floor doors
-    registry.insert_doors_with_3_structures(
+    registry.insert_doors(
       BuildingType::MediumHouse,
       Level::GroundFloor,
       vec![ObjectName::HouseMediumDoorLeft1, ObjectName::HouseMediumDoorLeft2],
-      vec![ObjectName::HouseMediumDoorMiddle],
+      Some(vec![ObjectName::HouseMediumDoorMiddle]),
       vec![ObjectName::HouseMediumDoorRight1, ObjectName::HouseMediumDoorRight2],
     );
 
     // Medium house - Ground floor walls
-    registry.insert_level_with_3_structures(
+    registry.insert_level(
       BuildingType::MediumHouse,
       Level::GroundFloor,
       vec![ObjectName::HouseMediumWallLeft],
-      vec![ObjectName::HouseMediumWallMiddle1, ObjectName::HouseMediumWallMiddle2],
+      Some(vec![ObjectName::HouseMediumWallMiddle1, ObjectName::HouseMediumWallMiddle2]),
       vec![ObjectName::HouseMediumWallRight],
     );
 
     // Medium house - Roof
-    registry.insert_level_with_3_structures(
+    registry.insert_level(
       BuildingType::MediumHouse,
       Level::Roof,
       vec![
@@ -98,11 +94,11 @@ impl BuildingComponentRegistry {
         ObjectName::HouseMediumRoofLeft2,
         ObjectName::HouseMediumRoofLeft3,
       ],
-      vec![
+      Some(vec![
         ObjectName::HouseMediumRoofMiddle1,
         ObjectName::HouseMediumRoofMiddle2,
         ObjectName::HouseMediumRoofMiddle3,
-      ],
+      ]),
       vec![
         ObjectName::HouseMediumRoofRight1,
         ObjectName::HouseMediumRoofRight2,
@@ -110,42 +106,86 @@ impl BuildingComponentRegistry {
       ],
     );
 
+    // Large house - Ground floor doors
+    registry.insert_doors(
+      BuildingType::LargeHouse,
+      Level::GroundFloor,
+      vec![ObjectName::HouseLargeDoorLeft1, ObjectName::HouseLargeDoorLeft2],
+      Some(vec![ObjectName::HouseLargeDoorMiddle]),
+      vec![ObjectName::HouseLargeDoorRight1, ObjectName::HouseLargeDoorRight2],
+    );
+
+    // Large house - Ground floor walls
+    registry.insert_level(
+      BuildingType::LargeHouse,
+      Level::GroundFloor,
+      vec![ObjectName::HouseLargeWallLeft],
+      Some(vec![ObjectName::HouseLargeWallMiddle1, ObjectName::HouseLargeWallMiddle2]),
+      vec![ObjectName::HouseLargeWallRight],
+    );
+
+    // Large house - Roof
+    registry.insert_level(
+      BuildingType::LargeHouse,
+      Level::Roof,
+      vec![
+        ObjectName::HouseLargeRoofLeft1,
+        ObjectName::HouseLargeRoofLeft2,
+        ObjectName::HouseLargeRoofLeft3,
+      ],
+      Some(vec![
+        ObjectName::HouseLargeRoofMiddle1,
+        ObjectName::HouseLargeRoofMiddle2,
+        ObjectName::HouseLargeRoofMiddle3,
+      ]),
+      vec![
+        ObjectName::HouseLargeRoofRight1,
+        ObjectName::HouseLargeRoofRight2,
+        ObjectName::HouseLargeRoofRight3,
+      ],
+    );
+
     registry
   }
 
-  fn insert_level_with_3_structures(
+  fn insert_level(
     &mut self,
     building_type: BuildingType,
     level: Level,
     left: Vec<ObjectName>,
-    middle: Vec<ObjectName>,
+    middle: Option<Vec<ObjectName>>,
     right: Vec<ObjectName>,
   ) {
     self
       .variants
       .insert((building_type, level, StructureType::Left), Variants::new(left));
-    self
-      .variants
-      .insert((building_type, level, StructureType::Middle), Variants::new(middle));
+    if middle.is_some() {
+      self
+        .variants
+        .insert((building_type, level, StructureType::Middle), Variants::new(middle.unwrap()));
+    }
     self
       .variants
       .insert((building_type, level, StructureType::Right), Variants::new(right));
   }
 
-  fn insert_doors_with_3_structures(
+  fn insert_doors(
     &mut self,
     building_type: BuildingType,
     level: Level,
     left: Vec<ObjectName>,
-    middle: Vec<ObjectName>,
+    middle: Option<Vec<ObjectName>>,
     right: Vec<ObjectName>,
   ) {
     self
       .variants
       .insert((building_type, level, StructureType::LeftDoor), Variants::new(left));
-    self
-      .variants
-      .insert((building_type, level, StructureType::MiddleDoor), Variants::new(middle));
+    if middle.is_some() {
+      self.variants.insert(
+        (building_type, level, StructureType::MiddleDoor),
+        Variants::new(middle.unwrap()),
+      );
+    }
     self
       .variants
       .insert((building_type, level, StructureType::RightDoor), Variants::new(right));
@@ -173,13 +213,13 @@ mod tests {
   #[test]
   fn insert_level_with_3_structures_inserts_all_structures_correctly() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
-    let left = vec![ObjectName::HouseSmallWallLeft];
-    let middle = vec![ObjectName::HouseSmallWallMiddle1];
-    let right = vec![ObjectName::HouseSmallWallRight];
+    let left = vec![ObjectName::HouseMediumWallLeft];
+    let middle = vec![ObjectName::HouseMediumWallMiddle1];
+    let right = vec![ObjectName::HouseMediumWallRight];
 
-    registry.insert_level_with_3_structures(building_type, level, left.clone(), middle.clone(), right.clone());
+    registry.insert_level(building_type, level, left.clone(), Some(middle.clone()), right.clone());
 
     assert_eq!(registry.get_variants_for(&building_type, &level, &StructureType::Left), left);
     assert_eq!(
@@ -195,13 +235,13 @@ mod tests {
   #[test]
   fn insert_level_with_3_structures_overwrites_existing_entries() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
-    let initial_left = vec![ObjectName::HouseSmallWallLeft];
-    let new_left = vec![ObjectName::HouseSmallDoorLeft1];
+    let initial_left = vec![ObjectName::HouseMediumWallLeft];
+    let new_left = vec![ObjectName::HouseMediumDoorLeft1];
 
-    registry.insert_level_with_3_structures(building_type, level, initial_left.clone(), vec![], vec![]);
-    registry.insert_level_with_3_structures(building_type, level, new_left.clone(), vec![], vec![]);
+    registry.insert_level(building_type, level, initial_left.clone(), None, vec![]);
+    registry.insert_level(building_type, level, new_left.clone(), None, vec![]);
 
     assert_eq!(
       registry.get_variants_for(&building_type, &level, &StructureType::Left),
@@ -212,10 +252,10 @@ mod tests {
   #[test]
   fn insert_level_with_3_structures_handles_empty_variants() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
 
-    registry.insert_level_with_3_structures(building_type, level, vec![], vec![], vec![]);
+    registry.insert_level(building_type, level, vec![], None, vec![]);
 
     assert!(
       registry
@@ -237,13 +277,13 @@ mod tests {
   #[test]
   fn insert_doors_with_3_structures_inserts_all_doors_correctly() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
-    let left = vec![ObjectName::HouseSmallDoorLeft1];
-    let middle = vec![ObjectName::HouseSmallDoorMiddle];
-    let right = vec![ObjectName::HouseSmallDoorRight1];
+    let left = vec![ObjectName::HouseMediumDoorLeft1];
+    let middle = vec![ObjectName::HouseMediumDoorMiddle];
+    let right = vec![ObjectName::HouseMediumDoorRight1];
 
-    registry.insert_doors_with_3_structures(building_type, level, left.clone(), middle.clone(), right.clone());
+    registry.insert_doors(building_type, level, left.clone(), Some(middle.clone()), right.clone());
 
     assert_eq!(
       registry.get_variants_for(&building_type, &level, &StructureType::LeftDoor),
@@ -262,13 +302,13 @@ mod tests {
   #[test]
   fn insert_doors_with_3_structures_overwrites_existing_door_entries() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
-    let initial_left = vec![ObjectName::HouseSmallDoorLeft1];
-    let new_left = vec![ObjectName::HouseSmallDoorLeft2];
+    let initial_left = vec![ObjectName::HouseMediumDoorLeft1];
+    let new_left = vec![ObjectName::HouseMediumDoorLeft2];
 
-    registry.insert_doors_with_3_structures(building_type, level, initial_left.clone(), vec![], vec![]);
-    registry.insert_doors_with_3_structures(building_type, level, new_left.clone(), vec![], vec![]);
+    registry.insert_doors(building_type, level, initial_left.clone(), None, vec![]);
+    registry.insert_doors(building_type, level, new_left.clone(), None, vec![]);
 
     assert_eq!(
       registry.get_variants_for(&building_type, &level, &StructureType::LeftDoor),
@@ -279,10 +319,10 @@ mod tests {
   #[test]
   fn insert_doors_with_3_structures_handles_empty_door_variants() {
     let mut registry = BuildingComponentRegistry::default();
-    let building_type = BuildingType::SmallHouse;
+    let building_type = BuildingType::MediumHouse;
     let level = Level::GroundFloor;
 
-    registry.insert_doors_with_3_structures(building_type, level, vec![], vec![], vec![]);
+    registry.insert_doors(building_type, level, vec![], None, vec![]);
 
     assert!(
       registry

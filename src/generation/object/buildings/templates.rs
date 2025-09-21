@@ -12,6 +12,7 @@ use rand::prelude::StdRng;
 pub enum BuildingType {
   SmallHouse,
   MediumHouse,
+  LargeHouse,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -37,7 +38,14 @@ pub struct BuildingLevel {
 }
 
 impl BuildingLevel {
-  pub fn standard(level: Level) -> Self {
+  pub fn left_right_structure(level: Level) -> Self {
+    Self {
+      level,
+      structures: vec![StructureType::Left, StructureType::Right],
+    }
+  }
+
+  pub fn left_middle_right_structure(level: Level) -> Self {
     Self {
       level,
       structures: vec![StructureType::Left, StructureType::Middle, StructureType::Right],
@@ -174,39 +182,26 @@ impl BuildingTemplate {
 pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
   vec![
     BuildingTemplate::new(
-      "Small House Facing North",
-      BuildingType::SmallHouse,
-      vec![
-        BuildingLevel::standard(Level::Roof),
-        BuildingLevel {
-          level: Level::GroundFloor,
-          structures: vec![StructureType::Left, StructureType::MiddleDoor, StructureType::Right],
-        },
-      ],
-      Point::new_internal_grid(1, 1), // Reminder: x is column, y is row
-      Direction::Bottom,
-    ),
-    BuildingTemplate::new(
       "Small House Facing East",
       BuildingType::SmallHouse,
       vec![
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_right_structure(Level::Roof),
         BuildingLevel {
           level: Level::GroundFloor,
-          structures: vec![StructureType::Left, StructureType::Middle, StructureType::RightDoor],
+          structures: vec![StructureType::Left, StructureType::RightDoor],
         },
       ],
-      Point::new_internal_grid(2, 1), // Reminder: x is column, y is row
+      Point::new_internal_grid(1, 1), // Reminder: x is column, y is row
       Direction::Right,
     ),
     BuildingTemplate::new(
       "Small House Facing West",
       BuildingType::SmallHouse,
       vec![
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_right_structure(Level::Roof),
         BuildingLevel {
           level: Level::GroundFloor,
-          structures: vec![StructureType::LeftDoor, StructureType::Middle, StructureType::Right],
+          structures: vec![StructureType::LeftDoor, StructureType::Right],
         },
       ],
       Point::new_internal_grid(0, 1), // Reminder: x is column, y is row
@@ -216,7 +211,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
       "Medium House Facing North",
       BuildingType::MediumHouse,
       vec![
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_middle_right_structure(Level::Roof),
         BuildingLevel {
           level: Level::GroundFloor,
           structures: vec![StructureType::Left, StructureType::MiddleDoor, StructureType::Right],
@@ -229,7 +224,7 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
       "Medium House Facing East",
       BuildingType::MediumHouse,
       vec![
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_middle_right_structure(Level::Roof),
         BuildingLevel {
           level: Level::GroundFloor,
           structures: vec![StructureType::Left, StructureType::Middle, StructureType::RightDoor],
@@ -242,7 +237,46 @@ pub(crate) fn get_building_templates() -> Vec<BuildingTemplate> {
       "Medium House Facing West",
       BuildingType::MediumHouse,
       vec![
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_middle_right_structure(Level::Roof),
+        BuildingLevel {
+          level: Level::GroundFloor,
+          structures: vec![StructureType::LeftDoor, StructureType::Middle, StructureType::Right],
+        },
+      ],
+      Point::new_internal_grid(0, 1), // Reminder: x is column, y is row
+      Direction::Left,
+    ),
+    BuildingTemplate::new(
+      "Large House Facing North",
+      BuildingType::LargeHouse,
+      vec![
+        BuildingLevel::left_middle_right_structure(Level::Roof),
+        BuildingLevel {
+          level: Level::GroundFloor,
+          structures: vec![StructureType::Left, StructureType::MiddleDoor, StructureType::Right],
+        },
+      ],
+      Point::new_internal_grid(1, 1), // Reminder: x is column, y is row
+      Direction::Bottom,
+    ),
+    BuildingTemplate::new(
+      "Large House Facing East",
+      BuildingType::LargeHouse,
+      vec![
+        BuildingLevel::left_middle_right_structure(Level::Roof),
+        BuildingLevel {
+          level: Level::GroundFloor,
+          structures: vec![StructureType::Left, StructureType::Middle, StructureType::RightDoor],
+        },
+      ],
+      Point::new_internal_grid(2, 1), // Reminder: x is column, y is row
+      Direction::Right,
+    ),
+    BuildingTemplate::new(
+      "Large House Facing West",
+      BuildingType::LargeHouse,
+      vec![
+        BuildingLevel::left_middle_right_structure(Level::Roof),
         BuildingLevel {
           level: Level::GroundFloor,
           structures: vec![StructureType::LeftDoor, StructureType::Middle, StructureType::Right],
@@ -267,8 +301,8 @@ mod tests {
   fn calculate_origin_ig_from_connection_point_correctly_calculates_origin() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
     );
@@ -281,8 +315,8 @@ mod tests {
   fn calculate_origin_ig_from_absolute_door_correctly_calculates_origin() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
     );
@@ -295,8 +329,8 @@ mod tests {
   fn calculate_absolute_door_ig_correctly_calculates_door_position() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
     );
@@ -309,8 +343,8 @@ mod tests {
   fn is_placeable_at_path_returns_true_for_valid_placement() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(0, 1),
       Direction::Top,
     );
@@ -330,8 +364,8 @@ mod tests {
   fn is_placeable_at_path_returns_false_for_out_of_bounds() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
     );
@@ -344,8 +378,8 @@ mod tests {
   fn is_placeable_at_path_returns_false_if_space_is_unavailable() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
-      vec![BuildingLevel::standard(Level::GroundFloor)],
+      BuildingType::MediumHouse,
+      vec![BuildingLevel::left_middle_right_structure(Level::GroundFloor)],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
     );
@@ -358,10 +392,10 @@ mod tests {
   fn generate_tiles_creates_correct_tile_layout() {
     let template = BuildingTemplate::new(
       "Test Building",
-      BuildingType::SmallHouse,
+      BuildingType::MediumHouse,
       vec![
-        BuildingLevel::standard(Level::GroundFloor),
-        BuildingLevel::standard(Level::Roof),
+        BuildingLevel::left_middle_right_structure(Level::GroundFloor),
+        BuildingLevel::left_middle_right_structure(Level::Roof),
       ],
       Point::new_internal_grid(1, 1),
       Direction::Bottom,
@@ -371,11 +405,11 @@ mod tests {
     let tiles = template.generate_tiles(&registry, &mut rng);
     assert_eq!(tiles.len(), template.height as usize);
     assert_eq!(tiles[0].len(), template.width as usize);
-    assert_eq!(tiles[0][0], ObjectName::HouseSmallWallLeft);
-    assert_eq!(tiles[0][1], ObjectName::HouseSmallWallMiddle2);
-    assert_eq!(tiles[0][2], ObjectName::HouseSmallWallRight);
-    assert_eq!(tiles[1][0], ObjectName::HouseSmallRoofLeft2);
-    assert_eq!(tiles[1][1], ObjectName::HouseSmallRoofMiddle3);
-    assert_eq!(tiles[1][2], ObjectName::HouseSmallRoofRight2);
+    assert_eq!(tiles[0][0], ObjectName::HouseMediumWallLeft);
+    assert_eq!(tiles[0][1], ObjectName::HouseMediumWallMiddle2);
+    assert_eq!(tiles[0][2], ObjectName::HouseMediumWallRight);
+    assert_eq!(tiles[1][0], ObjectName::HouseMediumRoofLeft2);
+    assert_eq!(tiles[1][1], ObjectName::HouseMediumRoofMiddle3);
+    assert_eq!(tiles[1][2], ObjectName::HouseMediumRoofRight2);
   }
 }
