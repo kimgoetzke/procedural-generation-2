@@ -511,6 +511,11 @@ fn log_result(
     return;
   }
 
+  let this_cell_ig = if new_cell.ig == Point::new_internal_grid(-1, -1) {
+    "ig(unplaced no neighbours' tile)".to_string()
+  } else {
+    format!("{:?}", new_cell.ig)
+  };
   let old_possible_states_count = old_cell.possible_states.len();
   let new_possible_states_count = new_cell.possible_states.len();
   let new_possible_states_names = new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>();
@@ -521,8 +526,8 @@ fn log_result(
     && new_possible_states_count < 3
   {
     debug!(
-      "Reduced possible states of {:?} from {} to {}: {:?}",
-      new_cell.ig,
+      "Reduced possible states of {} from {} to {}: {:?}",
+      this_cell_ig,
       old_possible_states_count,
       new_cell.possible_states.len(),
       new_possible_states_names
@@ -531,8 +536,8 @@ fn log_result(
 
   if new_cell.possible_states.is_empty() {
     error!(
-      "Failed to find any possible states for {:?} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
-      new_cell.ig,
+      "Failed to find any possible states for {} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
+      this_cell_ig,
       old_cell.terrain,
       where_is_reference,
       if is_update { "update" } else { "verification" },
@@ -543,13 +548,13 @@ fn log_result(
 
   if (new_possible_states_count == 1 && !is_failure_log_level_increased) || new_possible_states_count == 0 {
     debug!(
-      "┌─|| Summary of the [{}] process for {:?}",
+      "┌─|| Summary of the [{}] process for {}",
       if is_update { "update" } else { "verification" },
-      old_cell.ig
+      this_cell_ig
     );
     debug!(
-      "| - THIS cell is at {:?} which is at the [{:?}] of the reference cell",
-      old_cell.ig, where_is_reference
+      "| - THIS cell is at {} which is at the [{:?}] of the reference cell",
+      this_cell_ig, where_is_reference
     );
     debug!(
       "| - THIS cell had {:?} possible state(s): {:?}",
