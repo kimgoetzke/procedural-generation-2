@@ -13,6 +13,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 bevy_common_assets = { version = "0.13.0", features = ["ron"] }
 iyes_perf_ui = "0.5.0"
 strum = { version = "0.27.2", features = ["derive"] }
+bevy_framepace = "0.19"
 
 #[profile.dev]
 #opt-level = 1
@@ -24,6 +25,8 @@ opt-level = 3
 lto = "thin"
 codegen-units = 1
 opt-level = 3
+incremental = false
+debug = false
 
 [profile.wasm-release]
 inherits = "release"

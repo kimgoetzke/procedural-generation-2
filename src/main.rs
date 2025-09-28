@@ -56,6 +56,7 @@ fn main() {
         .build(),
     )
     .add_plugins(PanCamPlugin::default())
+    .add_plugins(bevy_framepace::FramepacePlugin)
     .add_plugins((
       CameraPlugin,
       AppStatePlugin,
