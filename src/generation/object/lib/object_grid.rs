@@ -1,12 +1,13 @@
-use crate::constants::CHUNK_SIZE;
+use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
 use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
 use bevy::log::*;
-use bevy::platform::collections::HashMap;
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
 // TODO: Refactor ObjectGrid to not require two separate grids e.g. only use `CellRef` for pathfinding and wave function collapse
@@ -18,12 +19,14 @@ use std::sync::{Arc, Mutex};
 pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
   #[reflect(ignore)]
-  pub path_grid: Option<Vec<Vec<CellRef>>>,
-  pub object_grid: Vec<Vec<Cell>>,
+  path_grid: Option<Vec<Vec<CellRef>>>,
+  path: HashSet<Point<InternalGrid>>,
+  object_grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
   /// This [`Cell`] is used to represent out of bounds neighbours in the grid. It only allows [`ObjectName::Empty`] as
   /// permitted neighbours. Its purpose is to prevent "incomplete" multi-tile sprites.
   no_neighbours_tile: Cell,
+  is_failure_log_level_increased: bool,
 }
 
 impl ObjectGrid {
@@ -37,8 +40,10 @@ impl ObjectGrid {
     ObjectGrid {
       cg,
       path_grid: None,
+      path: HashSet::new(),
       object_grid,
       no_neighbours_tile,
+      is_failure_log_level_increased: false,
     }
   }
 
@@ -64,7 +69,7 @@ impl ObjectGrid {
       let terrain = tile.terrain;
       let tile_type = tile.tile_type;
       // Uncomment is_monitored below for debugging purposes
-      // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(0, 0) && ig == Point::new(16, 16);
+      // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(15, 13) && ig == Point::new(15, 0);
       let is_monitored = false;
       if let Some(cell) = self.get_cell_mut(&ig) {
         let possible_states = terrain_state_map
@@ -97,7 +102,7 @@ impl ObjectGrid {
           })
           .filter_map(|plane| plane.get_tile(ig).and_then(|t| Some((t.terrain, t.tile_type))))
           .collect::<Vec<(TerrainType, TileType)>>();
-        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone());
+        cell.initialise(terrain, tile_type, &possible_states, lower_tile_data.clone(), is_monitored);
         if is_monitored {
           debug!(
             "Initialised {:?} as a [{:?}] [{:?}] cell with {:?} state(s)",
@@ -124,7 +129,7 @@ impl ObjectGrid {
 
   /// Initialises the path finding grid by populating it with strong references to the respective [`Cell`]s, if
   /// it has not been initialised yet. Then, populates the neighbours for each cell.
-  pub(crate) fn initialise_path_grid(&mut self) {
+  pub fn initialise_path_grid(&mut self) {
     if self.path_grid.is_none() {
       self.path_grid = Some(
         (0..CHUNK_SIZE)
@@ -146,7 +151,7 @@ impl ObjectGrid {
       for y in 0..grid.len() {
         for x in 0..grid[y].len() {
           let cell_ref = &grid[y][x];
-          let ig = cell_ref.lock().expect("Failed to lock cell").ig;
+          let ig = cell_ref.lock().expect(CELL_LOCK_ERROR).ig;
           let mut neighbours: Vec<CellRef> = Vec::new();
 
           for (dx, dy) in [(0, 1), (-1, 0), (1, 0), (0, -1)] {
@@ -161,12 +166,25 @@ impl ObjectGrid {
             }
           }
 
-          let mut cell_guard = cell_ref.try_lock().expect("Failed to lock cell");
+          let mut cell_guard = cell_ref.try_lock().expect(CELL_LOCK_ERROR);
           cell_guard.add_neighbours(neighbours);
           cell_guard.calculate_is_walkable();
         }
       }
     }
+  }
+
+  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
+    if self.path_grid.is_none() {
+      error!("You're trying to get a cell reference from an uninitialised path grid - this is a bug!");
+      return None;
+    }
+    self
+      .path_grid
+      .as_ref()?
+      .iter()
+      .flatten()
+      .find(|cell| cell.lock().expect(CELL_LOCK_ERROR).ig == *point)
   }
 
   // TODO: Use weak references in Cell to make future memory leak less likely
@@ -186,6 +204,66 @@ impl ObjectGrid {
     }
   }
 
+  /// Sets the final path found by the pathfinding algorithm. This can be used by subsequent generation steps.
+  pub fn set_generated_path(&mut self, path: HashSet<Point<InternalGrid>>) {
+    self.path = path;
+  }
+
+  /// Returns a reference to the final path found by the pathfinding algorithm.
+  pub fn get_generated_path(&self) -> &HashSet<Point<InternalGrid>> {
+    &self.path
+  }
+
+  /// Validates the object grid to ensure it is in a consistent state. Assumed to be called prior to starting the wave
+  /// function collapse algorithm. Specifically, this method updates all neighbours of already collapsed cells (and
+  /// recurses over all neighbours of any updated the neighbour) to ensure their states are valid. This is important
+  /// because we're allowing some cells to be pre-collapsed (e.g. for paths) and we need to ensure the rest of the
+  /// grid is valid before starting the wave function collapse algorithm.
+  /// # Panics
+  /// If a cell must be updated but the update fails, this method will panic.
+  pub fn validate(&mut self) {
+    let mut queue: VecDeque<Cell> = self
+      .object_grid
+      .iter()
+      .flatten()
+      .filter(|c| c.is_collapsed())
+      .cloned()
+      .collect();
+    let cg = self.cg;
+    let mut i = 0;
+    while let Some(cell) = queue.pop_front() {
+      for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
+        if let Some(neighbour) = self.get_cell(&neighbour_ig) {
+          if neighbour.is_collapsed() {
+            continue;
+          }
+          match neighbour.clone_and_reduce(&cell, &connection, false) {
+            Ok((true, updated_neighbour)) => {
+              trace!(
+                "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
+                cg,
+                neighbour_ig,
+                neighbour.get_possible_states().len(),
+                updated_neighbour.get_possible_states().len(),
+              );
+              self.set_cell(updated_neighbour.clone());
+              queue.push_back(updated_neighbour);
+              i += 1;
+            }
+            Ok((false, _)) => {}
+            Err(_) => {
+              panic!(
+                "Validating object grid {}: Failed to reduce neighbour at {:?} of collapsed cell at {:?}",
+                cg, neighbour_ig, cell.ig,
+              );
+            }
+          }
+        }
+      }
+    }
+    trace!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
+  }
+
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
     let point = cell.ig;
     let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&point).into_iter().collect();
@@ -197,22 +275,8 @@ impl ObjectGrid {
         neighbours.push((direction, &self.no_neighbours_tile));
       }
     }
-    trace!("Found [{}] neighbours for {:?}", neighbours.len(), point);
 
     neighbours
-  }
-
-  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
-    if self.path_grid.is_none() {
-      error!("You're trying to get a cell reference from an uninitialised path grid - this is a bug!");
-      return None;
-    }
-    self
-      .path_grid
-      .as_ref()?
-      .iter()
-      .flatten()
-      .find(|cell| cell.lock().expect("Failed to lock cell").ig == *point)
   }
 
   pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {
@@ -262,6 +326,14 @@ impl ObjectGrid {
   pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
     self.object_grid = other.object_grid.clone();
   }
+
+  pub fn is_failure_log_level_increased(&self) -> bool {
+    self.is_failure_log_level_increased
+  }
+
+  pub fn increase_failure_log_level(&mut self) {
+    self.is_failure_log_level_increased = true;
+  }
 }
 
 #[cfg(test)]
@@ -273,7 +345,7 @@ mod tests {
       let mut grid = ObjectGrid::default(cg);
       for row in &mut grid.object_grid {
         for cell in row {
-          cell.initialise(TerrainType::Land2, TileType::Fill, &vec![], vec![]);
+          cell.initialise(TerrainType::Land2, TileType::Fill, &vec![], vec![], false);
         }
       }
 

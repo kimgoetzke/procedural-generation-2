@@ -86,15 +86,12 @@ impl Cell {
     tile_type: TileType,
     states: &Vec<TerrainState>,
     lower_layer_info: Vec<(TerrainType, TileType)>,
+    is_monitored: bool,
   ) {
     if self.is_initialised {
       panic!("Attempting to initialise a cell that already has been initialised");
     }
-    // Uncomment the below to monitor specific cells
-    // let points = vec![Point::new_internal_grid(9, 6)];
-    // if points.contains(&self.ig) {
-    //   self.is_being_monitored = true;
-    // }
+    self.is_being_monitored = is_monitored;
     if self.is_being_monitored {
       debug!(
         "Initialising {:?} as a [{:?}] cell with {:?} possible state(s): {:?}",
@@ -249,6 +246,25 @@ impl Cell {
     })
   }
 
+  /// Returns whether this cell is suitable for a building to be placed on it based on its terrain type and tile
+  /// type.
+  pub fn is_suitable_for_building_placement(&self) -> bool {
+    if self.terrain.lt(&TerrainType::Land1) || self.terrain == TerrainType::Any {
+      return false;
+    }
+
+    self.tile_below.as_ref().map_or(false, |tile_below| {
+      let mut current = Some(tile_below);
+      while let Some(below) = current {
+        if below.terrain == TerrainType::Land1 && below.tile_type == TileType::Fill {
+          return true;
+        }
+        current = below.below.as_deref();
+      }
+      false
+    })
+  }
+
   pub fn log_tiles_below(&self) {
     if let Some(tile_below) = &self.tile_below {
       tile_below.log();
@@ -289,8 +305,8 @@ impl Cell {
 
   /// Used outside the wave function collapse algorithm to set the [`Cell`] as collapsed with a single state.
   /// Must only be called prior to the wave function collapse algorithm starting.
-  pub fn set_collapsed(&mut self, object_name: ObjectName) {
-    let i = object_name.get_index_for_path();
+  pub fn mark_as_collapsed(&mut self, object_name: ObjectName) {
+    let i = object_name.get_sprite_index();
     self.index = i;
     self.is_collapsed = true;
     self.entropy = 0usize;
@@ -305,6 +321,7 @@ impl Cell {
     &self,
     reference_cell: &Cell,
     where_is_reference: &Connection,
+    is_failure_log_level_increased: bool,
   ) -> Result<(bool, Self), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
@@ -327,6 +344,7 @@ impl Cell {
       self,
       &mut clone,
       &permitted_state_names,
+      is_failure_log_level_increased,
     );
 
     match clone.possible_states.len() {
@@ -393,7 +411,12 @@ impl Cell {
   /// invalid states that would not be allowed by the rules defined in the reference cell.
   /// # Errors
   /// If the current state of this [`Cell`] is not valid.
-  pub fn verify(&self, reference_cell: &Cell, where_is_reference: &Connection) -> Result<(), PropagationFailure> {
+  pub fn verify(
+    &self,
+    reference_cell: &Cell,
+    where_is_reference: &Connection,
+    is_failure_log_level_increased: bool,
+  ) -> Result<(), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
     let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
 
@@ -406,6 +429,7 @@ impl Cell {
         self,
         &mut self.clone(),
         &permitted_state_names,
+        is_failure_log_level_increased,
       );
       Err(PropagationFailure {})
     } else {
@@ -481,11 +505,17 @@ fn log_result(
   old_cell: &Cell,
   new_cell: &mut Cell,
   new_permitted_states: &Vec<ObjectName>,
+  is_failure_log_level_increased: bool,
 ) {
-  if !new_cell.is_being_monitored && !reference_cell.is_being_monitored {
+  if !new_cell.is_being_monitored && !reference_cell.is_being_monitored && !is_failure_log_level_increased {
     return;
   }
 
+  let this_cell_ig = if new_cell.ig == Point::new_internal_grid(-1, -1) {
+    "ig(unplaced no neighbours' tile)".to_string()
+  } else {
+    format!("{:?}", new_cell.ig)
+  };
   let old_possible_states_count = old_cell.possible_states.len();
   let new_possible_states_count = new_cell.possible_states.len();
   let new_possible_states_names = new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>();
@@ -496,8 +526,8 @@ fn log_result(
     && new_possible_states_count < 3
   {
     debug!(
-      "Reduced possible states of {:?} from {} to {}: {:?}",
-      new_cell.ig,
+      "Reduced possible states of {} from {} to {}: {:?}",
+      this_cell_ig,
       old_possible_states_count,
       new_cell.possible_states.len(),
       new_possible_states_names
@@ -506,8 +536,8 @@ fn log_result(
 
   if new_cell.possible_states.is_empty() {
     error!(
-      "Failed to find any possible states for {:?} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
-      new_cell.ig,
+      "Failed to find any possible states for {} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
+      this_cell_ig,
       old_cell.terrain,
       where_is_reference,
       if is_update { "update" } else { "verification" },
@@ -516,15 +546,15 @@ fn log_result(
     );
   }
 
-  if new_possible_states_count <= 1 {
+  if (new_possible_states_count == 1 && !is_failure_log_level_increased) || new_possible_states_count == 0 {
     debug!(
-      "┌─|| Summary of the [{}] process for {:?}",
+      "┌─|| Summary of the [{}] process for {}",
       if is_update { "update" } else { "verification" },
-      old_cell.ig
+      this_cell_ig
     );
     debug!(
-      "| - THIS cell is at {:?} which is at the [{:?}] of the reference cell",
-      old_cell.ig, where_is_reference
+      "| - THIS cell is at {} which is at the [{:?}] of the reference cell",
+      this_cell_ig, where_is_reference
     );
     debug!(
       "| - THIS cell had {:?} possible state(s): {:?}",

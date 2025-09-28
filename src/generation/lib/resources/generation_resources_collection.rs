@@ -40,7 +40,16 @@ impl GenerationResourcesCollection {
     }
   }
 
-  pub fn get_object_collection(&self, terrain: TerrainType, climate: Climate, is_large_sprite: bool) -> &AssetCollection {
+  pub fn get_object_collection(
+    &self,
+    terrain: TerrainType,
+    climate: Climate,
+    is_large_sprite: bool,
+    is_building: bool,
+  ) -> &AssetCollection {
+    if is_building {
+      return &self.objects.buildings;
+    }
     match (terrain, climate, is_large_sprite) {
       (TerrainType::Water, _, _) => &self.objects.water,
       (TerrainType::Shore, _, _) => &self.objects.shore,

@@ -1,6 +1,7 @@
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_direction_points};
+use crate::generation::object::lib::ObjectGrid;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::platform::collections::HashMap;
@@ -29,10 +30,17 @@ impl Plugin for MetadataPlugin {
 #[reflect(Resource)]
 pub struct Metadata {
   pub current_chunk_cg: Point<ChunkGrid>,
+  /// A list of all chunk coordinates that have metadata associated with them.
   pub index: Vec<Point<ChunkGrid>>,
+  /// Contains data about cross-chunk elevation changes. This influences terrain generation.
   pub elevation: HashMap<Point<ChunkGrid>, ElevationMetadata>,
+  /// Contains biome metadata for each chunk such as climate. This influences which sprite sets are used.
   pub biome: HashMap<Point<ChunkGrid>, BiomeMetadata>,
-  pub connection_points: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
+  /// Contains potential connection points between chunks. This influences path generation and therefore all other
+  /// object placement.
+  pub connection: HashMap<Point<ChunkGrid>, Vec<Point<InternalGrid>>>,
+  /// Indicates whether a chunk is considered to be settled or not. This influences the generation of buildings.
+  pub settlement: HashMap<Point<ChunkGrid>, bool>,
 }
 
 impl Metadata {
@@ -64,6 +72,65 @@ impl Metadata {
     trace!("Biome metadata for {}: {}", cg, biome_metadata_set);
 
     biome_metadata_set
+  }
+
+  /// Returns a list of valid connection points for the given [`Point<ChunkGrid>`] by filtering out any points that
+  /// are invalid in the provided [`ObjectGrid`]. See [`ObjectGrid::is_valid_connection_point`] for the criteria.
+  pub fn get_connection_points_for(&self, cg: &Point<ChunkGrid>, object_grid: &mut ObjectGrid) -> Vec<Point<InternalGrid>> {
+    let mut connection_points = self
+      .connection
+      .get(cg)
+      .expect(format!("Failed to get connection points for {}", cg).as_str())
+      .iter()
+      .filter(|p| {
+        if let Some(cell) = object_grid.get_cell_mut(&p) {
+          if cell.is_valid_connection_point() {
+            // Uncomment below for debugging purposes
+            // if let Some(tile_below) = &cell.tile_below {
+            //   debug!("Keeping chunk {} connection point {:?} as a valid connection", cg, p,);
+            //   tile_below.log();
+            // }
+
+            return true;
+          }
+          trace!(
+            "Removing chunk {} connection point {:?} because is walkable={} & is_valid_connection_point={}",
+            cg,
+            p,
+            cell.is_walkable(),
+            cell.is_valid_connection_point()
+          );
+          if let Some(tile_below) = &cell.tile_below {
+            tile_below.log();
+          } else {
+            trace!("- No tile below for connection point {:?}", p);
+          }
+
+          return false;
+        }
+        debug!(
+          "Removing chunk {} connection point {:?} because there is no tile in the object grid",
+          cg, p
+        );
+
+        false
+      })
+      .cloned()
+      .collect::<Vec<_>>();
+
+    if connection_points.len() == 1 {
+      if !connection_points[0].is_touching_edge() {
+        connection_points.clear();
+      }
+    }
+
+    connection_points
+  }
+
+  /// Returns whether the given [`Point<ChunkGrid>`] is considered to be settled or not. Defaults to `false` if no
+  /// data is available.
+  pub fn get_settlement_status_for(&self, cg: &Point<ChunkGrid>) -> bool {
+    *self.settlement.get(cg).unwrap_or(&false)
   }
 }
 
@@ -128,21 +195,12 @@ impl ElevationMetadata {
 #[reflect(Resource)]
 pub struct BiomeMetadata {
   pub cg: Point<ChunkGrid>,
-  pub is_rocky: bool,
-  pub rainfall: f32,
-  pub max_layer: i32,
   pub climate: Climate,
 }
 
 impl BiomeMetadata {
-  pub fn new(cg: Point<ChunkGrid>, is_rocky: bool, rainfall: f32, max_layer: i32, climate: Climate) -> Self {
-    Self {
-      cg,
-      is_rocky,
-      rainfall,
-      max_layer,
-      climate,
-    }
+  pub fn new(cg: Point<ChunkGrid>, climate: Climate) -> Self {
+    Self { cg, climate }
   }
 }
 
@@ -256,7 +314,8 @@ mod tests {
         index: vec![],
         elevation: HashMap::new(),
         biome: HashMap::new(),
-        connection_points: HashMap::new(),
+        connection: HashMap::new(),
+        settlement: HashMap::new(),
       }
     }
   }
@@ -270,31 +329,22 @@ mod tests {
     for (direction, point) in get_direction_points(&cg) {
       metadata
         .biome
-        .insert(point.clone(), BiomeMetadata::new(point, false, 0.5, 5, Climate::Moderate));
+        .insert(point.clone(), BiomeMetadata::new(point, Climate::Moderate));
       if direction == Direction::Top {
-        metadata
-          .biome
-          .insert(point.clone(), BiomeMetadata::new(point, false, 0.1, 10, Climate::Dry));
+        metadata.biome.insert(point.clone(), BiomeMetadata::new(point, Climate::Dry));
       } else if direction == Direction::BottomLeft {
         metadata
           .biome
-          .insert(point.clone(), BiomeMetadata::new(point, false, 0.8, 11, Climate::Humid));
+          .insert(point.clone(), BiomeMetadata::new(point, Climate::Humid));
       }
     }
 
     let result = metadata.get_biome_metadata_for(&cg);
 
     assert_eq!(result.this.cg, cg);
-    assert_eq!(result.this.is_rocky, false);
-    assert_eq!(result.top_right.rainfall, 0.5);
-    assert_eq!(result.top_right.max_layer, 5);
     assert_eq!(result.top_right.climate, Climate::Moderate);
     assert_eq!(result.top.cg, Point::new(0, 1));
-    assert_eq!(result.top.is_rocky, false);
-    assert_eq!(result.top.rainfall, 0.1);
-    assert_eq!(result.top.max_layer, 10);
     assert_eq!(result.bottom_left.cg, Point::new(-1, -1));
-    assert_eq!(result.bottom_left.rainfall, 0.8);
     assert_eq!(result.bottom_left.climate, Climate::Humid);
   }
 
@@ -307,9 +357,53 @@ mod tests {
     // Given incomplete metadata
     metadata
       .biome
-      .insert(cg.clone(), BiomeMetadata::new(cg.clone(), false, 0.5, 10, Climate::Moderate));
+      .insert(cg.clone(), BiomeMetadata::new(cg.clone(), Climate::Moderate));
 
     metadata.get_biome_metadata_for(&cg);
+  }
+
+  #[test]
+  #[should_panic(expected = "Failed to get connection points for cg(0, 0)")]
+  fn get_valid_connection_points_panics_when_there_are_no_points_for_cg() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let metadata = Metadata::default(cg);
+    metadata.get_connection_points_for(&cg, &mut object_grid);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_empty_list_when_no_connection_points_exist() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    let mut metadata = Metadata::default(cg);
+    metadata.connection.insert(cg.clone(), vec![]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn get_valid_connection_points_filters_out_non_walkable_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default(cg);
+    if let Some(cell) = object_grid.get_cell_mut(&Point::new_internal_grid(1, 1)) {
+      cell.calculate_is_walkable(); // Point (1, 1) is not walkable
+    }
+    let mut metadata = Metadata::default(cg);
+    metadata.connection.insert(cg.clone(), vec![Point::new_internal_grid(1, 1)]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert_eq!(result, vec![]);
+  }
+
+  #[test]
+  fn get_valid_connection_points_returns_valid_connection_points() {
+    let cg = Point::new_chunk_grid(0, 0);
+    let mut object_grid = ObjectGrid::default_walkable(cg);
+    let mut metadata = Metadata::default(cg);
+    let expected_point1 = Point::new_internal_grid(1, 1);
+    let expected_point2 = Point::new_internal_grid(1, 2);
+    metadata.connection.insert(cg.clone(), vec![expected_point1, expected_point2]);
+    let result = metadata.get_connection_points_for(&cg, &mut object_grid);
+    assert_eq!(result, vec![expected_point1, expected_point2]);
   }
 
   #[test]

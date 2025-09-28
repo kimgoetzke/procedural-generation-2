@@ -1,6 +1,6 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{MouseClickEvent, RefreshMetadata, ToggleDebugInfo, ToggleDiagnostics};
+use crate::events::{MouseRightClickEvent, RefreshMetadata, ToggleDebugInfo, ToggleDiagnostics};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -12,7 +12,7 @@ impl Plugin for ControlPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(
       Update,
-      (event_control_system, settings_controls_system, left_mouse_click_system),
+      (event_control_system, settings_controls_system, right_mouse_click_system),
     );
   }
 }
@@ -100,14 +100,14 @@ fn settings_controls_system(
   }
 }
 
-fn left_mouse_click_system(
+fn right_mouse_click_system(
   mouse_button_input: Res<ButtonInput<MouseButton>>,
   camera: Query<(&Camera, &GlobalTransform)>,
   windows: Query<&Window>,
   mut commands: Commands,
   mut egui_contexts: EguiContexts,
 ) {
-  if mouse_button_input.just_pressed(MouseButton::Left) && !egui_contexts.ctx_mut().wants_pointer_input() {
+  if mouse_button_input.just_pressed(MouseButton::Right) && !egui_contexts.ctx_mut().wants_pointer_input() {
     let (camera, camera_transform) = camera.single().expect("Failed to find camera");
     if let Some(vec2) = windows
       .single()
@@ -119,8 +119,8 @@ fn left_mouse_click_system(
       let tg = Point::new_tile_grid_from_world_vec2(vec2);
       let cg = Point::new_chunk_grid_from_world_vec2(vec2);
       let tile_w = Point::new_world_from_tile_grid(tg);
-      debug!("[Left Mouse Button] Clicked on {} => {} {} {}", vec2.round(), tile_w, cg, tg);
-      commands.trigger(MouseClickEvent { tile_w, cg, tg });
+      debug!("[Right Mouse Button] Clicked on {} => {} {} {}", vec2.round(), tile_w, cg, tg);
+      commands.trigger(MouseRightClickEvent { tile_w, cg, tg });
     }
   }
 }

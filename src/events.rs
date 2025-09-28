@@ -13,7 +13,7 @@ impl Plugin for SharedEventsPlugin {
       .add_event::<ResetCameraEvent>()
       .add_event::<ToggleDiagnostics>()
       .add_event::<ToggleDebugInfo>()
-      .add_event::<MouseClickEvent>()
+      .add_event::<MouseRightClickEvent>()
       .add_event::<UpdateWorldEvent>()
       .add_event::<PruneWorldEvent>();
   }
@@ -66,9 +66,9 @@ pub struct ToggleDiagnostics {}
 #[derive(Event)]
 pub struct ToggleDebugInfo {}
 
-/// An event that indicates that the user has left-clicked with the mouse at specific world coordinates.
+/// An event that indicates that the user has right-clicked with the mouse at specific world coordinates.
 #[derive(Event)]
-pub struct MouseClickEvent {
+pub struct MouseRightClickEvent {
   pub tile_w: Point<World>,
   pub cg: Point<ChunkGrid>,
   pub tg: Point<TileGrid>,

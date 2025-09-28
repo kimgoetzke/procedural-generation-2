@@ -71,7 +71,7 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
   debug!("Generating world with origin {} {}", w, cg);
   commands.spawn((
-    Name::new(format!("World Generation Component {}", w)),
+    Name::new(format!("World Generation Component {}", cg)),
     WorldGenerationComponent::new(w, cg, false, shared::get_time()),
   ));
   commands.spawn((
@@ -131,7 +131,7 @@ fn update_world_event(
     let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
-      Name::new(format!("World Generation Component {}", new_parent_w)),
+      Name::new(format!("World Generation Component {}", new_parent_cg)),
       WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);
@@ -211,7 +211,7 @@ fn world_generation_system(
         stage_6_schedule_path_generation(&mut commands, &settings, &metadata, grid_generation_task, component_cg)
       }
       GenerationStage::Stage7(path_generation_task) => {
-        stage_7_schedule_generating_object_data(&mut commands, &settings, path_generation_task, component_cg)
+        stage_7_schedule_generating_object_data(&mut commands, &settings, &metadata, path_generation_task, component_cg)
       }
       GenerationStage::Stage8(object_generation_tasks) => {
         stage_8_schedule_spawning_objects(&mut commands, &settings, object_generation_tasks, component_cg)
@@ -445,10 +445,10 @@ fn stage_6_schedule_path_generation(
       let task_pool = AsyncComputeTaskPool::get();
       let task = task_pool.spawn(async move {
         let mut new_chunk_entity_grid_triplets = Vec::new();
-        for (chunk, chunk_entity, object_grid) in triplets.drain(..) {
+        for (chunk, chunk_entity, mut object_grid) in triplets.drain(..) {
           let rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-          let processed_object_grid = path::calculate_paths(&settings, &metadata, object_grid, rng);
-          new_chunk_entity_grid_triplets.push((chunk, chunk_entity, processed_object_grid))
+          path::place_paths_on_grid(&mut object_grid, &settings, &metadata, rng);
+          new_chunk_entity_grid_triplets.push((chunk, chunk_entity, object_grid))
         }
 
         new_chunk_entity_grid_triplets
@@ -472,6 +472,7 @@ fn stage_6_schedule_path_generation(
 fn stage_7_schedule_generating_object_data(
   commands: &mut Commands,
   settings: &Settings,
+  metadata: &Metadata,
   path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
@@ -481,11 +482,12 @@ fn stage_7_schedule_generating_object_data(
       for (chunk, chunk_entity, mut object_grid) in triplets.drain(..) {
         if commands.get_entity(chunk_entity).is_ok() {
           let settings = settings.clone();
+          let metadata = metadata.clone();
           let task_pool = AsyncComputeTaskPool::get();
           let task = task_pool.spawn(async move {
             let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-            let is_decoration_enabled = settings.object.generate_decoration;
-            object::wfc::determine_decorative_objects(&mut rng, &mut object_grid, is_decoration_enabled);
+            object::buildings::place_buildings_on_grid(&mut object_grid, &settings, &metadata, &mut rng);
+            object::wfc::place_decorative_objects_on_grid(&mut object_grid, &settings, &mut rng);
             object::generate_object_data(&settings, object_grid, chunk, chunk_entity)
           });
           object_generation_tasks.push(task);

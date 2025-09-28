@@ -2,7 +2,7 @@ use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
-use crate::generation::lib::{Direction, TerrainType, get_cardinal_direction_points, shared};
+use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
@@ -76,16 +76,20 @@ fn refresh_metadata_event(
 fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, settings: &Settings) {
   let start_time = shared::get_time();
   let metadata_settings = settings.metadata;
-  let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+  let biome_perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
     .set_frequency(metadata_settings.biome_noise_frequency);
+  let settlement_perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
+    .set_octaves(1)
+    .set_frequency(metadata_settings.settlement_noise_frequency);
   metadata.index.clear();
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
       generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
-      generate_biome_metadata(&mut metadata, &settings, &perlin, cg);
+      generate_biome_metadata(&mut metadata, &biome_perlin, cg);
       generate_connection_points(&mut metadata, &settings, cg);
+      generate_settlement_metadata(&mut metadata, &settings, &settlement_perlin, cg);
       metadata.index.push(cg);
     })
   });
@@ -155,30 +159,17 @@ fn step_size(range_start: f64, range_end: f64, grid_size: f64, is_positive: bool
   ((range_end - range_start) / grid_size) * modifier
 }
 
-fn generate_biome_metadata(
-  metadata: &mut ResMut<Metadata>,
-  settings: &Settings,
-  perlin: &BasicMulti<Perlin>,
-  cg: Point<ChunkGrid>,
-) {
-  let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg, settings.world.noise_seed));
+fn generate_biome_metadata(metadata: &mut ResMut<Metadata>, perlin: &BasicMulti<Perlin>, cg: Point<ChunkGrid>) {
   let rainfall = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
   let climate = Climate::from(rainfall);
-  let is_rocky = rng.random_bool(BIOME_IS_ROCKY_PROBABILITY);
-  let max_layer = match rainfall {
-    n if n > 0.75 => TerrainType::Land3,
-    n if n > 0.5 => TerrainType::Land2,
-    n if n > 0.25 => TerrainType::Land1,
-    _ => TerrainType::Shore,
-  };
-  let bm = BiomeMetadata::new(cg, is_rocky, rainfall as f32, max_layer as i32, climate);
+  let bm = BiomeMetadata::new(cg, climate);
   trace!("Generated: {:?}", bm);
   metadata.biome.insert(cg, bm);
 }
 
 fn generate_connection_points(metadata: &mut ResMut<Metadata>, settings: &Settings, cg: Point<ChunkGrid>) {
   let connection_points = calculate_connection_points_for_cg(settings, &cg);
-  metadata.connection_points.insert(cg, connection_points);
+  metadata.connection.insert(cg, connection_points);
 }
 
 fn calculate_connection_points_for_cg(settings: &Settings, cg: &Point<ChunkGrid>) -> Vec<Point<InternalGrid>> {
@@ -246,6 +237,24 @@ fn generate_hash(reference_cg: &Point<ChunkGrid>, neighbour_cg: &Point<ChunkGrid
   format!("{:?}:{:?}", smaller_point, larger_point).hash(&mut hasher);
 
   hasher.finish()
+}
+
+/// Determines whether a chunk should have a settlement based on its coordinates and the settings. If the chunk is
+/// considered to be settled, buildings can be generated on it.
+fn generate_settlement_metadata(
+  metadata: &mut ResMut<Metadata>,
+  settings: &Settings,
+  perlin: &BasicMulti<Perlin>,
+  cg: Point<ChunkGrid>,
+) {
+  let noise_value = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
+  let settlement_threshold = settings.metadata.settlement_probability;
+  let is_settled = if noise_value >= settlement_threshold { false } else { true };
+  trace!(
+    "Generated settled status [{:?}] for {} because noise value is [{:.2}] at a threshold of [{:.2}]",
+    is_settled, cg, noise_value, settlement_threshold
+  );
+  metadata.settlement.insert(cg, is_settled);
 }
 
 #[cfg(test)]

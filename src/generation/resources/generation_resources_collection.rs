@@ -176,6 +176,13 @@ fn initialise_resources_system(
   asset_collection.objects.trees_humid.stat =
     AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
+  // Objects: Buildings
+  let static_buildings_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, BUILDINGS_OBJ_COLUMNS, BUILDINGS_OBJ_ROWS, None, None);
+  let static_buildings_atlas_layout = layouts.add(static_buildings_layout);
+  asset_collection.objects.buildings.stat =
+    AssetPack::new(asset_server.load(BUILDINGS_OBJ_PATH), static_buildings_atlas_layout.clone());
+
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
   asset_collection.objects.shore = object_assets_static(&asset_server, &mut layouts, SHORE_OBJ_PATH);
@@ -487,10 +494,10 @@ fn validate_terrain_state(
 /// a state allowing a neighbour in one direction, but the neighbour state not allowing the original state in the
 /// opposite direction.
 ///
-/// This is only checked for non-path objects, as paths are allowed to have asymmetric connections
-/// because paths are calculated and "collapsed" before the wave function collapse algorithm even runs. As a result,
-/// only non-path objects need to know that they are allowed to be placed next to a path object and no rules for the
-/// opposite are required since they would never be evaluated.
+/// This is only checked for non-path/-building objects, as paths/buildings are allowed to have asymmetric connections
+/// because they are calculated and "collapsed" before the wave function collapse algorithm even runs. As a result,
+/// only non-path/-building objects need to know that they are allowed to be placed next to a path or building object
+/// and no rules for the opposite are required since they will never be evaluated.
 fn validate_asymmetric_rules(
   state: &TerrainState,
   terrain: TerrainType,
@@ -515,7 +522,7 @@ fn validate_asymmetric_rules(
             .iter()
             .any(|(c, neighbours)| *c == opposite_connection && neighbours.contains(&state.name))
         });
-      if !has_reciprocal && !neighbour_object_name.is_path() {
+      if !has_reciprocal && !neighbour_object_name.is_path() && !neighbour_object_name.is_building() {
         errors.insert(format!(
           "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
           terrain,
