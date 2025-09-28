@@ -13,10 +13,11 @@ techniques.
 
 [![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 
-_The above video has not been updated to feature paths yet._
+⬆️ _The above video has not been updated to feature paths and buildings (yet)._
 
-![Screenshot 1](assets/ignore/screenshot1.png)
-![Screenshot 4](assets/ignore/screenshot4.png)
+
+![Screenshot 6](assets/ignore/screenshot6.png)
+![Screenshot 7](assets/ignore/screenshot7.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
 ![Demo GIF 1](assets/ignore/demo1.gif)
 ![Demo GIF 4](assets/ignore/demo4.gif)
@@ -37,6 +38,8 @@ _The above video has not been updated to feature paths yet._
       changes over great distances and inter-chunk biome changes without reducing generation performance
 - Object generation:
     - Uses a basic A* pathfinding algorithm implementation to generate paths crossing multiple chunks
+    - Generates 3 modular building types - each allowing for different door locations, and window/roofs styles - in
+      settled areas along paths
     - Uses the wave function collapse algorithm to generate additional decorative objects such as trees, ruins,
       stones, etc.
     - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
@@ -119,7 +122,7 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 
 You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects
 and therefore don't need to be considered in the wave function collapse algorithm which uses these rulesets. However,
-the addition to the "any ruleset" file results in the neighbouring tile of the new sprite to be empty 
+the addition to the "any ruleset" file results in the neighbouring tile of the new sprite to be empty
 (`ObjectName::Empty`). Without this, you'll see errors in the wave function collapse algorithm.
 
 #### How to use cargo-flamegraph
