@@ -3,7 +3,7 @@
   states: [
     (
       index: 1,
-      name: SandPathRight,
+      name: Land1PathRight,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -11,9 +11,9 @@
         (
           Right,
           [
-            SandPathLeft,
-            SandPathHorizontal,
-            SandPathCross,
+            Land1PathLeft,
+            Land1PathHorizontal,
+            Land1PathCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -21,24 +21,24 @@
     ),
     (
       index: 2,
-      name: SandPathHorizontal,
+      name: Land1PathHorizontal,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            SandPathRight,
-            SandPathHorizontal,
-            SandPathCross,
+            Land1PathRight,
+            Land1PathHorizontal,
+            Land1PathCross,
           ]
         ),
         (
           Right,
           [
-            SandPathLeft,
-            SandPathHorizontal,
-            SandPathCross,
+            Land1PathLeft,
+            Land1PathHorizontal,
+            Land1PathCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -46,50 +46,50 @@
     ),
     (
       index: 3,
-      name: SandPathCross,
+      name: Land1PathCross,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            SandPathBottom,
-            SandPathVertical,
+            Land1PathBottom,
+            Land1PathVertical,
           ]
         ),
         (
           Left,
           [
-            SandPathRight,
-            SandPathHorizontal,
+            Land1PathRight,
+            Land1PathHorizontal,
           ]
         ),
         (
           Right,
           [
-            SandPathLeft,
-            SandPathHorizontal,
+            Land1PathLeft,
+            Land1PathHorizontal,
           ]
         ),
         (
           Bottom,
           [
-            SandPathTop,
-            SandPathVertical,
+            Land1PathTop,
+            Land1PathVertical,
           ]
         ),
       ]
     ),
     (
       index: 4,
-      name: SandPathVertical,
+      name: Land1PathVertical,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            SandPathVertical,
-            SandPathBottom,
-            SandPathCross,
+            Land1PathVertical,
+            Land1PathBottom,
+            Land1PathCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -97,16 +97,16 @@
         (
           Bottom,
           [
-            SandPathVertical,
-            SandPathTop,
-            SandPathCross,
+            Land1PathVertical,
+            Land1PathTop,
+            Land1PathCross,
           ]
         ),
       ]
     ),
     (
       index: 5,
-      name: SandPathBottom,
+      name: Land1PathBottom,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -115,24 +115,24 @@
         (
           Bottom,
           [
-            SandPathCross,
-            SandPathVertical,
-            SandPathTop,
+            Land1PathCross,
+            Land1PathVertical,
+            Land1PathTop,
           ]
         ),
       ]
     ),
     (
       index: 6,
-      name: SandPathTop,
+      name: Land1PathTop,
       weight: 3,
       permitted_neighbours: [
         (
           Top,
           [
-            SandPathCross,
-            SandPathVertical,
-            SandPathBottom,
+            Land1PathCross,
+            Land1PathVertical,
+            Land1PathBottom,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -142,16 +142,16 @@
     ),
     (
       index: 7,
-      name: SandPathLeft,
+      name: Land1PathLeft,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            SandPathRight,
-            SandPathHorizontal,
-            SandPathCross,
+            Land1PathRight,
+            Land1PathHorizontal,
+            Land1PathCross,
           ]
         ),
         ( Right, [ Empty ] ),
@@ -160,233 +160,233 @@
     ),
     (
       index: 8,
-      name: SandStoneTopFill1,
+      name: Land1StoneTopFill1,
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
-        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, ] ),
+        ( Right, [ Empty, Land1StoneTopFill1, Land1StoneTopFill2, Land1StoneTopLeftFill, ] ),
         ( Bottom, [ Empty ] ),
-        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, ] ),
+        ( Left, [ Empty, Land1StoneTopFill1, Land1StoneTopFill2, Land1StoneTopRightFill, ] ),
       ]
     ),
     (
       index: 9,
-      name: SandStoneTopFill2,
+      name: Land1StoneTopFill2,
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
-        ( Right, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopLeftFill, ] ),
+        ( Right, [ Empty, Land1StoneTopFill1, Land1StoneTopFill2, Land1StoneTopLeftFill, ] ),
         ( Bottom, [ Empty ] ),
-        ( Left, [ Empty, SandStoneTopFill1, SandStoneTopFill2, SandStoneTopRightFill, ] ),
+        ( Left, [ Empty, Land1StoneTopFill1, Land1StoneTopFill2, Land1StoneTopRightFill, ] ),
       ]
     ),
     (
       index: 10,
-      name: SandStoneTopRightFill,
+      name: Land1StoneTopRightFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomRightFill, ] ),
-        ( Right, [ Empty, SandStoneTopLeftFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
+        ( Top, [ Empty, Land1StoneRightFill, Land1StoneBottomRightFill, ] ),
+        ( Right, [ Empty, Land1StoneTopLeftFill, Land1StoneTopFill1, Land1StoneTopFill2, ] ),
         ( Bottom, [ Empty ] ),
         ( Left, [ Empty ] ),
       ]
     ),
     (
       index: 11,
-      name: SandStoneTopLeftFill,
+      name: Land1StoneTopLeftFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Top, [ Empty, Land1StoneLeftFill, Land1StoneBottomLeftFill, ] ),
         ( Right, [ Empty, ] ),
         ( Bottom, [ Empty ] ),
-        ( Left, [ Empty, SandStoneTopRightFill, SandStoneTopFill1, SandStoneTopFill2, ] ),
+        ( Left, [ Empty, Land1StoneTopRightFill, Land1StoneTopFill1, Land1StoneTopFill2, ] ),
       ]
     ),
     (
       index: 12,
-      name: SandStoneLeftFill,
+      name: Land1StoneLeftFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneLeftFill, SandStoneBottomLeftFill, ] ),
+        ( Top, [ Empty, Land1StoneLeftFill, Land1StoneBottomLeftFill, ] ),
         ( Right, [ Empty, ] ),
-        ( Bottom, [ Empty, SandStoneLeftFill, SandStoneTopLeftFill, ] ),
+        ( Bottom, [ Empty, Land1StoneLeftFill, Land1StoneTopLeftFill, ] ),
         ( Left, [ Empty, ] ),
       ]
     ),
     (
       index: 13,
-      name: SandStoneRightFill,
+      name: Land1StoneRightFill,
       weight: 50,
       permitted_neighbours: [
-        ( Top, [ Empty, SandStoneRightFill, SandStoneBottomRightFill, ] ),
+        ( Top, [ Empty, Land1StoneRightFill, Land1StoneBottomRightFill, ] ),
         ( Right, [ Empty, ] ),
-        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, ] ),
+        ( Bottom, [ Empty, Land1StoneRightFill, Land1StoneTopRightFill, ] ),
         ( Left, [ Empty, ] ),
       ]
     ),
     (
       index: 14,
-      name: SandStoneBottomLeftFill,
+      name: Land1StoneBottomLeftFill,
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty, ] ),
         ( Right, [ Empty, ] ),
-        ( Bottom, [ Empty, SandStoneLeftFill, SandStoneTopLeftFill, ] ),
-        ( Left, [ Empty, SandStoneBottomRightFill, ] ),
+        ( Bottom, [ Empty, Land1StoneLeftFill, Land1StoneTopLeftFill, ] ),
+        ( Left, [ Empty, Land1StoneBottomRightFill, ] ),
       ]
     ),
     (
       index: 15,
-      name: SandStoneBottomRightFill,
+      name: Land1StoneBottomRightFill,
       weight: 50,
       permitted_neighbours: [
         ( Top, [ Empty, ] ),
-        ( Right, [ Empty, SandStoneBottomLeftFill, ] ),
-        ( Bottom, [ Empty, SandStoneRightFill, SandStoneTopRightFill, ] ),
+        ( Right, [ Empty, Land1StoneBottomLeftFill, ] ),
+        ( Bottom, [ Empty, Land1StoneRightFill, Land1StoneTopRightFill, ] ),
         ( Left, [ Empty, ] ),
       ]
     ),
     (
       index: 16,
-      name: SandStone1,
+      name: Land1Stone1,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 17,
-      name: SandStone2,
+      name: Land1Stone2,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 18,
-      name: SandStone3,
+      name: Land1Stone3,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 19,
-      name: SandStone4,
+      name: Land1Stone4,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 20,
-      name: SandStone5,
+      name: Land1Stone5,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 21,
-      name: SandStone6,
+      name: Land1Stone6,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 22,
-      name: SandGrassPatch1,
+      name: Land1IndividualObject1,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 23,
-      name: SandGrassPatch2,
+      name: Land1IndividualObject2,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, ] ),
       ]
     ),
     (
       index: 24,
-      name: SandPattern1,
+      name: Land1ConnectedObjectLeft,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ SandPattern2, SandPattern3, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Right, [ Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
       ]
     ),
     (
       index: 25,
-      name: SandPattern2,
+      name: Land1ConnectedObjectMiddle,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ SandPattern3, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone5, SandStone4, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ SandPattern1, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Right, [ Land1ConnectedObjectRight, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone5, Land1Stone4, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Left, [ Land1ConnectedObjectLeft, ] ),
       ]
     ),
     (
       index: 26,
-      name: SandPattern3,
+      name: Land1ConnectedObjectRight,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ SandPattern1, SandPattern2, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Left, [ Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, ] ),
       ]
     ),
     (
       index: 27,
-      name: SandPattern4,
+      name: Land1IndividualObject3,
       weight: 2,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
       ]
     ),
     (
       index: 28,
-      name: SandPattern5,
+      name: Land1IndividualObject4,
       weight: 5,
       permitted_neighbours: [
-        ( Top, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Right, [ Empty, SandPattern1, SandPattern4, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Bottom, [ Empty, SandPattern1, SandPattern2, SandPattern3, SandPattern4, SandPattern5, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
-        ( Left, [ Empty, SandPattern3, SandPattern4, SandStone1, SandStone2, SandStone3, SandStone4, SandStone5, SandStone6, SandGrassPatch1, SandGrassPatch2, ] ),
+        ( Top, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Right, [ Empty, Land1ConnectedObjectLeft, Land1IndividualObject3, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Bottom, [ Empty, Land1ConnectedObjectLeft, Land1ConnectedObjectMiddle, Land1ConnectedObjectRight, Land1IndividualObject3, Land1IndividualObject4, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
+        ( Left, [ Empty, Land1ConnectedObjectRight, Land1IndividualObject3, Land1Stone1, Land1Stone2, Land1Stone3, Land1Stone4, Land1Stone5, Land1Stone6, Land1IndividualObject1, Land1IndividualObject2, ] ),
       ]
     ),
   ]

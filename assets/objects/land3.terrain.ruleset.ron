@@ -3,7 +3,7 @@
   states: [
     (
       index: 1,
-      name: ForestRuinRight,
+      name: Land3RuinRight,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -11,11 +11,11 @@
         (
           Right,
           [
-            ForestRuinLeft,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassRight,
-            GrassRubbleHorizontalForestLeft,
-            ForestRuinCross,
+            Land3RuinLeft,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Right,
+            Land2RubbleHorizontalLand3Left,
+            Land3RuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -23,28 +23,28 @@
     ),
     (
       index: 2,
-      name: ForestRuinHorizontal,
+      name: Land3RuinHorizontal,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassLeft,
-            GrassRubbleHorizontalForestRight,
-            ForestRuinCross,
+            Land3RuinRight,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Left,
+            Land2RubbleHorizontalLand3Right,
+            Land3RuinCross,
           ]
         ),
         (
           Right,
           [
-            ForestRuinLeft,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassRight,
-            GrassRubbleHorizontalForestLeft,
-            ForestRuinCross,
+            Land3RuinLeft,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Right,
+            Land2RubbleHorizontalLand3Left,
+            Land3RuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -52,60 +52,60 @@
     ),
     (
       index: 3,
-      name: ForestRuinCross,
+      name: Land3RuinCross,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestRuinBottom,
-            ForestRuinVertical,
-            ForestRuinVerticalGrassTop,
-            GrassRubbleVerticalForestBottom,
+            Land3RuinBottom,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Top,
+            Land2RubbleVerticalLand3Bottom,
           ]
         ),
         (
           Left,
           [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassLeft,
-            GrassRubbleHorizontalForestRight,
+            Land3RuinRight,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Left,
+            Land2RubbleHorizontalLand3Right,
           ]
         ),
         (
           Right,
           [
-            ForestRuinLeft,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassRight,
-            GrassRubbleHorizontalForestLeft,
+            Land3RuinLeft,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Right,
+            Land2RubbleHorizontalLand3Left,
           ]
         ),
         (
           Bottom,
           [
-            ForestRuinTop,
-            ForestRuinVertical,
-            ForestRuinVerticalGrassBottom,
-            GrassRubbleVerticalForestTop,
+            Land3RuinTop,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Bottom,
+            Land2RubbleVerticalLand3Top,
           ]
         ),
       ]
     ),
     (
       index: 4,
-      name: ForestRuinVertical,
+      name: Land3RuinVertical,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestRuinVertical,
-            ForestRuinVerticalGrassTop,
-            GrassRubbleVerticalForestBottom,
-            ForestRuinBottom,
-            ForestRuinCross,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Top,
+            Land2RubbleVerticalLand3Bottom,
+            Land3RuinBottom,
+            Land3RuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -113,18 +113,18 @@
         (
           Bottom,
           [
-            ForestRuinVertical,
-            ForestRuinVerticalGrassBottom,
-            GrassRubbleVerticalForestTop,
-            ForestRuinTop,
-            ForestRuinCross,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Bottom,
+            Land2RubbleVerticalLand3Top,
+            Land3RuinTop,
+            Land3RuinCross,
           ]
         ),
       ]
     ),
     (
       index: 5,
-      name: ForestRuinBottom,
+      name: Land3RuinBottom,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
@@ -133,28 +133,28 @@
         (
           Bottom,
           [
-            ForestRuinCross,
-            ForestRuinVertical,
-            ForestRuinVerticalGrassBottom,
-            GrassRubbleVerticalForestTop,
-            ForestRuinTop,
+            Land3RuinCross,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Bottom,
+            Land2RubbleVerticalLand3Top,
+            Land3RuinTop,
           ]
         ),
       ]
     ),
     (
       index: 6,
-      name: ForestRuinTop,
+      name: Land3RuinTop,
       weight: 3,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestRuinCross,
-            ForestRuinVertical,
-            ForestRuinVerticalGrassTop,
-            GrassRubbleVerticalForestBottom,
-            ForestRuinBottom,
+            Land3RuinCross,
+            Land3RuinVertical,
+            Land3RuinVerticalLand2Top,
+            Land2RubbleVerticalLand3Bottom,
+            Land3RuinBottom,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -164,18 +164,18 @@
     ),
     (
       index: 7,
-      name: ForestRuinLeft,
+      name: Land3RuinLeft,
       weight: 3,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinHorizontalGrassLeft,
-            GrassRubbleHorizontalForestRight,
-            ForestRuinCross,
+            Land3RuinRight,
+            Land3RuinHorizontal,
+            Land3RuinHorizontalLand2Left,
+            Land2RubbleHorizontalLand3Right,
+            Land3RuinCross,
           ]
         ),
         ( Right, [ Empty ] ),
@@ -184,24 +184,24 @@
     ),
     (
       index: 8,
-      name: ForestRuinHorizontalGrassRight,
+      name: Land3RuinHorizontalLand2Right,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ] ),
         (
           Left,
           [
-            ForestRuinRight,
-            ForestRuinHorizontal,
-            ForestRuinCross,
+            Land3RuinRight,
+            Land3RuinHorizontal,
+            Land3RuinCross,
           ]
         ),
         (
           Right,
           [
-            GrassRubbleLeft,
-            GrassRubbleHorizontal,
-            GrassRubbleCross,
+            Land2RubbleLeft,
+            Land2RubbleHorizontal,
+            Land2RubbleCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -209,24 +209,24 @@
     ),
     (
       index: 9,
-      name: ForestRuinHorizontalGrassLeft,
+      name: Land3RuinHorizontalLand2Left,
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty ]  ),
         (
           Left,
           [
-            GrassRubbleRight,
-            GrassRubbleHorizontal,
-            GrassRubbleCross,
+            Land2RubbleRight,
+            Land2RubbleHorizontal,
+            Land2RubbleCross,
           ]
         ),
         (
           Right,
           [
-            ForestRuinLeft,
-            ForestRuinHorizontal,
-            ForestRuinCross,
+            Land3RuinLeft,
+            Land3RuinHorizontal,
+            Land3RuinCross,
           ]
         ),
         ( Bottom, [ Empty ] ),
@@ -234,15 +234,15 @@
     ),
     (
       index: 10,
-      name: ForestRuinVerticalGrassTop,
+      name: Land3RuinVerticalLand2Top,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            GrassRubbleVertical,
-            GrassRubbleBottom,
-            GrassRubbleCross,
+            Land2RubbleVertical,
+            Land2RubbleBottom,
+            Land2RubbleCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -250,24 +250,24 @@
         (
           Bottom,
           [
-            ForestRuinVertical,
-            ForestRuinTop,
-            ForestRuinCross,
+            Land3RuinVertical,
+            Land3RuinTop,
+            Land3RuinCross,
           ]
         ),
       ]
     ),
     (
       index: 11,
-      name: ForestRuinVerticalGrassBottom,
+      name: Land3RuinVerticalLand2Bottom,
       weight: 10,
       permitted_neighbours: [
         (
           Top,
           [
-            ForestRuinVertical,
-            ForestRuinBottom,
-            ForestRuinCross,
+            Land3RuinVertical,
+            Land3RuinBottom,
+            Land3RuinCross,
           ]
         ),
         ( Left, [ Empty ] ),
@@ -275,132 +275,132 @@
         (
           Bottom,
           [
-            GrassRubbleVertical,
-            GrassRubbleTop,
-            GrassRubbleCross,
+            Land2RubbleVertical,
+            Land2RubbleTop,
+            Land2RubbleCross,
           ]
         ),
       ]
     ),
     (
       index: 16,
-      name: ForestBush1,
+      name: Land3IndividualObject1,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestBush4, Land3Grass1, Land3Grass2, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 17,
-      name: ForestBush2,
+      name: Land3IndividualObject2,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 18,
-      name: ForestBush3,
+      name: Land3IndividualObject3,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush4, Land3Grass1, Land3Grass2, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 19,
-      name: ForestBush4,
+      name: Land3IndividualObject4,
       weight: 10,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, Land3Grass1, Land3Grass2, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, Land3Grass1, Land3Grass2, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, Land3Grass1, Land3Grass2, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 20,
-      name: Land3Grass1,
+      name: Land3IndividualObject5,
       weight: 20,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass2, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass2, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass2, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass2, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 21,
-      name: Land3Grass2,
+      name: Land3IndividualObject6,
       weight: 20,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
       ]
     ),
     (
       index: 1,
-      name: ForestTree1,
+      name: Land3Tree1,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
+        ( Top, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
     (
       index: 2,
-      name: ForestTree2,
+      name: Land3Tree2,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Right, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Bottom, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Left, [ Empty, ForestTree1, ForestTree3, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
     (
       index: 3,
-      name: ForestTree3,
+      name: Land3Tree3,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree4, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
+        ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
     (
       index: 4,
-      name: ForestTree4,
+      name: Land3Tree4,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree5, ForestBush1, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
+        ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
     (
       index: 5,
-      name: ForestTree5,
+      name: Land3Tree5,
       weight: 100,
       permitted_neighbours: [
-        ( Top, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Right, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Bottom, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
-        ( Left, [ Empty, ForestTree2, ForestTree1, ForestTree3, ForestTree4, ForestBush2, ForestBush3, ForestBush4, Land3Grass1, Land3Grass2, ] ),
+        ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
   ]
