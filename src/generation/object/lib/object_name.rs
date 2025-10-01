@@ -71,6 +71,8 @@ pub enum ObjectName {
   ForestBush2,
   ForestBush3,
   ForestBush4,
+  Land3Grass1,
+  Land3Grass2,
   PathRight,
   PathHorizontal,
   PathCross,
