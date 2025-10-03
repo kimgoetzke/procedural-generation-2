@@ -155,14 +155,15 @@ fn initialise_resources_system(
 
   // Detailed tile sets
   asset_collection.water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
-  asset_collection.shore = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH);
-  asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH);
+  asset_collection.shore = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH, false);
+  asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH, false);
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
-  asset_collection.land_moderate_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_MODERATE_L1_PATH);
+  asset_collection.land_moderate_l1 =
+    tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_MODERATE_L1_PATH, false);
   asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
   asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
-  asset_collection.land_humid_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_HUMID_L1_PATH);
+  asset_collection.land_humid_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_HUMID_L1_PATH, false);
   asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
   asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
 
@@ -229,6 +230,7 @@ fn tile_set_default_animations(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
+  is_fill_animated: bool,
 ) -> AssetCollection {
   let animated_tile_set_layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
@@ -238,20 +240,21 @@ fn tile_set_default_animations(
     None,
   );
   let atlas_layout = layout.add(animated_tile_set_layout);
+  let texture = asset_server.load(tile_set_path.to_string());
 
   AssetCollection {
     stat: AssetPack {
-      texture: asset_server.load(tile_set_path.to_string()),
+      texture: texture.clone(),
       texture_atlas_layout: atlas_layout.clone(),
       index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
     },
     anim: Some(AssetPack {
-      texture: asset_server.load(tile_set_path.to_string()),
+      texture,
       texture_atlas_layout: atlas_layout,
       index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
     }),
     animated_tile_types: {
-      let tile_types = [
+      let mut tile_types_set = HashSet::from([
         TileType::InnerCornerBottomLeft,
         TileType::InnerCornerBottomRight,
         TileType::InnerCornerTopLeft,
@@ -267,19 +270,14 @@ fn tile_set_default_animations(
         TileType::RightFill,
         TileType::LeftFill,
         TileType::Single,
-      ];
-      insert(&tile_types)
+      ]);
+      if is_fill_animated {
+        tile_types_set.insert(TileType::Fill);
+      }
+
+      tile_types_set
     },
   }
-}
-
-fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
-  let mut set = HashSet::new();
-  for tile_type in tile_types {
-    set.insert(*tile_type);
-  }
-
-  set
 }
 
 fn object_assets_static(
