@@ -1,4 +1,4 @@
-use crate::components::{AnimationMeshComponent, AnimationTimer};
+use crate::components::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::World;
@@ -124,7 +124,7 @@ fn prepare_texture_groups<'a>(
   let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
   for row in plane.data.iter() {
     for tile in row.iter().flatten() {
-      let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
+      let asset_collection = resources.get_terrain_collection(&tile.terrain, &tile.climate);
       let has_animated_sprites = asset_collection.anim.is_some();
       let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
       let texture = match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
@@ -192,15 +192,11 @@ fn spawn_tile_mesh(
       ))
       .insert_if(
         AnimationMeshComponent {
-          timer: AnimationTimer(Timer::from_seconds(
-            match TerrainType::from(layer as usize) {
-              TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
-              _ => DEFAULT_ANIMATION_FRAME_DURATION,
-            },
-            TimerMode::Repeating,
-          )),
-          frame_count: 4,
-          current_frame: 0,
+          animation_type: if TerrainType::from(layer as usize) == TerrainType::Shore {
+            AnimationType::FourFramesDoubleSpeed
+          } else {
+            AnimationType::FourFramesDefaultSpeed
+          },
           columns: sprite_sheet_columns,
           rows: sprite_sheet_rows,
           tile_indices: tile_sprite_indices,

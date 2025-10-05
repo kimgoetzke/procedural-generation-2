@@ -23,7 +23,7 @@ pub struct GenerationResourcesCollection {
 }
 
 impl GenerationResourcesCollection {
-  pub fn get_terrain_collection(&self, terrain: TerrainType, climate: Climate) -> &AssetCollection {
+  pub fn get_terrain_collection(&self, terrain: &TerrainType, climate: &Climate) -> &AssetCollection {
     match (terrain, climate) {
       (TerrainType::Water, _) => &self.water,
       (TerrainType::Shore, _) => &self.shore,

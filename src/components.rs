@@ -10,11 +10,15 @@ pub struct AnimationSpriteComponent {
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
 
-#[derive(Component)]
+#[derive(PartialEq)]
+pub enum AnimationType {
+  FourFramesDefaultSpeed,
+  FourFramesDoubleSpeed,
+}
+
+#[derive(Component, PartialEq)]
 pub struct AnimationMeshComponent {
-  pub(crate) timer: AnimationTimer,
-  pub(crate) frame_count: usize,
-  pub(crate) current_frame: usize,
+  pub(crate) animation_type: AnimationType,
   pub(crate) columns: f32,
   pub(crate) rows: f32,
   pub(crate) tile_indices: Vec<usize>,
