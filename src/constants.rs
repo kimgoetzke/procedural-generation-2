@@ -89,8 +89,8 @@ pub const TS_LAND_DRY_L3_PATH: &str = "tilesets/land-dry-l3.png";
 pub const TILE_SET_ROWS: u32 = 17;
 pub const DEFAULT_STATIC_TILE_SET_COLUMNS: u32 = 1;
 pub const DEFAULT_ANIMATED_TILE_SET_COLUMNS: u32 = 4;
-pub const DEFAULT_ANIMATION_FRAME_COUNT: u32 = 4;
-pub const DEFAULT_ANIMATION_FRAME_DURATION: f32 = 0.5;
+pub const ENHANCED_ANIMATED_TILE_SET_COLUMNS: u32 = 6;
+pub const DEFAULT_ANIMATION_FRAME_DURATION: f32 = 0.25;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile set sprite indices
 pub const FILL: usize = 4;

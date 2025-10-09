@@ -154,16 +154,45 @@ fn initialise_resources_system(
   asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  asset_collection.water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
-  asset_collection.shore = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH, false);
-  asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH, false);
+  asset_collection.water = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_WATER_PATH,
+    true,
+    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+  );
+  asset_collection.shore = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_SHORE_PATH,
+    true,
+    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+  );
+  asset_collection.land_dry_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_DRY_L1_PATH,
+    false,
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
-  asset_collection.land_moderate_l1 =
-    tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_MODERATE_L1_PATH, false);
+  asset_collection.land_moderate_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_MODERATE_L1_PATH,
+    false,
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
   asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
-  asset_collection.land_humid_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_HUMID_L1_PATH, false);
+  asset_collection.land_humid_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_HUMID_L1_PATH,
+    false,
+    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
   asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
 
@@ -226,19 +255,14 @@ fn tile_set_static(
   }
 }
 
-fn tile_set_default_animations(
+fn tile_set_animated(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
   is_fill_animated: bool,
+  columns: u32,
 ) -> AssetCollection {
-  let animated_tile_set_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
-    TILE_SET_ROWS,
-    None,
-    None,
-  );
+  let animated_tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
   let atlas_layout = layout.add(animated_tile_set_layout);
   let texture = asset_server.load(tile_set_path.to_string());
 
@@ -246,12 +270,12 @@ fn tile_set_default_animations(
     stat: AssetPack {
       texture: texture.clone(),
       texture_atlas_layout: atlas_layout.clone(),
-      index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+      index_offset: columns as usize,
     },
     anim: Some(AssetPack {
       texture,
       texture_atlas_layout: atlas_layout,
-      index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
+      index_offset: columns as usize,
     }),
     animated_tile_types: {
       let mut tile_types_set = HashSet::from([

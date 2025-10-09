@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Deref, DerefMut, Timer};
+use bevy::prelude::{Component, Deref, DerefMut, Reflect, Timer};
 
 #[derive(Component)]
 pub struct AnimationSpriteComponent {
@@ -10,13 +10,13 @@ pub struct AnimationSpriteComponent {
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Reflect)]
 pub enum AnimationType {
-  FourFramesDefaultSpeed,
-  FourFramesDoubleSpeed,
+  FourFramesHalfSpeed,
+  SixFramesRegularSpeed,
 }
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Reflect)]
 pub struct AnimationMeshComponent {
   pub(crate) animation_type: AnimationType,
   pub(crate) columns: f32,

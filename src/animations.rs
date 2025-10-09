@@ -1,5 +1,7 @@
 use crate::components::{AnimationMeshComponent, AnimationSpriteComponent, AnimationType};
-use crate::constants::{DEFAULT_ANIMATION_FRAME_COUNT, DEFAULT_ANIMATION_FRAME_DURATION};
+use crate::constants::{
+  DEFAULT_ANIMATED_TILE_SET_COLUMNS, DEFAULT_ANIMATION_FRAME_DURATION, ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+};
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::prelude::{Mesh, Mesh2d, Mut, Query, Res, ResMut, Resource, Sprite, Time, Timer, TimerMode, Update};
@@ -11,6 +13,7 @@ impl Plugin for AnimationsPlugin {
   fn build(&self, app: &mut App) {
     app
       .insert_resource(GlobalAnimationState::new())
+      .register_type::<AnimationMeshComponent>()
       // .add_systems(Update, sprite_animation_system) // Use once animated objects are used
       .add_systems(Update, tile_mesh_animation_system);
   }
@@ -36,16 +39,16 @@ impl GlobalAnimationState {
     Self {
       types: vec![
         AnimationTypeState {
-          animation_type: AnimationType::FourFramesDefaultSpeed,
-          timer: Timer::from_seconds(DEFAULT_ANIMATION_FRAME_DURATION, TimerMode::Repeating),
+          animation_type: AnimationType::FourFramesHalfSpeed,
+          timer: Timer::from_seconds(DEFAULT_ANIMATION_FRAME_DURATION * 2., TimerMode::Repeating),
           current_frame: 0,
-          total_frames: DEFAULT_ANIMATION_FRAME_COUNT,
+          total_frames: DEFAULT_ANIMATED_TILE_SET_COLUMNS,
         },
         AnimationTypeState {
-          animation_type: AnimationType::FourFramesDoubleSpeed,
-          timer: Timer::from_seconds(DEFAULT_ANIMATION_FRAME_DURATION / 2., TimerMode::Repeating),
+          animation_type: AnimationType::SixFramesRegularSpeed,
+          timer: Timer::from_seconds(DEFAULT_ANIMATION_FRAME_DURATION, TimerMode::Repeating),
           current_frame: 0,
-          total_frames: DEFAULT_ANIMATION_FRAME_COUNT,
+          total_frames: ENHANCED_ANIMATED_TILE_SET_COLUMNS,
         },
       ],
     }

@@ -27,12 +27,6 @@ impl LayeredPlane {
     for layer in 0..TerrainType::length() {
       let mut current_layer = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
 
-      // Skip lowest water layer because water is not rendered since the background colour is used instead
-      if layer == 0 {
-        final_layers.push(Plane::new(current_layer, Some(layer), settings));
-        continue;
-      }
-
       // Populate the layer using the draft plane and adjust terrain, if necessary - as a result,
       // each tile on a layer above the first rendered layer has a tile below it too
       for x in 0..draft_tiles[0].len() {

@@ -192,11 +192,7 @@ fn spawn_tile_mesh(
       ))
       .insert_if(
         AnimationMeshComponent {
-          animation_type: if TerrainType::from(layer as usize) == TerrainType::Shore {
-            AnimationType::FourFramesDoubleSpeed
-          } else {
-            AnimationType::FourFramesDefaultSpeed
-          },
+          animation_type: resolve_animation_type(layer),
           columns: sprite_sheet_columns,
           rows: sprite_sheet_rows,
           tile_indices: tile_sprite_indices,
@@ -204,6 +200,15 @@ fn spawn_tile_mesh(
         || is_animated,
       );
   });
+}
+
+// TODO: Consider moving this to a more meaningful place
+fn resolve_animation_type(layer: f32) -> AnimationType {
+  if matches!(TerrainType::from(layer as usize), TerrainType::Shore | TerrainType::Water) {
+    AnimationType::SixFramesRegularSpeed
+  } else {
+    AnimationType::FourFramesHalfSpeed
+  }
 }
 
 fn calculate_mesh_attributes(
@@ -218,7 +223,7 @@ fn calculate_mesh_attributes(
   let mut uvs = Vec::new();
   let mut tile_indices = Vec::new();
   let tile_size = TILE_SIZE as f32;
-  let columns = resolve_columns(has_animated_sprites, is_drawing_terrain_sprites_disabled);
+  let columns = resolve_columns(has_animated_sprites, is_drawing_terrain_sprites_disabled, layer);
   let rows = resolve_rows(is_drawing_terrain_sprites_disabled);
 
   for &tile in tiles {
@@ -255,14 +260,18 @@ fn calculate_mesh_attributes(
   (vertices, indices, uvs, tile_indices, columns, rows)
 }
 
+// TODO: Move this to a more meaningful place
 /// Determines the number of columns in the sprite sheet based on whether terrain sprites are disabled
 /// and whether the asset collection contains animated sprites. The latter can only be true if terrain sprites
 /// are enabled.
-fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool) -> f32 {
-  match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
-    (true, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
-    (false, true) => DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32,
-    (false, false) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
+fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool, layer: f32) -> f32 {
+  let terrain = TerrainType::from(layer as usize);
+  match (is_drawing_terrain_sprites_disabled, has_animated_sprites, terrain) {
+    (true, _, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
+    (false, true, TerrainType::Water) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, true, TerrainType::Shore) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, true, _) => DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, false, _) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
   }
 }
 
