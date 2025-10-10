@@ -202,7 +202,7 @@ fn spawn_tile_mesh(
   });
 }
 
-// TODO: Consider moving this to a more meaningful place
+// TODO: Move this to GenerationResourcesCollection
 fn resolve_animation_type(layer: f32) -> AnimationType {
   if matches!(TerrainType::from(layer as usize), TerrainType::Shore | TerrainType::Water) {
     AnimationType::SixFramesRegularSpeed
@@ -260,7 +260,7 @@ fn calculate_mesh_attributes(
   (vertices, indices, uvs, tile_indices, columns, rows)
 }
 
-// TODO: Move this to a more meaningful place
+// TODO: Move this to GenerationResourcesCollection
 /// Determines the number of columns in the sprite sheet based on whether terrain sprites are disabled
 /// and whether the asset collection contains animated sprites. The latter can only be true if terrain sprites
 /// are enabled.
@@ -275,6 +275,7 @@ fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabl
   }
 }
 
+// TODO: Move this to GenerationResourcesCollection
 /// Determines the number of rows in the sprite sheet based on whether terrain sprites are disabled.
 fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
   if is_drawing_terrain_sprites_disabled {
