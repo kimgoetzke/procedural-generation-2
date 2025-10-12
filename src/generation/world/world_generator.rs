@@ -214,7 +214,7 @@ fn calculate_mesh_attributes(
   let mut uvs = Vec::new();
   let mut tile_indices = Vec::new();
   let tile_size = TILE_SIZE as f32;
-  let columns = resolve_columns(has_animated_sprites, is_drawing_terrain_sprites_disabled, layer);
+  let columns = resolve_columns(has_animated_sprites, is_drawing_terrain_sprites_disabled);
   let rows = resolve_rows(is_drawing_terrain_sprites_disabled);
 
   for &tile in tiles {
@@ -251,24 +251,21 @@ fn calculate_mesh_attributes(
   (vertices, indices, uvs, tile_indices, columns, rows)
 }
 
-// TODO: Move this to GenerationResourcesCollection
 /// Determines the number of columns in the sprite sheet based on whether terrain sprites are disabled
 /// and whether the asset collection contains animated sprites. The latter can only be true if terrain sprites
 /// are enabled.
-fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool, layer: f32) -> f32 {
-  let terrain = TerrainType::from(layer as usize);
-  match (is_drawing_terrain_sprites_disabled, has_animated_sprites, terrain) {
-    (true, _, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
-    (false, true, _) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
-    (false, false, _) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
+fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool) -> f32 {
+  match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
+    (true, _) => PLACEHOLDER_TILE_SET_COLUMNS as f32,
+    (false, true) => ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, false) => STATIC_TILE_SET_COLUMNS as f32,
   }
 }
 
-// TODO: Move this to GenerationResourcesCollection
 /// Determines the number of rows in the sprite sheet based on whether terrain sprites are disabled.
 fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
   if is_drawing_terrain_sprites_disabled {
-    TILE_SET_PLACEHOLDER_ROWS as f32
+    PLACEHOLDER_TILE_SET_ROWS as f32
   } else {
     TILE_SET_ROWS as f32
   }

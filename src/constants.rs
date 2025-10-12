@@ -34,8 +34,6 @@ pub const NOISE_OCTAVES: usize = 3;
 pub const NOISE_FREQUENCY: f64 = 0.07;
 pub const NOISE_PERSISTENCE: f64 = 0.7;
 pub const NOISE_AMPLITUDE: f64 = 4.5;
-pub const FALLOFF_STRENGTH: f64 = 2.5;
-pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
@@ -53,26 +51,22 @@ pub const BUFFER_SIZE: i32 = 1;
 /// [`crate::generation::lib::TileType`]s of outermost tiles are known. Must not be modified directly. Change
 /// [`CHUNK_SIZE`] instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
-/// The size of a chunk that is rendered on the screen.
+/// The length and width of a chunk that is rendered on the screen, in pixels.
 pub const CHUNK_SIZE: i32 = 16;
+/// The length and width of a tile that is rendered on the screen, in pixels.
+pub const TILE_SIZE: u32 = 32;
+/// The origin point of the world, in different coordinate systems.
 pub const ORIGIN_CHUNK_GRID_SPAWN_POINT: Point<ChunkGrid> = Point::new_const(0, 0);
 pub const ORIGIN_WORLD_SPAWN_POINT: Point<World> =
   Point::new_const(-(CHUNK_SIZE / 2) * TILE_SIZE as i32, (CHUNK_SIZE / 2) * TILE_SIZE as i32);
 pub const ORIGIN_TILE_GRID_SPAWN_POINT: Point<TileGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
+/// The distance from the camera at which chunks are despawned, in world units (pixels).
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
-// Tiles
-pub const TILE_SIZE: u32 = 32;
-pub const WATER_LAYER: usize = 0;
-pub const SHORE_LAYER: usize = 1;
-pub const SAND_LAYER: usize = 2;
-pub const GRASS_LAYER: usize = 3;
-pub const FOREST_LAYER: usize = 4;
-// ------------------------------------------------------------------------------------------------------
 // Sprites: Placeholder tile set
-pub const TILE_SET_PLACEHOLDER_PATH: &str = "tilesets/placeholders.png";
-pub const TILE_SET_PLACEHOLDER_COLUMNS: u32 = 6;
-pub const TILE_SET_PLACEHOLDER_ROWS: u32 = 1;
+pub const PLACEHOLDER_TILE_SET_COLUMNS: u32 = 6;
+pub const PLACEHOLDER_TILE_SET_ROWS: u32 = 1;
+pub const TS_PLACEHOLDER_PATH: &str = "tilesets/placeholders.png";
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile sets
 pub const TS_WATER_PATH: &str = "tilesets/water-deep.png";
@@ -87,10 +81,9 @@ pub const TS_LAND_DRY_L1_PATH: &str = "tilesets/land-dry-l1.png";
 pub const TS_LAND_DRY_L2_PATH: &str = "tilesets/land-dry-l2.png";
 pub const TS_LAND_DRY_L3_PATH: &str = "tilesets/land-dry-l3.png";
 pub const TILE_SET_ROWS: u32 = 17;
-pub const DEFAULT_STATIC_TILE_SET_COLUMNS: u32 = 1;
-pub const DEFAULT_ANIMATED_TILE_SET_COLUMNS: u32 = 6;
-pub const ENHANCED_ANIMATED_TILE_SET_COLUMNS: u32 = 6;
-pub const DEFAULT_ANIMATION_FRAME_DURATION: f32 = 0.25;
+pub const STATIC_TILE_SET_COLUMNS: u32 = 1;
+pub const ANIMATED_TILE_SET_COLUMNS: u32 = 6;
+pub const ANIMATION_FRAME_DURATION: f32 = 0.25;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile set sprite indices
 pub const FILL: usize = 4;
@@ -111,7 +104,7 @@ pub const LEFT_FILL: usize = 5;
 pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
-// Objects
+// Sprites: Objects
 pub const WATER_OBJ_PATH: &str = "objects/objects-water-deep.png";
 pub const SHORE_OBJ_PATH: &str = "objects/objects-water-shore.png";
 pub const OBJ_L1_DRY_PATH: &str = "objects/objects-l1-dry.png";
@@ -157,5 +150,4 @@ pub const WINDOW_WIDTH: f32 = 1280.;
 pub const WINDOW_HEIGHT: f32 = 720.;
 // ------------------------------------------------------------------------------------------------------
 // Common errors
-pub const TERRAIN_TYPE_ERROR: &'static str = "Invalid terrain type for drawing a terrain sprite";
 pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";

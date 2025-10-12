@@ -145,35 +145,23 @@ fn initialise_resources_system(
   // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
-    TILE_SET_PLACEHOLDER_COLUMNS,
-    TILE_SET_PLACEHOLDER_ROWS,
+    PLACEHOLDER_TILE_SET_COLUMNS,
+    PLACEHOLDER_TILE_SET_ROWS,
     None,
     None,
   );
   let default_texture_atlas_layout = layouts.add(default_layout);
-  asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
+  asset_collection.placeholder = AssetPack::new(asset_server.load(TS_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  asset_collection.water = tile_set_animated(
-    &asset_server,
-    &mut layouts,
-    TS_WATER_PATH,
-    true,
-    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
-  );
-  asset_collection.shore = tile_set_animated(
-    &asset_server,
-    &mut layouts,
-    TS_SHORE_PATH,
-    true,
-    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
-  );
+  asset_collection.water = tile_set_animated(&asset_server, &mut layouts, TS_WATER_PATH, true, ANIMATED_TILE_SET_COLUMNS);
+  asset_collection.shore = tile_set_animated(&asset_server, &mut layouts, TS_SHORE_PATH, true, ANIMATED_TILE_SET_COLUMNS);
   asset_collection.land_dry_l1 = tile_set_animated(
     &asset_server,
     &mut layouts,
     TS_LAND_DRY_L1_PATH,
     false,
-    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+    ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
@@ -182,7 +170,7 @@ fn initialise_resources_system(
     &mut layouts,
     TS_LAND_MODERATE_L1_PATH,
     false,
-    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+    ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
   asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
@@ -191,7 +179,7 @@ fn initialise_resources_system(
     &mut layouts,
     TS_LAND_HUMID_L1_PATH,
     false,
-    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
+    ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
   asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
@@ -239,13 +227,8 @@ fn tile_set_static(
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
 ) -> AssetCollection {
-  let static_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    DEFAULT_STATIC_TILE_SET_COLUMNS,
-    TILE_SET_ROWS,
-    None,
-    None,
-  );
+  let static_layout =
+    TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), STATIC_TILE_SET_COLUMNS, TILE_SET_ROWS, None, None);
   let texture_atlas_layout = layout.add(static_layout);
 
   AssetCollection {
