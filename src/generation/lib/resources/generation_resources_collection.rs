@@ -55,9 +55,13 @@ impl GenerationResourcesCollection {
     climate: Climate,
     is_large_sprite: bool,
     is_building: bool,
+    is_animated: bool,
   ) -> &AssetCollection {
     if is_building {
       return &self.objects.buildings;
+    }
+    if is_animated {
+      return &self.objects.animated;
     }
     match (terrain, climate, is_large_sprite) {
       (TerrainType::Water, _, _) => &self.objects.water,

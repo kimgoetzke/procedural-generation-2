@@ -1,3 +1,4 @@
+use crate::components::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
@@ -163,7 +164,7 @@ fn attach_object_spawn_task(
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
   let colour = get_randomised_colour(settings, &mut rng, &object_data);
-  let is_building = object_name.is_building();
+  let is_animated = object_name.is_animated();
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -175,13 +176,14 @@ fn attach_object_spawn_task(
             tile_data.flat_tile.terrain,
             tile_data.flat_tile.climate,
             object_data.is_large_sprite,
-            is_building,
+            object_name.is_building(),
+            is_animated,
           )
           .clone()
       };
       if let Ok(mut chunk_entity) = world.get_entity_mut(tile_data.chunk_entity) {
         chunk_entity.with_children(|parent| {
-          parent.spawn(sprite(
+          let mut entity = parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
             &asset_collection,
@@ -190,6 +192,12 @@ fn attach_object_spawn_task(
             offset_y,
             colour,
           ));
+          if is_animated {
+            entity.insert(AnimationSpriteComponent::new(
+              AnimationType::SixFramesRegularSpeed,
+              sprite_index as usize,
+            ));
+          }
         });
       }
     });

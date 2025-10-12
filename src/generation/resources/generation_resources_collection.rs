@@ -213,6 +213,7 @@ fn initialise_resources_system(
   asset_collection.objects.l3_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L3_DRY_PATH);
   asset_collection.objects.l3_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L3_MODERATE_PATH);
   asset_collection.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
+  asset_collection.objects.animated = object_assets_animated(&asset_server, &mut layouts, OBJ_ANIMATED_PATH);
 
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
@@ -294,6 +295,24 @@ fn object_assets_static(
     anim: None,
     animated_tile_types: HashSet::new(),
     index_offset: 1,
+  }
+}
+
+fn object_assets_animated(
+  asset_server: &Res<AssetServer>,
+  layout: &mut Assets<TextureAtlasLayout>,
+  tile_set_path: &str,
+) -> AssetCollection {
+  let animated_tile_set_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, ANIMATED_OBJ_COLUMNS, ANIMATED_OBJ_ROWS, None, None);
+  let atlas_layout = layout.add(animated_tile_set_layout);
+  let texture = asset_server.load(tile_set_path.to_string());
+
+  AssetCollection {
+    stat: AssetPack::new(texture.clone(), atlas_layout.clone()),
+    anim: Some(AssetPack::new(texture, atlas_layout)),
+    animated_tile_types: { HashSet::new() },
+    index_offset: ANIMATED_OBJ_COLUMNS as usize,
   }
 }
 

@@ -18,6 +18,7 @@ pub struct ObjectResources {
   pub l3_dry: AssetCollection,
   pub l3_moderate: AssetCollection,
   pub l3_humid: AssetCollection,
+  pub animated: AssetCollection,
   pub trees_dry: AssetCollection,
   pub trees_moderate: AssetCollection,
   pub trees_humid: AssetCollection,

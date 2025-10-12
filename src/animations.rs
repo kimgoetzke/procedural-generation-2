@@ -1,5 +1,5 @@
 use crate::components::{AnimationMeshComponent, AnimationSpriteComponent, AnimationType};
-use crate::constants::{ANIMATED_TILE_SET_COLUMNS, ANIMATION_FRAME_DURATION};
+use crate::constants::ANIMATION_FRAME_DURATION;
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::prelude::{Mesh, Mesh2d, Mut, Query, Res, ResMut, Resource, Sprite, Time, Timer, TimerMode, Update};
@@ -12,8 +12,7 @@ impl Plugin for AnimationsPlugin {
     app
       .insert_resource(GlobalAnimationState::new())
       .register_type::<AnimationMeshComponent>()
-      // .add_systems(Update, sprite_animation_system) // Use once animated objects are used
-      .add_systems(Update, tile_mesh_animation_system);
+      .add_systems(Update, sprite_animation_system);
   }
 }
 
@@ -39,45 +38,40 @@ impl GlobalAnimationState {
         animation_type: AnimationType::SixFramesRegularSpeed,
         timer: Timer::from_seconds(ANIMATION_FRAME_DURATION, TimerMode::Repeating),
         current_frame: 0,
-        total_frames: ANIMATED_TILE_SET_COLUMNS,
+        total_frames: 6, // Must match the columns in the sprite sheet
       }],
     }
   }
 }
 
-#[allow(unused)]
-fn sprite_animation_system(time: Res<Time>, mut query: Query<(&mut AnimationSpriteComponent, &mut Sprite)>) {
-  for (mut ac, mut sprite) in &mut query {
-    ac.timer.tick(time.delta());
-    if ac.timer.just_finished() {
-      if let Some(atlas) = &mut sprite.texture_atlas {
-        atlas.index = if atlas.index >= ac.index_last {
-          ac.index_first
-        } else {
-          atlas.index + 1
-        };
-      }
-    }
-  }
-}
-
-fn tile_mesh_animation_system(
+fn sprite_animation_system(
   time: Res<Time>,
   mut animation_states: ResMut<GlobalAnimationState>,
   mut meshes: ResMut<Assets<Mesh>>,
-  mut query: Query<(&mut AnimationMeshComponent, &Mesh2d)>,
+  mut mesh_query: Query<(&mut AnimationMeshComponent, &Mesh2d)>,
+  mut sprite_query: Query<(&mut AnimationSpriteComponent, &mut Sprite)>,
 ) {
   for state in &mut animation_states.types {
     state.timer.tick(time.delta());
     if state.timer.just_finished() {
       state.current_frame = (state.current_frame + 1) % state.total_frames;
 
-      for (animated_mesh_component, mesh_2d) in &mut query {
+      for (animated_mesh_component, mesh_2d) in &mut mesh_query {
         if state.animation_type != animated_mesh_component.animation_type {
           continue;
         }
         if let Some(mesh) = meshes.get_mut(mesh_2d) {
           update_mesh_uvs(state, animated_mesh_component, mesh);
+        }
+      }
+
+      for (animated_sprite_component, mut sprite) in &mut sprite_query {
+        if state.animation_type != animated_sprite_component.animation_type {
+          continue;
+        }
+
+        if let Some(atlas) = &mut sprite.texture_atlas {
+          atlas.index = animated_sprite_component.sprite_index + state.current_frame as usize;
         }
       }
     }
