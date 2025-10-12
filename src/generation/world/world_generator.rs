@@ -192,7 +192,7 @@ fn spawn_tile_mesh(
       ))
       .insert_if(
         AnimationMeshComponent {
-          animation_type: resolve_animation_type(layer),
+          animation_type: AnimationType::SixFramesRegularSpeed,
           columns: sprite_sheet_columns,
           rows: sprite_sheet_rows,
           tile_indices: tile_sprite_indices,
@@ -200,15 +200,6 @@ fn spawn_tile_mesh(
         || is_animated,
       );
   });
-}
-
-// TODO: Move this to GenerationResourcesCollection
-fn resolve_animation_type(layer: f32) -> AnimationType {
-  if matches!(TerrainType::from(layer as usize), TerrainType::Shore | TerrainType::Water) {
-    AnimationType::SixFramesRegularSpeed
-  } else {
-    AnimationType::FourFramesHalfSpeed
-  }
 }
 
 fn calculate_mesh_attributes(
@@ -268,9 +259,7 @@ fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabl
   let terrain = TerrainType::from(layer as usize);
   match (is_drawing_terrain_sprites_disabled, has_animated_sprites, terrain) {
     (true, _, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
-    (false, true, TerrainType::Water) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
-    (false, true, TerrainType::Shore) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
-    (false, true, _) => DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, true, _) => ENHANCED_ANIMATED_TILE_SET_COLUMNS as f32,
     (false, false, _) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
   }
 }

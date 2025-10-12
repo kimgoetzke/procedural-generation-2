@@ -173,7 +173,7 @@ fn initialise_resources_system(
     &mut layouts,
     TS_LAND_DRY_L1_PATH,
     false,
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
@@ -182,7 +182,7 @@ fn initialise_resources_system(
     &mut layouts,
     TS_LAND_MODERATE_L1_PATH,
     false,
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
   asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
@@ -191,7 +191,7 @@ fn initialise_resources_system(
     &mut layouts,
     TS_LAND_HUMID_L1_PATH,
     false,
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
+    ENHANCED_ANIMATED_TILE_SET_COLUMNS,
   );
   asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
   asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
