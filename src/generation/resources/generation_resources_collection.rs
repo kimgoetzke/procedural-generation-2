@@ -503,10 +503,10 @@ fn validate_terrain_state(
   terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
   errors: &mut HashSet<String>,
 ) {
-  validate_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
-  validate_duplicate_neighbours(state, terrain, errors);
-  validate_duplicate_connections(state, terrain, errors);
-  validate_missing_connections(state, terrain, errors);
+  check_for_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
+  check_for_duplicate_neighbours(state, terrain, errors);
+  check_for_duplicate_connections(state, terrain, errors);
+  check_for_missing_connections(state, terrain, errors);
 }
 
 /// Adds an error to `errors` for each asymmetric neighbour rules in the given terrain state. Asymmetry refers to
@@ -517,7 +517,7 @@ fn validate_terrain_state(
 /// because they are calculated and "collapsed" before the wave function collapse algorithm even runs. As a result,
 /// only non-path/-building objects need to know that they are allowed to be placed next to a path or building object
 /// and no rules for the opposite are required since they will never be evaluated.
-fn validate_asymmetric_rules(
+fn check_for_asymmetric_rules(
   state: &TerrainState,
   terrain: TerrainType,
   state_lookup_map: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
@@ -559,7 +559,7 @@ fn validate_asymmetric_rules(
 
 /// Adds an error to `errors` if there are duplicate neighbours - i.e. [`ObjectName`]s - in
 /// [`TerrainState::permitted_neighbours`].
-fn validate_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   for (connection, permitted_neighbours) in &state.permitted_neighbours {
     let unique_neighbours: HashSet<&ObjectName> = permitted_neighbours.iter().collect();
     if unique_neighbours.len() != permitted_neighbours.len() {
@@ -572,7 +572,7 @@ fn validate_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, err
 }
 
 /// Adds an error to `errors` if there are duplicate [`Connection`]s in [`TerrainState::permitted_neighbours`].
-fn validate_duplicate_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_duplicate_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   let connections: Vec<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
   let unique_connections: HashSet<_> = connections.iter().collect();
 
@@ -586,7 +586,7 @@ fn validate_duplicate_connections(state: &TerrainState, terrain: TerrainType, er
 
 /// Adds an error to `errors` if not all four cardinal directions are defined as [`Connection`]s in
 /// [`TerrainState::permitted_neighbours`].
-fn validate_missing_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_missing_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   const ALL_CONNECTIONS: [Connection; 4] = [Connection::Top, Connection::Right, Connection::Bottom, Connection::Left];
   let defined_connections: HashSet<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
   for connection in &ALL_CONNECTIONS {

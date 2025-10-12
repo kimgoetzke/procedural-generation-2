@@ -73,6 +73,18 @@ pub enum ObjectName {
   Land3Tree3,
   Land3Tree4,
   Land3Tree5,
+  SwampInnerCornerBottomRight,
+  SwampInnerCornerTopRight,
+  SwampInnerCornerBottomLeft,
+  SwampInnerCornerTopLeft,
+  SwampOuterCornerTopLeft,
+  SwampOuterCornerBottomLeft,
+  SwampOuterCornerTopRight,
+  SwampOuterCornerBottomRight,
+  SwampBottomFill,
+  SwampTopFill,
+  SwampLeftFill,
+  SwampRightFill,
   SwampFill,
   PathRight,
   PathHorizontal,
@@ -155,7 +167,22 @@ impl ObjectName {
   }
 
   pub fn is_animated(&self) -> bool {
-    matches!(self, ObjectName::SwampFill)
+    matches!(
+      self,
+      ObjectName::SwampInnerCornerBottomRight
+        | ObjectName::SwampInnerCornerTopRight
+        | ObjectName::SwampInnerCornerBottomLeft
+        | ObjectName::SwampInnerCornerTopLeft
+        | ObjectName::SwampOuterCornerTopLeft
+        | ObjectName::SwampOuterCornerBottomLeft
+        | ObjectName::SwampOuterCornerTopRight
+        | ObjectName::SwampOuterCornerBottomRight
+        | ObjectName::SwampBottomFill
+        | ObjectName::SwampTopFill
+        | ObjectName::SwampLeftFill
+        | ObjectName::SwampRightFill
+        | ObjectName::SwampFill
+    )
   }
 
   pub fn is_path(&self) -> bool {
