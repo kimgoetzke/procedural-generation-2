@@ -5,6 +5,15 @@ use crate::generation::lib::resources::object_resources::ObjectResources;
 use crate::generation::resources::Climate;
 use bevy::prelude::Resource;
 
+/// A collection of all assets, rules, and other data that is used when spawning terrain and object sprites in the
+/// world. Initialised in the [`crate::generation::resources::GenerationResourcesCollectionPlugin`] on startup.
+///
+/// Each terrain layer and climate combination has its own [`AssetCollection`], which contains a static and optional
+/// animated [`AssetPack`].
+///
+/// It also stores [`ObjectResources`] which contain [`AssetCollection`]s for all objects as well as the terrain state
+/// map which describes the rules for placing objects on tiles (used by the
+/// [`crate::generation::object::lib::ObjectGrid`]).
 #[derive(Resource, Default, Debug, Clone)]
 pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,

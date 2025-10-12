@@ -235,6 +235,7 @@ fn tile_set_static(
     stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), texture_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
+    index_offset: 1,
   }
 }
 
@@ -250,16 +251,8 @@ fn tile_set_animated(
   let texture = asset_server.load(tile_set_path.to_string());
 
   AssetCollection {
-    stat: AssetPack {
-      texture: texture.clone(),
-      texture_atlas_layout: atlas_layout.clone(),
-      index_offset: columns as usize,
-    },
-    anim: Some(AssetPack {
-      texture,
-      texture_atlas_layout: atlas_layout,
-      index_offset: columns as usize,
-    }),
+    stat: AssetPack::new(texture.clone(), atlas_layout.clone()),
+    anim: Some(AssetPack::new(texture, atlas_layout)),
     animated_tile_types: {
       let mut tile_types_set = HashSet::from([
         TileType::InnerCornerBottomLeft,
@@ -284,6 +277,7 @@ fn tile_set_animated(
 
       tile_types_set
     },
+    index_offset: columns as usize,
   }
 }
 
@@ -299,6 +293,7 @@ fn object_assets_static(
     stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), static_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
+    index_offset: 1,
   }
 }
 

@@ -1,11 +1,12 @@
 use bevy::asset::Handle;
 use bevy::image::{Image, TextureAtlasLayout};
 
+/// An asset pack groups together related assets, such as a sprite sheet and its corresponding texture atlas layout. It
+/// is used to pre-initialise and bundle resources that are used repeatedly when spawning sprites.
 #[derive(Debug, Clone)]
 pub struct AssetPack {
   pub texture: Handle<Image>,
   pub texture_atlas_layout: Handle<TextureAtlasLayout>,
-  pub index_offset: usize,
 }
 
 impl Default for AssetPack {
@@ -13,7 +14,6 @@ impl Default for AssetPack {
     Self {
       texture: Handle::default(),
       texture_atlas_layout: Handle::default(),
-      index_offset: 1,
     }
   }
 }
@@ -23,7 +23,6 @@ impl AssetPack {
     Self {
       texture,
       texture_atlas_layout,
-      index_offset: 1,
     }
   }
 }
