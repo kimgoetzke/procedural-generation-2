@@ -1,0 +1,309 @@
+terrain = "Land1"
+
+[[states]]
+index = 1
+name = "Land1PathRight"
+weight = 3
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Left", ["Empty"]],
+    ["Right", ["Land1PathLeft", "Land1PathHorizontal", "Land1PathCross"]],
+    ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 2
+name = "Land1PathHorizontal"
+weight = 10
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Left", ["Land1PathRight", "Land1PathHorizontal", "Land1PathCross"]],
+    ["Right", ["Land1PathLeft", "Land1PathHorizontal", "Land1PathCross"]],
+    ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 3
+name = "Land1PathCross"
+weight = 10
+permitted_neighbours = [
+    ["Top", ["Land1PathBottom", "Land1PathVertical"]],
+    ["Left", ["Land1PathRight", "Land1PathHorizontal"]],
+    ["Right", ["Land1PathLeft", "Land1PathHorizontal"]],
+    ["Bottom", ["Land1PathTop", "Land1PathVertical"]],
+]
+
+[[states]]
+index = 4
+name = "Land1PathVertical"
+weight = 10
+permitted_neighbours = [
+    ["Top", ["Land1PathVertical", "Land1PathBottom", "Land1PathCross"]],
+    ["Left", ["Empty"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Land1PathVertical", "Land1PathTop", "Land1PathCross"]],
+]
+
+[[states]]
+index = 5
+name = "Land1PathBottom"
+weight = 3
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Left", ["Empty"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Land1PathCross", "Land1PathVertical", "Land1PathTop"]],
+]
+
+[[states]]
+index = 6
+name = "Land1PathTop"
+weight = 3
+permitted_neighbours = [
+    ["Top", ["Land1PathCross", "Land1PathVertical", "Land1PathBottom"]],
+    ["Left", ["Empty"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 7
+name = "Land1PathLeft"
+weight = 3
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Left", ["Land1PathRight", "Land1PathHorizontal", "Land1PathCross"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 8
+name = "Land1StoneTopFill1"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Right", ["Empty", "Land1StoneTopFill1", "Land1StoneTopFill2", "Land1StoneTopLeftFill"]],
+    ["Bottom", ["Empty"]],
+    ["Left", ["Empty", "Land1StoneTopFill1", "Land1StoneTopFill2", "Land1StoneTopRightFill"]],
+]
+
+[[states]]
+index = 9
+name = "Land1StoneTopFill2"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Right", ["Empty", "Land1StoneTopFill1", "Land1StoneTopFill2", "Land1StoneTopLeftFill"]],
+    ["Bottom", ["Empty"]],
+    ["Left", ["Empty", "Land1StoneTopFill1", "Land1StoneTopFill2", "Land1StoneTopRightFill"]],
+]
+
+[[states]]
+index = 10
+name = "Land1StoneTopRightFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1StoneRightFill", "Land1StoneBottomRightFill"]],
+    ["Right", ["Empty", "Land1StoneTopLeftFill", "Land1StoneTopFill1", "Land1StoneTopFill2"]],
+    ["Bottom", ["Empty"]],
+    ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 11
+name = "Land1StoneTopLeftFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1StoneLeftFill", "Land1StoneBottomLeftFill"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty"]],
+    ["Left", ["Empty", "Land1StoneTopRightFill", "Land1StoneTopFill1", "Land1StoneTopFill2"]],
+]
+
+[[states]]
+index = 12
+name = "Land1StoneLeftFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1StoneLeftFill", "Land1StoneBottomLeftFill"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty", "Land1StoneLeftFill", "Land1StoneTopLeftFill"]],
+    ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 13
+name = "Land1StoneRightFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1StoneRightFill", "Land1StoneBottomRightFill"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty", "Land1StoneRightFill", "Land1StoneTopRightFill"]],
+    ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 14
+name = "Land1StoneBottomLeftFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Right", ["Empty"]],
+    ["Bottom", ["Empty", "Land1StoneLeftFill", "Land1StoneTopLeftFill"]],
+    ["Left", ["Empty", "Land1StoneBottomRightFill"]],
+]
+
+[[states]]
+index = 15
+name = "Land1StoneBottomRightFill"
+weight = 50
+permitted_neighbours = [
+    ["Top", ["Empty"]],
+    ["Right", ["Empty", "Land1StoneBottomLeftFill"]],
+    ["Bottom", ["Empty", "Land1StoneRightFill", "Land1StoneTopRightFill"]],
+    ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 16
+name = "Land1Stone1"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 17
+name = "Land1Stone2"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 18
+name = "Land1Stone3"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 19
+name = "Land1Stone4"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 20
+name = "Land1Stone5"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 21
+name = "Land1Stone6"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 22
+name = "Land1IndividualObject1"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 23
+name = "Land1IndividualObject2"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4"]],
+]
+
+[[states]]
+index = 24
+name = "Land1ConnectedObjectLeft"
+weight = 10
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Right", ["Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+]
+
+[[states]]
+index = 25
+name = "Land1ConnectedObjectMiddle"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Right", ["Land1ConnectedObjectRight"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone5", "Land1Stone4", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Left", ["Land1ConnectedObjectLeft"]],
+]
+
+[[states]]
+index = 26
+name = "Land1ConnectedObjectRight"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Left", ["Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle"]],
+]
+
+[[states]]
+index = 27
+name = "Land1IndividualObject3"
+weight = 2
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+]
+
+[[states]]
+index = 28
+name = "Land1IndividualObject4"
+weight = 5
+permitted_neighbours = [
+    ["Top", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Right", ["Empty", "Land1ConnectedObjectLeft", "Land1IndividualObject3", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Bottom", ["Empty", "Land1ConnectedObjectLeft", "Land1ConnectedObjectMiddle", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1IndividualObject4", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+    ["Left", ["Empty", "Land1ConnectedObjectRight", "Land1IndividualObject3", "Land1Stone1", "Land1Stone2", "Land1Stone3", "Land1Stone4", "Land1Stone5", "Land1Stone6", "Land1IndividualObject1", "Land1IndividualObject2"]],
+]

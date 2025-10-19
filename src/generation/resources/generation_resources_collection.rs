@@ -11,7 +11,6 @@ use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
   Commands, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath, in_state,
 };
-use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_common_assets::toml::TomlAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -38,7 +37,7 @@ impl Plugin for GenerationResourcesCollectionPlugin {
     app
       .init_resource::<GenerationResourcesCollection>()
       .add_plugins((
-        RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
+        TomlAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.toml"]),
         TomlAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.toml"]),
         TomlAssetPlugin::<ExclusionsRuleSet>::new(&["exclusions.ruleset.toml"]),
       ))
@@ -116,11 +115,11 @@ struct ExclusionsState {
 fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
   for terrain_type in TerrainType::iter() {
-    let path = format!("objects/{}.terrain.ruleset.ron", terrain_type.to_string().to_lowercase());
+    let path = format!("objects/{}.terrain.ruleset.toml", terrain_type.to_string().to_lowercase());
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
   }
-  let any_handle = asset_server.load("objects/any.terrain.ruleset.ron");
+  let any_handle = asset_server.load("objects/any.terrain.ruleset.toml");
   rule_set_handles.push(any_handle);
   commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
   let all_handle = asset_server.load("objects/all.tile-type.ruleset.toml");
