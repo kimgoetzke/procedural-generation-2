@@ -203,6 +203,10 @@ pub struct ObjectGenerationSettings {
   /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc. Will be ignored if
   /// `generate_objects` is `false`.
   pub generate_decoration: bool,
+  /// Whether to allow generating objects that have animated sprites. If disabled, only objects with static sprites will
+  /// be generated and spawned. This can reduce wave function collapse error rates and improve performance because it
+  /// reduces the number of possible object states.
+  pub enable_animated_objects: bool,
   /// Whether to enable random colour variations for decorative objects. Does not affect paths or buildings.
   pub enable_colour_variations: bool,
 }
@@ -215,6 +219,7 @@ impl Default for ObjectGenerationSettings {
       generate_buildings: GENERATE_BUILDINGS,
       building_density: BUILDING_DENSITY,
       generate_decoration: GENERATE_DECORATION,
+      enable_animated_objects: ENABLE_ANIMATED_OBJECTS,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }
   }

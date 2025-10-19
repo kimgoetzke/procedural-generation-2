@@ -1,3 +1,4 @@
+use crate::constants::WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL;
 use crate::generation::lib::shared;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
 use crate::resources::Settings;
@@ -7,7 +8,7 @@ use rand::Rng;
 use rand::prelude::StdRng;
 
 /// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
-const WARNING_FREQUENCY: u128 = 2_000;
+const WARNING_FREQUENCY: u128 = 1_750;
 
 /// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
@@ -164,7 +165,7 @@ fn handle_success(
 ) {
   let current_entropy = grid.calculate_total_entropy();
   log_completion(grid, iter_count, iter_error_count, current_entropy);
-  if *iter_count % 10 == 0 {
+  if *iter_count % WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL == 0 {
     snapshots.push(grid.clone());
   }
   *has_entropy = result == IterationResult::Incomplete;

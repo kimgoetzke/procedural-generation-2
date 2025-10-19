@@ -41,6 +41,7 @@ pub const GENERATE_PATHS: bool = true;
 pub const GENERATE_BUILDINGS: bool = true;
 pub const BUILDING_DENSITY: f64 = 0.5;
 pub const GENERATE_DECORATION: bool = true;
+pub const ENABLE_ANIMATED_OBJECTS: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
@@ -152,5 +153,6 @@ pub const BRIGHTNESS_RANGE: Range<f32> = 0.0..0.4;
 pub const WINDOW_WIDTH: f32 = 1280.;
 pub const WINDOW_HEIGHT: f32 = 720.;
 // ------------------------------------------------------------------------------------------------------
-// Common errors
+// Miscellaneous
 pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";
+pub const WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL: i32 = 10;

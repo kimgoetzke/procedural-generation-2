@@ -53,7 +53,16 @@ pub fn generate_object_grid(
     return None;
   }
   let start_time = shared::get_time();
-  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &chunk.layered_plane);
+  let mut terrain_state_map = resources.objects.terrain_state_map.clone();
+  if !settings.object.enable_animated_objects {
+    terrain_state_map.iter_mut().for_each(|(_, map)| {
+      map.iter_mut().for_each(|states| {
+        states.1.retain(|state| !state.name.is_animated());
+      });
+    });
+  }
+
+  let grid = ObjectGrid::new_initialised(cg, &terrain_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
     cg,
