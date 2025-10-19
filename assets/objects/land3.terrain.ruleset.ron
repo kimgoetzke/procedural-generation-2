@@ -288,9 +288,9 @@
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -299,9 +299,9 @@
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -310,9 +310,9 @@
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -321,9 +321,9 @@
       weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject5, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -332,9 +332,9 @@
       weight: 20,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject6, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -343,9 +343,9 @@
       weight: 20,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathHorizontal, PathTop, PathLeft, PathTopRight, PathTopLeft, PathTopHorizontal, PathBottomHorizontal, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathVertical, PathBottom, PathTop, PathTopRight, PathBottomRight, PathLeftVertical, PathRightVertical, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathRight, PathHorizontal, PathBottom, PathLeft, PathBottomRight, PathBottomLeft, PathBottomHorizontal, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, PathVertical, PathBottom, PathTop, PathLeft, PathTopLeft, PathBottomLeft, PathLeftVertical, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -354,9 +354,9 @@
       weight: 100,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Right, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Bottom, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Left, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -365,9 +365,9 @@
       weight: 100,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Right, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Bottom, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Left, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -376,9 +376,9 @@
       weight: 100,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -387,9 +387,9 @@
       weight: 100,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -398,9 +398,9 @@
       weight: 100,
       permitted_neighbours: [
         ( Top, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
-        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
+        ( Right, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampRightFill, ] ),
+        ( Bottom, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampBottomFill, ] ),
+        ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, SwampLeftFill, ] ),
       ]
     ),
     (
@@ -496,7 +496,7 @@
       name: SwampBottomFill,
       weight: 5,
       permitted_neighbours: [
-        ( Top, [ Empty, ] ),
+        ( Top, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
         ( Right, [ SwampBottomFill, SwampOuterCornerTopLeft, SwampInnerCornerBottomLeft, ] ),
         ( Bottom, [ SwampTopFill, SwampFill, SwampOuterCornerBottomRight, SwampOuterCornerBottomLeft, ] ),
         ( Left, [ SwampBottomFill, SwampOuterCornerTopRight, SwampInnerCornerBottomRight, ] ),
@@ -519,7 +519,7 @@
       weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampOuterCornerBottomRight, SwampInnerCornerBottomLeft, SwampLeftFill, ] ),
-        ( Right, [ Empty, ] ),
+        ( Right, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
         ( Bottom, [ SwampLeftFill, SwampOuterCornerTopRight, SwampInnerCornerTopLeft, ] ),
         ( Left, [ SwampRightFill, SwampOuterCornerBottomLeft, SwampFill, SwampOuterCornerTopLeft, ] ),
       ]
@@ -532,7 +532,7 @@
         ( Top, [ SwampInnerCornerBottomRight, SwampRightFill, SwampOuterCornerBottomLeft, ] ),
         ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerBottomRight, SwampOuterCornerTopRight, ] ),
         ( Bottom, [ SwampOuterCornerTopLeft, SwampInnerCornerTopRight, SwampRightFill, ] ),
-        ( Left, [ Empty, ] ),
+        ( Left, [ Empty, Land3Tree1, Land3Tree2, Land3Tree3, Land3Tree4, Land3Tree5, Land3IndividualObject1, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
     (
