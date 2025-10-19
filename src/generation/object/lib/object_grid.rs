@@ -231,16 +231,18 @@ impl ObjectGrid {
   /// # Panics
   /// If a cell must be updated but the update fails, this method will panic.
   pub fn validate(&mut self) {
-    let mut queue: VecDeque<Cell> = self
-      .object_grid
-      .iter()
-      .flatten()
-      .filter(|c| c.is_collapsed())
-      .cloned()
-      .collect();
+    let mut collapsed_cells: VecDeque<Cell> = VecDeque::new();
+    let mut edge_cells: VecDeque<Cell> = VecDeque::new();
+    self.object_grid.iter().flatten().for_each(|c| {
+      if c.is_collapsed() {
+        collapsed_cells.push_back(c.clone());
+      } else if c.ig.is_touching_edge() {
+        edge_cells.push_back(c.clone());
+      }
+    });
     let cg = self.cg;
     let mut i = 0;
-    while let Some(cell) = queue.pop_front() {
+    while let Some(cell) = collapsed_cells.pop_front() {
       for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
         if let Some(neighbour) = self.get_cell(&neighbour_ig) {
           if neighbour.is_collapsed() {
@@ -256,7 +258,7 @@ impl ObjectGrid {
                 updated_neighbour.get_possible_states().len(),
               );
               self.set_cell(updated_neighbour.clone());
-              queue.push_back(updated_neighbour);
+              collapsed_cells.push_back(updated_neighbour);
               i += 1;
             }
             Ok((false, _)) => {}
@@ -270,7 +272,37 @@ impl ObjectGrid {
         }
       }
     }
-    trace!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
+    while let Some(cell) = edge_cells.pop_front() {
+      let edge_connections: Vec<Connection> = get_connection_points(&cell.ig)
+        .iter()
+        .filter_map(|(c, p)| if p.is_touching_edge() { Some(c) } else { None })
+        .cloned()
+        .collect();
+      for connection in edge_connections {
+        match cell.clone_and_reduce(&self.no_neighbours_tile, &connection, false) {
+          Ok((true, updated_cell)) => {
+            trace!(
+              "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
+              cg,
+              cell.ig,
+              cell.get_possible_states().len(),
+              updated_cell.get_possible_states().len(),
+            );
+            self.set_cell(updated_cell.clone());
+            collapsed_cells.push_back(updated_cell);
+            i += 1;
+          }
+          Ok((false, _)) => {}
+          Err(_) => {
+            panic!(
+              "Validating object grid {}: Failed to reduce edge cell at {:?} of collapsed cell at {:?}",
+              cg, cell, cell.ig,
+            );
+          }
+        }
+      }
+    }
+    debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
@@ -288,12 +320,12 @@ impl ObjectGrid {
     neighbours
   }
 
-  pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {
-    self.object_grid.iter().flatten().find(|cell| cell.ig == *point)
+  pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
+    self.object_grid.iter().flatten().find(|cell| cell.ig == *ig)
   }
 
-  pub fn get_cell_mut(&mut self, point: &Point<InternalGrid>) -> Option<&mut Cell> {
-    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *point)
+  pub fn get_cell_mut(&mut self, ig: &Point<InternalGrid>) -> Option<&mut Cell> {
+    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *ig)
   }
 
   /// Replaces the [`Cell`] at the given point with the provided [`Cell`].
