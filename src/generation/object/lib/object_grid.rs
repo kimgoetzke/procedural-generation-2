@@ -3,7 +3,7 @@ use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
+use crate::generation::object::lib::{Cell, CellRef, Connection, TerrainState};
 use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
@@ -35,15 +35,13 @@ impl ObjectGrid {
     let object_grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
-    let mut no_neighbours_tile = Cell::new(-1, -1);
-    no_neighbours_tile.override_possible_states(vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)]);
 
     ObjectGrid {
       cg,
       path_grid: None,
       path: HashSet::new(),
       object_grid,
-      no_neighbours_tile,
+      no_neighbours_tile: Cell::new(-1, -1),
       is_failure_log_level_increased: false,
     }
   }
@@ -55,6 +53,15 @@ impl ObjectGrid {
     layered_plane: &LayeredPlane,
   ) -> Self {
     let mut grid = ObjectGrid::default(cg);
+    let permitted_neighbours_of_empty = terrain_climate_state_map
+      .get(&(TerrainType::Any, climate))
+      .expect("Failed to find rule set for [Any] terrain type and [{:?}] climate combination")
+      .get(&TileType::Fill)
+      .expect("Failed to find rule set for [Fill] tile type")
+      .clone();
+    grid
+      .no_neighbours_tile
+      .override_possible_states(permitted_neighbours_of_empty);
     grid.initialise_cells(terrain_climate_state_map, climate, layered_plane);
 
     grid
@@ -224,10 +231,7 @@ impl ObjectGrid {
   }
 
   /// Validates the object grid to ensure it is in a consistent state. Assumed to be called prior to starting the wave
-  /// function collapse algorithm. Specifically, this method updates all neighbours of already collapsed cells (and
-  /// recurses over all neighbours of any updated the neighbour) to ensure their states are valid. This is important
-  /// because we're allowing some cells to be pre-collapsed (e.g. for paths) and we need to ensure the rest of the
-  /// grid is valid before starting the wave function collapse algorithm.
+  /// function collapse algorithm.
   /// # Panics
   /// If a cell must be updated but the update fails, this method will panic.
   pub fn validate(&mut self) {
@@ -242,6 +246,21 @@ impl ObjectGrid {
     });
     let cg = self.cg;
     let mut i = 0;
+    self.update_neighbours_of_collapsed_cells(&mut collapsed_cells, &cg, &mut i);
+    // self.update_edge_cells(&mut collapsed_cells, &mut edge_cells, &cg, &mut i);
+    debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
+  }
+
+  /// Updates all neighbours of already collapsed cells (and recurses over all neighbours of any updated the neighbour)
+  /// to ensure their states are valid. This is important because we're allowing some cells to be pre-collapsed (e.g.
+  /// for paths) and we need to ensure the rest of the grid is valid before starting the wave function collapse
+  /// algorithm.
+  fn update_neighbours_of_collapsed_cells(
+    &mut self,
+    collapsed_cells: &mut VecDeque<Cell>,
+    cg: &Point<ChunkGrid>,
+    i: &mut i32,
+  ) {
     while let Some(cell) = collapsed_cells.pop_front() {
       for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
         if let Some(neighbour) = self.get_cell(&neighbour_ig) {
@@ -259,7 +278,7 @@ impl ObjectGrid {
               );
               self.set_cell(updated_neighbour.clone());
               collapsed_cells.push_back(updated_neighbour);
-              i += 1;
+              *i += 1;
             }
             Ok((false, _)) => {}
             Err(_) => {
@@ -272,10 +291,20 @@ impl ObjectGrid {
         }
       }
     }
+  }
+
+  /// Updates all cells that touch any edge of the grid to ensure their states are valid.
+  fn update_edge_cells(
+    &mut self,
+    collapsed_cells: &mut VecDeque<Cell>,
+    edge_cells: &mut VecDeque<Cell>,
+    cg: &Point<ChunkGrid>,
+    i: &mut i32,
+  ) {
     while let Some(cell) = edge_cells.pop_front() {
       let edge_connections: Vec<Connection> = get_connection_points(&cell.ig)
         .iter()
-        .filter_map(|(c, p)| if p.is_touching_edge() { Some(c) } else { None })
+        .filter_map(|(c, p)| if p.is_outside_grid() { Some(c) } else { None })
         .cloned()
         .collect();
       for connection in edge_connections {
@@ -290,7 +319,7 @@ impl ObjectGrid {
             );
             self.set_cell(updated_cell.clone());
             collapsed_cells.push_back(updated_cell);
-            i += 1;
+            *i += 1;
           }
           Ok((false, _)) => {}
           Err(_) => {
@@ -302,7 +331,6 @@ impl ObjectGrid {
         }
       }
     }
-    debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {

@@ -375,6 +375,7 @@ fn terrain_rules(
         states.len()
       );
     }
+    rule_sets.insert(TerrainType::Any, any_rule_set);
   }
 
   rule_sets
@@ -419,8 +420,6 @@ fn exclusion_rules(
 /// their possible states.
 ///
 /// Note:
-/// - [`TerrainType::Any`] is filtered out, as it is not a valid terrain type to be rendered and used to extend other
-///   terrain types. This [`TerrainType`] causes panics if it is used later in the generation logic.
 /// - [`TileType::Unknown`] is also filtered out, as it is not a valid tile type and is only used to signal
 ///   an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
 ///   single-coloured tile to indicate the error.
@@ -429,7 +428,7 @@ fn resolve_rules_to_terrain_states_map(
   tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
 ) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
   let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
-  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
+  for terrain_type in TerrainType::iter() {
     let relevant_terrain_rules = terrain_rules
       .get(&terrain_type)
       .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
@@ -472,7 +471,6 @@ fn resolve_rules_to_terrain_states_map(
 }
 
 /// Validates the terrain state map in a basic way. This function checks for the following:
-/// - The map must not contain [`TerrainType::Any`]
 /// - The map must not contain [`TileType::Unknown`] for any [`TerrainType`]
 /// - Each state must not have asymmetric neighbour rules (i.e. a state that allows a neighbour in one direction
 ///   but the neighbour state does not allow the original state in the opposite direction) - however, paths and
@@ -484,10 +482,6 @@ fn validate_terrain_state_map(terrain_state_map: &HashMap<TerrainType, HashMap<T
   let mut errors = HashSet::new();
   let state_lookup_map = build_state_lookup_map(terrain_state_map);
   for (terrain, state_map) in terrain_state_map {
-    if let Err(error_msg) = validate_terrain_type(terrain) {
-      errors.insert(error_msg);
-      continue;
-    }
     for (tile_type, states) in state_map {
       if let Err(error_msg) = validate_tile_type(tile_type, terrain) {
         errors.insert(error_msg);
@@ -523,16 +517,6 @@ fn build_state_lookup_map(
         .flat_map(move |(tile_type, states)| states.iter().map(move |state| ((*terrain, *tile_type, state.name), state)))
     })
     .collect()
-}
-
-/// Validates the terrain type. Returns and error if the terrain type is [`TerrainType::Any`] since this terrain type
-/// must not be in the terrain state map. It is only used to extend other terrain types or as a placeholder value
-/// in the generation logic at runtime.
-fn validate_terrain_type(terrain: &TerrainType) -> Result<(), String> {
-  match terrain {
-    TerrainType::Any => Err("Found terrain type [Any], which is not allowed".to_string()),
-    _ => Ok(()),
-  }
 }
 
 /// Validates the tile type. Returns an error if the tile type is [`TileType::Unknown`] since this tile type is only
@@ -667,7 +651,22 @@ fn apply_exclusions(
       cloned_states
         .iter_mut()
         .for_each(|entry| entry.1.retain(|state| !excluded_objects.contains(&state.name)));
-      terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states);
+      terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states.clone());
+      if terrain == &TerrainType::Any {
+        // TODO: Find out why exclusions for [Any] terrain are not applied correctly and then remove the if-statement
+        debug!(
+          "Objects for [Any] terrain in [{:?}] climate to be excluded: {:?}",
+          climate, excluded_objects
+        );
+        debug!(
+          "Now allowing {}",
+          cloned_states
+            .iter()
+            .map(|o| format!("- [{:?}]\n", o))
+            .collect::<Vec<String>>()
+            .join(", ")
+        );
+      }
     }
   }
 

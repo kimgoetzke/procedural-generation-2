@@ -1,19 +1,76 @@
 [[states]]
+terrain = "Any"
+climate = "Moderate"
+excluded_objects = [
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
+  "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
+  "SwampFill"
+]
+
+[[states]]
+terrain = "Any"
+climate = "Humid"
+excluded_objects = [
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
+  "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
+  "SwampFill"
+]
+
+[[states]]
+terrain = "Any"
+climate = "Dry"
+excluded_objects = [
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
+  "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
+  "SwampFill"
+]
+
+[[states]]
 terrain = "Land2"
 climate = "Moderate"
 excluded_objects = [
-  "SwampInnerCornerTopRight",
-  "SwampInnerCornerTopLeft",
-  "SwampTopFill",
-  "SwampInnerCornerBottomLeft",
-  "SwampInnerCornerTopLeft",
-  "SwampLeftFill",
   "SwampInnerCornerBottomRight",
   "SwampInnerCornerTopRight",
-  "SwampRightFill",
-  "SwampInnerCornerBottomRight",
   "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
   "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
   "SwampFill"
 ]
 
@@ -21,17 +78,17 @@ excluded_objects = [
 terrain = "Land3"
 climate = "Moderate"
 excluded_objects = [
-  "SwampInnerCornerTopRight",
-  "SwampInnerCornerTopLeft",
-  "SwampTopFill",
-  "SwampInnerCornerBottomLeft",
-  "SwampInnerCornerTopLeft",
-  "SwampLeftFill",
   "SwampInnerCornerBottomRight",
   "SwampInnerCornerTopRight",
-  "SwampRightFill",
-  "SwampInnerCornerBottomRight",
   "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
   "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
   "SwampFill"
 ]
