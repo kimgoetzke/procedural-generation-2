@@ -247,7 +247,7 @@ impl ObjectGrid {
     let cg = self.cg;
     let mut i = 0;
     self.update_neighbours_of_collapsed_cells(&mut collapsed_cells, &cg, &mut i);
-    // self.update_edge_cells(&mut collapsed_cells, &mut edge_cells, &cg, &mut i);
+    self.update_edge_cells(&mut edge_cells, &cg, &mut i);
     debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
   }
 
@@ -294,13 +294,7 @@ impl ObjectGrid {
   }
 
   /// Updates all cells that touch any edge of the grid to ensure their states are valid.
-  fn update_edge_cells(
-    &mut self,
-    collapsed_cells: &mut VecDeque<Cell>,
-    edge_cells: &mut VecDeque<Cell>,
-    cg: &Point<ChunkGrid>,
-    i: &mut i32,
-  ) {
+  fn update_edge_cells(&mut self, edge_cells: &mut VecDeque<Cell>, cg: &Point<ChunkGrid>, i: &mut i32) {
     while let Some(cell) = edge_cells.pop_front() {
       let edge_connections: Vec<Connection> = get_connection_points(&cell.ig)
         .iter()
@@ -318,7 +312,6 @@ impl ObjectGrid {
               updated_cell.get_possible_states().len(),
             );
             self.set_cell(updated_cell.clone());
-            collapsed_cells.push_back(updated_cell);
             *i += 1;
           }
           Ok((false, _)) => {}

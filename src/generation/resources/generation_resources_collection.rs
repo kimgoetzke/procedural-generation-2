@@ -653,7 +653,7 @@ fn apply_exclusions(
         .for_each(|entry| entry.1.retain(|state| !excluded_objects.contains(&state.name)));
       terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states.clone());
       if terrain == &TerrainType::Any {
-        // TODO: Find out why exclusions for [Any] terrain are not applied correctly and then remove the if-statement
+        // TODO: Find out why exclusions for [Any] are not applied correctly and then remove the if-statement
         debug!(
           "Objects for [Any] terrain in [{:?}] climate to be excluded: {:?}",
           climate, excluded_objects

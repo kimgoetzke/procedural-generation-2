@@ -94,9 +94,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
     grid.set_cell(cell.clone());
     for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
       if !neighbour.is_collapsed() {
-        if let Ok((has_changed, neighbour_cell)) =
-          neighbour.clone_and_reduce(&cell, &connection, is_failure_log_level_increased)
-        {
+        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection, false) {
           if has_changed {
             stack.push(neighbour_cell);
           }
