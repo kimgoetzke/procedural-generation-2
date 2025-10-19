@@ -4,6 +4,7 @@ use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
 use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
+use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
@@ -49,11 +50,12 @@ impl ObjectGrid {
 
   pub fn new_initialised(
     cg: Point<ChunkGrid>,
-    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+    climate: Climate,
+    terrain_climate_state_map: &HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
     layered_plane: &LayeredPlane,
   ) -> Self {
     let mut grid = ObjectGrid::default(cg);
-    grid.initialise_cells(terrain_state_map, layered_plane);
+    grid.initialise_cells(terrain_climate_state_map, climate, layered_plane);
 
     grid
   }
@@ -61,7 +63,8 @@ impl ObjectGrid {
   /// Initialises object grid cells with terrain and tile type.
   fn initialise_cells(
     &mut self,
-    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+    terrain_climate_state_map: &HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
+    climate: Climate,
     layered_plane: &LayeredPlane,
   ) {
     for tile in layered_plane.flat.data.iter().flatten().flatten() {
@@ -72,9 +75,15 @@ impl ObjectGrid {
       // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(15, 13) && ig == Point::new(15, 0);
       let is_monitored = false;
       if let Some(cell) = self.get_cell_mut(&ig) {
-        let possible_states = terrain_state_map
-          .get(&terrain)
-          .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str())
+        let possible_states = terrain_climate_state_map
+          .get(&(terrain, climate))
+          .expect(
+            format!(
+              "Failed to find rule set for [{:?}] terrain type and [{:?}] climate combination",
+              &terrain, &climate
+            )
+            .as_str(),
+          )
           .get(&tile_type)
           .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str())
           .clone();

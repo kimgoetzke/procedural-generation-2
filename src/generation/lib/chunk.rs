@@ -3,7 +3,7 @@ use crate::coords::point::{ChunkGrid, TileGrid, World};
 use crate::coords::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::{Direction, DraftTile, LayeredPlane, TerrainType, shared};
-use crate::generation::resources::{BiomeMetadataSet, Metadata};
+use crate::generation::resources::{BiomeMetadataSet, Climate, ElevationMetadata, Metadata};
 use crate::resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
@@ -24,6 +24,7 @@ const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
 pub struct Chunk {
   pub coords: Coords,
   pub center: Point<World>,
+  pub climate: Climate,
   pub layered_plane: LayeredPlane,
 }
 
@@ -33,11 +34,17 @@ impl Chunk {
   /// about the [`crate::generation::lib::Tile`]s that make up the terrain including their types.
   pub fn new(w: Point<World>, tg: Point<TileGrid>, metadata: &Metadata, settings: &Settings) -> Self {
     let coords = Coords::new_for_chunk(w, tg);
-    let data = generate_terrain_data(&tg, &coords.chunk_grid, metadata, settings);
+    let biome_metadata_set = metadata.get_biome_metadata_for(&coords.chunk_grid);
+    let elevation_metadata = metadata
+      .elevation
+      .get(&coords.chunk_grid)
+      .expect(format!("Failed to get elevation metadata for {}", coords.chunk_grid).as_str());
+    let data = generate_terrain_data(&tg, &coords.chunk_grid, &biome_metadata_set, elevation_metadata, settings);
     let layered_plane = LayeredPlane::new(data, settings);
     Chunk {
       coords,
       center: Point::new_world(tg.x + (CHUNK_SIZE_PLUS_BUFFER / 2), tg.y + (CHUNK_SIZE_PLUS_BUFFER / 2)),
+      climate: biome_metadata_set.this.climate,
       layered_plane,
     }
   }
@@ -48,15 +55,12 @@ impl Chunk {
 fn generate_terrain_data(
   tg: &Point<TileGrid>,
   cg: &Point<ChunkGrid>,
-  metadata: &Metadata,
+  biome_metadata_set: &BiomeMetadataSet,
+  elevation_metadata: &ElevationMetadata,
   settings: &Settings,
 ) -> Vec<Vec<Option<DraftTile>>> {
   let start_time = shared::get_time();
-  let elevation_metadata = metadata
-    .elevation
-    .get(cg)
-    .expect(format!("Failed to get elevation metadata for {}", cg).as_str());
-  let biome_metadata = metadata.get_biome_metadata_for(cg);
+
   let mut rng = StdRng::seed_from_u64(shared::calculate_seed(cg.clone(), settings.world.noise_seed));
   let perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(settings.world.noise_octaves)
@@ -88,7 +92,7 @@ fn generate_terrain_data(
 
       // Calculate if this tile is a biome edge
       let distance_from_center = calculate_distance_from_center(center, max_distance, tx, ty);
-      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, &biome_metadata, &mut rng);
+      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, biome_metadata_set, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -105,7 +109,7 @@ fn generate_terrain_data(
         n if n > 0.3 => TerrainType::new(TerrainType::Shore, is_biome_edge),
         _ => TerrainType::Water,
       };
-      let climate = biome_metadata.this.climate;
+      let climate = biome_metadata_set.this.climate;
 
       let tile = DraftTile::new(ig, tg, terrain, climate, debug_data);
       tiles[ix as usize][iy as usize] = Some(tile);

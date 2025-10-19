@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName, TerrainState};
+use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
@@ -38,6 +39,7 @@ impl Plugin for GenerationResourcesCollectionPlugin {
       .add_plugins((
         RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
         RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
+        RonAssetPlugin::<ExclusionsRuleSet>::new(&["exclusions.ruleset.ron"]),
       ))
       .add_systems(Startup, load_rule_sets_system)
       .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
@@ -89,6 +91,27 @@ struct TileTypeState {
   pub permitted_self: Vec<ObjectName>,
 }
 
+#[derive(Resource, Default, Debug, Clone)]
+struct ExclusionsRuleSetHandle(Handle<ExclusionsRuleSet>);
+
+#[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
+struct ExclusionsRuleSet {
+  states: Vec<ExclusionsState>,
+}
+
+impl Display for ExclusionsRuleSet {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "Exclusions rule set with {} states", self.states.len())
+  }
+}
+
+#[derive(serde::Deserialize, Debug, Clone, Reflect)]
+struct ExclusionsState {
+  pub terrain: TerrainType,
+  pub climate: Climate,
+  pub excluded_objects: Vec<ObjectName>,
+}
+
 fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
   for terrain_type in TerrainType::iter() {
@@ -99,14 +122,17 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
   let any_handle = asset_server.load("objects/any.terrain.ruleset.ron");
   rule_set_handles.push(any_handle);
   commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
-  let handle = asset_server.load("objects/all.tile-type.ruleset.ron");
-  commands.insert_resource(TileTypeRuleSetHandle(handle));
+  let all_handle = asset_server.load("objects/all.tile-type.ruleset.ron");
+  commands.insert_resource(TileTypeRuleSetHandle(all_handle));
+  let exclusion_handle = asset_server.load("objects/exclusions.ruleset.ron");
+  commands.insert_resource(ExclusionsRuleSetHandle(exclusion_handle));
 }
 
 fn check_loading_state_system(
   asset_server: Res<AssetServer>,
   terrain_handles: Res<TerrainRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
+  exclusions_handle: Res<ExclusionsRuleSetHandle>,
   mut state: ResMut<NextState<AppState>>,
 ) {
   for handle in &terrain_handles.0 {
@@ -116,6 +142,10 @@ fn check_loading_state_system(
     }
   }
   if is_loading(asset_server.get_load_state(&tile_type_handle.0)) {
+    info_once!("Waiting for assets to load...");
+    return;
+  }
+  if is_loading(asset_server.get_load_state(&exclusions_handle.0)) {
     info_once!("Waiting for assets to load...");
     return;
   }
@@ -141,6 +171,8 @@ fn initialise_resources_system(
   mut terrain_rule_set_assets: ResMut<Assets<TerrainRuleSet>>,
   tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
   mut tile_type_rule_set_assets: ResMut<Assets<TileTypeRuleSet>>,
+  exclusions_rule_set_handle: Res<ExclusionsRuleSetHandle>,
+  mut exclusions_rule_set_assets: ResMut<Assets<ExclusionsRuleSet>>,
 ) {
   // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
@@ -218,9 +250,11 @@ fn initialise_resources_system(
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
   let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  let exclusion_rules = exclusion_rules(exclusions_rule_set_handle, &mut exclusions_rule_set_assets);
   let terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
   validate_terrain_state_map(&terrain_state_map);
-  asset_collection.objects.terrain_state_map = terrain_state_map.clone();
+  let terrain_climate_state_map = apply_exclusions(exclusion_rules, terrain_state_map);
+  asset_collection.objects.terrain_climate_state_map = terrain_climate_state_map;
 }
 
 fn tile_set_static(
@@ -355,6 +389,25 @@ fn tile_type_rules(
     let mut rule_sets = HashMap::new();
     for state in rule_set.states {
       rule_sets.insert(state.tile_type, state.permitted_self);
+    }
+    return rule_sets;
+  }
+
+  HashMap::new()
+}
+
+fn exclusion_rules(
+  exclusion_rule_set_handle: Res<ExclusionsRuleSetHandle>,
+  exclusion_rule_set_assets: &mut ResMut<Assets<ExclusionsRuleSet>>,
+) -> HashMap<(TerrainType, Climate), Vec<ObjectName>> {
+  if let Some(rule_set) = exclusion_rule_set_assets.remove(&exclusion_rule_set_handle.0) {
+    debug!(
+      "Loaded: Exclusions rule set for [{}] terrain-climate combinations",
+      rule_set.states.len()
+    );
+    let mut rule_sets = HashMap::new();
+    for state in rule_set.states {
+      rule_sets.insert((state.terrain, state.climate), state.excluded_objects);
     }
     return rule_sets;
   }
@@ -597,4 +650,26 @@ fn check_for_missing_connections(state: &TerrainState, terrain: TerrainType, err
       ));
     }
   }
+}
+
+/// Turns a terrain state map into a terrain-climate state map by applying the exclusion rules. For each terrain type
+/// and climate combination, the relevant exclusion rules are applied to filter out any excluded object names from
+/// the terrain states.
+fn apply_exclusions(
+  exclusion_rules: HashMap<(TerrainType, Climate), Vec<ObjectName>>,
+  terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+) -> HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>> {
+  let mut terrain_climate_state_map = HashMap::new();
+  for terrain in terrain_state_map.keys() {
+    for climate in Climate::iter() {
+      let mut cloned_states = terrain_state_map.get(terrain).expect("Terrain must exist").clone();
+      let excluded_objects = exclusion_rules.get(&(*terrain, climate)).cloned().unwrap_or_default();
+      cloned_states
+        .iter_mut()
+        .for_each(|entry| entry.1.retain(|state| !excluded_objects.contains(&state.name)));
+      terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states);
+    }
+  }
+
+  terrain_climate_state_map
 }

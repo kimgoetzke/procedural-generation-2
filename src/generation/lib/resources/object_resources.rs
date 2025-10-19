@@ -1,12 +1,13 @@
 use crate::generation::lib::resources::asset_collection::AssetCollection;
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::TerrainState;
+use crate::generation::resources::Climate;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::Resource;
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct ObjectResources {
-  pub terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+  pub terrain_climate_state_map: HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
   pub water: AssetCollection,
   pub shore: AssetCollection,
   pub l1_dry: AssetCollection,
