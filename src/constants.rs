@@ -155,4 +155,8 @@ pub const WINDOW_HEIGHT: f32 = 720.;
 // ------------------------------------------------------------------------------------------------------
 // Miscellaneous
 pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";
+/// The number of successful iterations that have to be performed in the wave function collapse algorithm before taking
+/// a snapshot.
 pub const WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL: i32 = 10;
+/// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
+pub const WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY: u128 = 1_750;

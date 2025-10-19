@@ -1,4 +1,4 @@
-use crate::constants::WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL;
+use crate::constants::{WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
 use crate::generation::lib::shared;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
 use crate::resources::Settings;
@@ -6,9 +6,6 @@ use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::Rng;
 use rand::prelude::StdRng;
-
-/// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
-const WARNING_FREQUENCY: u128 = 1_750;
 
 /// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
@@ -20,7 +17,7 @@ impl Plugin for WfcPlugin {
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, mut rng: &mut StdRng) {
   let start_time = shared::get_time();
-  let mut next_warning_time = start_time + WARNING_FREQUENCY;
+  let mut next_warning_time = start_time + WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY;
   object_grid.validate();
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
   let is_decoration_enabled = settings.object.generate_decoration;
@@ -236,7 +233,7 @@ fn log_failure(
       iteration_error_count,
       snapshots.len()
     );
-    *next_warning_time = now + WARNING_FREQUENCY;
+    *next_warning_time = now + WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY;
   }
 }
 
