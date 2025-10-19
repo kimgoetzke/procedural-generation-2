@@ -2,36 +2,36 @@
 terrain = "Land2"
 climate = "Moderate"
 excluded_objects = [
-    "SwampInnerCornerTopRight",
-    "SwampInnerCornerTopLeft",
-    "SwampTopFill",
-    "SwampInnerCornerBottomLeft",
-    "SwampInnerCornerTopLeft",
-    "SwampLeftFill",
-    "SwampInnerCornerBottomRight",
-    "SwampInnerCornerTopRight",
-    "SwampRightFill",
-    "SwampInnerCornerBottomRight",
-    "SwampInnerCornerBottomLeft",
-    "SwampBottomFill",
-    "SwampFill"
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerTopLeft",
+  "SwampTopFill",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampLeftFill",
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampRightFill",
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampBottomFill",
+  "SwampFill"
 ]
 
 [[states]]
 terrain = "Land3"
 climate = "Moderate"
 excluded_objects = [
-    "SwampInnerCornerTopRight",
-    "SwampInnerCornerTopLeft",
-    "SwampTopFill",
-    "SwampInnerCornerBottomLeft",
-    "SwampInnerCornerTopLeft",
-    "SwampLeftFill",
-    "SwampInnerCornerBottomRight",
-    "SwampInnerCornerTopRight",
-    "SwampRightFill",
-    "SwampInnerCornerBottomRight",
-    "SwampInnerCornerBottomLeft",
-    "SwampBottomFill",
-    "SwampFill"
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerTopLeft",
+  "SwampTopFill",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampLeftFill",
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampRightFill",
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampBottomFill",
+  "SwampFill"
 ]
