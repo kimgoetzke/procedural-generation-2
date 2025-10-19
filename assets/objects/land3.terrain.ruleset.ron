@@ -403,5 +403,148 @@
         ( Left, [ Empty, Land3Tree2, Land3Tree1, Land3Tree3, Land3Tree4, Land3IndividualObject2, Land3IndividualObject3, Land3IndividualObject4, Land3IndividualObject5, Land3IndividualObject6, ] ),
       ]
     ),
+    (
+      index: 1,
+      name: SwampInnerCornerBottomRight,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Right, [ SwampInnerCornerBottomLeft, SwampOuterCornerTopLeft, SwampBottomFill, ] ),
+        ( Bottom, [ SwampInnerCornerTopRight, SwampOuterCornerTopLeft, SwampRightFill, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
+      index: 2,
+      name: SwampInnerCornerTopRight,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampInnerCornerBottomRight, SwampOuterCornerBottomLeft, SwampRightFill, ] ),
+        ( Right, [ SwampOuterCornerBottomLeft, SwampTopFill, SwampInnerCornerTopLeft, ] ),
+        ( Bottom, [ Empty, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
+      index: 3,
+      name: SwampInnerCornerBottomLeft,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ SwampOuterCornerTopRight, SwampLeftFill, SwampInnerCornerTopLeft, ] ),
+        ( Left, [ SwampInnerCornerBottomRight, SwampOuterCornerTopRight, SwampBottomFill, ] ),
+      ]
+    ),
+    (
+      index: 4,
+      name: SwampInnerCornerTopLeft,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampInnerCornerBottomLeft, SwampOuterCornerBottomRight, SwampLeftFill, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ Empty, ] ),
+        ( Left, [ SwampTopFill, SwampOuterCornerBottomRight, SwampInnerCornerTopRight, ] ),
+      ]
+    ),
+    (
+      index: 5,
+      name: SwampOuterCornerTopLeft,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampInnerCornerBottomRight, SwampRightFill, SwampOuterCornerBottomLeft, ] ),
+        ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerTopRight, SwampOuterCornerBottomRight, ] ),
+        ( Bottom, [ SwampFill, SwampTopFill, SwampOuterCornerBottomLeft, SwampOuterCornerBottomRight, ] ),
+        ( Left, [ SwampInnerCornerBottomRight, SwampBottomFill, SwampOuterCornerTopRight, ] ),
+      ]
+    ),
+    (
+      index: 6,
+      name: SwampOuterCornerBottomLeft,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampOuterCornerTopLeft, SwampOuterCornerTopRight, SwampBottomFill, SwampFill, ] ),
+        ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerTopRight, SwampOuterCornerBottomRight,  ] ),
+        ( Bottom, [ SwampInnerCornerTopRight, SwampRightFill, SwampOuterCornerTopLeft, ] ),
+        ( Left, [ SwampOuterCornerBottomRight, SwampInnerCornerTopRight, SwampTopFill, ] ),
+      ]
+    ),
+    (
+      index: 7,
+      name: SwampOuterCornerTopRight,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampLeftFill, SwampOuterCornerBottomRight, SwampInnerCornerBottomLeft, ] ),
+        ( Right, [ SwampBottomFill, SwampOuterCornerTopLeft, SwampInnerCornerBottomLeft, ] ),
+        ( Bottom, [ SwampFill, SwampTopFill, SwampOuterCornerBottomLeft, SwampOuterCornerBottomRight, ] ),
+        ( Left, [ SwampFill, SwampRightFill, SwampOuterCornerBottomLeft, SwampOuterCornerTopLeft, ] ),
+      ]
+    ),
+    (
+      index: 8,
+      name: SwampOuterCornerBottomRight,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampFill, SwampBottomFill, SwampOuterCornerTopRight, SwampOuterCornerTopLeft, ] ),
+        ( Right, [ SwampOuterCornerBottomLeft, SwampInnerCornerTopLeft, SwampTopFill, ] ),
+        ( Bottom, [ SwampOuterCornerTopRight, SwampInnerCornerTopLeft, SwampLeftFill, ] ),
+        ( Left, [ SwampFill, SwampRightFill, SwampOuterCornerBottomLeft, SwampOuterCornerTopLeft, ] ),
+      ]
+    ),
+    (
+      index: 9,
+      name: SwampBottomFill,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ Empty, ] ),
+        ( Right, [ SwampBottomFill, SwampOuterCornerTopLeft, SwampInnerCornerBottomLeft, ] ),
+        ( Bottom, [ SwampTopFill, SwampFill, SwampOuterCornerBottomRight, SwampOuterCornerBottomLeft, ] ),
+        ( Left, [ SwampBottomFill, SwampOuterCornerTopRight, SwampInnerCornerBottomRight, ] ),
+      ]
+    ),
+    (
+      index: 10,
+      name: SwampTopFill,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampBottomFill, SwampFill, SwampOuterCornerTopRight, SwampOuterCornerTopLeft, ] ),
+        ( Right, [ SwampTopFill, SwampOuterCornerBottomLeft, SwampInnerCornerTopLeft, ] ),
+        ( Bottom, [ Empty, ] ),
+        ( Left, [ SwampTopFill, SwampOuterCornerBottomRight, SwampInnerCornerTopRight, ] ),
+      ]
+    ),
+    (
+      index: 11,
+      name: SwampLeftFill,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampOuterCornerBottomRight, SwampInnerCornerBottomLeft, SwampLeftFill, ] ),
+        ( Right, [ Empty, ] ),
+        ( Bottom, [ SwampLeftFill, SwampOuterCornerTopRight, SwampInnerCornerTopLeft, ] ),
+        ( Left, [ SwampRightFill, SwampOuterCornerBottomLeft, SwampFill, SwampOuterCornerTopLeft, ] ),
+      ]
+    ),
+    (
+      index: 12,
+      name: SwampRightFill,
+      weight: 5,
+      permitted_neighbours: [
+        ( Top, [ SwampInnerCornerBottomRight, SwampRightFill, SwampOuterCornerBottomLeft, ] ),
+        ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerBottomRight, SwampOuterCornerTopRight, ] ),
+        ( Bottom, [ SwampOuterCornerTopLeft, SwampInnerCornerTopRight, SwampRightFill, ] ),
+        ( Left, [ Empty, ] ),
+      ]
+    ),
+    (
+      index: 13,
+      name: SwampFill,
+      weight: 10,
+      permitted_neighbours: [
+        ( Top, [ SwampFill, SwampBottomFill, SwampOuterCornerTopLeft, SwampOuterCornerTopRight, ] ),
+        ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerBottomRight, SwampOuterCornerTopRight, ] ),
+        ( Bottom, [ SwampFill, SwampTopFill, SwampOuterCornerBottomRight, SwampOuterCornerBottomLeft, ] ),
+        ( Left, [ SwampFill, SwampRightFill, SwampOuterCornerBottomLeft, SwampOuterCornerTopLeft, ] ),
+      ]
+    ),
   ]
 )

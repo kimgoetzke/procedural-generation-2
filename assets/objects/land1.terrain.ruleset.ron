@@ -392,7 +392,7 @@
     (
       index: 1,
       name: SwampInnerCornerBottomRight,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ Empty, ] ),
         ( Right, [ SwampInnerCornerBottomLeft, SwampOuterCornerTopLeft, SwampBottomFill, ] ),
@@ -403,7 +403,7 @@
     (
       index: 2,
       name: SwampInnerCornerTopRight,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampInnerCornerBottomRight, SwampOuterCornerBottomLeft, SwampRightFill, ] ),
         ( Right, [ SwampOuterCornerBottomLeft, SwampTopFill, SwampInnerCornerTopLeft, ] ),
@@ -414,7 +414,7 @@
     (
       index: 3,
       name: SwampInnerCornerBottomLeft,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ Empty, ] ),
         ( Right, [ Empty, ] ),
@@ -425,7 +425,7 @@
     (
       index: 4,
       name: SwampInnerCornerTopLeft,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampInnerCornerBottomLeft, SwampOuterCornerBottomRight, SwampLeftFill, ] ),
         ( Right, [ Empty, ] ),
@@ -436,7 +436,7 @@
     (
       index: 5,
       name: SwampOuterCornerTopLeft,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampInnerCornerBottomRight, SwampRightFill, SwampOuterCornerBottomLeft, ] ),
         ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerTopRight, SwampOuterCornerBottomRight, ] ),
@@ -447,7 +447,7 @@
     (
       index: 6,
       name: SwampOuterCornerBottomLeft,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampOuterCornerTopLeft, SwampOuterCornerTopRight, SwampBottomFill, SwampFill, ] ),
         ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerTopRight, SwampOuterCornerBottomRight,  ] ),
@@ -458,7 +458,7 @@
     (
       index: 7,
       name: SwampOuterCornerTopRight,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampLeftFill, SwampOuterCornerBottomRight, SwampInnerCornerBottomLeft, ] ),
         ( Right, [ SwampBottomFill, SwampOuterCornerTopLeft, SwampInnerCornerBottomLeft, ] ),
@@ -469,7 +469,7 @@
     (
       index: 8,
       name: SwampOuterCornerBottomRight,
-      weight: 500,
+      weight: 5,
       permitted_neighbours: [
         ( Top, [ SwampFill, SwampBottomFill, SwampOuterCornerTopRight, SwampOuterCornerTopLeft, ] ),
         ( Right, [ SwampOuterCornerBottomLeft, SwampInnerCornerTopLeft, SwampTopFill, ] ),
@@ -480,7 +480,7 @@
     (
       index: 9,
       name: SwampBottomFill,
-      weight: 500,
+      weight: 10,
       permitted_neighbours: [
         ( Top, [ Empty, ] ),
         ( Right, [ SwampBottomFill, SwampOuterCornerTopLeft, SwampInnerCornerBottomLeft, ] ),
@@ -491,7 +491,7 @@
     (
       index: 10,
       name: SwampTopFill,
-      weight: 500,
+      weight: 10,
       permitted_neighbours: [
         ( Top, [ SwampBottomFill, SwampFill, SwampOuterCornerTopRight, SwampOuterCornerTopLeft, ] ),
         ( Right, [ SwampTopFill, SwampOuterCornerBottomLeft, SwampInnerCornerTopLeft, ] ),
@@ -502,7 +502,7 @@
     (
       index: 11,
       name: SwampLeftFill,
-      weight: 500,
+      weight: 10,
       permitted_neighbours: [
         ( Top, [ SwampOuterCornerBottomRight, SwampInnerCornerBottomLeft, SwampLeftFill, ] ),
         ( Right, [ Empty, ] ),
@@ -513,7 +513,7 @@
     (
       index: 12,
       name: SwampRightFill,
-      weight: 500,
+      weight: 10,
       permitted_neighbours: [
         ( Top, [ SwampInnerCornerBottomRight, SwampRightFill, SwampOuterCornerBottomLeft, ] ),
         ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerBottomRight, SwampOuterCornerTopRight, ] ),
@@ -524,7 +524,7 @@
     (
       index: 13,
       name: SwampFill,
-      weight: 500,
+      weight: 8,
       permitted_neighbours: [
         ( Top, [ SwampFill, SwampBottomFill, SwampOuterCornerTopLeft, SwampOuterCornerTopRight, ] ),
         ( Right, [ SwampFill, SwampLeftFill, SwampOuterCornerBottomRight, SwampOuterCornerTopRight, ] ),
