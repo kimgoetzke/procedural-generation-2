@@ -14,7 +14,8 @@ excluded_objects = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -33,7 +34,8 @@ excluded_objects = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -52,7 +54,8 @@ excluded_objects = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -71,7 +74,8 @@ excluded_objects = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -90,5 +94,6 @@ excluded_objects = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]

@@ -74,7 +74,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -94,7 +95,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -114,7 +116,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -134,7 +137,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -154,7 +158,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -174,7 +179,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -193,7 +199,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -213,7 +220,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -232,7 +240,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -265,7 +274,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -289,7 +299,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -312,7 +323,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]
@@ -336,7 +348,8 @@ permitted_self = [
   "SwampTopFill",
   "SwampLeftFill",
   "SwampRightFill",
-  "SwampFill"
+  "SwampFill1",
+  "SwampFill2",
 ]
 
 [[states]]

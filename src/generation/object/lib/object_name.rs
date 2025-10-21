@@ -85,7 +85,8 @@ pub enum ObjectName {
   SwampTopFill,
   SwampLeftFill,
   SwampRightFill,
-  SwampFill,
+  SwampFill1,
+  SwampFill2,
   PathRight,
   PathHorizontal,
   PathCross,
@@ -181,7 +182,8 @@ impl ObjectName {
         | ObjectName::SwampTopFill
         | ObjectName::SwampLeftFill
         | ObjectName::SwampRightFill
-        | ObjectName::SwampFill
+        | ObjectName::SwampFill1
+        | ObjectName::SwampFill2
     )
   }
 
