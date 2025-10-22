@@ -97,3 +97,43 @@ excluded_objects = [
   "SwampFill1",
   "SwampFill2",
 ]
+
+[[states]]
+terrain = "Land2"
+climate = "Dry"
+excluded_objects = [
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
+  "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
+  "SwampFill1",
+  "SwampFill2",
+]
+
+[[states]]
+terrain = "Land3"
+climate = "Dry"
+excluded_objects = [
+  "SwampInnerCornerBottomRight",
+  "SwampInnerCornerTopRight",
+  "SwampInnerCornerBottomLeft",
+  "SwampInnerCornerTopLeft",
+  "SwampOuterCornerTopLeft",
+  "SwampOuterCornerBottomLeft",
+  "SwampOuterCornerTopRight",
+  "SwampOuterCornerBottomRight",
+  "SwampBottomFill",
+  "SwampTopFill",
+  "SwampLeftFill",
+  "SwampRightFill",
+  "SwampFill1",
+  "SwampFill2",
+]
