@@ -27,21 +27,21 @@ techniques.
 - Generates an infinite and animated, 2D pixel art world that is fully deterministic
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
-    - Uses multi-fractal Perlin noise to generate terrain layers
+    - Uses **multi-fractal Perlin noise** to generate terrain layers
     - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g.
       sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions and layering
     - Uses a chunk-based approach (as can be seen in the GIFs)
-    - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual elevation
+    - Employs **contextual layers** (`Metadata`) to make chunks context aware, allowing for gradual elevation
       changes over great distances and inter-chunk biome changes without reducing generation performance
 - Object generation:
-    - Uses a basic A* pathfinding algorithm implementation to generate paths crossing multiple chunks
+    - Uses a basic **A\* pathfinding** algorithm implementation to generate paths crossing multiple chunks
     - Generates 3 modular building types - each allowing for different door locations, and window/roofs styles - in
       settled areas along paths
-    - Uses the wave function collapse algorithm to generate additional decorative objects such as trees, ruins,
+    - Uses the **wave function collapse** algorithm to generate additional decorative objects such as trees, ruins,
       stones, etc.
-    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
+    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.toml` files -
       for example, ruins can span multiple tiles and span over multiple terrain types
 - Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
