@@ -15,7 +15,6 @@ techniques.
 
 ⬆️ _The above video has not been updated to feature paths and buildings (yet)._
 
-
 ![Screenshot 6](assets/ignore/screenshot6.png)
 ![Screenshot 7](assets/ignore/screenshot7.png)
 ![Demo GIF 3](assets/ignore/demo3.gif)
@@ -105,10 +104,20 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 
 1. Add the sprite to the relevant sprite sheet in `assets/objects/`
 2. Add a new option to the `ObjectName` enum
-3. Add the object name to the `any.terrain.ruleset.ron` file (top, right, bottom, left)
-4. Add the object name to the `all.tile-type.ruleset.ron` file (like just `Fill`)
-5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
-6. Optional: If this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
+3. Optional: Add the object name to the `any.terrain.ruleset.toml` file (top, right, bottom, left) if it can be placed
+   next to
+   a tile that contains no object (i.e. `ObjectName::Empty`)
+4. Add the object name to the `all.tile-type.ruleset.toml` file (like just `Fill`) to the relevant `TileType`s on which
+   the object can be placed
+5. Add a new state to the relevant `{terrain}.terrain.ruleset.toml` file using the index from the sprite sheet
+    - Make sure provide of permitted neighbours (even if just `Empty` on all sides)
+    - Make sure the permitted neighbours themselves list the new object name as a neighbour, too
+    - The application will run some validations and prevent startup with clear error messages if the configured state is
+      unresolvable
+6. Optional: Add the object name to any terrain-climate combination in `all.exclusions.ruleset.toml` if it shouldn't
+   be placed in those terrains and/or climates
+7. Optional: If this is a large asset, make sure to add it to `ObjectName.is_multi_tile()`
+8. Optional: If this is an animated asset, add it to `ObjectName.is_animated()`
 
 #### How to add building or path sprite assets
 
@@ -117,7 +126,7 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 3. Add the new option(s) to the `ObjectName` enum
 4. Add the object name(s) to the `is_building()` or `is_path()` function in `object_name.rs`
 5. Add the object name(s) to the `get_index_for_building()` or `get_index_for_path()` function in `object_name.rs`
-6. Add the object name(s) to the `any.terrain.ruleset.ron` file where appropriate (top, right, bottom, left)
+6. Add the object name(s) to the `any.terrain.ruleset.toml` file where appropriate (top, right, bottom, left)
 7. If building sprite: Add the object name(s) to relevant `BuildingType` in the `BuildingComponentRegistry`
 
 You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects
