@@ -1,7 +1,7 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
 use crate::coords::Point;
 use crate::events::{ResetCameraEvent, UpdateWorldEvent};
-use crate::resources::CurrentChunk;
+use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin, Startup};
 use bevy::core_pipeline::bloom::Bloom;
 use bevy::input::touch::Touch;
@@ -43,7 +43,7 @@ struct TouchState {
   is_panning: bool,
 }
 
-fn setup_camera_system(mut commands: Commands) {
+fn setup_camera_system(mut commands: Commands, settings: Res<Settings>) {
   commands.spawn((
     Name::new("Camera: In Game"),
     Camera2d,
@@ -53,6 +53,7 @@ fn setup_camera_system(mut commands: Commands) {
     Projection::Orthographic(OrthographicProjection {
       near: -10000.0,
       far: 1000000.0,
+      scale: settings.general.camera_default_zoom,
       ..OrthographicProjection::default_3d()
     }),
     WorldCamera,
@@ -104,13 +105,15 @@ fn camera_movement_system(
 fn reset_camera_event(
   mut camera: Query<(&Camera, &mut Projection, &mut Transform), With<WorldCamera>>,
   mut events: EventReader<ResetCameraEvent>,
+  settings: Res<Settings>,
 ) {
-  let event_count = events.read().count();
-  if event_count > 0 {
+  for event in events.read() {
     let (_, mut projection, mut camera_transform) = camera.single_mut().expect("Failed to find camera");
-    camera_transform.translation = Vec3::new(0., 0., CAMERA_TRANSFORM_Z);
+    if event.reset_position {
+      camera_transform.translation = Vec3::new(0., 0., CAMERA_TRANSFORM_Z);
+    }
     if let Projection::Orthographic(ref mut orthographic_projection) = *projection {
-      orthographic_projection.scale = 1.0;
+      orthographic_projection.scale = settings.general.camera_default_zoom;
     }
     trace!("Camera position and zoom reset");
   }

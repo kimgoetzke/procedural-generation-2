@@ -88,6 +88,8 @@ pub struct GeneralGenerationSettings {
   /// Whether to enable world pruning: when enabled, chunks that are far away from the current chunk will be despawned
   /// for performance reasons. Disabling this will cause all generated chunks to remain in the world forever.
   pub enable_world_pruning: bool,
+  #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
+  pub camera_default_zoom: f32,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -102,6 +104,7 @@ impl Default for GeneralGenerationSettings {
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
       enable_world_pruning: ENABLE_WORLD_PRUNING,
+      camera_default_zoom: CAMERA_DEFAULT_ZOOM,
     }
   }
 }

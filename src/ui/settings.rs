@@ -192,7 +192,7 @@ fn handle_ui_events_system(
         send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
       }
       UiAction::ResetCamera => {
-        reset_camera_event.write(ResetCameraEvent {});
+        reset_camera_event.write(ResetCameraEvent { reset_position: true });
         send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
       }
       UiAction::Regenerate => {

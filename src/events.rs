@@ -53,9 +53,11 @@ pub struct PruneWorldEvent {
   pub update_world_after: bool,
 }
 
-/// An event that triggers resetting the camera to the default position and zoom level.
+/// An event that triggers resetting the camera to the default zoom level and position if `reset_position` is `true`.
 #[derive(Event)]
-pub struct ResetCameraEvent {}
+pub struct ResetCameraEvent {
+  pub reset_position: bool,
+}
 
 /// An event that toggles the display of diagnostics - incl. the FPS counter, CPU & memory utilisation - on or off.
 #[derive(Event)]

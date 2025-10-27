@@ -1,6 +1,6 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{MouseRightClickEvent, RefreshMetadata, ToggleDebugInfo, ToggleDiagnostics};
+use crate::events::{MouseRightClickEvent, RefreshMetadata, ResetCameraEvent, ToggleDebugInfo, ToggleDiagnostics};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -20,6 +20,7 @@ impl Plugin for ControlPlugin {
 fn event_control_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
   mut refresh_metadata_event: EventWriter<RefreshMetadata>,
+  mut reset_camera_event: EventWriter<ResetCameraEvent>,
   current_chunk: Res<CurrentChunk>,
 ) {
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
@@ -29,6 +30,10 @@ fn event_control_system(
       regenerate_world_after: is_at_origin_spawn_point,
       prune_then_update_world_after: !is_at_origin_spawn_point,
     });
+  }
+  if keyboard_input.just_pressed(KeyCode::F6) | keyboard_input.just_pressed(KeyCode::KeyT) {
+    info!("[F6]/[T] Triggered camera zoom reset");
+    reset_camera_event.write(ResetCameraEvent { reset_position: false });
   }
 }
 
