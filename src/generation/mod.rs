@@ -4,7 +4,6 @@ use crate::constants::{
 };
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, World};
-use crate::events::{PruneWorldEvent, RegenerateWorldEvent, UpdateWorldEvent};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::{
   Chunk, ChunkComponent, Direction, GenerationResourcesCollection, GenerationStage, WorldComponent,
@@ -14,14 +13,15 @@ use crate::generation::object::ObjectGenerationPlugin;
 use crate::generation::object::lib::{ObjectData, ObjectGrid};
 use crate::generation::resources::{ChunkComponentIndex, Metadata};
 use crate::generation::world::WorldGenerationPlugin;
+use crate::messages::{PruneWorldMessage, RegenerateWorldMessage, UpdateWorldMessage};
 use crate::resources::{CurrentChunk, Settings};
 use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::log::*;
 use bevy::prelude::{
-  ColorMaterial, Commands, Entity, EventReader, EventWriter, IntoScheduleConfigs, IntoSystem, Local, Mesh, Mut, Name,
-  NextState, Observer, OnExit, OnRemove, Query, Res, ResMut, Transform, Trigger, Update, Visibility, With, in_state,
+  ColorMaterial, Commands, Entity, IntoScheduleConfigs, IntoSystem, Local, Mesh, MessageReader, MessageWriter, Mut, Name,
+  NextState, Observer, On, OnExit, Query, Remove, Res, ResMut, Transform, Update, Visibility, With, in_state,
 };
 use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use lib::shared;
@@ -51,9 +51,9 @@ impl Plugin for GenerationPlugin {
       .add_systems(
         Update,
         (
-          regenerate_world_event,
-          update_world_event,
-          prune_world_event.after(world_generation_system),
+          regenerate_world_message,
+          update_world_message,
+          prune_world_message.after(world_generation_system),
         )
           .run_if(in_state(AppState::Running)),
       )
@@ -65,7 +65,7 @@ impl Plugin for GenerationPlugin {
   }
 }
 
-/// Generates the world and all its objects. Called once before entering `AppState::Running`.
+/// Generates the world and all its objects. Called once before entering [`AppState::Running`].
 fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResMut<NextState<GenerationState>>) {
   let w = ORIGIN_WORLD_SPAWN_POINT;
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
@@ -83,17 +83,17 @@ fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResM
   next_state.set(GenerationState::Generating);
 }
 
-/// Destroys the world and then generates a new one and all its objects. Called when a `RegenerateWorldEvent` is
+/// Destroys the world and then generates a new one and all its objects. Called when a [`RegenerateWorldMessage`] is
 /// received. This is triggered by pressing a key or a button in the UI while the camera is within the bounds of the
-/// `Chunk` at the origin of the world.
-fn regenerate_world_event(
+/// [`Chunk`] at the origin of the world.
+fn regenerate_world_message(
   mut commands: Commands,
-  mut events: EventReader<RegenerateWorldEvent>,
+  mut messages: MessageReader<RegenerateWorldMessage>,
   existing_world: Query<Entity, With<WorldComponent>>,
   mut next_state: ResMut<NextState<GenerationState>>,
 ) {
-  let event_count = events.read().count();
-  if event_count > 0 {
+  let message_count = messages.read().count();
+  if message_count > 0 {
     let world = existing_world.single().expect("Failed to get existing world entity");
     let w = ORIGIN_WORLD_SPAWN_POINT;
     let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
@@ -113,26 +113,26 @@ fn regenerate_world_event(
   }
 }
 
-/// Updates the world and all its objects. Called when an `UpdateWorldEvent` is received. Triggered when the camera
-/// moves outside the bounds of the `CurrentChunk` or when manually requesting a world re-generation while the camera
-/// is outside the bounds of the `Chunk` at origin spawn point.
-fn update_world_event(
+/// Updates the world and all its objects. Called when an [`UpdateWorldMessage`] is received. Triggered when the camera
+/// moves outside the bounds of the [`CurrentChunk`] or when manually requesting a world re-generation while the camera
+/// is outside the bounds of the [`Chunk`] at origin spawn point.
+fn update_world_message(
   mut commands: Commands,
-  mut events: EventReader<UpdateWorldEvent>,
+  mut messages: MessageReader<UpdateWorldMessage>,
   mut current_chunk: ResMut<CurrentChunk>,
   mut next_state: ResMut<NextState<GenerationState>>,
 ) {
-  for event in events.read() {
-    if current_chunk.contains(event.tg) && !event.is_forced_update {
-      debug!("{} is inside current chunk, ignoring event...", event.tg);
+  for message in messages.read() {
+    if current_chunk.contains(message.tg) && !message.is_forced_update {
+      debug!("{} is inside current chunk, ignoring message...", message.tg);
       return;
     }
-    let new_parent_w = calculate_new_current_chunk_w(&mut current_chunk, &event);
+    let new_parent_w = calculate_new_current_chunk_w(&mut current_chunk, &message);
     let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("World Generation Component {}", new_parent_cg)),
-      WorldGenerationComponent::new(new_parent_w, new_parent_cg, event.is_forced_update, shared::get_time()),
+      WorldGenerationComponent::new(new_parent_w, new_parent_cg, message.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);
     next_state.set(GenerationState::Generating);
@@ -140,17 +140,17 @@ fn update_world_event(
 }
 
 // TODO: Refactor this and ChunkComponentIndex to use cg instead of w
-fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, event: &UpdateWorldEvent) -> Point<World> {
+fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, message: &UpdateWorldMessage) -> Point<World> {
   let current_chunk_w = current_chunk.get_world();
-  let direction = Direction::from_chunk_w(&current_chunk_w, &event.w);
+  let direction = Direction::from_chunk_w(&current_chunk_w, &message.w);
   let direction_point_w = Point::<World>::from_direction(&direction);
   let new_parent_chunk_w = Point::new_world(
     current_chunk_w.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.x),
     current_chunk_w.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.y),
   );
   trace!(
-    "Update world event at {} {} will change the current chunk to be at [{:?}] of {} i.e. {}",
-    event.w, event.tg, direction, current_chunk_w, new_parent_chunk_w
+    "Update world message at {} {} will change the current chunk to be at [{:?}] of {} i.e. {}",
+    message.w, message.tg, direction, current_chunk_w, new_parent_chunk_w
   );
 
   new_parent_chunk_w
@@ -171,7 +171,7 @@ fn world_generation_system(
   metadata: Res<Metadata>,
   resources: Res<GenerationResourcesCollection>,
   existing_chunks: Res<ChunkComponentIndex>,
-  mut prune_world_event: EventWriter<PruneWorldEvent>,
+  mut prune_world_message: MessageWriter<PruneWorldMessage>,
   mut meshes: ResMut<Assets<Mesh>>,
   mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -187,7 +187,7 @@ fn world_generation_system(
         &existing_chunks,
         &component,
         has_metadata,
-        &mut prune_world_event,
+        &mut prune_world_message,
       ),
       GenerationStage::Stage2(chunk_generation_task) => {
         stage_2_await_chunk_generation_task_completion(&existing_chunks, chunk_generation_task, component_cg)
@@ -222,7 +222,7 @@ fn world_generation_system(
         &settings,
         entity,
         &existing_chunks,
-        &mut prune_world_event,
+        &mut prune_world_message,
       ),
       GenerationStage::Done => GenerationStage::Done,
     };
@@ -243,7 +243,7 @@ fn stage_1_prune_world_and_schedule_chunk_generation(
   existing_chunks: &Res<ChunkComponentIndex>,
   component: &WorldGenerationComponent,
   mut has_metadata: bool,
-  prune_event: &mut EventWriter<PruneWorldEvent>,
+  prune_message: &mut MessageWriter<PruneWorldMessage>,
 ) -> GenerationStage {
   if !has_metadata && metadata.index.contains(&component.cg) {
     has_metadata = true;
@@ -252,7 +252,7 @@ fn stage_1_prune_world_and_schedule_chunk_generation(
   }
   if has_metadata {
     if !component.suppress_pruning_world && settings.general.enable_world_pruning {
-      prune_event.write(PruneWorldEvent {
+      prune_message.write(PruneWorldMessage {
         despawn_all_chunks: false,
         update_world_after: false,
       });
@@ -555,7 +555,7 @@ fn stage_9_clean_up(
   settings: &Res<Settings>,
   entity: Entity,
   existing_chunks: &Res<ChunkComponentIndex>,
-  prune_world_event: &mut EventWriter<PruneWorldEvent>,
+  prune_world_message: &mut MessageWriter<PruneWorldMessage>,
 ) -> GenerationStage {
   info!(
     "✅  World generation component {} successfully processed in {} ms",
@@ -563,7 +563,7 @@ fn stage_9_clean_up(
     shared::get_time() - component.created_at
   );
   if existing_chunks.size() > MAX_CHUNKS && !component.suppress_pruning_world && settings.general.enable_world_pruning {
-    prune_world_event.write(PruneWorldEvent {
+    prune_world_message.write(PruneWorldMessage {
       despawn_all_chunks: false,
       update_world_after: false,
     });
@@ -576,7 +576,7 @@ fn stage_9_clean_up(
 /// Sets the [`GenerationState`] to [`GenerationState::Idling`] when the last [`WorldGenerationComponent`] has just
 /// been removed.
 fn on_remove_world_generation_component_trigger(
-  _trigger: Trigger<OnRemove, WorldGenerationComponent>,
+  _trigger: On<Remove, WorldGenerationComponent>,
   query: Query<&WorldGenerationComponent>,
   mut next_state: ResMut<NextState<GenerationState>>,
 ) {
@@ -585,30 +585,30 @@ fn on_remove_world_generation_component_trigger(
   }
 }
 
-pub fn prune_world_event(
+pub fn prune_world_message(
   mut commands: Commands,
-  mut prune_world_event: EventReader<PruneWorldEvent>,
-  mut update_world_event: EventWriter<UpdateWorldEvent>,
+  mut prune_world_message: MessageReader<PruneWorldMessage>,
+  mut update_world_message: MessageWriter<UpdateWorldMessage>,
   existing_chunks: Query<(Entity, &ChunkComponent), With<ChunkComponent>>,
   current_chunk: Res<CurrentChunk>,
-  mut delayed_update_world_event: Local<Option<UpdateWorldEvent>>,
+  mut delayed_update_world_message: Local<Option<UpdateWorldMessage>>,
 ) {
-  // Allows the `PruneWorldEvent` to trigger an `UpdateWorldEvent` after the world has been pruned. Doing this in the
+  // Allows the [`PruneWorldMessage`] to trigger an [`UpdateWorldMessage`] after the world has been pruned. Doing this in the
   // same frame will lead to race conditions and chunks been despawned just after they were spawned.
-  if let Some(event) = delayed_update_world_event.take() {
-    update_world_event.write(event);
+  if let Some(message) = delayed_update_world_message.take() {
+    update_world_message.write(message);
   }
 
-  for event in prune_world_event.read() {
+  for message in prune_world_message.read() {
     prune_world(
       &mut commands,
       &existing_chunks,
       &current_chunk,
-      event.despawn_all_chunks,
-      event.update_world_after,
+      message.despawn_all_chunks,
+      message.update_world_after,
     );
-    if event.update_world_after {
-      *delayed_update_world_event = Some(UpdateWorldEvent {
+    if message.update_world_after {
+      *delayed_update_world_message = Some(UpdateWorldMessage {
         is_forced_update: true,
         tg: current_chunk.get_tile_grid(),
         w: current_chunk.get_world(),

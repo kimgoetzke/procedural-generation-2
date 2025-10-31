@@ -12,9 +12,9 @@ use bevy::app::{App, Plugin};
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::log::*;
+use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
-use bevy::render::mesh::{Indices, PrimitiveTopology};
-use bevy::sprite::AlphaMode2d;
+use bevy::sprite_render::AlphaMode2d;
 use std::collections::HashMap;
 
 pub struct WorldGeneratorPlugin;

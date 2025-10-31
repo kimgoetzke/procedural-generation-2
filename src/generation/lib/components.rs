@@ -61,7 +61,7 @@ pub struct ObjectComponent {
 #[derive(Debug)]
 pub enum GenerationStage {
   /// Stage 1: Check if required metadata this [`WorldGenerationComponent`] exists. If no, return current stage.
-  /// Otherwise, send event to clean up not-needed chunks and schedule chunk generation and return the `Task`.
+  /// Otherwise, send message to clean up not-needed chunks and schedule chunk generation and return the `Task`.
   Stage1(bool),
   /// Stage 2: Await completion of chunk generation task, then use [`crate::generation::resources::ChunkComponentIndex`]
   /// to check if any of the chunks already exists. Return all [`Chunk`]s that don't exist yet, so they can be spawned.
@@ -88,7 +88,7 @@ pub enum GenerationStage {
   /// Stage 8: If any object generation tasks is finished, schedule spawning of object sprites for the relevant chunk.
   /// If not, do nothing. Return all remaining [`Task`]s until all are finished, then proceed to next stage.
   Stage8(Vec<Task<Vec<ObjectData>>>),
-  /// Stage 9: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) event to clean up
+  /// Stage 9: Despawn the [`WorldGenerationComponent`] and, if necessary, fire a (second) message to clean up
   /// unneeded chunks.
   Stage9,
   Done,

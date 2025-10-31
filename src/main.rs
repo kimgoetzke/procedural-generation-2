@@ -4,8 +4,8 @@ mod components;
 mod constants;
 mod controls;
 mod coords;
-mod events;
 mod generation;
+mod messages;
 mod resources;
 mod states;
 mod ui;
@@ -14,8 +14,8 @@ use crate::animations::AnimationsPlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
-use crate::events::SharedEventsPlugin;
 use crate::generation::GenerationPlugin;
+use crate::messages::SharedMessagesPlugin;
 use crate::resources::SharedResourcesPlugin;
 use crate::states::AppStatePlugin;
 use crate::ui::UiPlugin;
@@ -24,6 +24,7 @@ use bevy::audio::{AudioPlugin, SpatialScale};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
+use bevy_framepace::FramepacePlugin;
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -56,21 +57,19 @@ fn main() {
         .build(),
     )
     .add_plugins(PanCamPlugin::default())
-    .add_plugins(bevy_framepace::FramepacePlugin)
+    .add_plugins(FramepacePlugin)
     .add_plugins((
       CameraPlugin,
       AppStatePlugin,
       GenerationPlugin,
       AnimationsPlugin,
-      SharedEventsPlugin,
+      SharedMessagesPlugin,
       SharedResourcesPlugin,
       ControlPlugin,
       UiPlugin,
     ))
     .add_plugins(DefaultInspectorConfigPlugin)
-    .add_plugins(EguiPlugin {
-      enable_multipass_for_primary_context: false,
-    })
+    .add_plugins(EguiPlugin::default())
     .add_plugins(WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::F1)))
     .run();
 }

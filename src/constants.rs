@@ -151,8 +151,8 @@ pub const DARKNESS_RANGE: Range<f32> = 0.0..0.2;
 pub const BRIGHTNESS_RANGE: Range<f32> = 0.0..0.4;
 // ------------------------------------------------------------------------------------------------------
 // Window
-pub const WINDOW_WIDTH: f32 = 1280.;
-pub const WINDOW_HEIGHT: f32 = 720.;
+pub const WINDOW_WIDTH: u32 = 1280;
+pub const WINDOW_HEIGHT: u32 = 720;
 // ------------------------------------------------------------------------------------------------------
 // Miscellaneous
 pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";

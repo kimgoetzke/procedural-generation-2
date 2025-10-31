@@ -254,7 +254,7 @@ fn sprite(
   offset_x: f32,
   offset_y: f32,
   colour: Color,
-) -> (Name, Sprite, Transform, ObjectComponent) {
+) -> (Name, Sprite, Anchor, Transform, ObjectComponent) {
   let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
   let internal_z = tile.coords.internal_grid.y as f32;
   let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
@@ -262,7 +262,6 @@ fn sprite(
   (
     Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {
-      anchor: Anchor::BottomCenter,
       texture_atlas: Option::from(TextureAtlas {
         layout: asset_collection.stat.texture_atlas_layout.clone(),
         index: index as usize,
@@ -271,6 +270,7 @@ fn sprite(
       color: colour,
       ..Default::default()
     },
+    Anchor::BOTTOM_CENTER,
     Transform::from_xyz(
       tile.coords.world.x as f32 + TILE_SIZE as f32 / 2. + offset_x,
       tile.coords.world.y as f32 + TILE_SIZE as f32 * -1. + offset_y,

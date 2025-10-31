@@ -1,6 +1,8 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coords::Point;
-use crate::events::{MouseRightClickEvent, RefreshMetadata, ResetCameraEvent, ToggleDebugInfo, ToggleDiagnostics};
+use crate::messages::{
+  MouseRightClickMessage, RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage,
+};
 use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -12,28 +14,28 @@ impl Plugin for ControlPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(
       Update,
-      (event_control_system, settings_controls_system, right_mouse_click_system),
+      (message_control_system, settings_controls_system, right_mouse_click_system),
     );
   }
 }
 
-fn event_control_system(
+fn message_control_system(
   keyboard_input: Res<ButtonInput<KeyCode>>,
-  mut refresh_metadata_event: EventWriter<RefreshMetadata>,
-  mut reset_camera_event: EventWriter<ResetCameraEvent>,
+  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
+  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
   current_chunk: Res<CurrentChunk>,
 ) {
   if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
     info!("[F5]/[R] Triggered regeneration of the world");
     let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
-    refresh_metadata_event.write(RefreshMetadata {
+    refresh_metadata_message.write(RefreshMetadataMessage {
       regenerate_world_after: is_at_origin_spawn_point,
       prune_then_update_world_after: !is_at_origin_spawn_point,
     });
   }
   if keyboard_input.just_pressed(KeyCode::F6) | keyboard_input.just_pressed(KeyCode::KeyT) {
     info!("[F6]/[T] Triggered camera zoom reset");
-    reset_camera_event.write(ResetCameraEvent { reset_position: false });
+    reset_camera_message.write(ResetCameraMessage { reset_position: false });
   }
 }
 
@@ -42,14 +44,14 @@ fn settings_controls_system(
   mut settings: ResMut<Settings>,
   mut general_settings: ResMut<GeneralGenerationSettings>,
   mut object_settings: ResMut<ObjectGenerationSettings>,
-  mut toggle_debug_info_event: EventWriter<ToggleDebugInfo>,
-  mut toggle_diagnostics_event: EventWriter<ToggleDiagnostics>,
+  mut toggle_debug_info_message: MessageWriter<ToggleDebugInfoMessage>,
+  mut toggle_diagnostics_message: MessageWriter<ToggleDiagnosticsMessage>,
 ) {
   if keyboard_input.just_pressed(KeyCode::KeyZ) {
     settings.general.display_diagnostics = !settings.general.display_diagnostics;
     general_settings.display_diagnostics = settings.general.display_diagnostics;
     info!("[Z] Set display diagnostics to [{}]", settings.general.display_diagnostics);
-    toggle_diagnostics_event.write(ToggleDiagnostics {});
+    toggle_diagnostics_message.write(ToggleDiagnosticsMessage {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyX) {
@@ -62,7 +64,7 @@ fn settings_controls_system(
     settings.general.enable_tile_debugging = !settings.general.enable_tile_debugging;
     general_settings.enable_tile_debugging = settings.general.enable_tile_debugging;
     info!("[C] Set tile debugging to [{}]", settings.general.enable_tile_debugging);
-    toggle_debug_info_event.write(ToggleDebugInfo {});
+    toggle_debug_info_message.write(ToggleDebugInfoMessage {});
   }
 
   if keyboard_input.just_pressed(KeyCode::KeyV) {
@@ -112,7 +114,12 @@ fn right_mouse_click_system(
   mut commands: Commands,
   mut egui_contexts: EguiContexts,
 ) {
-  if mouse_button_input.just_pressed(MouseButton::Right) && !egui_contexts.ctx_mut().wants_pointer_input() {
+  if mouse_button_input.just_pressed(MouseButton::Right)
+    && !egui_contexts
+      .ctx_mut()
+      .expect("Failed to fetch Egui context")
+      .wants_pointer_input()
+  {
     let (camera, camera_transform) = camera.single().expect("Failed to find camera");
     if let Some(vec2) = windows
       .single()
@@ -125,7 +132,7 @@ fn right_mouse_click_system(
       let cg = Point::new_chunk_grid_from_world_vec2(vec2);
       let tile_w = Point::new_world_from_tile_grid(tg);
       debug!("[Right Mouse Button] Clicked on {} => {} {} {}", vec2.round(), tile_w, cg, tg);
-      commands.trigger(MouseRightClickEvent { tile_w, cg, tg });
+      commands.write_message(MouseRightClickMessage { tile_w, cg, tg });
     }
   }
 }

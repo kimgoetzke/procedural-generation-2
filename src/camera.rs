@@ -1,12 +1,12 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
 use crate::coords::Point;
-use crate::events::{ResetCameraEvent, UpdateWorldEvent};
+use crate::messages::{ResetCameraMessage, UpdateWorldMessage};
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin, Startup};
-use bevy::core_pipeline::bloom::Bloom;
+use bevy::camera::visibility::RenderLayers;
 use bevy::input::touch::Touch;
+use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
 use bevy_pancam::PanCam;
 
 const WORLD_LAYER: RenderLayers = RenderLayers::layer(0);
@@ -21,7 +21,7 @@ impl Plugin for CameraPlugin {
       .init_resource::<TouchState>()
       .add_systems(Startup, setup_camera_system)
       .add_systems(Update, (camera_movement_system, touch_camera_system))
-      .add_systems(Update, reset_camera_event);
+      .add_systems(Update, reset_camera_message);
   }
 }
 
@@ -58,7 +58,7 @@ fn setup_camera_system(mut commands: Commands, settings: Res<Settings>) {
     }),
     WorldCamera,
     WORLD_LAYER,
-    Bloom::SCREEN_BLUR,
+    Bloom::NATURAL,
     SpatialListener::new(10.),
     PanCam {
       grab_buttons: vec![MouseButton::Left, MouseButton::Middle],
@@ -80,7 +80,7 @@ fn setup_camera_system(mut commands: Commands, settings: Res<Settings>) {
 fn camera_movement_system(
   camera: Query<(&Camera, &GlobalTransform)>,
   current_chunk: Res<CurrentChunk>,
-  mut event: EventWriter<UpdateWorldEvent>,
+  mut message: MessageWriter<UpdateWorldMessage>,
 ) {
   let translation = camera.single().expect("Failed to find camera").1.translation();
   let current_world = Point::new_world_from_world_vec2(translation.truncate());
@@ -94,7 +94,7 @@ fn camera_movement_system(
   );
 
   if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
-    event.write(UpdateWorldEvent {
+    message.write(UpdateWorldMessage {
       is_forced_update: false,
       tg: Point::new_tile_grid_from_world(current_world),
       w: current_world,
@@ -102,14 +102,14 @@ fn camera_movement_system(
   };
 }
 
-fn reset_camera_event(
+fn reset_camera_message(
   mut camera: Query<(&Camera, &mut Projection, &mut Transform), With<WorldCamera>>,
-  mut events: EventReader<ResetCameraEvent>,
+  mut messages: MessageReader<ResetCameraMessage>,
   settings: Res<Settings>,
 ) {
-  for event in events.read() {
+  for message in messages.read() {
     let (_, mut projection, mut camera_transform) = camera.single_mut().expect("Failed to find camera");
-    if event.reset_position {
+    if message.reset_position {
       camera_transform.translation = Vec3::new(0., 0., CAMERA_TRANSFORM_Z);
     }
     if let Projection::Orthographic(ref mut orthographic_projection) = *projection {

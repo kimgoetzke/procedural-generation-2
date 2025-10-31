@@ -2,8 +2,8 @@ use crate::components::{AnimationMeshComponent, AnimationSpriteComponent, Animat
 use crate::constants::ANIMATION_FRAME_DURATION;
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
+use bevy::mesh::VertexAttributeValues;
 use bevy::prelude::{Mesh, Mesh2d, Mut, Query, Res, ResMut, Resource, Sprite, Time, Timer, TimerMode, Update};
-use bevy::render::mesh::VertexAttributeValues;
 
 pub struct AnimationsPlugin;
 

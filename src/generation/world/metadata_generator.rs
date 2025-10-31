@@ -1,14 +1,14 @@
 use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
-use crate::events::{PruneWorldEvent, RefreshMetadata, RegenerateWorldEvent};
 use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
+use crate::messages::{PruneWorldMessage, RefreshMetadataMessage, RegenerateWorldMessage};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
-use bevy::prelude::{EventReader, EventWriter, NextState, OnEnter, Res, ResMut};
+use bevy::prelude::{MessageReader, MessageWriter, NextState, OnEnter, Res, ResMut};
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::prelude::StdRng;
 use rand::{Rng, SeedableRng};
@@ -22,7 +22,7 @@ impl Plugin for MetadataGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_systems(OnEnter(AppState::Initialising), initialise_metadata_system)
-      .add_systems(Update, (update_metadata_system, refresh_metadata_event));
+      .add_systems(Update, (update_metadata_system, refresh_metadata_message));
   }
 }
 
@@ -52,20 +52,20 @@ fn update_metadata_system(mut metadata: ResMut<Metadata>, current_chunk: Res<Cur
 /// Refreshes the metadata based on the current chunk and settings. Used when manually triggering a world regeneration
 /// via the UI or using a keyboard shortcut. Triggers the action intended to be invoked by the user once the metadata
 /// has been refreshed.
-fn refresh_metadata_event(
+fn refresh_metadata_message(
   metadata: ResMut<Metadata>,
   current_chunk: Res<CurrentChunk>,
   settings: Res<Settings>,
-  mut refresh_metadata_event: EventReader<RefreshMetadata>,
-  mut regenerate_world_event: EventWriter<RegenerateWorldEvent>,
-  mut prune_world_event: EventWriter<PruneWorldEvent>,
+  mut refresh_metadata_message: MessageReader<RefreshMetadataMessage>,
+  mut regenerate_world_message: MessageWriter<RegenerateWorldMessage>,
+  mut prune_world_message: MessageWriter<PruneWorldMessage>,
 ) {
-  if let Some(event) = refresh_metadata_event.read().last() {
+  if let Some(message) = refresh_metadata_message.read().last() {
     regenerate_metadata(metadata, current_chunk.get_chunk_grid(), &settings);
-    if event.regenerate_world_after {
-      regenerate_world_event.write(RegenerateWorldEvent {});
-    } else if event.prune_then_update_world_after && settings.general.enable_world_pruning {
-      prune_world_event.write(PruneWorldEvent {
+    if message.regenerate_world_after {
+      regenerate_world_message.write(RegenerateWorldMessage {});
+    } else if message.prune_then_update_world_after && settings.general.enable_world_pruning {
+      prune_world_message.write(PruneWorldMessage {
         despawn_all_chunks: true,
         update_world_after: true,
       });
