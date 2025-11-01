@@ -1,0 +1,353 @@
+terrain = "Land2"
+
+[[states]]
+index = 1
+name = "Land2RubbleRight"
+weight = 3
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Land2RubbleLeft", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Right", "Land3RuinHorizontalLand2Left", "Land2RubbleCross"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 2
+name = "Land2RubbleHorizontal"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Land2RubbleRight", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Left", "Land3RuinHorizontalLand2Right", "Land2RubbleCross"]],
+  ["Right", ["Land2RubbleLeft", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Right", "Land3RuinHorizontalLand2Left", "Land2RubbleCross"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 3
+name = "Land2RubbleCross"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Land2RubbleBottom", "Land2RubbleVertical", "Land2RubbleVerticalLand3Top", "Land3RuinVerticalLand2Bottom"]],
+  ["Left", ["Land2RubbleRight", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Left", "Land3RuinHorizontalLand2Right"]],
+  ["Right", ["Land2RubbleLeft", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Right", "Land3RuinHorizontalLand2Left"]],
+  ["Bottom", ["Land2RubbleTop", "Land2RubbleVertical", "Land2RubbleVerticalLand3Bottom", "Land3RuinVerticalLand2Top"]],
+]
+
+[[states]]
+index = 4
+name = "Land2RubbleVertical"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Land2RubbleVertical", "Land2RubbleVerticalLand3Top", "Land3RuinVerticalLand2Bottom", "Land2RubbleBottom", "Land2RubbleCross"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Land2RubbleVertical", "Land2RubbleVerticalLand3Bottom", "Land3RuinVerticalLand2Top", "Land2RubbleTop", "Land2RubbleCross"]],
+]
+
+[[states]]
+index = 5
+name = "Land2RubbleBottom"
+weight = 3
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Land2RubbleCross", "Land2RubbleVertical", "Land2RubbleVerticalLand3Bottom", "Land3RuinVerticalLand2Top", "Land2RubbleTop"]],
+]
+
+[[states]]
+index = 6
+name = "Land2RubbleTop"
+weight = 3
+permitted_neighbours = [
+  ["Top", ["Land2RubbleCross", "Land2RubbleVertical", "Land2RubbleVerticalLand3Top", "Land3RuinVerticalLand2Bottom", "Land2RubbleBottom"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 7
+name = "Land2RubbleLeft"
+weight = 3
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Land2RubbleRight", "Land2RubbleHorizontal", "Land2RubbleHorizontalLand3Left", "Land3RuinHorizontalLand2Right", "Land2RubbleCross"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 8
+name = "Land2RubbleHorizontalLand3Right"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Land2RubbleRight", "Land2RubbleHorizontal", "Land2RubbleCross"]],
+  ["Right", ["Land3RuinLeft", "Land3RuinHorizontal", "Land3RuinCross"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 9
+name = "Land2RubbleHorizontalLand3Left"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Left", ["Land3RuinRight", "Land3RuinHorizontal", "Land3RuinCross"]],
+  ["Right", ["Land2RubbleLeft", "Land2RubbleHorizontal", "Land2RubbleCross"]],
+  ["Bottom", ["Empty"]],
+]
+
+[[states]]
+index = 10
+name = "Land2RubbleVerticalLand3Top"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Land3RuinVertical", "Land3RuinBottom", "Land3RuinCross"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Land2RubbleVertical", "Land2RubbleTop", "Land2RubbleCross"]],
+]
+
+[[states]]
+index = 11
+name = "Land2RubbleVerticalLand3Bottom"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Land2RubbleVertical", "Land2RubbleBottom", "Land2RubbleCross"]],
+  ["Left", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Land3RuinVertical", "Land3RuinTop", "Land3RuinCross"]],
+]
+
+[[states]]
+index = 16
+name = "Land2IndividualObject1"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 17
+name = "Land2IndividualObject2"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 18
+name = "Land2IndividualObject3"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 19
+name = "Land2IndividualObject4"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 20
+name = "Land2IndividualObject5"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 21
+name = "Land2IndividualObject6"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 22
+name = "Land2IndividualObject7"
+weight = 10
+permitted_neighbours = [
+  ["Top", ["Empty", "PathRight", "PathHorizontal", "PathTop", "PathLeft", "PathTopRight", "PathTopLeft", "PathTopHorizontal", "PathBottomHorizontal"]],
+  ["Left", ["Empty", "PathRight", "PathVertical", "PathBottom", "PathTop", "PathTopRight", "PathBottomRight", "PathLeftVertical", "PathRightVertical"]],
+  ["Right", ["Empty", "PathRight", "PathHorizontal", "PathBottom", "PathLeft", "PathBottomRight", "PathBottomLeft", "PathBottomHorizontal"]],
+  ["Bottom", ["Empty", "PathVertical", "PathBottom", "PathTop", "PathLeft", "PathTopLeft", "PathBottomLeft", "PathLeftVertical"]],
+]
+
+[[states]]
+index = 1
+name = "SwampInnerCornerBottomRight"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Right", ["SwampInnerCornerBottomLeft", "SwampOuterCornerTopLeft", "SwampBottomFill"]],
+  ["Bottom", ["SwampInnerCornerTopRight", "SwampOuterCornerTopLeft", "SwampRightFill"]],
+  ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 2
+name = "SwampInnerCornerTopRight"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampInnerCornerBottomRight", "SwampOuterCornerBottomLeft", "SwampRightFill"]],
+  ["Right", ["SwampOuterCornerBottomLeft", "SwampTopFill", "SwampInnerCornerTopLeft"]],
+  ["Bottom", ["Empty"]],
+  ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 3
+name = "SwampInnerCornerBottomLeft"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["SwampOuterCornerTopRight", "SwampLeftFill", "SwampInnerCornerTopLeft"]],
+  ["Left", ["SwampInnerCornerBottomRight", "SwampOuterCornerTopRight", "SwampBottomFill"]],
+]
+
+[[states]]
+index = 4
+name = "SwampInnerCornerTopLeft"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampInnerCornerBottomLeft", "SwampOuterCornerBottomRight", "SwampLeftFill"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["Empty"]],
+  ["Left", ["SwampTopFill", "SwampOuterCornerBottomRight", "SwampInnerCornerTopRight"]],
+]
+
+[[states]]
+index = 5
+name = "SwampOuterCornerTopLeft"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampInnerCornerBottomRight", "SwampRightFill", "SwampOuterCornerBottomLeft"]],
+  ["Right", ["SwampFill1", "SwampFill2", "SwampLeftFill", "SwampOuterCornerTopRight", "SwampOuterCornerBottomRight"]],
+  ["Bottom", ["SwampFill1", "SwampFill2", "SwampTopFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerBottomRight"]],
+  ["Left", ["SwampInnerCornerBottomRight", "SwampBottomFill", "SwampOuterCornerTopRight"]],
+]
+
+[[states]]
+index = 6
+name = "SwampOuterCornerBottomLeft"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampOuterCornerTopLeft", "SwampOuterCornerTopRight", "SwampBottomFill", "SwampFill1", "SwampFill2", ]],
+  ["Right", ["SwampFill1", "SwampFill2", "SwampLeftFill", "SwampOuterCornerTopRight", "SwampOuterCornerBottomRight"]],
+  ["Bottom", ["SwampInnerCornerTopRight", "SwampRightFill", "SwampOuterCornerTopLeft"]],
+  ["Left", ["SwampOuterCornerBottomRight", "SwampInnerCornerTopRight", "SwampTopFill"]],
+]
+
+[[states]]
+index = 7
+name = "SwampOuterCornerTopRight"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampLeftFill", "SwampOuterCornerBottomRight", "SwampInnerCornerBottomLeft"]],
+  ["Right", ["SwampBottomFill", "SwampOuterCornerTopLeft", "SwampInnerCornerBottomLeft"]],
+  ["Bottom", ["SwampFill1", "SwampFill2", "SwampTopFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerBottomRight"]],
+  ["Left", ["SwampFill1", "SwampFill2", "SwampRightFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerTopLeft"]],
+]
+
+[[states]]
+index = 8
+name = "SwampOuterCornerBottomRight"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampFill1", "SwampFill2", "SwampBottomFill", "SwampOuterCornerTopRight", "SwampOuterCornerTopLeft"]],
+  ["Right", ["SwampOuterCornerBottomLeft", "SwampInnerCornerTopLeft", "SwampTopFill"]],
+  ["Bottom", ["SwampOuterCornerTopRight", "SwampInnerCornerTopLeft", "SwampLeftFill"]],
+  ["Left", ["SwampFill1", "SwampFill2", "SwampRightFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerTopLeft"]],
+]
+
+[[states]]
+index = 9
+name = "SwampBottomFill"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["Empty"]],
+  ["Right", ["SwampBottomFill", "SwampOuterCornerTopLeft", "SwampInnerCornerBottomLeft"]],
+  ["Bottom", ["SwampTopFill", "SwampFill1", "SwampFill2", "SwampOuterCornerBottomRight", "SwampOuterCornerBottomLeft"]],
+  ["Left", ["SwampBottomFill", "SwampOuterCornerTopRight", "SwampInnerCornerBottomRight"]],
+]
+
+[[states]]
+index = 10
+name = "SwampTopFill"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampBottomFill", "SwampFill1", "SwampFill2", "SwampOuterCornerTopRight", "SwampOuterCornerTopLeft"]],
+  ["Right", ["SwampTopFill", "SwampOuterCornerBottomLeft", "SwampInnerCornerTopLeft"]],
+  ["Bottom", ["Empty"]],
+  ["Left", ["SwampTopFill", "SwampOuterCornerBottomRight", "SwampInnerCornerTopRight"]],
+]
+
+[[states]]
+index = 11
+name = "SwampLeftFill"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampOuterCornerBottomRight", "SwampInnerCornerBottomLeft", "SwampLeftFill"]],
+  ["Right", ["Empty"]],
+  ["Bottom", ["SwampLeftFill", "SwampOuterCornerTopRight", "SwampInnerCornerTopLeft"]],
+  ["Left", ["SwampRightFill", "SwampOuterCornerBottomLeft", "SwampFill1", "SwampFill2", "SwampOuterCornerTopLeft"]],
+]
+
+[[states]]
+index = 12
+name = "SwampRightFill"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampInnerCornerBottomRight", "SwampRightFill", "SwampOuterCornerBottomLeft"]],
+  ["Right", ["SwampFill1", "SwampFill2", "SwampLeftFill", "SwampOuterCornerBottomRight", "SwampOuterCornerTopRight"]],
+  ["Bottom", ["SwampOuterCornerTopLeft", "SwampInnerCornerTopRight", "SwampRightFill"]],
+  ["Left", ["Empty"]],
+]
+
+[[states]]
+index = 13
+name = "SwampFill1"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampFill1", "SwampFill2", "SwampBottomFill", "SwampOuterCornerTopLeft", "SwampOuterCornerTopRight"]],
+  ["Right", ["SwampFill1", "SwampFill2", "SwampLeftFill", "SwampOuterCornerBottomRight", "SwampOuterCornerTopRight"]],
+  ["Bottom", ["SwampFill1", "SwampFill2", "SwampTopFill", "SwampOuterCornerBottomRight", "SwampOuterCornerBottomLeft"]],
+  ["Left", ["SwampFill1", "SwampFill2", "SwampRightFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerTopLeft"]],
+]
+
+[[states]]
+index = 14
+name = "SwampFill2"
+weight = 5
+permitted_neighbours = [
+  ["Top", ["SwampFill1", "SwampFill2", "SwampBottomFill", "SwampOuterCornerTopLeft", "SwampOuterCornerTopRight"]],
+  ["Right", ["SwampFill1", "SwampFill2", "SwampLeftFill", "SwampOuterCornerBottomRight", "SwampOuterCornerTopRight"]],
+  ["Bottom", ["SwampFill1", "SwampFill2", "SwampTopFill", "SwampOuterCornerBottomRight", "SwampOuterCornerBottomLeft"]],
+  ["Left", ["SwampFill1", "SwampFill2", "SwampRightFill", "SwampOuterCornerBottomLeft", "SwampOuterCornerTopLeft"]],
+]

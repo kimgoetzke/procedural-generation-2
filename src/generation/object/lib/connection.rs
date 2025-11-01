@@ -21,7 +21,7 @@ impl Connection {
   }
 }
 
-// TODO: Find out why left/right appear to be inverted - is this making up for a bug elsewhere?
+// TODO: Find out why left and right are inverted - is this making up for an unintended inversion elsewhere?
 pub fn get_connection_points(point: &Point<InternalGrid>) -> [(Connection, Point<InternalGrid>); 4] {
   let p = point;
   [
@@ -30,4 +30,29 @@ pub fn get_connection_points(point: &Point<InternalGrid>) -> [(Connection, Point
     (Connection::Bottom, Point::new(p.x, p.y - 1)),
     (Connection::Left, Point::new(p.x + 1, p.y)),
   ]
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn opposite_of_top_is_bottom() {
+    assert_eq!(Connection::Top.opposite(), Connection::Bottom);
+  }
+
+  #[test]
+  fn opposite_of_bottom_is_top() {
+    assert_eq!(Connection::Bottom.opposite(), Connection::Top);
+  }
+
+  #[test]
+  fn opposite_of_right_is_left() {
+    assert_eq!(Connection::Right.opposite(), Connection::Left);
+  }
+
+  #[test]
+  fn opposite_of_left_is_right() {
+    assert_eq!(Connection::Left.opposite(), Connection::Right);
+  }
 }

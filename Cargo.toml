@@ -4,15 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.16.1", features = ["wayland"] }
-bevy-inspector-egui = { version = "0.31.0" }
-bevy_pancam = { version = "0.18.0", features = ["bevy_egui"] }
+bevy = { version = "0.17.2", features = ["wayland"] }
+bevy-inspector-egui = { version = "0.34.0" }
+bevy_pancam = { version = "0.19.0", features = ["bevy_egui"] }
 noise = { version = "0.9.0" }
 rand = { version = "0.9.2" }
-serde = { version = "1.0.219", features = ["derive"] }
-bevy_common_assets = { version = "0.13.0", features = ["ron"] }
+serde = { version = "1.0.228", features = ["derive"] }
+bevy_common_assets = { version = "0.14.0", features = ["toml"] }
 iyes_perf_ui = "0.5.0"
 strum = { version = "0.27.2", features = ["derive"] }
+bevy_framepace = "0.20.0"
+
+[patch.crates-io]
+iyes_perf_ui = { git = "https://github.com/mgi388/iyes_perf_ui", branch = "bevy-0.17" }
 
 #[profile.dev]
 #opt-level = 1
@@ -24,6 +28,8 @@ opt-level = 3
 lto = "thin"
 codegen-units = 1
 opt-level = 3
+incremental = false
+debug = false
 
 [profile.wasm-release]
 inherits = "release"

@@ -1,6 +1,6 @@
 use bevy::app::{App, Plugin, Update};
 use bevy::log::*;
-use bevy::prelude::{AppExtStates, EventReader, State, StateTransitionEvent, States};
+use bevy::prelude::{AppExtStates, MessageReader, State, StateTransitionEvent, States};
 use bevy::reflect::Reflect;
 use std::fmt::Display;
 
@@ -20,24 +20,26 @@ impl Plugin for AppStatePlugin {
   }
 }
 
-fn log_app_state_transitions_system(mut app_state_events: EventReader<StateTransitionEvent<AppState>>) {
-  for event in app_state_events.read() {
+fn log_app_state_transitions_system(mut app_state_messages: MessageReader<StateTransitionEvent<AppState>>) {
+  for message in app_state_messages.read() {
     info!(
       "Transitioning [{}] from [{}] to [{}]",
       AppState::name(),
-      name_from(event.exited),
-      name_from(event.entered)
+      name_from(message.exited),
+      name_from(message.entered)
     );
   }
 }
 
-fn log_generation_state_transitions_system(mut generation_state_events: EventReader<StateTransitionEvent<GenerationState>>) {
-  for event in generation_state_events.read() {
+fn log_generation_state_transitions_system(
+  mut generation_state_messages: MessageReader<StateTransitionEvent<GenerationState>>,
+) {
+  for message in generation_state_messages.read() {
     info!(
       "Transitioning [{}] from [{}] to [{}]",
       GenerationState::name(),
-      name_from(event.exited),
-      name_from(event.entered)
+      name_from(message.exited),
+      name_from(message.entered)
     );
   }
 }

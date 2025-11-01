@@ -1,3 +1,4 @@
+use crate::components::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
@@ -52,7 +53,16 @@ pub fn generate_object_grid(
     return None;
   }
   let start_time = shared::get_time();
-  let grid = ObjectGrid::new_initialised(cg, &resources.objects.terrain_state_map, &chunk.layered_plane);
+  let mut terrain_climate_state_map = resources.objects.terrain_climate_state_map.clone();
+  if !settings.object.enable_animated_objects {
+    terrain_climate_state_map.iter_mut().for_each(|(_, map)| {
+      map.iter_mut().for_each(|states| {
+        states.1.retain(|state| !state.name.is_animated());
+      });
+    });
+  }
+
+  let grid = ObjectGrid::new_initialised(cg, chunk.climate, &terrain_climate_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
     cg,
@@ -163,7 +173,7 @@ fn attach_object_spawn_task(
   let object_name = object_data.name.expect("Failed to get object name");
   let (offset_x, offset_y) = get_sprite_offsets(&mut rng, &object_data);
   let colour = get_randomised_colour(settings, &mut rng, &object_data);
-  let is_building = object_name.is_building();
+  let is_animated = object_name.is_animated();
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
@@ -175,13 +185,14 @@ fn attach_object_spawn_task(
             tile_data.flat_tile.terrain,
             tile_data.flat_tile.climate,
             object_data.is_large_sprite,
-            is_building,
+            object_name.is_building(),
+            is_animated,
           )
           .clone()
       };
       if let Ok(mut chunk_entity) = world.get_entity_mut(tile_data.chunk_entity) {
         chunk_entity.with_children(|parent| {
-          parent.spawn(sprite(
+          let mut entity = parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
             &asset_collection,
@@ -190,6 +201,12 @@ fn attach_object_spawn_task(
             offset_y,
             colour,
           ));
+          if is_animated {
+            entity.insert(AnimationSpriteComponent::new(
+              AnimationType::SixFramesRegularSpeed,
+              sprite_index as usize,
+            ));
+          }
         });
       }
     });
@@ -237,7 +254,7 @@ fn sprite(
   offset_x: f32,
   offset_y: f32,
   colour: Color,
-) -> (Name, Sprite, Transform, ObjectComponent) {
+) -> (Name, Sprite, Anchor, Transform, ObjectComponent) {
   let base_z = (tile.coords.chunk_grid.y * CHUNK_SIZE) as f32;
   let internal_z = tile.coords.internal_grid.y as f32;
   let z = 10000. - base_z + internal_z - (offset_y / TILE_SIZE as f32);
@@ -245,7 +262,6 @@ fn sprite(
   (
     Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {
-      anchor: Anchor::BottomCenter,
       texture_atlas: Option::from(TextureAtlas {
         layout: asset_collection.stat.texture_atlas_layout.clone(),
         index: index as usize,
@@ -254,6 +270,7 @@ fn sprite(
       color: colour,
       ..Default::default()
     },
+    Anchor::BOTTOM_CENTER,
     Transform::from_xyz(
       tile.coords.world.x as f32 + TILE_SIZE as f32 / 2. + offset_x,
       tile.coords.world.y as f32 + TILE_SIZE as f32 * -1. + offset_y,

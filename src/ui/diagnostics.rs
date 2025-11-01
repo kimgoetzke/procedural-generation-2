@@ -1,4 +1,4 @@
-use crate::events::ToggleDiagnostics;
+use crate::messages::ToggleDiagnosticsMessage;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
@@ -16,11 +16,11 @@ impl Plugin for DiagnosticsUiPlugin {
     app
       .add_plugins(PerfUiPlugin)
       .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
-      .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+      .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin::default())
       .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
       .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
       .add_systems(Startup, add_perf_ui_system)
-      .add_systems(Update, toggle_ui_event.before(iyes_perf_ui::PerfUiSet::Setup));
+      .add_systems(Update, toggle_ui_message.before(iyes_perf_ui::PerfUiSet::Setup));
   }
 }
 
@@ -31,13 +31,13 @@ fn add_perf_ui_system(commands: Commands, settings: Res<Settings>) {
   add_perf_ui(commands);
 }
 
-fn toggle_ui_event(
-  mut events: EventReader<ToggleDiagnostics>,
+fn toggle_ui_message(
+  mut messages: MessageReader<ToggleDiagnosticsMessage>,
   q_root: Query<Entity, With<PerfUiRoot>>,
   mut commands: Commands,
 ) {
-  let event_count = events.read().count();
-  if event_count > 0 {
+  let message_count = messages.read().count();
+  if message_count > 0 {
     if let Ok(e) = q_root.single() {
       commands.entity(e).despawn();
     } else {

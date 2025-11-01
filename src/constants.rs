@@ -17,6 +17,7 @@ pub const ANIMATE_TERRAIN_SPRITES: bool = true;
 pub const SPAWN_UP_TO_LAYER: usize = 4;
 pub const SPAWN_FROM_LAYER: usize = 0;
 pub const ENABLE_WORLD_PRUNING: bool = true;
+pub const CAMERA_DEFAULT_ZOOM: f32 = 0.85;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Metadata
 pub const METADATA_GRID_APOTHEM: i32 = 3;
@@ -34,8 +35,6 @@ pub const NOISE_OCTAVES: usize = 3;
 pub const NOISE_FREQUENCY: f64 = 0.07;
 pub const NOISE_PERSISTENCE: f64 = 0.7;
 pub const NOISE_AMPLITUDE: f64 = 4.5;
-pub const FALLOFF_STRENGTH: f64 = 2.5;
-pub const FALLOFF_NOISE_STRENGTH: f64 = 0.5;
 // ------------------------------------------------------------------------------------------------------
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
@@ -43,6 +42,7 @@ pub const GENERATE_PATHS: bool = true;
 pub const GENERATE_BUILDINGS: bool = true;
 pub const BUILDING_DENSITY: f64 = 0.5;
 pub const GENERATE_DECORATION: bool = true;
+pub const ENABLE_ANIMATED_OBJECTS: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
 // ------------------------------------------------------------------------------------------------------
 // Chunks and tiles
@@ -53,26 +53,22 @@ pub const BUFFER_SIZE: i32 = 1;
 /// [`crate::generation::lib::TileType`]s of outermost tiles are known. Must not be modified directly. Change
 /// [`CHUNK_SIZE`] instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
-/// The size of a chunk that is rendered on the screen.
+/// The length and width of a chunk that is rendered on the screen, in pixels.
 pub const CHUNK_SIZE: i32 = 16;
+/// The length and width of a tile that is rendered on the screen, in pixels.
+pub const TILE_SIZE: u32 = 32;
+/// The origin point of the world, in different coordinate systems.
 pub const ORIGIN_CHUNK_GRID_SPAWN_POINT: Point<ChunkGrid> = Point::new_const(0, 0);
 pub const ORIGIN_WORLD_SPAWN_POINT: Point<World> =
   Point::new_const(-(CHUNK_SIZE / 2) * TILE_SIZE as i32, (CHUNK_SIZE / 2) * TILE_SIZE as i32);
 pub const ORIGIN_TILE_GRID_SPAWN_POINT: Point<TileGrid> = Point::new_const(-(CHUNK_SIZE / 2), CHUNK_SIZE / 2);
+/// The distance from the camera at which chunks are despawned, in world units (pixels).
 pub const DESPAWN_DISTANCE: f32 = CHUNK_SIZE as f32 * TILE_SIZE as f32 * 1.75;
 // ------------------------------------------------------------------------------------------------------
-// Tiles
-pub const TILE_SIZE: u32 = 32;
-pub const WATER_LAYER: usize = 0;
-pub const SHORE_LAYER: usize = 1;
-pub const SAND_LAYER: usize = 2;
-pub const GRASS_LAYER: usize = 3;
-pub const FOREST_LAYER: usize = 4;
-// ------------------------------------------------------------------------------------------------------
 // Sprites: Placeholder tile set
-pub const TILE_SET_PLACEHOLDER_PATH: &str = "tilesets/placeholders.png";
-pub const TILE_SET_PLACEHOLDER_COLUMNS: u32 = 6;
-pub const TILE_SET_PLACEHOLDER_ROWS: u32 = 1;
+pub const PLACEHOLDER_TILE_SET_COLUMNS: u32 = 6;
+pub const PLACEHOLDER_TILE_SET_ROWS: u32 = 1;
+pub const TS_PLACEHOLDER_PATH: &str = "tilesets/placeholders.png";
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile sets
 pub const TS_WATER_PATH: &str = "tilesets/water-deep.png";
@@ -87,10 +83,9 @@ pub const TS_LAND_DRY_L1_PATH: &str = "tilesets/land-dry-l1.png";
 pub const TS_LAND_DRY_L2_PATH: &str = "tilesets/land-dry-l2.png";
 pub const TS_LAND_DRY_L3_PATH: &str = "tilesets/land-dry-l3.png";
 pub const TILE_SET_ROWS: u32 = 17;
-pub const DEFAULT_STATIC_TILE_SET_COLUMNS: u32 = 1;
-pub const DEFAULT_ANIMATED_TILE_SET_COLUMNS: u32 = 4;
-pub const ANIMATION_LENGTH: usize = 4;
-pub const DEFAULT_ANIMATION_FRAME_DURATION: f32 = 0.5;
+pub const STATIC_TILE_SET_COLUMNS: u32 = 1;
+pub const ANIMATED_TILE_SET_COLUMNS: u32 = 6;
+pub const ANIMATION_FRAME_DURATION: f32 = 0.25;
 // ------------------------------------------------------------------------------------------------------
 // Sprites: Detailed tile set sprite indices
 pub const FILL: usize = 4;
@@ -111,7 +106,7 @@ pub const LEFT_FILL: usize = 5;
 pub const SINGLE: usize = 15;
 pub const ERROR: usize = 16;
 // ------------------------------------------------------------------------------------------------------
-// Objects
+// Sprites: Objects
 pub const WATER_OBJ_PATH: &str = "objects/objects-water-deep.png";
 pub const SHORE_OBJ_PATH: &str = "objects/objects-water-shore.png";
 pub const OBJ_L1_DRY_PATH: &str = "objects/objects-l1-dry.png";
@@ -123,6 +118,7 @@ pub const OBJ_L2_HUMID_PATH: &str = "objects/objects-l2-humid.png";
 pub const OBJ_L3_DRY_PATH: &str = "objects/objects-l3-dry.png";
 pub const OBJ_L3_MODERATE_PATH: &str = "objects/objects-l3-moderate.png";
 pub const OBJ_L3_HUMID_PATH: &str = "objects/objects-l3-humid.png";
+pub const OBJ_ANIMATED_PATH: &str = "objects/objects-animated.png";
 pub const TREES_HUMID_OBJ_PATH: &str = "objects/trees-humid.png";
 pub const TREES_MODERATE_OBJ_PATH: &str = "objects/trees-moderate.png";
 pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-dry.png";
@@ -130,6 +126,8 @@ pub const BUILDINGS_OBJ_PATH: &str = "objects/buildings.png";
 pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
 pub const DEFAULT_OBJ_ROWS: u32 = 3;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
+pub const ANIMATED_OBJ_COLUMNS: u32 = 6;
+pub const ANIMATED_OBJ_ROWS: u32 = 15;
 pub const BUILDINGS_OBJ_COLUMNS: u32 = 9;
 pub const BUILDINGS_OBJ_ROWS: u32 = 6;
 pub const TREES_OBJ_COLUMNS: u32 = 6;
@@ -142,8 +140,8 @@ pub const PURPLE: Color = Color::srgb(0.706, 0.557, 0.678);
 pub const YELLOW: Color = Color::srgb(0.922, 0.796, 0.545);
 pub const ORANGE: Color = Color::srgb(0.816, 0.529, 0.439);
 pub const GREEN: Color = Color::srgb(0.639, 0.745, 0.549);
-pub const WATER_BLUE: Color = Color::srgb(0.305882, 0.611765, 0.74902);
-pub const DEEP_WATER_BLUE: Color = Color::srgb(0.259, 0.471, 0.565);
+pub const WATER_BLUE: Color = Color::srgb(0.2510, 0.5921, 0.9176);
+pub const DEEP_WATER_BLUE: Color = Color::srgb(0.21176, 0.41961, 0.54118);
 pub const LIGHT: Color = Color::srgb(0.925, 0.937, 0.957);
 pub const MEDIUM: Color = Color::srgb(0.60, 0.639, 0.714);
 pub const DARK: Color = Color::srgb(0.298, 0.337, 0.416);
@@ -153,9 +151,13 @@ pub const DARKNESS_RANGE: Range<f32> = 0.0..0.2;
 pub const BRIGHTNESS_RANGE: Range<f32> = 0.0..0.4;
 // ------------------------------------------------------------------------------------------------------
 // Window
-pub const WINDOW_WIDTH: f32 = 1280.;
-pub const WINDOW_HEIGHT: f32 = 720.;
+pub const WINDOW_WIDTH: u32 = 1280;
+pub const WINDOW_HEIGHT: u32 = 720;
 // ------------------------------------------------------------------------------------------------------
-// Common errors
-pub const TERRAIN_TYPE_ERROR: &'static str = "Invalid terrain type for drawing a terrain sprite";
+// Miscellaneous
 pub const CELL_LOCK_ERROR: &'static str = "Failed to lock cell";
+/// The number of successful iterations that have to be performed in the wave function collapse algorithm before taking
+/// a snapshot.
+pub const WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL: i32 = 10;
+/// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
+pub const WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY: u128 = 1_750;

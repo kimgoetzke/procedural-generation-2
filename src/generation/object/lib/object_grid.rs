@@ -3,7 +3,8 @@ use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectName, TerrainState};
+use crate::generation::object::lib::{Cell, CellRef, Connection, TerrainState};
+use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
@@ -34,26 +35,34 @@ impl ObjectGrid {
     let object_grid: Vec<Vec<Cell>> = (0..CHUNK_SIZE)
       .map(|y| (0..CHUNK_SIZE).map(|x| Cell::new(x, y)).collect())
       .collect();
-    let mut no_neighbours_tile = Cell::new(-1, -1);
-    no_neighbours_tile.override_possible_states(vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)]);
 
     ObjectGrid {
       cg,
       path_grid: None,
       path: HashSet::new(),
       object_grid,
-      no_neighbours_tile,
+      no_neighbours_tile: Cell::new(-1, -1),
       is_failure_log_level_increased: false,
     }
   }
 
   pub fn new_initialised(
     cg: Point<ChunkGrid>,
-    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+    climate: Climate,
+    terrain_climate_state_map: &HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
     layered_plane: &LayeredPlane,
   ) -> Self {
     let mut grid = ObjectGrid::default(cg);
-    grid.initialise_cells(terrain_state_map, layered_plane);
+    let permitted_neighbours_of_empty = terrain_climate_state_map
+      .get(&(TerrainType::Any, climate))
+      .expect("Failed to find rule set for [Any] terrain type and [{:?}] climate combination")
+      .get(&TileType::Fill)
+      .expect("Failed to find rule set for [Fill] tile type")
+      .clone();
+    grid
+      .no_neighbours_tile
+      .override_possible_states(permitted_neighbours_of_empty);
+    grid.initialise_cells(terrain_climate_state_map, climate, layered_plane);
 
     grid
   }
@@ -61,7 +70,8 @@ impl ObjectGrid {
   /// Initialises object grid cells with terrain and tile type.
   fn initialise_cells(
     &mut self,
-    terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+    terrain_climate_state_map: &HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
+    climate: Climate,
     layered_plane: &LayeredPlane,
   ) {
     for tile in layered_plane.flat.data.iter().flatten().flatten() {
@@ -72,9 +82,15 @@ impl ObjectGrid {
       // Example: is_monitored = tile.coords.chunk_grid == Point::new_chunk_grid(15, 13) && ig == Point::new(15, 0);
       let is_monitored = false;
       if let Some(cell) = self.get_cell_mut(&ig) {
-        let possible_states = terrain_state_map
-          .get(&terrain)
-          .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain).as_str())
+        let possible_states = terrain_climate_state_map
+          .get(&(terrain, climate))
+          .expect(
+            format!(
+              "Failed to find rule set for [{:?}] terrain type and [{:?}] climate combination",
+              &terrain, &climate
+            )
+            .as_str(),
+          )
           .get(&tile_type)
           .expect(format!("Failed to find rule set for [{:?}] tile type", &tile_type).as_str())
           .clone();
@@ -215,23 +231,37 @@ impl ObjectGrid {
   }
 
   /// Validates the object grid to ensure it is in a consistent state. Assumed to be called prior to starting the wave
-  /// function collapse algorithm. Specifically, this method updates all neighbours of already collapsed cells (and
-  /// recurses over all neighbours of any updated the neighbour) to ensure their states are valid. This is important
-  /// because we're allowing some cells to be pre-collapsed (e.g. for paths) and we need to ensure the rest of the
-  /// grid is valid before starting the wave function collapse algorithm.
+  /// function collapse algorithm.
   /// # Panics
   /// If a cell must be updated but the update fails, this method will panic.
   pub fn validate(&mut self) {
-    let mut queue: VecDeque<Cell> = self
-      .object_grid
-      .iter()
-      .flatten()
-      .filter(|c| c.is_collapsed())
-      .cloned()
-      .collect();
+    let mut collapsed_cells: VecDeque<Cell> = VecDeque::new();
+    let mut edge_cells: VecDeque<Cell> = VecDeque::new();
+    self.object_grid.iter().flatten().for_each(|c| {
+      if c.is_collapsed() {
+        collapsed_cells.push_back(c.clone());
+      } else if c.ig.is_touching_edge() {
+        edge_cells.push_back(c.clone());
+      }
+    });
     let cg = self.cg;
     let mut i = 0;
-    while let Some(cell) = queue.pop_front() {
+    self.update_neighbours_of_collapsed_cells(&mut collapsed_cells, &cg, &mut i);
+    self.update_edge_cells(&mut edge_cells, &cg, &mut i);
+    debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
+  }
+
+  /// Updates all neighbours of already collapsed cells (and recurses over all neighbours of any updated the neighbour)
+  /// to ensure their states are valid. This is important because we're allowing some cells to be pre-collapsed (e.g.
+  /// for paths) and we need to ensure the rest of the grid is valid before starting the wave function collapse
+  /// algorithm.
+  fn update_neighbours_of_collapsed_cells(
+    &mut self,
+    collapsed_cells: &mut VecDeque<Cell>,
+    cg: &Point<ChunkGrid>,
+    i: &mut i32,
+  ) {
+    while let Some(cell) = collapsed_cells.pop_front() {
       for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
         if let Some(neighbour) = self.get_cell(&neighbour_ig) {
           if neighbour.is_collapsed() {
@@ -247,8 +277,8 @@ impl ObjectGrid {
                 updated_neighbour.get_possible_states().len(),
               );
               self.set_cell(updated_neighbour.clone());
-              queue.push_back(updated_neighbour);
-              i += 1;
+              collapsed_cells.push_back(updated_neighbour);
+              *i += 1;
             }
             Ok((false, _)) => {}
             Err(_) => {
@@ -261,7 +291,39 @@ impl ObjectGrid {
         }
       }
     }
-    trace!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
+  }
+
+  /// Updates all cells that touch any edge of the grid to ensure their states are valid.
+  fn update_edge_cells(&mut self, edge_cells: &mut VecDeque<Cell>, cg: &Point<ChunkGrid>, i: &mut i32) {
+    while let Some(cell) = edge_cells.pop_front() {
+      let edge_connections: Vec<Connection> = get_connection_points(&cell.ig)
+        .iter()
+        .filter_map(|(c, p)| if p.is_outside_grid() { Some(c) } else { None })
+        .cloned()
+        .collect();
+      for connection in edge_connections {
+        match cell.clone_and_reduce(&self.no_neighbours_tile, &connection, false) {
+          Ok((true, updated_cell)) => {
+            trace!(
+              "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
+              cg,
+              cell.ig,
+              cell.get_possible_states().len(),
+              updated_cell.get_possible_states().len(),
+            );
+            self.set_cell(updated_cell.clone());
+            *i += 1;
+          }
+          Ok((false, _)) => {}
+          Err(_) => {
+            panic!(
+              "Validating object grid {}: Failed to reduce edge cell at {:?} of collapsed cell at {:?}",
+              cg, cell, cell.ig,
+            );
+          }
+        }
+      }
+    }
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
@@ -279,12 +341,12 @@ impl ObjectGrid {
     neighbours
   }
 
-  pub fn get_cell(&self, point: &Point<InternalGrid>) -> Option<&Cell> {
-    self.object_grid.iter().flatten().find(|cell| cell.ig == *point)
+  pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
+    self.object_grid.iter().flatten().find(|cell| cell.ig == *ig)
   }
 
-  pub fn get_cell_mut(&mut self, point: &Point<InternalGrid>) -> Option<&mut Cell> {
-    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *point)
+  pub fn get_cell_mut(&mut self, ig: &Point<InternalGrid>) -> Option<&mut Cell> {
+    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *ig)
   }
 
   /// Replaces the [`Cell`] at the given point with the provided [`Cell`].

@@ -178,6 +178,10 @@ impl Point<InternalGrid> {
   pub fn is_touching_edge(&self) -> bool {
     self.x == 0 || self.x == CHUNK_SIZE - 1 || self.y == 0 || self.y == CHUNK_SIZE - 1
   }
+
+  pub fn is_outside_grid(&self) -> bool {
+    self.x < 0 || self.x >= CHUNK_SIZE || self.y < 0 || self.y >= CHUNK_SIZE
+  }
 }
 
 impl Point<TileGrid> {
@@ -401,5 +405,35 @@ mod tests {
   fn is_touching_edge_false_outside_grid() {
     let p = Point::new_internal_grid(CHUNK_SIZE, CHUNK_SIZE);
     assert!(!p.is_touching_edge());
+  }
+
+  #[test]
+  fn is_outside_grid_true_for_negative_coordinates() {
+    let p = Point::new_internal_grid(-1, -1);
+    assert!(p.is_outside_grid());
+  }
+
+  #[test]
+  fn is_outside_grid_true_for_x_out_of_bounds() {
+    let p = Point::new_internal_grid(CHUNK_SIZE, 5);
+    assert!(p.is_outside_grid());
+  }
+
+  #[test]
+  fn is_outside_grid_true_for_y_out_of_bounds() {
+    let p = Point::new_internal_grid(5, CHUNK_SIZE);
+    assert!(p.is_outside_grid());
+  }
+
+  #[test]
+  fn is_outside_grid_false_for_valid_coordinates() {
+    let p = Point::new_internal_grid(5, 5);
+    assert!(!p.is_outside_grid());
+  }
+
+  #[test]
+  fn is_outside_grid_false_for_edge_coordinates() {
+    let p = Point::new_internal_grid(0, CHUNK_SIZE - 1);
+    assert!(!p.is_outside_grid());
   }
 }

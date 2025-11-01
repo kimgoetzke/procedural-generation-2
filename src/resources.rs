@@ -88,6 +88,8 @@ pub struct GeneralGenerationSettings {
   /// Whether to enable world pruning: when enabled, chunks that are far away from the current chunk will be despawned
   /// for performance reasons. Disabling this will cause all generated chunks to remain in the world forever.
   pub enable_world_pruning: bool,
+  #[inspector(min = 0., max = 2., display = NumberDisplay::Slider)]
+  pub camera_default_zoom: f32,
 }
 
 impl Default for GeneralGenerationSettings {
@@ -102,6 +104,7 @@ impl Default for GeneralGenerationSettings {
       spawn_from_layer: SPAWN_FROM_LAYER,
       spawn_up_to_layer: SPAWN_UP_TO_LAYER,
       enable_world_pruning: ENABLE_WORLD_PRUNING,
+      camera_default_zoom: CAMERA_DEFAULT_ZOOM,
     }
   }
 }
@@ -203,6 +206,10 @@ pub struct ObjectGenerationSettings {
   /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc. Will be ignored if
   /// `generate_objects` is `false`.
   pub generate_decoration: bool,
+  /// Whether to allow generating objects that have animated sprites. If disabled, only objects with static sprites will
+  /// be generated and spawned. This can reduce wave function collapse error rates and improve performance because it
+  /// reduces the number of possible object states.
+  pub enable_animated_objects: bool,
   /// Whether to enable random colour variations for decorative objects. Does not affect paths or buildings.
   pub enable_colour_variations: bool,
 }
@@ -215,6 +222,7 @@ impl Default for ObjectGenerationSettings {
       generate_buildings: GENERATE_BUILDINGS,
       building_density: BUILDING_DENSITY,
       generate_decoration: GENERATE_DECORATION,
+      enable_animated_objects: ENABLE_ANIMATED_OBJECTS,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
     }
   }

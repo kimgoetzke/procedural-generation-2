@@ -8,6 +8,7 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
 use std::fmt::Display;
 use std::ops::Range;
+use strum::EnumIter;
 
 pub struct MetadataPlugin;
 
@@ -286,7 +287,7 @@ impl BiomeMetadataSet<'_> {
   }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Reflect)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Reflect, serde::Deserialize, EnumIter)]
 pub enum Climate {
   Dry,
   Moderate,

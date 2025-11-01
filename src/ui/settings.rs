@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::events::{RefreshMetadata, ResetCameraEvent};
+use crate::messages::{RefreshMetadataMessage, ResetCameraMessage};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
@@ -7,10 +7,8 @@ use crate::resources::{
 use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
-use bevy::log::*;
-use bevy::prelude::{EventWriter, KeyCode, Local, Res, ResMut, Resource, With, World};
-use bevy::window::PrimaryWindow;
-use bevy_inspector_egui::bevy_egui::EguiContext;
+use bevy::prelude::{KeyCode, Local, MessageWriter, Res, ResMut, Resource, With, World};
+use bevy_inspector_egui::bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 use bevy_inspector_egui::egui::{Align, Align2, Color32, FontId, Layout, RichText, ScrollArea, Window};
 
 pub struct SettingsUiPlugin;
@@ -19,7 +17,8 @@ impl Plugin for SettingsUiPlugin {
   fn build(&self, app: &mut App) {
     app
       .insert_resource(UiState::default())
-      .add_systems(Update, (render_settings_ui_system, handle_ui_events_system));
+      .add_systems(Update, handle_ui_messages_system)
+      .add_systems(EguiPrimaryContextPass, render_settings_ui_system);
   }
 }
 
@@ -58,11 +57,13 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
     return;
   }
 
-  let mut egui_context = if let Ok(context) = world.query_filtered::<&mut EguiContext, With<PrimaryWindow>>().single(world) {
+  let mut egui_context = if let Ok(context) = world
+    .query_filtered::<&mut EguiContext, With<PrimaryEguiContext>>()
+    .single(world)
+  {
     context.clone()
   } else {
-    warn_once!("No egui context found");
-    return;
+    panic!("No egui context found");
   };
 
   // Increase the default tooltip width in order to allow documentation comments to be displayed without double
@@ -168,9 +169,9 @@ fn render_buttons(world: &mut World, ui: &mut bevy_inspector_egui::egui::Ui) {
   });
 }
 
-fn handle_ui_events_system(
-  mut refresh_metadata_event: EventWriter<RefreshMetadata>,
-  mut reset_camera_event: EventWriter<ResetCameraEvent>,
+fn handle_ui_messages_system(
+  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
+  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
   mut ui_state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
   mut general: ResMut<GeneralGenerationSettings>,
@@ -189,21 +190,21 @@ fn handle_ui_events_system(
           &mut world_gen,
           &mut object,
         );
-        send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
+        send_regenerate_or_prune_message(&current_chunk, &mut refresh_metadata_message);
       }
       UiAction::ResetCamera => {
-        reset_camera_event.write(ResetCameraEvent {});
-        send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
+        reset_camera_message.write(ResetCameraMessage { reset_position: true });
+        send_regenerate_or_prune_message(&current_chunk, &mut refresh_metadata_message);
       }
       UiAction::Regenerate => {
         update_settings(&mut settings, &general, &metadata_settings, &world_gen, &object);
-        send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
+        send_regenerate_or_prune_message(&current_chunk, &mut refresh_metadata_message);
       }
       UiAction::GenerateNext => {
         update_settings(&mut settings, &general, &metadata_settings, &world_gen, &object);
         settings.world.noise_seed = settings.world.noise_seed.saturating_add(1);
         world_gen.noise_seed = settings.world.noise_seed;
-        send_regenerate_or_prune_event(&current_chunk, &mut refresh_metadata_event);
+        send_regenerate_or_prune_message(&current_chunk, &mut refresh_metadata_message);
       }
     }
   }
@@ -245,12 +246,12 @@ fn update_settings(
   settings.object = *object;
 }
 
-fn send_regenerate_or_prune_event(
+fn send_regenerate_or_prune_message(
   current_chunk: &Res<CurrentChunk>,
-  refresh_metadata_event: &mut EventWriter<RefreshMetadata>,
+  refresh_metadata_message: &mut MessageWriter<RefreshMetadataMessage>,
 ) {
   let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
-  refresh_metadata_event.write(RefreshMetadata {
+  refresh_metadata_message.write(RefreshMetadataMessage {
     regenerate_world_after: is_at_origin_spawn_point,
     prune_then_update_world_after: !is_at_origin_spawn_point,
   });

@@ -1,3 +1,4 @@
+use crate::constants::{WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
 use crate::generation::lib::shared;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
 use crate::resources::Settings;
@@ -5,9 +6,6 @@ use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::Rng;
 use rand::prelude::StdRng;
-
-/// The frequency (in milliseconds) at which to log warnings if the wave function collapse algorithm is taking a long time.
-const WARNING_FREQUENCY: u128 = 2_000;
 
 /// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
 pub struct WfcPlugin;
@@ -19,7 +17,7 @@ impl Plugin for WfcPlugin {
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.
 pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, mut rng: &mut StdRng) {
   let start_time = shared::get_time();
-  let mut next_warning_time = start_time + WARNING_FREQUENCY;
+  let mut next_warning_time = start_time + WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY;
   object_grid.validate();
   let (mut snapshot_error_count, mut iter_error_count, mut total_error_count) = (0, 0, 0);
   let is_decoration_enabled = settings.object.generate_decoration;
@@ -96,9 +94,7 @@ fn iterate(mut rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
     grid.set_cell(cell.clone());
     for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
       if !neighbour.is_collapsed() {
-        if let Ok((has_changed, neighbour_cell)) =
-          neighbour.clone_and_reduce(&cell, &connection, is_failure_log_level_increased)
-        {
+        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection, false) {
           if has_changed {
             stack.push(neighbour_cell);
           }
@@ -164,7 +160,7 @@ fn handle_success(
 ) {
   let current_entropy = grid.calculate_total_entropy();
   log_completion(grid, iter_count, iter_error_count, current_entropy);
-  if *iter_count % 10 == 0 {
+  if *iter_count % WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL == 0 {
     snapshots.push(grid.clone());
   }
   *has_entropy = result == IterationResult::Incomplete;
@@ -235,7 +231,7 @@ fn log_failure(
       iteration_error_count,
       snapshots.len()
     );
-    *next_warning_time = now + WARNING_FREQUENCY;
+    *next_warning_time = now + WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY;
   }
 }
 

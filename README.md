@@ -1,9 +1,9 @@
 # Procedural Generation Project 2
 
 This repository contains basic generation logic for a 2D, pixel art, tile set-based world. It was written in Rust,
-using Bevy engine (v0.16.1). The purpose of this project was to familiarise myself a little more with Rust and
-procedural
-generation. It's a follow-up on my first attempt to learn Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids),
+using Bevy engine (v0.17.2). The purpose of this project was to familiarise myself a little more with Rust and
+procedural generation. It's a follow-up on my first attempt to learn
+Rust, [Rusteroids](https://github.com/kimgoetzke/rusteroids),
 and my first, non-Rust procedural generation
 project, [Procedural Generation Project 1](https://github.com/kimgoetzke/procedural-generation-1).
 You will neither find advanced concepts of Rust being applied (correctly) here nor advanced procedural generation
@@ -11,38 +11,36 @@ techniques.
 
 ## Demo
 
-[![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
-
-⬆️ _The above video has not been updated to feature paths and buildings (yet)._
-
-
-![Screenshot 6](assets/ignore/screenshot6.png)
-![Screenshot 7](assets/ignore/screenshot7.png)
-![Demo GIF 3](assets/ignore/demo3.gif)
-![Demo GIF 1](assets/ignore/demo1.gif)
-![Demo GIF 4](assets/ignore/demo4.gif)
+![Screenshot 8](assets/ignore/screenshot8.jpg)
+![Screenshot 9](assets/ignore/screenshot9.jpg)
+![Demo GIF 5](assets/ignore/demo5.gif)
+![Demo GIF 7](assets/ignore/demo7.gif)
+![Demo GIF 6](assets/ignore/demo6.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
+
+⬇️  **IMPORTANT**: _The below video has not been updated to feature paths, buildings, or the updated artwork (yet)._ ⚠️
+[![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 
 ## Features
 
 - Generates an infinite and animated, 2D pixel art world that is fully deterministic
 - Executes generation processes asynchronously (excluding entity spawning, of course)
 - Terrain generation:
-    - Uses multi-fractal Perlin noise to generate terrain layers
+    - Uses **multi-fractal Perlin noise** to generate terrain layers
     - Features 3 biomes (dry, moderate, humid), each with 5 terrain types (water, shore, and three land layers e.g.
       sand/grass/forest)
     - Each terrain type supports 16 different tile types, many with transparency allowing for smooth
       transitions and layering
     - Uses a chunk-based approach (as can be seen in the GIFs)
-    - Employs contextual layers (`Metadata`) to make chunks context aware, allowing for gradual elevation
+    - Employs **contextual layers** (`Metadata`) to make chunks context aware, allowing for gradual elevation
       changes over great distances and inter-chunk biome changes without reducing generation performance
 - Object generation:
-    - Uses a basic A* pathfinding algorithm implementation to generate paths crossing multiple chunks
+    - Uses a basic **A\* pathfinding** algorithm implementation to generate paths crossing multiple chunks
     - Generates 3 modular building types - each allowing for different door locations, and window/roofs styles - in
       settled areas along paths
-    - Uses the wave function collapse algorithm to generate additional decorative objects such as trees, ruins,
+    - Uses the **wave function collapse** algorithm to generate additional decorative objects such as trees, ruins,
       stones, etc.
-    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.ron` files -
+    - Supports multi-tile objects and connected objects, the rules for which are expressed in `.toml` files -
       for example, ruins can span multiple tiles and span over multiple terrain types
 - Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
@@ -105,10 +103,20 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 
 1. Add the sprite to the relevant sprite sheet in `assets/objects/`
 2. Add a new option to the `ObjectName` enum
-3. Add the object name to the `any.terrain.ruleset.ron` file (top, right, bottom, left)
-4. Add the object name to the `all.tile-type.ruleset.ron` file (like just `Fill`)
-5. Add a new state to the relevant `{terrain}.terrain.ruleset.ron` file using the index from the sprite sheet
-6. Optional: If this is a large asset, make sure to add it to `ObjectName.is_large_sprite()` too
+3. Optional: Add the object name to the `any.terrain.ruleset.toml` file (top, right, bottom, left) if it can be placed
+   next to
+   a tile that contains no object (i.e. `ObjectName::Empty`)
+4. Add the object name to the `all.tile-type.ruleset.toml` file (like just `Fill`) to the relevant `TileType`s on which
+   the object can be placed
+5. Add a new state to the relevant `{terrain}.terrain.ruleset.toml` file using the index from the sprite sheet
+    - Make sure provide of permitted neighbours (even if just `Empty` on all sides)
+    - Make sure the permitted neighbours themselves list the new object name as a neighbour, too
+    - The application will run some validations and prevent startup with clear error messages if the configured state is
+      unresolvable
+6. Optional: Add the object name to any terrain-climate combination in `all.exclusions.ruleset.toml` if it shouldn't
+   be placed in those terrains and/or climates
+7. Optional: If this is a large asset, make sure to add it to `ObjectName.is_multi_tile()`
+8. Optional: If this is an animated asset, add it to `ObjectName.is_animated()`
 
 #### How to add building or path sprite assets
 
@@ -117,7 +125,7 @@ Upgrade the flake by running `nix flake update` in the repository's base directo
 3. Add the new option(s) to the `ObjectName` enum
 4. Add the object name(s) to the `is_building()` or `is_path()` function in `object_name.rs`
 5. Add the object name(s) to the `get_index_for_building()` or `get_index_for_path()` function in `object_name.rs`
-6. Add the object name(s) to the `any.terrain.ruleset.ron` file where appropriate (top, right, bottom, left)
+6. Add the object name(s) to the `any.terrain.ruleset.toml` file where appropriate (top, right, bottom, left)
 7. If building sprite: Add the object name(s) to relevant `BuildingType` in the `BuildingComponentRegistry`
 
 You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects

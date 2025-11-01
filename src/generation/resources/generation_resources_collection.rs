@@ -1,6 +1,7 @@
 use crate::constants::*;
 use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName, TerrainState};
+use crate::generation::resources::Climate;
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};
@@ -10,7 +11,7 @@ use bevy::platform::collections::{HashMap, HashSet};
 use bevy::prelude::{
   Commands, IntoScheduleConfigs, NextState, OnExit, Reflect, Res, ResMut, Resource, TextureAtlasLayout, TypePath, in_state,
 };
-use bevy_common_assets::ron::RonAssetPlugin;
+use bevy_common_assets::toml::TomlAssetPlugin;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
@@ -36,8 +37,9 @@ impl Plugin for GenerationResourcesCollectionPlugin {
     app
       .init_resource::<GenerationResourcesCollection>()
       .add_plugins((
-        RonAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.ron"]),
-        RonAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.ron"]),
+        TomlAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.toml"]),
+        TomlAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.toml"]),
+        TomlAssetPlugin::<ExclusionsRuleSet>::new(&["exclusions.ruleset.toml"]),
       ))
       .add_systems(Startup, load_rule_sets_system)
       .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
@@ -89,24 +91,48 @@ struct TileTypeState {
   pub permitted_self: Vec<ObjectName>,
 }
 
+#[derive(Resource, Default, Debug, Clone)]
+struct ExclusionsRuleSetHandle(Handle<ExclusionsRuleSet>);
+
+#[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
+struct ExclusionsRuleSet {
+  states: Vec<ExclusionsState>,
+}
+
+impl Display for ExclusionsRuleSet {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "Exclusions rule set with {} states", self.states.len())
+  }
+}
+
+#[derive(serde::Deserialize, Debug, Clone, Reflect)]
+struct ExclusionsState {
+  pub terrain: TerrainType,
+  pub climate: Climate,
+  pub excluded_objects: Vec<ObjectName>,
+}
+
 fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
   for terrain_type in TerrainType::iter() {
-    let path = format!("objects/{}.terrain.ruleset.ron", terrain_type.to_string().to_lowercase());
+    let path = format!("objects/{}.terrain.ruleset.toml", terrain_type.to_string().to_lowercase());
     let handle = asset_server.load(path);
     rule_set_handles.push(handle);
   }
-  let any_handle = asset_server.load("objects/any.terrain.ruleset.ron");
+  let any_handle = asset_server.load("objects/any.terrain.ruleset.toml");
   rule_set_handles.push(any_handle);
   commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
-  let handle = asset_server.load("objects/all.tile-type.ruleset.ron");
-  commands.insert_resource(TileTypeRuleSetHandle(handle));
+  let all_handle = asset_server.load("objects/all.tile-type.ruleset.toml");
+  commands.insert_resource(TileTypeRuleSetHandle(all_handle));
+  let exclusion_handle = asset_server.load("objects/all.exclusions.ruleset.toml");
+  commands.insert_resource(ExclusionsRuleSetHandle(exclusion_handle));
 }
 
 fn check_loading_state_system(
   asset_server: Res<AssetServer>,
   terrain_handles: Res<TerrainRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
+  exclusions_handle: Res<ExclusionsRuleSetHandle>,
   mut state: ResMut<NextState<AppState>>,
 ) {
   for handle in &terrain_handles.0 {
@@ -116,6 +142,10 @@ fn check_loading_state_system(
     }
   }
   if is_loading(asset_server.get_load_state(&tile_type_handle.0)) {
+    info_once!("Waiting for assets to load...");
+    return;
+  }
+  if is_loading(asset_server.get_load_state(&exclusions_handle.0)) {
     info_once!("Waiting for assets to load...");
     return;
   }
@@ -141,28 +171,48 @@ fn initialise_resources_system(
   mut terrain_rule_set_assets: ResMut<Assets<TerrainRuleSet>>,
   tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
   mut tile_type_rule_set_assets: ResMut<Assets<TileTypeRuleSet>>,
+  exclusions_rule_set_handle: Res<ExclusionsRuleSetHandle>,
+  mut exclusions_rule_set_assets: ResMut<Assets<ExclusionsRuleSet>>,
 ) {
   // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
     UVec2::splat(TILE_SIZE),
-    TILE_SET_PLACEHOLDER_COLUMNS,
-    TILE_SET_PLACEHOLDER_ROWS,
+    PLACEHOLDER_TILE_SET_COLUMNS,
+    PLACEHOLDER_TILE_SET_ROWS,
     None,
     None,
   );
   let default_texture_atlas_layout = layouts.add(default_layout);
-  asset_collection.placeholder = AssetPack::new(asset_server.load(TILE_SET_PLACEHOLDER_PATH), default_texture_atlas_layout);
+  asset_collection.placeholder = AssetPack::new(asset_server.load(TS_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  asset_collection.water = tile_set_static(&asset_server, &mut layouts, TS_WATER_PATH);
-  asset_collection.shore = tile_set_default_animations(&asset_server, &mut layouts, TS_SHORE_PATH);
-  asset_collection.land_dry_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_DRY_L1_PATH);
+  asset_collection.water = tile_set_animated(&asset_server, &mut layouts, TS_WATER_PATH, true, ANIMATED_TILE_SET_COLUMNS);
+  asset_collection.shore = tile_set_animated(&asset_server, &mut layouts, TS_SHORE_PATH, true, ANIMATED_TILE_SET_COLUMNS);
+  asset_collection.land_dry_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_DRY_L1_PATH,
+    false,
+    ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
   asset_collection.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
-  asset_collection.land_moderate_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_MODERATE_L1_PATH);
+  asset_collection.land_moderate_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_MODERATE_L1_PATH,
+    false,
+    ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
   asset_collection.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
-  asset_collection.land_humid_l1 = tile_set_default_animations(&asset_server, &mut layouts, TS_LAND_HUMID_L1_PATH);
+  asset_collection.land_humid_l1 = tile_set_animated(
+    &asset_server,
+    &mut layouts,
+    TS_LAND_HUMID_L1_PATH,
+    false,
+    ANIMATED_TILE_SET_COLUMNS,
+  );
   asset_collection.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
   asset_collection.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
 
@@ -195,13 +245,16 @@ fn initialise_resources_system(
   asset_collection.objects.l3_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L3_DRY_PATH);
   asset_collection.objects.l3_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L3_MODERATE_PATH);
   asset_collection.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
+  asset_collection.objects.animated = object_assets_animated(&asset_server, &mut layouts, OBJ_ANIMATED_PATH);
 
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
   let tile_type_rules = tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
+  let exclusion_rules = exclusion_rules(exclusions_rule_set_handle, &mut exclusions_rule_set_assets);
   let terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
   validate_terrain_state_map(&terrain_state_map);
-  asset_collection.objects.terrain_state_map = terrain_state_map.clone();
+  let terrain_climate_state_map = apply_exclusions(exclusion_rules, terrain_state_map);
+  asset_collection.objects.terrain_climate_state_map = terrain_climate_state_map;
 }
 
 fn tile_set_static(
@@ -209,49 +262,34 @@ fn tile_set_static(
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
 ) -> AssetCollection {
-  let static_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    DEFAULT_STATIC_TILE_SET_COLUMNS,
-    TILE_SET_ROWS,
-    None,
-    None,
-  );
+  let static_layout =
+    TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), STATIC_TILE_SET_COLUMNS, TILE_SET_ROWS, None, None);
   let texture_atlas_layout = layout.add(static_layout);
 
   AssetCollection {
     stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), texture_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
+    index_offset: 1,
   }
 }
 
-fn tile_set_default_animations(
+fn tile_set_animated(
   asset_server: &Res<AssetServer>,
   layout: &mut Assets<TextureAtlasLayout>,
   tile_set_path: &str,
+  is_fill_animated: bool,
+  columns: u32,
 ) -> AssetCollection {
-  let animated_tile_set_layout = TextureAtlasLayout::from_grid(
-    UVec2::splat(TILE_SIZE),
-    DEFAULT_ANIMATED_TILE_SET_COLUMNS,
-    TILE_SET_ROWS,
-    None,
-    None,
-  );
+  let animated_tile_set_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), columns, TILE_SET_ROWS, None, None);
   let atlas_layout = layout.add(animated_tile_set_layout);
+  let texture = asset_server.load(tile_set_path.to_string());
 
   AssetCollection {
-    stat: AssetPack {
-      texture: asset_server.load(tile_set_path.to_string()),
-      texture_atlas_layout: atlas_layout.clone(),
-      index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
-    },
-    anim: Some(AssetPack {
-      texture: asset_server.load(tile_set_path.to_string()),
-      texture_atlas_layout: atlas_layout,
-      index_offset: DEFAULT_ANIMATED_TILE_SET_COLUMNS as usize,
-    }),
+    stat: AssetPack::new(texture.clone(), atlas_layout.clone()),
+    anim: Some(AssetPack::new(texture, atlas_layout)),
     animated_tile_types: {
-      let tile_types = [
+      let mut tile_types_set = HashSet::from([
         TileType::InnerCornerBottomLeft,
         TileType::InnerCornerBottomRight,
         TileType::InnerCornerTopLeft,
@@ -267,19 +305,15 @@ fn tile_set_default_animations(
         TileType::RightFill,
         TileType::LeftFill,
         TileType::Single,
-      ];
-      insert(&tile_types)
+      ]);
+      if is_fill_animated {
+        tile_types_set.insert(TileType::Fill);
+      }
+
+      tile_types_set
     },
+    index_offset: columns as usize,
   }
-}
-
-fn insert(tile_types: &[TileType; 15]) -> HashSet<TileType> {
-  let mut set = HashSet::new();
-  for tile_type in tile_types {
-    set.insert(*tile_type);
-  }
-
-  set
 }
 
 fn object_assets_static(
@@ -294,6 +328,25 @@ fn object_assets_static(
     stat: AssetPack::new(asset_server.load(tile_set_path.to_string()), static_atlas_layout.clone()),
     anim: None,
     animated_tile_types: HashSet::new(),
+    index_offset: 1,
+  }
+}
+
+fn object_assets_animated(
+  asset_server: &Res<AssetServer>,
+  layout: &mut Assets<TextureAtlasLayout>,
+  tile_set_path: &str,
+) -> AssetCollection {
+  let animated_tile_set_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, ANIMATED_OBJ_COLUMNS, ANIMATED_OBJ_ROWS, None, None);
+  let atlas_layout = layout.add(animated_tile_set_layout);
+  let texture = asset_server.load(tile_set_path.to_string());
+
+  AssetCollection {
+    stat: AssetPack::new(texture.clone(), atlas_layout.clone()),
+    anim: Some(AssetPack::new(texture, atlas_layout)),
+    animated_tile_types: { HashSet::new() },
+    index_offset: ANIMATED_OBJ_COLUMNS as usize,
   }
 }
 
@@ -322,6 +375,7 @@ fn terrain_rules(
         states.len()
       );
     }
+    rule_sets.insert(TerrainType::Any, any_rule_set);
   }
 
   rule_sets
@@ -343,12 +397,29 @@ fn tile_type_rules(
   HashMap::new()
 }
 
+fn exclusion_rules(
+  exclusion_rule_set_handle: Res<ExclusionsRuleSetHandle>,
+  exclusion_rule_set_assets: &mut ResMut<Assets<ExclusionsRuleSet>>,
+) -> HashMap<(TerrainType, Climate), Vec<ObjectName>> {
+  if let Some(rule_set) = exclusion_rule_set_assets.remove(&exclusion_rule_set_handle.0) {
+    debug!(
+      "Loaded: Exclusions rule set for [{}] terrain-climate combinations",
+      rule_set.states.len()
+    );
+    let mut rule_sets = HashMap::new();
+    for state in rule_set.states {
+      rule_sets.insert((state.terrain, state.climate), state.excluded_objects);
+    }
+    return rule_sets;
+  }
+
+  HashMap::new()
+}
+
 /// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
 /// their possible states.
 ///
 /// Note:
-/// - [`TerrainType::Any`] is filtered out, as it is not a valid terrain type to be rendered and used to extend other
-///   terrain types. This [`TerrainType`] causes panics if it is used later in the generation logic.
 /// - [`TileType::Unknown`] is also filtered out, as it is not a valid tile type and is only used to signal
 ///   an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
 ///   single-coloured tile to indicate the error.
@@ -357,7 +428,7 @@ fn resolve_rules_to_terrain_states_map(
   tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
 ) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
   let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
-  for terrain_type in TerrainType::iter().filter(|&t| t != TerrainType::Any) {
+  for terrain_type in TerrainType::iter() {
     let relevant_terrain_rules = terrain_rules
       .get(&terrain_type)
       .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
@@ -400,7 +471,6 @@ fn resolve_rules_to_terrain_states_map(
 }
 
 /// Validates the terrain state map in a basic way. This function checks for the following:
-/// - The map must not contain [`TerrainType::Any`]
 /// - The map must not contain [`TileType::Unknown`] for any [`TerrainType`]
 /// - Each state must not have asymmetric neighbour rules (i.e. a state that allows a neighbour in one direction
 ///   but the neighbour state does not allow the original state in the opposite direction) - however, paths and
@@ -412,10 +482,6 @@ fn validate_terrain_state_map(terrain_state_map: &HashMap<TerrainType, HashMap<T
   let mut errors = HashSet::new();
   let state_lookup_map = build_state_lookup_map(terrain_state_map);
   for (terrain, state_map) in terrain_state_map {
-    if let Err(error_msg) = validate_terrain_type(terrain) {
-      errors.insert(error_msg);
-      continue;
-    }
     for (tile_type, states) in state_map {
       if let Err(error_msg) = validate_tile_type(tile_type, terrain) {
         errors.insert(error_msg);
@@ -453,16 +519,6 @@ fn build_state_lookup_map(
     .collect()
 }
 
-/// Validates the terrain type. Returns and error if the terrain type is [`TerrainType::Any`] since this terrain type
-/// must not be in the terrain state map. It is only used to extend other terrain types or as a placeholder value
-/// in the generation logic at runtime.
-fn validate_terrain_type(terrain: &TerrainType) -> Result<(), String> {
-  match terrain {
-    TerrainType::Any => Err("Found terrain type [Any], which is not allowed".to_string()),
-    _ => Ok(()),
-  }
-}
-
 /// Validates the tile type. Returns an error if the tile type is [`TileType::Unknown`] since this tile type is only
 /// used to signal an error in the generation logic and should not be present in the terrain state map.
 fn validate_tile_type(tile_type: &TileType, terrain: &TerrainType) -> Result<(), String> {
@@ -484,10 +540,10 @@ fn validate_terrain_state(
   terrain_state_map: &HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
   errors: &mut HashSet<String>,
 ) {
-  validate_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
-  validate_duplicate_neighbours(state, terrain, errors);
-  validate_duplicate_connections(state, terrain, errors);
-  validate_missing_connections(state, terrain, errors);
+  check_for_asymmetric_rules(state, terrain, state_lookup, terrain_state_map, errors);
+  check_for_duplicate_neighbours(state, terrain, errors);
+  check_for_duplicate_connections(state, terrain, errors);
+  check_for_missing_connections(state, terrain, errors);
 }
 
 /// Adds an error to `errors` for each asymmetric neighbour rules in the given terrain state. Asymmetry refers to
@@ -498,7 +554,7 @@ fn validate_terrain_state(
 /// because they are calculated and "collapsed" before the wave function collapse algorithm even runs. As a result,
 /// only non-path/-building objects need to know that they are allowed to be placed next to a path or building object
 /// and no rules for the opposite are required since they will never be evaluated.
-fn validate_asymmetric_rules(
+fn check_for_asymmetric_rules(
   state: &TerrainState,
   terrain: TerrainType,
   state_lookup_map: &HashMap<(TerrainType, TileType, ObjectName), &TerrainState>,
@@ -540,7 +596,7 @@ fn validate_asymmetric_rules(
 
 /// Adds an error to `errors` if there are duplicate neighbours - i.e. [`ObjectName`]s - in
 /// [`TerrainState::permitted_neighbours`].
-fn validate_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   for (connection, permitted_neighbours) in &state.permitted_neighbours {
     let unique_neighbours: HashSet<&ObjectName> = permitted_neighbours.iter().collect();
     if unique_neighbours.len() != permitted_neighbours.len() {
@@ -553,7 +609,7 @@ fn validate_duplicate_neighbours(state: &TerrainState, terrain: TerrainType, err
 }
 
 /// Adds an error to `errors` if there are duplicate [`Connection`]s in [`TerrainState::permitted_neighbours`].
-fn validate_duplicate_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_duplicate_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   let connections: Vec<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
   let unique_connections: HashSet<_> = connections.iter().collect();
 
@@ -567,7 +623,7 @@ fn validate_duplicate_connections(state: &TerrainState, terrain: TerrainType, er
 
 /// Adds an error to `errors` if not all four cardinal directions are defined as [`Connection`]s in
 /// [`TerrainState::permitted_neighbours`].
-fn validate_missing_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
+fn check_for_missing_connections(state: &TerrainState, terrain: TerrainType, errors: &mut HashSet<String>) {
   const ALL_CONNECTIONS: [Connection; 4] = [Connection::Top, Connection::Right, Connection::Bottom, Connection::Left];
   let defined_connections: HashSet<Connection> = state.permitted_neighbours.iter().map(|(c, _)| *c).collect();
   for connection in &ALL_CONNECTIONS {
@@ -578,4 +634,41 @@ fn validate_missing_connections(state: &TerrainState, terrain: TerrainType, erro
       ));
     }
   }
+}
+
+/// Turns a terrain state map into a terrain-climate state map by applying the exclusion rules. For each terrain type
+/// and climate combination, the relevant exclusion rules are applied to filter out any excluded object names from
+/// the terrain states.
+fn apply_exclusions(
+  exclusion_rules: HashMap<(TerrainType, Climate), Vec<ObjectName>>,
+  terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>>,
+) -> HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>> {
+  let mut terrain_climate_state_map = HashMap::new();
+  for terrain in terrain_state_map.keys() {
+    for climate in Climate::iter() {
+      let mut cloned_states = terrain_state_map.get(terrain).expect("Terrain must exist").clone();
+      let excluded_objects = exclusion_rules.get(&(*terrain, climate)).cloned().unwrap_or_default();
+      cloned_states
+        .iter_mut()
+        .for_each(|entry| entry.1.retain(|state| !excluded_objects.contains(&state.name)));
+      terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states.clone());
+      if terrain == &TerrainType::Any {
+        // TODO: Find out why exclusions for [Any] are not applied correctly and then remove the if-statement
+        debug!(
+          "Objects for [Any] terrain in [{:?}] climate to be excluded: {:?}",
+          climate, excluded_objects
+        );
+        debug!(
+          "Now allowing {}",
+          cloned_states
+            .iter()
+            .map(|o| format!("- [{:?}]\n", o))
+            .collect::<Vec<String>>()
+            .join(", ")
+        );
+      }
+    }
+  }
+
+  terrain_climate_state_map
 }

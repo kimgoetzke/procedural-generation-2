@@ -1,4 +1,4 @@
-use crate::components::{AnimationMeshComponent, AnimationTimer};
+use crate::components::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
 use crate::coords::Point;
 use crate::coords::point::World;
@@ -12,9 +12,9 @@ use bevy::app::{App, Plugin};
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::log::*;
+use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
-use bevy::render::mesh::{Indices, PrimitiveTopology};
-use bevy::sprite::AlphaMode2d;
+use bevy::sprite_render::AlphaMode2d;
 use std::collections::HashMap;
 
 pub struct WorldGeneratorPlugin;
@@ -124,7 +124,7 @@ fn prepare_texture_groups<'a>(
   let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
   for row in plane.data.iter() {
     for tile in row.iter().flatten() {
-      let asset_collection = resources.get_terrain_collection(tile.terrain, tile.climate);
+      let asset_collection = resources.get_terrain_collection(&tile.terrain, &tile.climate);
       let has_animated_sprites = asset_collection.anim.is_some();
       let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
       let texture = match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
@@ -192,15 +192,7 @@ fn spawn_tile_mesh(
       ))
       .insert_if(
         AnimationMeshComponent {
-          timer: AnimationTimer(Timer::from_seconds(
-            match TerrainType::from(layer as usize) {
-              TerrainType::Shore => DEFAULT_ANIMATION_FRAME_DURATION / 2.,
-              _ => DEFAULT_ANIMATION_FRAME_DURATION,
-            },
-            TimerMode::Repeating,
-          )),
-          frame_count: 4,
-          current_frame: 0,
+          animation_type: AnimationType::SixFramesRegularSpeed,
           columns: sprite_sheet_columns,
           rows: sprite_sheet_rows,
           tile_indices: tile_sprite_indices,
@@ -264,16 +256,16 @@ fn calculate_mesh_attributes(
 /// are enabled.
 fn resolve_columns(has_animated_sprites: bool, is_drawing_terrain_sprites_disabled: bool) -> f32 {
   match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
-    (true, _) => TILE_SET_PLACEHOLDER_COLUMNS as f32,
-    (false, true) => DEFAULT_ANIMATED_TILE_SET_COLUMNS as f32,
-    (false, false) => DEFAULT_STATIC_TILE_SET_COLUMNS as f32,
+    (true, _) => PLACEHOLDER_TILE_SET_COLUMNS as f32,
+    (false, true) => ANIMATED_TILE_SET_COLUMNS as f32,
+    (false, false) => STATIC_TILE_SET_COLUMNS as f32,
   }
 }
 
 /// Determines the number of rows in the sprite sheet based on whether terrain sprites are disabled.
 fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
   if is_drawing_terrain_sprites_disabled {
-    TILE_SET_PLACEHOLDER_ROWS as f32
+    PLACEHOLDER_TILE_SET_ROWS as f32
   } else {
     TILE_SET_ROWS as f32
   }

@@ -54,7 +54,7 @@ fn get_sprite_index_from(
     (TerrainType::Land3, Climate::Dry) => get_sprite_index(&tile_type, resources.land_dry_l3.index_offset()),
     (TerrainType::Land3, Climate::Moderate) => get_sprite_index(&tile_type, resources.land_moderate_l3.index_offset()),
     (TerrainType::Land3, Climate::Humid) => get_sprite_index(&tile_type, resources.land_humid_l3.index_offset()),
-    (TerrainType::Any, _) => panic!("{}", TERRAIN_TYPE_ERROR),
+    (TerrainType::Any, _) => panic!("{}", "Invalid terrain type for drawing a terrain sprite"),
   }
 }
 
