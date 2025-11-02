@@ -365,7 +365,7 @@ fn terrain_rules(
   }
   if let Some(any_rule_set) = rule_sets.remove(&TerrainType::Any) {
     debug!(
-      "Found and removed [Any] terrain rule set with [{}] state(s) and will extend each of the other rule sets accordingly",
+      "Found [Any] terrain rule set with [{}] state(s) and will extend each of the other rule sets accordingly",
       any_rule_set.len()
     );
     for (terrain, states) in rule_sets.iter_mut() {
@@ -421,19 +421,18 @@ fn exclusion_rules(
 /// Resolves the terrain rules and tile type rules into a single map that associates terrain types with tile types and
 /// their possible states.
 ///
-/// Note:
-/// - [`TileType::Unknown`] is also filtered out, as it is not a valid tile type and is only used to signal
-///   an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
-///   single-coloured tile to indicate the error.
+/// Note: [`TileType::Unknown`] is filtered out, as it is not a valid tile type and is only used to signal
+/// an error in the generation logic. This [`TileType`] will not cause panics but will be rendered as a bright,
+/// single-coloured tile to indicate the error.
 fn resolve_rules_to_terrain_states_map(
   terrain_rules: HashMap<TerrainType, Vec<TerrainState>>,
   tile_type_rules: HashMap<TileType, Vec<ObjectName>>,
 ) -> HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> {
   let mut terrain_state_map: HashMap<TerrainType, HashMap<TileType, Vec<TerrainState>>> = HashMap::new();
-  for terrain_type in TerrainType::iter() {
+  for terrain in TerrainType::iter() {
     let relevant_terrain_rules = terrain_rules
-      .get(&terrain_type)
-      .expect(format!("Failed to find rule set for [{:?}] terrain type", &terrain_type).as_str());
+      .get(&terrain)
+      .expect(format!("Failed to find rule set for [{:?}] terrain", &terrain).as_str());
     let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
       .filter(|&t| t != TileType::Unknown)
       .map(|tile_type| {
@@ -452,13 +451,13 @@ fn resolve_rules_to_terrain_states_map(
     trace!(
       "Resolved [{}] rules for [{:?}] terrain type: {:?}",
       resolved_rules_for_terrain.values().map(|ts| ts.len()).sum::<usize>(),
-      terrain_type,
+      terrain,
       resolved_rules_for_terrain
         .iter()
         .map(|(k, v)| (k, v.len()))
         .collect::<HashMap<&TileType, usize>>()
     );
-    terrain_state_map.insert(terrain_type, resolved_rules_for_terrain);
+    terrain_state_map.insert(terrain, resolved_rules_for_terrain);
   }
   debug!(
     "Resolved [{}] rules for [{}] terrain types",
@@ -652,9 +651,11 @@ fn apply_exclusions(
       let mut object_count_before = 0;
       let mut cloned_states = terrain_state_map.get(terrain).expect("Terrain must exist").clone();
       if !excluded_objects.is_empty() {
-        trace!(
-          "Applying exclusions rules to [{:?}] terrain in [{:?}] climate",
-          terrain, climate
+        debug!(
+          "Applying up to [{}] exclusions rules to [{:?}] terrain in [{:?}] climate",
+          excluded_objects.len(),
+          terrain,
+          climate
         );
         let distinct_objects = cloned_states
           .values()
