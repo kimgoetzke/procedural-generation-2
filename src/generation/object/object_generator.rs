@@ -53,15 +53,9 @@ pub fn generate_object_grid(
     return None;
   }
   let start_time = shared::get_time();
-  let mut terrain_climate_state_map = resources.objects.terrain_climate_state_map.clone();
-  if !settings.object.enable_animated_objects {
-    terrain_climate_state_map.iter_mut().for_each(|(_, map)| {
-      map.iter_mut().for_each(|states| {
-        states.1.retain(|state| !state.name.is_animated());
-      });
-    });
-  }
-
+  let terrain_climate_state_map = resources
+    .objects
+    .get_terrain_state_collection(settings.object.enable_animated_objects);
   let grid = ObjectGrid::new_initialised(cg, chunk.climate, &terrain_climate_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",

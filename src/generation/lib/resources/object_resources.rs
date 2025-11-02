@@ -7,7 +7,7 @@ use bevy::prelude::Resource;
 
 #[derive(Resource, Default, Debug, Clone)]
 pub struct ObjectResources {
-  pub terrain_climate_state_map: HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
+  terrain_climate_state_map: HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
   pub water: AssetCollection,
   pub shore: AssetCollection,
   pub l1_dry: AssetCollection,
@@ -24,4 +24,26 @@ pub struct ObjectResources {
   pub trees_moderate: AssetCollection,
   pub trees_humid: AssetCollection,
   pub buildings: AssetCollection,
+}
+
+impl ObjectResources {
+  pub fn set_terrain_state_climate_map(
+    &mut self,
+    map: HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>>,
+  ) {
+    self.terrain_climate_state_map = map;
+  }
+
+  pub fn get_terrain_state_collection(
+    &self,
+    enable_animated_objects: bool,
+  ) -> HashMap<(TerrainType, Climate), HashMap<TileType, Vec<TerrainState>>> {
+    let mut terrain_climate_state_map = self.terrain_climate_state_map.clone();
+    for map in terrain_climate_state_map.values_mut() {
+      for states in map.values_mut() {
+        states.retain(|state| enable_animated_objects || !state.name.is_animated());
+      }
+    }
+    terrain_climate_state_map
+  }
 }
