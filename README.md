@@ -19,6 +19,7 @@ techniques.
 ![Demo GIF 2](assets/ignore/demo2.gif)
 
 ⬇️  **IMPORTANT**: _The below video has not been updated to feature paths, buildings, or the updated artwork (yet)._ ⚠️
+
 [![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 
 ## Features
