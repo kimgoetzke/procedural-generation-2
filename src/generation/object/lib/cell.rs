@@ -9,6 +9,7 @@ use bevy::log::*;
 use bevy::prelude::Reflect;
 use rand::Rng;
 use rand::prelude::StdRng;
+use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
 
 pub struct PropagationFailure {}
@@ -320,11 +321,11 @@ impl Cell {
   pub fn clone_and_reduce(
     &self,
     reference_cell: &Cell,
-    where_is_reference: &Connection,
+    where_is_reference_for_self: &Connection,
     is_failure_log_level_increased: bool,
   ) -> Result<(bool, Self), PropagationFailure> {
-    let where_is_self_for_reference = where_is_reference.opposite();
-    let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
+    let where_is_self_for_reference = where_is_reference_for_self.opposite();
+    let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     let mut updated_possible_states = Vec::new();
     for possible_state_self in &self.possible_states {
@@ -336,10 +337,15 @@ impl Cell {
     let mut clone = self.clone();
     clone.possible_states = updated_possible_states;
     clone.entropy = self.possible_states.len();
+    let result = if clone.possible_states.len() == 0 {
+      ResultType::FailedUpdate
+    } else {
+      ResultType::SuccessfulUpdate
+    };
     log_result(
-      true,
+      result,
       reference_cell,
-      where_is_reference,
+      where_is_reference_for_self,
       where_is_self_for_reference,
       self,
       &mut clone,
@@ -347,9 +353,9 @@ impl Cell {
       is_failure_log_level_increased,
     );
 
-    match clone.possible_states.len() {
-      0 => Err(PropagationFailure {}),
-      _ => Ok((self.possible_states.len() != clone.possible_states.len(), clone)),
+    match result {
+      ResultType::SuccessfulUpdate => Ok((self.possible_states.len() != clone.possible_states.len(), clone)),
+      _ => Err(PropagationFailure {}),
     }
   }
 
@@ -418,11 +424,11 @@ impl Cell {
     is_failure_log_level_increased: bool,
   ) -> Result<(), PropagationFailure> {
     let where_is_self_for_reference = where_is_reference.opposite();
-    let permitted_state_names = get_permitted_new_states(&reference_cell, &where_is_self_for_reference);
+    let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     if !permitted_state_names.contains(&self.possible_states[0].name) {
       log_result(
-        false,
+        ResultType::FailedVerification,
         reference_cell,
         where_is_reference,
         where_is_self_for_reference,
@@ -438,15 +444,15 @@ impl Cell {
   }
 }
 
-fn get_permitted_new_states(reference_cell: &Cell, where_is_self_for_reference: &Connection) -> Vec<ObjectName> {
-  reference_cell
+fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> Vec<ObjectName> {
+  cell
     .possible_states
     .iter()
-    .flat_map(|possible_state_reference| {
-      possible_state_reference
+    .flat_map(|states| {
+      states
         .permitted_neighbours
         .iter()
-        .filter(|(connection, _)| connection == where_is_self_for_reference)
+        .filter(|(c, _)| c == connection)
         .flat_map(|(_, names)| names.iter().cloned())
     })
     .collect()
@@ -498,7 +504,7 @@ fn is_filled_at_facing_edge_including_corner_types(ig: Point<InternalGrid>, tile
 }
 
 fn log_result(
-  is_update: bool,
+  result_type: ResultType,
   reference_cell: &Cell,
   where_is_reference: &Connection,
   where_is_self_for_reference: Connection,
@@ -521,7 +527,7 @@ fn log_result(
   let new_possible_states_names = new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>();
 
   if old_possible_states_count != new_possible_states_count
-    && is_update
+    && (result_type == ResultType::SuccessfulUpdate || result_type == ResultType::FailedUpdate)
     && new_cell.is_being_monitored
     && new_possible_states_count < 3
   {
@@ -537,21 +543,12 @@ fn log_result(
   if new_cell.possible_states.is_empty() {
     error!(
       "Failed to find any possible states for {} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
-      this_cell_ig,
-      old_cell.terrain,
-      where_is_reference,
-      if is_update { "update" } else { "verification" },
-      reference_cell.ig,
-      reference_cell.terrain,
+      this_cell_ig, old_cell.terrain, where_is_reference, result_type, reference_cell.ig, reference_cell.terrain,
     );
   }
 
   if (new_possible_states_count == 1 && !is_failure_log_level_increased) || new_possible_states_count == 0 {
-    debug!(
-      "┌─|| Summary of the [{}] process for {}",
-      if is_update { "update" } else { "verification" },
-      this_cell_ig
-    );
+    debug!("┌─|| Summary of the [{}] process for {}", result_type, this_cell_ig);
     debug!(
       "| - THIS cell is at {} which is at the [{:?}] of the reference cell",
       this_cell_ig, where_is_reference
@@ -594,7 +591,11 @@ fn log_result(
     );
     debug!(
       "└─> Result: THIS cell has {} new possible state(s): {:?}",
-      new_cell.possible_states.len(),
+      if result_type == ResultType::FailedVerification {
+        0
+      } else {
+        new_cell.possible_states.len()
+      },
       new_possible_states_names
     );
     debug!("")
@@ -626,6 +627,23 @@ fn log_collapse_result(
       "└─> Selected state for {:?} is [{:?}] with a weight of {}",
       cell.ig, selected_state.name, selected_state.weight
     );
+  }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum ResultType {
+  SuccessfulUpdate,
+  FailedUpdate,
+  FailedVerification,
+}
+
+impl Display for ResultType {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      ResultType::SuccessfulUpdate => write!(f, "Successful Update"),
+      ResultType::FailedUpdate => write!(f, "Failed Update"),
+      ResultType::FailedVerification => write!(f, "Failed Verification"),
+    }
   }
 }
 
