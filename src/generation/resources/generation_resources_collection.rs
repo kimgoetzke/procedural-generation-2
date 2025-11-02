@@ -254,7 +254,9 @@ fn initialise_resources_system(
   let terrain_state_map = resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
   validate_terrain_state_map(&terrain_state_map);
   let terrain_climate_state_map = apply_exclusions(exclusion_rules, terrain_state_map);
-  asset_collection.objects.terrain_climate_state_map = terrain_climate_state_map;
+  asset_collection
+    .objects
+    .set_terrain_state_climate_map(terrain_climate_state_map);
 }
 
 fn tile_set_static(
@@ -646,26 +648,41 @@ fn apply_exclusions(
   let mut terrain_climate_state_map = HashMap::new();
   for terrain in terrain_state_map.keys() {
     for climate in Climate::iter() {
-      let mut cloned_states = terrain_state_map.get(terrain).expect("Terrain must exist").clone();
       let excluded_objects = exclusion_rules.get(&(*terrain, climate)).cloned().unwrap_or_default();
+      let mut object_count_before = 0;
+      let mut cloned_states = terrain_state_map.get(terrain).expect("Terrain must exist").clone();
+      if !excluded_objects.is_empty() {
+        trace!(
+          "Applying exclusions rules to [{:?}] terrain in [{:?}] climate",
+          terrain, climate
+        );
+        let distinct_objects = cloned_states
+          .values()
+          .flat_map(|states| states.iter().map(|s| &s.name))
+          .collect::<HashSet<&ObjectName>>();
+        object_count_before = distinct_objects.len();
+        trace!(" ├─> [{}] objects before: {:?}", object_count_before, distinct_objects);
+      }
       cloned_states
         .iter_mut()
         .for_each(|entry| entry.1.retain(|state| !excluded_objects.contains(&state.name)));
       terrain_climate_state_map.insert((terrain.clone(), climate), cloned_states.clone());
-      if terrain == &TerrainType::Any {
-        // TODO: Find out why exclusions for [Any] are not applied correctly and then remove the if-statement
-        debug!(
-          "Objects for [Any] terrain in [{:?}] climate to be excluded: {:?}",
-          climate, excluded_objects
+      if !excluded_objects.is_empty() {
+        trace!(" ├─> [{}] exclusions to be applied", excluded_objects.len());
+        let distinct_objects_after = cloned_states
+          .values()
+          .flat_map(|states| states.iter().map(|s| &s.name))
+          .collect::<HashSet<&ObjectName>>();
+        trace!(
+          " ├─> [{}] objects after: {:?}",
+          distinct_objects_after.len(),
+          distinct_objects_after
         );
-        debug!(
-          "Now allowing {}",
-          cloned_states
-            .iter()
-            .map(|o| format!("- [{:?}]\n", o))
-            .collect::<Vec<String>>()
-            .join(", ")
+        trace!(
+          " └─> [{}] objects removed",
+          object_count_before - distinct_objects_after.len()
         );
+        trace!("");
       }
     }
   }
