@@ -24,3 +24,36 @@ impl TerrainState {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  impl TerrainState {
+    pub fn default(name: ObjectName, neighbours: Vec<ObjectName>) -> Self {
+      Self {
+        name,
+        index: 1,
+        weight: 10,
+        permitted_neighbours: vec![
+          (Connection::Top, neighbours.clone()),
+          (Connection::Right, neighbours.clone()),
+          (Connection::Bottom, neighbours.clone()),
+          (Connection::Left, neighbours),
+        ],
+      }
+    }
+  }
+
+  #[test]
+  fn create_terrain_state_with_no_neighbours() {
+    let terrain_state = TerrainState::new_with_no_neighbours(ObjectName::Land1IndividualObject1, 1, 10);
+    assert_eq!(terrain_state.name, ObjectName::Land1IndividualObject1);
+    assert_eq!(terrain_state.index, 1);
+    assert_eq!(terrain_state.weight, 10);
+    assert_eq!(terrain_state.permitted_neighbours.len(), 4);
+    for (_, neighbours) in terrain_state.permitted_neighbours {
+      assert_eq!(neighbours, vec![ObjectName::Empty]);
+    }
+  }
+}

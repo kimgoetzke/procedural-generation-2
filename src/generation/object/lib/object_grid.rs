@@ -267,7 +267,7 @@ impl ObjectGrid {
           if neighbour.is_collapsed() {
             continue;
           }
-          match neighbour.clone_and_reduce(&cell, &connection, false) {
+          match neighbour.clone_and_reduce(&cell, &connection.opposite(), false) {
             Ok((true, updated_neighbour)) => {
               trace!(
                 "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
@@ -327,14 +327,13 @@ impl ObjectGrid {
   }
 
   pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
-    let point = cell.ig;
-    let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&point).into_iter().collect();
+    let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&cell.ig).into_iter().collect();
     let mut neighbours = vec![];
-    for (direction, point) in points {
-      if let Some(cell) = self.object_grid.iter().flatten().filter(|cell| cell.ig == point).next() {
-        neighbours.push((direction, cell));
+    for (connection, ig) in points {
+      if let Some(cell) = self.object_grid.iter().flatten().filter(|cell| cell.ig == ig).next() {
+        neighbours.push((connection.opposite(), cell));
       } else {
-        neighbours.push((direction, &self.no_neighbours_tile));
+        neighbours.push((connection.opposite(), &self.no_neighbours_tile));
       }
     }
 
@@ -342,11 +341,14 @@ impl ObjectGrid {
   }
 
   pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
-    self.object_grid.iter().flatten().find(|cell| cell.ig == *ig)
+    self.object_grid.get(ig.y as usize).and_then(|row| row.get(ig.x as usize))
   }
 
   pub fn get_cell_mut(&mut self, ig: &Point<InternalGrid>) -> Option<&mut Cell> {
-    self.object_grid.iter_mut().flatten().find(|cell| cell.ig == *ig)
+    self
+      .object_grid
+      .get_mut(ig.y as usize)
+      .and_then(|row| row.get_mut(ig.x as usize))
   }
 
   /// Replaces the [`Cell`] at the given point with the provided [`Cell`].

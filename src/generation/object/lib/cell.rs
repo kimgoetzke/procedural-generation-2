@@ -12,6 +12,7 @@ use rand::prelude::StdRng;
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
 
+#[derive(Debug)]
 pub struct PropagationFailure {}
 
 pub type CellRef = Arc<Mutex<Cell>>;
@@ -321,10 +322,10 @@ impl Cell {
   pub fn clone_and_reduce(
     &self,
     reference_cell: &Cell,
-    where_is_reference_for_self: &Connection,
+    where_is_self_for_reference: &Connection,
     is_failure_log_level_increased: bool,
   ) -> Result<(bool, Self), PropagationFailure> {
-    let where_is_self_for_reference = where_is_reference_for_self.opposite();
+    let where_is_reference_for_self = &where_is_self_for_reference.opposite();
     let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     let mut updated_possible_states = Vec::new();
@@ -420,17 +421,17 @@ impl Cell {
   pub fn verify(
     &self,
     reference_cell: &Cell,
-    where_is_reference: &Connection,
+    where_is_self_for_reference: &Connection,
     is_failure_log_level_increased: bool,
   ) -> Result<(), PropagationFailure> {
-    let where_is_self_for_reference = where_is_reference.opposite();
+    let where_is_reference_for_self = &where_is_self_for_reference.opposite();
     let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     if !permitted_state_names.contains(&self.possible_states[0].name) {
       log_result(
         ResultType::FailedVerification,
         reference_cell,
-        where_is_reference,
+        where_is_reference_for_self,
         where_is_self_for_reference,
         self,
         &mut self.clone(),
@@ -507,7 +508,7 @@ fn log_result(
   result_type: ResultType,
   reference_cell: &Cell,
   where_is_reference: &Connection,
-  where_is_self_for_reference: Connection,
+  where_is_self_for_reference: &Connection,
   old_cell: &Cell,
   new_cell: &mut Cell,
   new_permitted_states: &Vec<ObjectName>,
@@ -575,7 +576,7 @@ fn log_result(
       if let Some((_, neighbours)) = reference_cell.possible_states[0]
         .permitted_neighbours
         .iter()
-        .find(|(connection, _)| *connection == where_is_self_for_reference)
+        .find(|(connection, _)| connection == where_is_self_for_reference)
       {
         debug!(
           "| - The relevant rule for a [{:?}] neighbour of the REFERENCE cell is: {:?}",
@@ -848,5 +849,63 @@ mod tests {
     cell.tile_type = TileType::Unknown;
     cell.tile_below = None;
     assert!(!cell.is_valid_connection_point());
+  }
+
+  #[test]
+  fn clone_and_reduce_returns_failure_when_no_states_remain() {
+    let cell = Cell {
+      possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Land1IndividualObject1, 0, 1)],
+      ..Cell::new(0, 0)
+    };
+    let reference_cell = Cell {
+      ig: Point::new_internal_grid(0, 1),
+      possible_states: vec![TerrainState::default(
+        ObjectName::Empty,
+        vec![ObjectName::Land1IndividualObject2], // A different object
+      )],
+      ..cell.clone()
+    };
+    let result = cell.clone_and_reduce(&reference_cell, &Connection::Bottom, false);
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn clone_and_reduce_returns_success_when_reference_cell_allows_it_as_neighbour() {
+    let cell = Cell {
+      possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Land1IndividualObject1, 0, 1)],
+      ..Cell::new(0, 0)
+    };
+    let reference_cell = Cell {
+      ig: Point::new_internal_grid(0, 1),
+      possible_states: vec![TerrainState::default(
+        ObjectName::Empty,
+        vec![ObjectName::Land1IndividualObject1],
+      )],
+      ..Cell::new(0, 0)
+    };
+    let (has_changed, processed_cell) = cell.clone_and_reduce(&reference_cell, &Connection::Bottom, false).unwrap();
+    assert_eq!(has_changed, false);
+    assert_eq!(processed_cell.possible_states.len(), 1);
+    assert_eq!(cell.possible_states.len(), 1);
+  }
+
+  #[test]
+  fn clone_and_reduce_returns_success_and_removes_states_that_are_disallowed_by_the_reference() {
+    let cell = Cell {
+      possible_states: vec![
+        TerrainState::default(ObjectName::Empty, vec![]),
+        TerrainState::default(ObjectName::Land1IndividualObject1, vec![]), // Disallowed by reference
+      ],
+      ..Cell::new(0, 1)
+    };
+    let reference_cell = Cell {
+      ig: Point::new_internal_grid(0, 0),
+      possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)],
+      ..Cell::new(0, 0)
+    };
+    let (has_changed, processed_cell) = cell.clone_and_reduce(&reference_cell, &Connection::Top, false).unwrap();
+    assert_eq!(has_changed, true);
+    assert_eq!(processed_cell.possible_states.len(), 1);
+    assert_eq!(cell.possible_states.len(), 2);
   }
 }

@@ -21,14 +21,13 @@ impl Connection {
   }
 }
 
-// TODO: Find out why left and right are inverted - is this making up for an unintended inversion elsewhere?
-pub fn get_connection_points(point: &Point<InternalGrid>) -> [(Connection, Point<InternalGrid>); 4] {
-  let p = point;
+pub fn get_connection_points(ig: &Point<InternalGrid>) -> [(Connection, Point<InternalGrid>); 4] {
+  let point = ig;
   [
-    (Connection::Top, Point::new(p.x, p.y + 1)),
-    (Connection::Right, Point::new(p.x - 1, p.y)),
-    (Connection::Bottom, Point::new(p.x, p.y - 1)),
-    (Connection::Left, Point::new(p.x + 1, p.y)),
+    (Connection::Top, Point::new(point.x, point.y - 1)),
+    (Connection::Right, Point::new(point.x + 1, point.y)),
+    (Connection::Bottom, Point::new(point.x, point.y + 1)),
+    (Connection::Left, Point::new(point.x - 1, point.y)),
   ]
 }
 
@@ -54,5 +53,38 @@ mod tests {
   #[test]
   fn opposite_of_left_is_right() {
     assert_eq!(Connection::Left.opposite(), Connection::Right);
+  }
+
+  #[test]
+  fn get_connection_points_returns_correct_points_1() {
+    let point = Point::new(5, 5);
+    let connections = get_connection_points(&point);
+
+    assert_eq!(connections[0], (Connection::Top, Point::new(5, 4)));
+    assert_eq!(connections[1], (Connection::Right, Point::new(6, 5)));
+    assert_eq!(connections[2], (Connection::Bottom, Point::new(5, 6)));
+    assert_eq!(connections[3], (Connection::Left, Point::new(4, 5)));
+  }
+
+  #[test]
+  fn get_connection_points_returns_correct_points_2() {
+    let point = Point::new(0, 0);
+    let connections = get_connection_points(&point);
+
+    assert_eq!(connections[0], (Connection::Top, Point::new(0, -1)));
+    assert_eq!(connections[1], (Connection::Right, Point::new(1, 0)));
+    assert_eq!(connections[2], (Connection::Bottom, Point::new(0, 1)));
+    assert_eq!(connections[3], (Connection::Left, Point::new(-1, 0)));
+  }
+
+  #[test]
+  fn get_connection_points_handles_negative_coordinates_correctly() {
+    let point = Point::new(-3, -3);
+    let connections = get_connection_points(&point);
+
+    assert_eq!(connections[0], (Connection::Top, Point::new(-3, -4)));
+    assert_eq!(connections[1], (Connection::Right, Point::new(-2, -3)));
+    assert_eq!(connections[2], (Connection::Bottom, Point::new(-3, -2)));
+    assert_eq!(connections[3], (Connection::Left, Point::new(-4, -3)));
   }
 }
