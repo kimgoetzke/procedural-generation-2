@@ -325,7 +325,6 @@ impl Cell {
     where_is_self_for_reference: &Connection,
     is_failure_log_level_increased: bool,
   ) -> Result<(bool, Self), PropagationFailure> {
-    let where_is_reference_for_self = &where_is_self_for_reference.opposite();
     let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     let mut updated_possible_states = Vec::new();
@@ -343,14 +342,13 @@ impl Cell {
     } else {
       ResultType::SuccessfulUpdate
     };
-    log_result(
+    log_reduce_or_verify_result(
       result,
-      reference_cell,
-      where_is_reference_for_self,
-      where_is_self_for_reference,
       self,
       &mut clone,
       &permitted_state_names,
+      reference_cell,
+      where_is_self_for_reference,
       is_failure_log_level_increased,
     );
 
@@ -424,18 +422,16 @@ impl Cell {
     where_is_self_for_reference: &Connection,
     is_failure_log_level_increased: bool,
   ) -> Result<(), PropagationFailure> {
-    let where_is_reference_for_self = &where_is_self_for_reference.opposite();
     let permitted_state_names = get_permitted_state_names(&reference_cell, &where_is_self_for_reference);
 
     if !permitted_state_names.contains(&self.possible_states[0].name) {
-      log_result(
+      log_reduce_or_verify_result(
         ResultType::FailedVerification,
-        reference_cell,
-        where_is_reference_for_self,
-        where_is_self_for_reference,
         self,
         &mut self.clone(),
         &permitted_state_names,
+        reference_cell,
+        where_is_self_for_reference,
         is_failure_log_level_increased,
       );
       Err(PropagationFailure {})
@@ -504,14 +500,13 @@ fn is_filled_at_facing_edge_including_corner_types(ig: Point<InternalGrid>, tile
   }
 }
 
-fn log_result(
+fn log_reduce_or_verify_result(
   result_type: ResultType,
-  reference_cell: &Cell,
-  where_is_reference: &Connection,
-  where_is_self_for_reference: &Connection,
   old_cell: &Cell,
-  new_cell: &mut Cell,
+  new_cell: &Cell,
   new_permitted_states: &Vec<ObjectName>,
+  reference_cell: &Cell,
+  where_is_self_for_reference: &Connection,
   is_failure_log_level_increased: bool,
 ) {
   if !new_cell.is_being_monitored && !reference_cell.is_being_monitored && !is_failure_log_level_increased {
@@ -526,6 +521,7 @@ fn log_result(
   let old_possible_states_count = old_cell.possible_states.len();
   let new_possible_states_count = new_cell.possible_states.len();
   let new_possible_states_names = new_cell.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>();
+  let where_is_reference_for_self = &where_is_self_for_reference.opposite();
 
   if old_possible_states_count != new_possible_states_count
     && (result_type == ResultType::SuccessfulUpdate || result_type == ResultType::FailedUpdate)
@@ -544,7 +540,7 @@ fn log_result(
   if new_cell.possible_states.is_empty() {
     error!(
       "Failed to find any possible states for {} ({:?}, at [{:?}] of latter) during {} with {:?} ({:?})",
-      this_cell_ig, old_cell.terrain, where_is_reference, result_type, reference_cell.ig, reference_cell.terrain,
+      this_cell_ig, old_cell.terrain, where_is_reference_for_self, result_type, reference_cell.ig, reference_cell.terrain,
     );
   }
 
@@ -552,7 +548,7 @@ fn log_result(
     debug!("┌─|| Summary of the [{}] process for {}", result_type, this_cell_ig);
     debug!(
       "| - THIS cell is at {} which is at the [{:?}] of the reference cell",
-      this_cell_ig, where_is_reference
+      this_cell_ig, where_is_reference_for_self
     );
     debug!(
       "| - THIS cell had {:?} possible state(s): {:?}",
@@ -580,7 +576,7 @@ fn log_result(
       {
         debug!(
           "| - The relevant rule for a [{:?}] neighbour of the REFERENCE cell is: {:?}",
-          where_is_reference, neighbours
+          where_is_reference_for_self, neighbours
         );
       } else {
         warn!("| - The relevant rule for only possible state of the REFERENCE cell does not exist");
