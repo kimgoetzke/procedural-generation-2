@@ -14,28 +14,12 @@ impl Plugin for ControlPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(
       Update,
-      (message_control_system, settings_controls_system, right_mouse_click_system),
+      (
+        settings_controls_system,
+        right_mouse_click_system,
+        miscellaneous_controls_system,
+      ),
     );
-  }
-}
-
-fn message_control_system(
-  keyboard_input: Res<ButtonInput<KeyCode>>,
-  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
-  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
-  current_chunk: Res<CurrentChunk>,
-) {
-  if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
-    info!("[F5]/[R] Triggered regeneration of the world");
-    let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
-    refresh_metadata_message.write(RefreshMetadataMessage {
-      regenerate_world_after: is_at_origin_spawn_point,
-      prune_then_update_world_after: !is_at_origin_spawn_point,
-    });
-  }
-  if keyboard_input.just_pressed(KeyCode::F6) | keyboard_input.just_pressed(KeyCode::KeyT) {
-    info!("[F6]/[T] Triggered camera zoom reset");
-    reset_camera_message.write(ResetCameraMessage { reset_position: false });
   }
 }
 
@@ -134,5 +118,34 @@ fn right_mouse_click_system(
       debug!("[Right Mouse Button] Clicked on {} => {} {} {}", vec2.round(), tile_w, cg, tg);
       commands.write_message(MouseRightClickMessage { tile_w, cg, tg });
     }
+  }
+}
+
+fn miscellaneous_controls_system(
+  keyboard_input: Res<ButtonInput<KeyCode>>,
+  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
+  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
+  current_chunk: Res<CurrentChunk>,
+  mut windows: Query<&mut Window>,
+) {
+  if keyboard_input.just_pressed(KeyCode::F5) | keyboard_input.just_pressed(KeyCode::KeyR) {
+    info!("[F5]/[R] Triggered regeneration of the world");
+    let is_at_origin_spawn_point = current_chunk.get_tile_grid() == ORIGIN_TILE_GRID_SPAWN_POINT;
+    refresh_metadata_message.write(RefreshMetadataMessage {
+      regenerate_world_after: is_at_origin_spawn_point,
+      prune_then_update_world_after: !is_at_origin_spawn_point,
+    });
+  }
+  if keyboard_input.just_pressed(KeyCode::F6) | keyboard_input.just_pressed(KeyCode::KeyT) {
+    info!("[F6]/[T] Triggered camera zoom reset");
+    reset_camera_message.write(ResetCameraMessage { reset_position: false });
+  }
+  if keyboard_input.just_pressed(KeyCode::F11) {
+    let mut window = windows.single_mut().expect("Failed to get primary window");
+    window.mode = match window.mode {
+      bevy::window::WindowMode::Windowed => bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+      _ => bevy::window::WindowMode::Windowed,
+    };
+    info!("[F11] Set window mode to [{:?}]", window.mode);
   }
 }
