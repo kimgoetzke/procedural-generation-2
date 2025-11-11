@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::messages::{RefreshMetadataMessage, ResetCameraMessage};
+use crate::messages::{RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage};
 use crate::resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
@@ -170,8 +170,6 @@ fn render_buttons(world: &mut World, ui: &mut bevy_inspector_egui::egui::Ui) {
 }
 
 fn handle_ui_messages_system(
-  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
-  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
   mut ui_state: ResMut<UiState>,
   mut settings: ResMut<Settings>,
   mut general: ResMut<GeneralGenerationSettings>,
@@ -179,6 +177,10 @@ fn handle_ui_messages_system(
   mut object: ResMut<ObjectGenerationSettings>,
   mut world_gen: ResMut<WorldGenerationSettings>,
   current_chunk: Res<CurrentChunk>,
+  mut refresh_metadata_message: MessageWriter<RefreshMetadataMessage>,
+  mut reset_camera_message: MessageWriter<ResetCameraMessage>,
+  mut toggle_debug_info_message: MessageWriter<ToggleDebugInfoMessage>,
+  mut toggle_diagnostics_message: MessageWriter<ToggleDiagnosticsMessage>,
 ) {
   if let Some(action) = ui_state.take_action() {
     match action {
@@ -207,6 +209,8 @@ fn handle_ui_messages_system(
         send_regenerate_or_prune_message(&current_chunk, &mut refresh_metadata_message);
       }
     }
+    toggle_debug_info_message.write(ToggleDebugInfoMessage {});
+    toggle_diagnostics_message.write(ToggleDiagnosticsMessage {});
   }
 }
 

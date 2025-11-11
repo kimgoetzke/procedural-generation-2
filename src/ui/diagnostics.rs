@@ -24,29 +24,32 @@ impl Plugin for DiagnosticsUiPlugin {
   }
 }
 
-fn add_perf_ui_system(commands: Commands, settings: Res<Settings>) {
+fn add_perf_ui_system(mut commands: Commands, settings: Res<Settings>) {
   if !settings.general.display_diagnostics {
     return;
   }
-  add_perf_ui(commands);
+  add_perf_ui(&mut commands);
 }
 
 fn toggle_ui_message(
   mut messages: MessageReader<ToggleDiagnosticsMessage>,
   q_root: Query<Entity, With<PerfUiRoot>>,
   mut commands: Commands,
+  settings: Res<Settings>,
 ) {
   let message_count = messages.read().count();
   if message_count > 0 {
     if let Ok(e) = q_root.single() {
-      commands.entity(e).despawn();
-    } else {
-      add_perf_ui(commands);
+      if !settings.general.display_diagnostics {
+        commands.entity(e).despawn();
+      }
+    } else if settings.general.display_diagnostics {
+      add_perf_ui(&mut commands);
     }
   }
 }
 
-fn add_perf_ui(mut commands: Commands) {
+fn add_perf_ui(commands: &mut Commands) {
   commands.spawn((
     PerfUiWidgetBar::new(PerfUiEntryFPS::default()),
     PerfUiWidgetBar::new(PerfUiEntryFPSWorst::default()),
