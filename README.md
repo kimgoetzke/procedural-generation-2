@@ -11,16 +11,13 @@ techniques.
 
 ## Demo
 
+[![YouTube - Demo](https://img.youtube.com/vi/Y6WG1mbpJhg/0.jpg)](https://www.youtube.com/watch?v=Y6WG1mbpJhg)
 ![Screenshot 8](assets/ignore/screenshot8.jpg)
 ![Screenshot 9](assets/ignore/screenshot9.jpg)
 ![Demo GIF 5](assets/ignore/demo5.gif)
 ![Demo GIF 7](assets/ignore/demo7.gif)
 ![Demo GIF 6](assets/ignore/demo6.gif)
 ![Demo GIF 2](assets/ignore/demo2.gif)
-
-⬇️  **IMPORTANT**: _The below video has not been updated to feature paths, buildings, or the updated artwork (yet)._ ⚠️
-
-[![YouTube - Demo](https://img.youtube.com/vi/rdGre9dZdgo/0.jpg)](https://www.youtube.com/watch?v=rdGre9dZdgo)
 
 ## Features
 
@@ -50,7 +47,7 @@ techniques.
 
 ## Attribution
 
-- Art work is heavily inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style
+- Art work is somewhat inspired by [sanctumpixel](https://sanctumpixel.itch.io/)'s style
 - All sprites were created by myself and are available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 ## How to develop
