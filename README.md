@@ -41,6 +41,7 @@ techniques.
     - Supports multi-tile objects and connected objects, the rules for which are expressed in `.toml` files -
       for example, ruins can span multiple tiles and span over multiple terrain types
 - Features 32x32px sprites (or sprites that fit within a 32x32px grid) that were created by me
+- Supports touch screen input for camera movement and zooming
 - `bevy-inspector-egui` plugin to play around with the generation parameters at runtime
 - `bevy_pancam` plugin for free camera movement
 - `iyes_perf_ui` plugin for performance metrics in an overlay
