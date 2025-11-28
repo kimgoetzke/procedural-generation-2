@@ -436,4 +436,74 @@ mod tests {
     let p = Point::new_internal_grid(0, CHUNK_SIZE - 1);
     assert!(!p.is_outside_grid());
   }
+
+  // New tests added below to cover remaining functions/constructors not previously tested
+  #[test]
+  fn default_world_point() {
+    let w: Point<World> = Default::default();
+    assert_eq!(w, Point::new_world(0, 0));
+  }
+
+  #[test]
+  fn new_world_from_world_vec2_rounding() {
+    let vec2 = Vec2::new(1.4, 2.6);
+    let w = Point::new_world_from_world_vec2(vec2);
+    assert_eq!(w, Point::new_world(1, 3));
+  }
+
+  #[test]
+  fn new_world_from_chunk_grid_conversion() {
+    let cg = Point::new_chunk_grid(2, 3);
+    let w = Point::new_world_from_chunk_grid(cg);
+    assert_eq!(w, Point::new_world(cg.x * CHUNK_SIZE * TILE_SIZE as i32, cg.y * CHUNK_SIZE * TILE_SIZE as i32));
+  }
+
+  #[test]
+  fn new_world_from_tile_grid_conversion() {
+    let tg = Point::new_tile_grid(5, 6);
+    let w = Point::new_world_from_tile_grid(tg);
+    assert_eq!(w, Point::new_world(tg.x * TILE_SIZE as i32, tg.y * TILE_SIZE as i32));
+  }
+
+  #[test]
+  fn new_tile_grid_from_world_vec2_rounding() {
+    let w = Vec2::new(100., 75.);
+    let tg = Point::new_tile_grid_from_world_vec2(w);
+    assert_eq!(tg, Point::new_tile_grid(3, 3));
+  }
+
+  #[test]
+  fn new_chunk_grid_from_world_vec2_rounding_and_sign() {
+    let offset = TILE_SIZE as f32 * CHUNK_SIZE as f32;
+    let w = Vec2::new(offset * 3.0, offset * -2.0);
+    let cg = Point::new_chunk_grid_from_world_vec2(w);
+    assert_eq!(cg, Point::new_chunk_grid(3, -2));
+  }
+
+  #[test]
+  fn from_direction_center_for_internal_and_world() {
+    let direction = Direction::Center;
+    let ig: Point<InternalGrid> = Point::from_direction(&direction);
+    assert_eq!(ig, Point::new(0, 0));
+
+    let w: Point<World> = Point::from_direction(&direction);
+    assert_eq!(w, Point::new(0, 0));
+  }
+
+  #[test]
+  fn from_direction_bottom_right_for_internal_and_world() {
+    let direction = Direction::BottomRight;
+    let ig: Point<InternalGrid> = Point::from_direction(&direction);
+    assert_eq!(ig, Point::new(1, 1));
+
+    let w: Point<World> = Point::from_direction(&direction);
+    assert_eq!(w, Point::new(1, -1));
+  }
+
+  #[test]
+  fn display_and_debug_formats() {
+    let w = Point::new_world(7, 8);
+    assert_eq!(format!("{}", w), "w(7, 8)");
+    assert_eq!(format!("{:?}", w), "w(7, 8)");
+  }
 }
