@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.19.0", default-features = false, features = ["wayland", "2d", "bevy_camera_controller", "pan_camera"] }
+bevy = { version = "0.19.0", default-features = false, features = ["wayland", "2d", "ui", "bevy_camera_controller", "pan_camera"] }
 bevy-inspector-egui = { version = "0.37.0" }
 noise = { version = "0.9.0" }
 rand = { version = "0.10.0" }
