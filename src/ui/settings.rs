@@ -69,7 +69,7 @@ fn render_settings_ui_system(world: &mut World, mut disabled: Local<bool>) {
 
   // Increase the default tooltip width in order to allow documentation comments to be displayed without double
   // line-breaking - if this ever breaks the UI, remove it and use single line comments for settings instead
-  egui_context.get_mut().style_mut(|style| {
+  egui_context.get_mut().global_style_mut(|style| {
     style.spacing.tooltip_width = 700.0;
   });
 

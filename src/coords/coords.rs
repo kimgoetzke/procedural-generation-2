@@ -32,8 +32,8 @@ impl Coords {
   pub fn new_for_chunk(w: Point<World>, tg: Point<TileGrid>) -> Self {
     let cg = Point::new_chunk_grid_from_world(w);
     let world = Point::new_world_from_tile_grid(tg);
-    assert!(
-      w == world,
+    assert_eq!(
+      w, world,
       "World coordinates do not match the tile grid coordinates - provided {w} vs expected {world} based on provided {tg}"
     );
     Self {

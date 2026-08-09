@@ -60,8 +60,8 @@ fn sprite_animation_system(
         if state.animation_type != animated_mesh_component.animation_type {
           continue;
         }
-        if let Some(mesh) = meshes.get_mut(mesh_2d) {
-          update_mesh_uvs(state, animated_mesh_component, mesh);
+        if let Some(mut mesh) = meshes.get_mut(mesh_2d) {
+          update_mesh_uvs(state, animated_mesh_component, &mut mesh);
         }
       }
 

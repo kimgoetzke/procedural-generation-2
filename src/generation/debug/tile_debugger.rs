@@ -13,7 +13,7 @@ use bevy::prelude::{
   Resource, Text2d, TextFont, Transform, Vec3, Visibility, With, default,
 };
 use bevy::sprite::Anchor;
-use bevy::text::{LineBreak, TextBounds, TextColor, TextLayout};
+use bevy::text::{FontSize, LineBreak, TextBounds, TextColor, TextLayout};
 
 pub struct TileDebuggerPlugin;
 
@@ -220,7 +220,7 @@ fn tile_info(
       object
     )),
     TextFont {
-      font_size: 22.,
+      font_size: FontSize::Px(22.),
       ..default()
     },
     TextLayout::new(Justify::Left, LineBreak::AnyCharacter),

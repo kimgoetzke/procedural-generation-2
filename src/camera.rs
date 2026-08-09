@@ -66,7 +66,6 @@ fn setup_camera_system(mut commands: Commands, settings: Res<Settings>) {
     WorldCamera,
     WORLD_LAYER,
     Bloom::NATURAL,
-    SpatialListener::new(10.),
     PanCamera {
       key_zoom_in: Some(KeyCode::PageUp),
       key_zoom_out: Some(KeyCode::PageDown),

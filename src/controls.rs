@@ -102,7 +102,7 @@ fn right_mouse_click_system(
     && !egui_contexts
       .ctx_mut()
       .expect("Failed to fetch Egui context")
-      .wants_pointer_input()
+      .egui_wants_pointer_input()
   {
     let (camera, camera_transform) = camera.single().expect("Failed to find camera");
     if let Some(vec2) = windows

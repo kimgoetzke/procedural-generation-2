@@ -4,18 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18.0", default-features = false, features = ["wayland", "2d", "bevy_camera_controller", "pan_camera"] }
-bevy-inspector-egui = { version = "0.36.0" }
+bevy = { version = "0.19.0", default-features = false, features = ["wayland", "2d", "bevy_camera_controller", "pan_camera"] }
+bevy-inspector-egui = { version = "0.37.0" }
 noise = { version = "0.9.0" }
 rand = { version = "0.10.0" }
 serde = { version = "1.0.228", features = ["derive"] }
-bevy_common_assets = { version = "0.15.0", features = ["toml"] }
+bevy_common_assets = { version = "0.17.0", features = ["toml"] }
 iyes_perf_ui = "0.5.0"
-strum = { version = "0.27.2", features = ["derive"] }
-bevy_framepace = "0.21.0"
+strum = { version = "0.28.0", features = ["derive"] }
+bevy_framepace = "0.22.0"
 
 [patch.crates-io]
-iyes_perf_ui = { git = "https://github.com/kimgoetzke/iyes_perf_ui", branch = "bevy-0.18" }
+iyes_perf_ui = { git = "https://github.com/kimgoetzke/iyes_perf_ui", branch = "bevy-0.19" }
 
 #[profile.dev]
 #opt-level = 1
