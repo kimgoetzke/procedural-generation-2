@@ -44,10 +44,10 @@
             pkgs.vulkan-tools
             pkgs.libxkbcommon
             pkgs.wayland
-            pkgs.xorg.libX11
-            pkgs.xorg.libXcursor
-            pkgs.xorg.libXi
-            pkgs.xorg.libXrandr
+            pkgs.libX11
+            pkgs.libXcursor
+            pkgs.libXi
+            pkgs.libXrandr
             pkgs.glibc.dev
             pkgs.libGL
             pkgs.audacity
