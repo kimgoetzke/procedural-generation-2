@@ -1,6 +1,5 @@
 use crate::coords::Point;
 use crate::coords::point::ChunkGrid;
-use crate::generation::lib::GenerationResourcesCollection;
 use bevy::color::Color;
 use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
@@ -31,13 +30,6 @@ pub fn process_tasks<T: CommandQueueTask + Component<Mutability = Mutable>>(
       commands.entity(entity).despawn();
     }
   }
-}
-
-pub fn get_resources_from_world(world: &mut bevy::ecs::world::World) -> GenerationResourcesCollection {
-  world
-    .get_resource::<GenerationResourcesCollection>()
-    .expect("Failed to fetch GenerationResourcesCollection")
-    .clone()
 }
 
 pub fn get_time() -> u128 {

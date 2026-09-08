@@ -162,19 +162,17 @@ fn attach_object_spawn_task(
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let asset_collection = {
-        let resources = shared::get_resources_from_world(world);
-
-        resources
-          .get_object_collection(
-            tile_data.flat_tile.terrain,
-            tile_data.flat_tile.climate,
-            object_data.is_large_sprite,
-            object_name.is_building(),
-            is_animated,
-          )
-          .clone()
-      };
+      let asset_collection = world
+        .get_resource::<GenerationResourcesCollection>()
+        .expect("Failed to fetch GenerationResourcesCollection")
+        .get_object_collection(
+          tile_data.flat_tile.terrain,
+          tile_data.flat_tile.climate,
+          object_data.is_large_sprite,
+          object_name.is_building(),
+          is_animated,
+        )
+        .clone();
       if let Ok(mut chunk_entity) = world.get_entity_mut(tile_data.chunk_entity) {
         chunk_entity.with_children(|parent| {
           let mut entity = parent.spawn(sprite(
