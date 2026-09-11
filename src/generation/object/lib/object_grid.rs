@@ -344,10 +344,16 @@ impl ObjectGrid {
   }
 
   pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
+    if ig.is_outside_grid() {
+      return None;
+    }
     self.object_grid.get(ig.y as usize).and_then(|row| row.get(ig.x as usize))
   }
 
   pub fn get_cell_mut(&mut self, ig: &Point<InternalGrid>) -> Option<&mut Cell> {
+    if ig.is_outside_grid() {
+      return None;
+    }
     self
       .object_grid
       .get_mut(ig.y as usize)
@@ -356,10 +362,11 @@ impl ObjectGrid {
 
   /// Replaces the [`Cell`] at the given point with the provided [`Cell`].
   pub fn set_cell(&mut self, cell: Cell) {
-    if let Some(existing_cell) = self.object_grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
+    let ig = cell.ig;
+    if let Some(existing_cell) = self.get_cell_mut(&ig) {
       *existing_cell = cell;
     } else {
-      error!("Failed to find cell to update at {:?}", cell.ig);
+      error!("Failed to find cell to update at {:?}", ig);
     }
   }
 
@@ -418,5 +425,16 @@ mod tests {
 
       grid
     }
+  }
+
+  #[test]
+  fn set_cell_replaces_the_cell_at_matching_coordinates() {
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let mut cell = Cell::new(3, 4);
+    cell.mark_as_collapsed(crate::generation::object::lib::ObjectName::PathTop);
+
+    grid.set_cell(cell);
+
+    assert!(grid.get_cell(&Point::new_internal_grid(3, 4)).unwrap().is_collapsed());
   }
 }
