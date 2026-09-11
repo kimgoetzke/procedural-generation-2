@@ -329,15 +329,10 @@ impl ObjectGrid {
     }
   }
 
-  pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
-    let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&cell.ig).into_iter().collect();
-    let mut neighbours = vec![];
-    for (connection, ig) in points {
-      if let Some(cell) = self.object_grid.iter().flatten().find(|cell| cell.ig == ig) {
-        neighbours.push((connection.opposite(), cell));
-      } else {
-        neighbours.push((connection.opposite(), &self.no_neighbours_tile));
-      }
+  pub fn get_neighbours(&self, cell: &Cell) -> Vec<(Connection, &Cell)> {
+    let mut neighbours = Vec::with_capacity(4);
+    for (connection, ig) in get_connection_points(&cell.ig) {
+      neighbours.push((connection.opposite(), self.get_cell(&ig).unwrap_or(&self.no_neighbours_tile)));
     }
 
     neighbours
@@ -436,5 +431,19 @@ mod tests {
     grid.set_cell(cell);
 
     assert!(grid.get_cell(&Point::new_internal_grid(3, 4)).unwrap().is_collapsed());
+  }
+
+  #[test]
+  fn get_neighbours_returns_grid_cells_and_out_of_bounds_placeholders() {
+    let grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let cell = grid.get_cell(&Point::new_internal_grid(0, 0)).unwrap();
+
+    let neighbours = grid.get_neighbours(cell);
+
+    assert_eq!(neighbours.len(), 4);
+    assert_eq!(neighbours[0].1.get_ig(), &Point::new_internal_grid(-1, -1));
+    assert_eq!(neighbours[1].1.get_ig(), &Point::new_internal_grid(1, 0));
+    assert_eq!(neighbours[2].1.get_ig(), &Point::new_internal_grid(0, 1));
+    assert_eq!(neighbours[3].1.get_ig(), &Point::new_internal_grid(-1, -1));
   }
 }
