@@ -338,6 +338,11 @@ impl ObjectGrid {
     neighbours
   }
 
+  /// Iterates over all object cells.
+  pub(crate) fn iter(&self) -> impl Iterator<Item = &Cell> {
+    self.object_grid.iter().flatten()
+  }
+
   pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
     if ig.is_outside_grid() {
       return None;
@@ -367,29 +372,6 @@ impl ObjectGrid {
 
   pub fn calculate_total_entropy(&self) -> i32 {
     self.object_grid.iter().flatten().map(|cell| cell.get_entropy() as i32).sum()
-  }
-
-  pub fn get_cells_with_lowest_entropy(&self) -> Vec<&Cell> {
-    let mut lowest_entropy = usize::MAX;
-    let mut lowest_entropy_cells = vec![];
-    for cell in self.object_grid.iter().flatten() {
-      if !cell.is_collapsed() {
-        let entropy = cell.get_entropy();
-        if entropy < lowest_entropy {
-          lowest_entropy = entropy;
-          lowest_entropy_cells = vec![cell];
-        } else if entropy == lowest_entropy {
-          lowest_entropy_cells.push(cell);
-        }
-      }
-    }
-    trace!(
-      "Found {} cell(s) with lowest entropy of {}",
-      lowest_entropy_cells.len(),
-      lowest_entropy
-    );
-
-    lowest_entropy_cells
   }
 
   pub fn snapshot(&self) -> ObjectGridSnapshot {

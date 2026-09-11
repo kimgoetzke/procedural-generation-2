@@ -1,10 +1,12 @@
+mod cell_entropy_index;
+
 use crate::constants::{WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
 use crate::generation::lib::shared;
 use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid, ObjectGridSnapshot};
+use crate::generation::object::wfc::cell_entropy_index::CellEntropyIndex;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
-use rand::RngExt;
 use rand::prelude::StdRng;
 
 /// Contains the main logic for the wave function collapse algorithm used to determine decorative objects in the grid.
@@ -25,19 +27,23 @@ pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: 
     let mut snapshots = vec![];
     let mut iter_count = 1;
     let mut has_entropy = true;
+    let mut entropy_index = CellEntropyIndex::from_cells(object_grid.iter());
 
     while has_entropy {
-      match iterate(rng, object_grid) {
-        IterationResult::Failure => handle_failure(
-          object_grid,
-          &mut snapshots,
-          &mut iter_count,
-          &mut snapshot_error_count,
-          &mut iter_error_count,
-          &mut total_error_count,
-          &mut next_warning_time,
-          start_time,
-        ),
+      match iterate(rng, object_grid, &mut entropy_index) {
+        IterationResult::Failure => {
+          handle_failure(
+            object_grid,
+            &mut snapshots,
+            &mut iter_count,
+            &mut snapshot_error_count,
+            &mut iter_error_count,
+            &mut total_error_count,
+            &mut next_warning_time,
+            start_time,
+          );
+          entropy_index.rebuild(object_grid.iter());
+        }
         result => handle_success(
           object_grid,
           &mut snapshots,
@@ -71,19 +77,17 @@ pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: 
 ///
 /// This method is the central part of the wave function collapse algorithm and is called repeatedly until no more
 /// cells can be collapsed.
-fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
-  // Observation: Get the cells with the lowest entropy
-  let lowest_entropy_cells = grid.get_cells_with_lowest_entropy();
-  if lowest_entropy_cells.is_empty() {
+fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid, entropy_index: &mut CellEntropyIndex) -> IterationResult {
+  // Observation: Get a cell with the lowest entropy
+  let Some(ig) = entropy_index.choose_lowest_entropy_cell(rng) else {
     trace!("No more cells to collapse in object grid {}", grid.cg);
     return IterationResult::Ok;
-  }
+  };
 
   // Collapse: Collapse random cell from the cells with the lowest entropy
-  let index = rng.random_range(0..lowest_entropy_cells.len());
-  let random_cell: &Cell = lowest_entropy_cells
-    .get(index)
-    .unwrap_or_else(|| panic!("Failed to get random cell during processing of object grid {}", grid.cg));
+  let random_cell: &Cell = grid
+    .get_cell(&ig)
+    .unwrap_or_else(|| panic!("Failed to get cell {ig} from object grid {} during processing", grid.cg));
   let mut random_cell_clone = random_cell.clone();
   random_cell_clone.collapse(rng);
 
@@ -91,6 +95,7 @@ fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
   let mut stack: Vec<Cell> = vec![random_cell_clone];
   let is_failure_log_level_increased = grid.is_failure_log_level_increased();
   while let Some(cell) = stack.pop() {
+    entropy_index.update(&cell);
     grid.set_cell(cell.clone());
     for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
       if !neighbour.is_collapsed() {
