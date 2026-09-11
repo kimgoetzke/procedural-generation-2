@@ -327,7 +327,7 @@ impl Cell {
   ) -> Result<(bool, Self), PropagationFailure> {
     let permitted_state_names = get_permitted_state_names(reference_cell, where_is_self_for_reference);
 
-    let mut updated_possible_states = Vec::new();
+    let mut updated_possible_states = Vec::with_capacity(self.possible_states.len());
     for possible_state_self in &self.possible_states {
       if permitted_state_names.contains(&possible_state_self.name) {
         updated_possible_states.push(possible_state_self.clone());
@@ -335,8 +335,8 @@ impl Cell {
     }
 
     let mut clone = self.clone();
+    clone.entropy = updated_possible_states.len();
     clone.possible_states = updated_possible_states;
-    clone.entropy = self.possible_states.len();
     let result = if clone.possible_states.is_empty() {
       ResultType::FailedUpdate
     } else {
