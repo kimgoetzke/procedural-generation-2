@@ -3,7 +3,7 @@ use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, TerrainState};
+use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectGridSnapshot, TerrainState};
 use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
@@ -392,8 +392,14 @@ impl ObjectGrid {
     lowest_entropy_cells
   }
 
-  pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
-    self.object_grid = other.object_grid.clone();
+  pub fn snapshot(&self) -> ObjectGridSnapshot {
+    ObjectGridSnapshot {
+      object_grid: self.object_grid.clone(),
+    }
+  }
+
+  pub fn restore_from_snapshot(&mut self, snapshot: &ObjectGridSnapshot) {
+    self.object_grid = snapshot.object_grid.clone();
   }
 
   pub const fn is_failure_log_level_increased(&self) -> bool {
@@ -445,5 +451,18 @@ mod tests {
     assert_eq!(neighbours[1].1.get_ig(), &Point::new_internal_grid(1, 0));
     assert_eq!(neighbours[2].1.get_ig(), &Point::new_internal_grid(0, 1));
     assert_eq!(neighbours[3].1.get_ig(), &Point::new_internal_grid(-1, -1));
+  }
+
+  #[test]
+  fn restore_from_snapshot_only_restores_object_cells() {
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let snapshot = grid.snapshot();
+    let mut cell = Cell::new(2, 2);
+    cell.mark_as_collapsed(crate::generation::object::lib::ObjectName::PathTop);
+    grid.set_cell(cell);
+
+    grid.restore_from_snapshot(&snapshot);
+
+    assert!(!grid.get_cell(&Point::new_internal_grid(2, 2)).unwrap().is_collapsed());
   }
 }

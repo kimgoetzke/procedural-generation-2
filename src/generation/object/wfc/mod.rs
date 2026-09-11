@@ -1,6 +1,6 @@
 use crate::constants::{WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
 use crate::generation::lib::shared;
-use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid};
+use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid, ObjectGridSnapshot};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -115,7 +115,7 @@ fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid) -> IterationResult {
 
 fn handle_failure(
   grid: &mut ObjectGrid,
-  snapshots: &mut Vec<ObjectGrid>,
+  snapshots: &mut Vec<ObjectGridSnapshot>,
   iter_count: &mut i32,
   snapshot_error_count: &mut usize,
   iter_error_count: &mut usize,
@@ -153,26 +153,28 @@ fn handle_failure(
 
 fn handle_success(
   grid: &mut ObjectGrid,
-  snapshots: &mut Vec<ObjectGrid>,
+  snapshots: &mut Vec<ObjectGridSnapshot>,
   iter_count: &mut i32,
   has_entropy: &mut bool,
   iter_error_count: &mut usize,
   result: IterationResult,
 ) {
-  let current_entropy = grid.calculate_total_entropy();
-  log_completion(grid, iter_count, iter_error_count, current_entropy);
+  log_completion(grid, iter_count, iter_error_count);
   if *iter_count % WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL == 0 {
-    snapshots.push(grid.clone());
+    snapshots.push(grid.snapshot());
   }
   *has_entropy = result == IterationResult::Incomplete;
   *iter_count += 1;
   *iter_error_count = 0;
 }
 
-fn log_completion(grid: &mut ObjectGrid, iter_count: &i32, iter_error_count: &mut usize, current_entropy: i32) {
+fn log_completion(grid: &ObjectGrid, iter_count: &i32, iter_error_count: &mut usize) {
   trace!(
     "Completed object grid {} iteration {} (encountering {} errors) and with a total entropy of {}",
-    grid.cg, iter_count, iter_error_count, current_entropy
+    grid.cg,
+    iter_count,
+    iter_error_count,
+    grid.calculate_total_entropy()
   );
 }
 
@@ -189,7 +191,7 @@ fn increase_logging_or_short_circuit(
   grid: &mut ObjectGrid,
   iter_count: &mut i32,
   iter_error_count: &mut usize,
-  snapshots: &mut Vec<ObjectGrid>,
+  snapshots: &mut Vec<ObjectGridSnapshot>,
 ) {
   if grid.is_failure_log_level_increased() && *iter_error_count < 5 && *iter_count > 40_000 {
     warn!(
@@ -206,7 +208,7 @@ fn increase_logging_or_short_circuit(
 
 fn log_failure(
   grid: &mut ObjectGrid,
-  snapshots: &[ObjectGrid],
+  snapshots: &[ObjectGridSnapshot],
   iteration_count: &i32,
   iteration_error_count: &usize,
   snapshot_index: usize,

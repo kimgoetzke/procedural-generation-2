@@ -6,6 +6,7 @@ use crate::generation::object::lib::terrain_state::TerrainState;
 use crate::generation::object::lib::tile_below::TileBelow;
 use crate::generation::object::lib::{Connection, ObjectName};
 use bevy::log::*;
+use bevy::platform::collections::HashSet;
 use bevy::prelude::Reflect;
 use rand::RngExt;
 use rand::prelude::StdRng;
@@ -441,7 +442,7 @@ impl Cell {
   }
 }
 
-fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> Vec<ObjectName> {
+fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> HashSet<ObjectName> {
   cell
     .possible_states
     .iter()
@@ -450,7 +451,7 @@ fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> Vec<Object
         .permitted_neighbours
         .iter()
         .filter(|(c, _)| c == connection)
-        .flat_map(|(_, names)| names.iter().cloned())
+        .flat_map(|(_, names)| names.iter().copied())
     })
     .collect()
 }
@@ -504,7 +505,7 @@ fn log_reduce_or_verify_result(
   result_type: ResultType,
   old_cell: &Cell,
   new_cell: &Cell,
-  new_permitted_states: &Vec<ObjectName>,
+  new_permitted_states: &HashSet<ObjectName>,
   reference_cell: &Cell,
   where_is_self_for_reference: &Connection,
   is_failure_log_level_increased: bool,
@@ -582,6 +583,8 @@ fn log_reduce_or_verify_result(
         warn!("| - The relevant rule for only possible state of the REFERENCE cell does not exist");
       }
     }
+    let mut new_permitted_states = new_permitted_states.iter().copied().collect::<Vec<_>>();
+    new_permitted_states.sort_by_key(|state| format!("{state:?}"));
     debug!(
       "| - The permitted new states were determined to be: {:?}",
       new_permitted_states
@@ -903,5 +906,28 @@ mod tests {
     assert!(has_changed);
     assert_eq!(processed_cell.possible_states.len(), 1);
     assert_eq!(cell.possible_states.len(), 2);
+  }
+
+  #[test]
+  fn clone_and_reduce_updates_entropy_to_remaining_state_count() {
+    let cell = Cell {
+      possible_states: vec![
+        TerrainState::default(ObjectName::Empty, vec![]),
+        TerrainState::default(ObjectName::Land1IndividualObject1, vec![]),
+        TerrainState::default(ObjectName::Land1IndividualObject2, vec![]),
+      ],
+      entropy: 3,
+      ..Cell::new(0, 1)
+    };
+    let reference_cell = Cell {
+      ig: Point::new_internal_grid(0, 0),
+      possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)],
+      ..Cell::new(0, 0)
+    };
+
+    let (_, processed_cell) = cell.clone_and_reduce(&reference_cell, &Connection::Top, false).unwrap();
+
+    assert_eq!(processed_cell.possible_states.len(), 1);
+    assert_eq!(processed_cell.get_entropy(), 1);
   }
 }
