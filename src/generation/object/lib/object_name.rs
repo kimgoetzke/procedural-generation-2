@@ -1,8 +1,8 @@
 use bevy::log::*;
 use bevy::reflect::Reflect;
-use strum::EnumIter;
+use strum::{EnumCount, EnumIter};
 
-#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumIter)]
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumCount, EnumIter)]
 pub enum ObjectName {
   Empty,
   Land1Stone1,

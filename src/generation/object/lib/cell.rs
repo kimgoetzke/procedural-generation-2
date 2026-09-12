@@ -2,6 +2,7 @@ use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::lib::{TerrainType, TileType};
+use crate::generation::object::lib::permitted_object_names::PermittedObjectNames;
 use crate::generation::object::lib::terrain_state::TerrainState;
 use crate::generation::object::lib::tile_below::TileBelow;
 use crate::generation::object::lib::{Connection, ObjectName};
@@ -11,6 +12,7 @@ use rand::RngExt;
 use rand::prelude::StdRng;
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct PropagationFailure {}
@@ -291,7 +293,7 @@ impl Cell {
 
   /// Sets the possible states of this [`Cell`]. Does NOT update the entropy and can therefore cause an *inconsistent*
   /// state. Only use this method if you know what you are doing. States should only be updated using
-  /// [`Cell::clone_and_reduce`] or [`Cell::collapse`] as part of running the wave function collapse algorithm.
+  /// [`Cell::reduce`] or [`Cell::collapse`] as part of running the wave function collapse algorithm.
   pub fn override_possible_states(&mut self, states: Vec<TerrainState>) {
     self.possible_states = states;
   }
@@ -315,47 +317,63 @@ impl Cell {
     self.possible_states = vec![TerrainState::new_with_no_neighbours(object_name, i, 1)];
   }
 
-  /// Clones this [`Cell`] and reduces its possible states based on the reference cell and the connection to it.
-  /// Returns a tuple containing a boolean indicating whether the [`Cell`] was updated and the cloned and modified cell.
+  /// Reduces possible states in place using the reference cell's constraints.
   /// # Errors
-  /// If the [`Cell`] has no possible states left after the reduction, an error is returned.
-  pub fn clone_and_reduce(
-    &self,
+  /// Returns an error without modifying the cell if no possible states would remain.
+  pub fn reduce(
+    &mut self,
     reference_cell: &Self,
     where_is_self_for_reference: &Connection,
     is_failure_log_level_increased: bool,
-  ) -> Result<(bool, Self), PropagationFailure> {
+  ) -> Result<bool, PropagationFailure> {
     let permitted_state_names = get_permitted_state_names(reference_cell, where_is_self_for_reference);
+    let previous_entropy = self.possible_states.len();
+    let updated_entropy = self
+      .possible_states
+      .iter()
+      .filter(|state| permitted_state_names.contains(state.name))
+      .count();
+    let should_log = self.is_being_monitored || reference_cell.is_being_monitored || is_failure_log_level_increased;
 
-    let mut updated_possible_states = Vec::new();
-    for possible_state_self in &self.possible_states {
-      if permitted_state_names.contains(&possible_state_self.name) {
-        updated_possible_states.push(possible_state_self.clone());
-      };
+    if updated_entropy == 0 {
+      if should_log {
+        let mut failed_cell = self.clone();
+        failed_cell.entropy = 0;
+        failed_cell.possible_states.clear();
+        log_reduce_or_verify_result(
+          ResultType::FailedUpdate,
+          self,
+          &failed_cell,
+          &permitted_state_names,
+          reference_cell,
+          where_is_self_for_reference,
+          is_failure_log_level_increased,
+        );
+      }
+      return Err(PropagationFailure {});
     }
 
-    let mut clone = self.clone();
-    clone.possible_states = updated_possible_states;
-    clone.entropy = self.possible_states.len();
-    let result = if clone.possible_states.is_empty() {
-      ResultType::FailedUpdate
-    } else {
-      ResultType::SuccessfulUpdate
-    };
-    log_reduce_or_verify_result(
-      result,
-      self,
-      &clone,
-      &permitted_state_names,
-      reference_cell,
-      where_is_self_for_reference,
-      is_failure_log_level_increased,
-    );
-
-    match result {
-      ResultType::SuccessfulUpdate => Ok((self.possible_states.len() != clone.possible_states.len(), clone)),
-      _ => Err(PropagationFailure {}),
+    let has_changed = previous_entropy != updated_entropy;
+    let old_cell = should_log.then(|| self.clone());
+    if has_changed {
+      self
+        .possible_states
+        .retain(|state| permitted_state_names.contains(state.name));
+      self.entropy = updated_entropy;
     }
+    if let Some(old_cell) = old_cell {
+      log_reduce_or_verify_result(
+        ResultType::SuccessfulUpdate,
+        &old_cell,
+        self,
+        &permitted_state_names,
+        reference_cell,
+        where_is_self_for_reference,
+        is_failure_log_level_increased,
+      );
+    }
+
+    Ok(has_changed)
   }
 
   /// Collapses this [`Cell`] to a single state based on the weights of the remaining possible states. This means
@@ -363,52 +381,57 @@ impl Cell {
   /// and the index set to the index of the only remaining state.
   pub fn collapse(&mut self, rng: &mut StdRng) {
     let possible_states_count = self.possible_states.len();
-    let state = if possible_states_count == 1 {
-      &self.possible_states[0]
+    let selected_state_index = if possible_states_count == 1 {
+      0
     } else {
       let total_weight: i32 = self.possible_states.iter().map(|state| state.weight).sum();
       let mut target = rng.random_range(0..total_weight);
-      let mut selected_state = None;
-      let mut states_logs = vec![];
+      let mut selected_state_index = None;
+      let mut states_logs = Vec::new();
       let initial_target = target;
 
-      for state in &self.possible_states {
+      for (index, state) in self.possible_states.iter().enumerate() {
         if target < state.weight {
-          selected_state = Some(state);
+          selected_state_index = Some(index);
           break;
         }
-        states_logs.push(format!("│  • State [{:?}] has a weight of {}", state.name, state.weight));
+        if self.is_being_monitored {
+          states_logs.push(format!("│  • State [{:?}] has a weight of {}", state.name, state.weight));
+        }
         target -= state.weight;
       }
-      let selected_state = selected_state.expect("Failed to get selected state");
+      let selected_state_index =
+        selected_state_index.expect("Failed to get state index (positive state weights always select a state)");
 
       log_collapse_result(
         self,
         possible_states_count,
         total_weight,
         &mut states_logs,
-        selected_state,
+        &self.possible_states[selected_state_index],
         initial_target,
       );
 
-      selected_state
+      selected_state_index
     };
+    let selected_state = &self.possible_states[selected_state_index];
 
     if self.is_being_monitored {
       debug!(
         "Collapsed {:?} to [{:?}] with previous entropy {} and {} states: {:?}",
         self.ig,
-        state.name,
+        selected_state.name,
         self.entropy,
         self.possible_states.len(),
         self.possible_states.iter().map(|s| s.name).collect::<Vec<ObjectName>>()
       );
     }
 
-    self.index = state.index;
+    self.index = selected_state.index;
     self.is_collapsed = true;
     self.entropy = 0;
-    self.possible_states = vec![state.clone()];
+    self.possible_states.swap(0, selected_state_index);
+    self.possible_states.truncate(1);
   }
 
   /// Verifies that the current state of this [`Cell`] is valid with respect to the given reference cell and the
@@ -424,11 +447,11 @@ impl Cell {
   ) -> Result<(), PropagationFailure> {
     let permitted_state_names = get_permitted_state_names(reference_cell, where_is_self_for_reference);
 
-    if !permitted_state_names.contains(&self.possible_states[0].name) {
+    if !permitted_state_names.contains(self.possible_states[0].name) {
       log_reduce_or_verify_result(
         ResultType::FailedVerification,
         self,
-        &self.clone(),
+        self,
         &permitted_state_names,
         reference_cell,
         where_is_self_for_reference,
@@ -441,18 +464,18 @@ impl Cell {
   }
 }
 
-fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> Vec<ObjectName> {
-  cell
-    .possible_states
-    .iter()
-    .flat_map(|states| {
-      states
-        .permitted_neighbours
-        .iter()
-        .filter(|(c, _)| c == connection)
-        .flat_map(|(_, names)| names.iter().cloned())
-    })
-    .collect()
+fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> PermittedObjectNames {
+  let mut permitted_names = PermittedObjectNames::default();
+  for name in cell.possible_states.iter().flat_map(|state| {
+    state
+      .permitted_neighbours
+      .iter()
+      .filter(|(candidate, _)| candidate == connection)
+      .flat_map(|(_, names)| names.iter().copied())
+  }) {
+    permitted_names.insert(name);
+  }
+  permitted_names
 }
 
 /// Returns `true` if the tile type is touching the edge of a chunk and is a fill type at the facing edge of the chunk
@@ -504,7 +527,7 @@ fn log_reduce_or_verify_result(
   result_type: ResultType,
   old_cell: &Cell,
   new_cell: &Cell,
-  new_permitted_states: &Vec<ObjectName>,
+  new_permitted_names: &PermittedObjectNames,
   reference_cell: &Cell,
   where_is_self_for_reference: &Connection,
   is_failure_log_level_increased: bool,
@@ -582,6 +605,10 @@ fn log_reduce_or_verify_result(
         warn!("| - The relevant rule for only possible state of the REFERENCE cell does not exist");
       }
     }
+    let mut new_permitted_states = ObjectName::iter()
+      .filter(|name| new_permitted_names.contains(*name))
+      .collect::<Vec<_>>();
+    new_permitted_states.sort_by_key(|state| format!("{state:?}"));
     debug!(
       "| - The permitted new states were determined to be: {:?}",
       new_permitted_states
@@ -848,27 +875,57 @@ mod tests {
   }
 
   #[test]
-  fn clone_and_reduce_returns_failure_when_no_states_remain() {
-    let cell = Cell {
+  fn reduce_updates_the_cell_in_place() {
+    let mut cell = Cell {
+      possible_states: vec![
+        TerrainState::default(ObjectName::Empty, vec![]),
+        TerrainState::default(ObjectName::Land1IndividualObject1, vec![]),
+      ],
+      entropy: 2,
+      ..Cell::new(0, 1)
+    };
+    let reference_cell = Cell {
+      ig: Point::new_internal_grid(0, 0),
+      possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)],
+      ..Cell::new(0, 0)
+    };
+
+    let has_changed = cell.reduce(&reference_cell, &Connection::Top, false).unwrap();
+
+    assert!(has_changed);
+    assert_eq!(cell.possible_states.len(), 1);
+    assert_eq!(cell.possible_states[0].name, ObjectName::Empty);
+    assert_eq!(cell.entropy, 1);
+  }
+
+  #[test]
+  fn reduce_returns_failure_without_modifying_the_cell_when_no_states_remain() {
+    let mut cell = Cell {
       possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Land1IndividualObject1, 0, 1)],
+      entropy: 1,
       ..Cell::new(0, 0)
     };
     let reference_cell = Cell {
       ig: Point::new_internal_grid(0, 1),
       possible_states: vec![TerrainState::default(
         ObjectName::Empty,
-        vec![ObjectName::Land1IndividualObject2], // A different object
+        vec![ObjectName::Land1IndividualObject2],
       )],
-      ..cell.clone()
+      ..Cell::new(0, 1)
     };
-    let result = cell.clone_and_reduce(&reference_cell, &Connection::Bottom, false);
+
+    let result = cell.reduce(&reference_cell, &Connection::Bottom, false);
+
     assert!(result.is_err());
+    assert_eq!(cell.possible_states.len(), 1);
+    assert_eq!(cell.get_entropy(), 1);
   }
 
   #[test]
-  fn clone_and_reduce_returns_success_when_reference_cell_allows_it_as_neighbour() {
-    let cell = Cell {
+  fn reduce_returns_unchanged_when_reference_cell_allows_every_state() {
+    let mut cell = Cell {
       possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Land1IndividualObject1, 0, 1)],
+      entropy: 1,
       ..Cell::new(0, 0)
     };
     let reference_cell = Cell {
@@ -877,21 +934,24 @@ mod tests {
         ObjectName::Empty,
         vec![ObjectName::Land1IndividualObject1],
       )],
-      ..Cell::new(0, 0)
+      ..Cell::new(0, 1)
     };
-    let (has_changed, processed_cell) = cell.clone_and_reduce(&reference_cell, &Connection::Bottom, false).unwrap();
+
+    let has_changed = cell.reduce(&reference_cell, &Connection::Bottom, false).unwrap();
+
     assert!(!has_changed);
-    assert_eq!(processed_cell.possible_states.len(), 1);
     assert_eq!(cell.possible_states.len(), 1);
   }
 
   #[test]
-  fn clone_and_reduce_returns_success_and_removes_states_that_are_disallowed_by_the_reference() {
-    let cell = Cell {
+  fn reduce_updates_entropy_to_remaining_state_count() {
+    let mut cell = Cell {
       possible_states: vec![
         TerrainState::default(ObjectName::Empty, vec![]),
-        TerrainState::default(ObjectName::Land1IndividualObject1, vec![]), // Disallowed by reference
+        TerrainState::default(ObjectName::Land1IndividualObject1, vec![]),
+        TerrainState::default(ObjectName::Land1IndividualObject2, vec![]),
       ],
+      entropy: 3,
       ..Cell::new(0, 1)
     };
     let reference_cell = Cell {
@@ -899,9 +959,10 @@ mod tests {
       possible_states: vec![TerrainState::new_with_no_neighbours(ObjectName::Empty, 0, 1)],
       ..Cell::new(0, 0)
     };
-    let (has_changed, processed_cell) = cell.clone_and_reduce(&reference_cell, &Connection::Top, false).unwrap();
-    assert!(has_changed);
-    assert_eq!(processed_cell.possible_states.len(), 1);
-    assert_eq!(cell.possible_states.len(), 2);
+
+    cell.reduce(&reference_cell, &Connection::Top, false).unwrap();
+
+    assert_eq!(cell.possible_states.len(), 1);
+    assert_eq!(cell.get_entropy(), 1);
   }
 }
