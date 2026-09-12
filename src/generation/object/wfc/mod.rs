@@ -1,8 +1,10 @@
 mod cell_entropy_index;
 
-use crate::constants::{WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
+use crate::constants::{CHUNK_SIZE, WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
+use crate::coords::Point;
+use crate::coords::point::InternalGrid;
 use crate::generation::lib::shared;
-use crate::generation::object::lib::{Cell, IterationResult, ObjectGrid, ObjectGridSnapshot};
+use crate::generation::object::lib::{IterationResult, ObjectGrid, ObjectGridSnapshot, get_connection_points};
 use crate::generation::object::wfc::cell_entropy_index::CellEntropyIndex;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -28,9 +30,10 @@ pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: 
     let mut iter_count = 1;
     let mut has_entropy = true;
     let mut entropy_index = CellEntropyIndex::from_cells(object_grid.iter());
+    let mut propagation_stack = Vec::with_capacity((CHUNK_SIZE * CHUNK_SIZE) as usize);
 
     while has_entropy {
-      match iterate(rng, object_grid, &mut entropy_index) {
+      match iterate(rng, object_grid, &mut entropy_index, &mut propagation_stack) {
         IterationResult::Failure => {
           handle_failure(
             object_grid,
@@ -77,7 +80,12 @@ pub fn place_decorative_objects_on_grid(object_grid: &mut ObjectGrid, settings: 
 ///
 /// This method is the central part of the wave function collapse algorithm and is called repeatedly until no more
 /// cells can be collapsed.
-fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid, entropy_index: &mut CellEntropyIndex) -> IterationResult {
+fn iterate(
+  rng: &mut StdRng,
+  grid: &mut ObjectGrid,
+  entropy_index: &mut CellEntropyIndex,
+  propagation_stack: &mut Vec<Point<InternalGrid>>,
+) -> IterationResult {
   // Observation: Get a cell with the lowest entropy
   let Some(ig) = entropy_index.choose_lowest_entropy_cell(rng) else {
     trace!("No more cells to collapse in object grid {}", grid.cg);
@@ -85,32 +93,32 @@ fn iterate(rng: &mut StdRng, grid: &mut ObjectGrid, entropy_index: &mut CellEntr
   };
 
   // Collapse: Collapse random cell from the cells with the lowest entropy
-  let random_cell: &Cell = grid
-    .get_cell(&ig)
-    .unwrap_or_else(|| panic!("Failed to get cell {ig} from object grid {} during processing", grid.cg));
-  let mut random_cell_clone = random_cell.clone();
-  random_cell_clone.collapse(rng);
+  let cg = grid.cg;
+  let random_cell = grid
+    .get_cell_mut(&ig)
+    .unwrap_or_else(|| panic!("Failed to get cell {ig} from object grid {cg} during processing"));
+  random_cell.collapse(rng);
+  entropy_index.update(random_cell);
 
-  // Propagation: Update every neighbours' states and the grid
-  let mut stack: Vec<Cell> = vec![random_cell_clone];
+  // Propagation: Update every neighbour's states in place
+  propagation_stack.clear();
+  propagation_stack.push(ig);
   let is_failure_log_level_increased = grid.is_failure_log_level_increased();
-  while let Some(cell) = stack.pop() {
-    entropy_index.update(&cell);
-    grid.set_cell(cell.clone());
-    for (connection, neighbour) in grid.get_neighbours(&cell).iter_mut() {
-      if !neighbour.is_collapsed() {
-        if let Ok((has_changed, neighbour_cell)) = neighbour.clone_and_reduce(&cell, &connection.opposite(), false) {
-          if has_changed {
-            stack.push(neighbour_cell);
-          }
-        } else {
-          return IterationResult::Failure;
+  while let Some(reference_ig) = propagation_stack.pop() {
+    for (connection, neighbour_ig) in get_connection_points(&reference_ig) {
+      if neighbour_ig.is_outside_grid() {
+        continue;
+      }
+      match grid.reduce_neighbour(&reference_ig, &neighbour_ig, &connection, is_failure_log_level_increased) {
+        Ok(true) => {
+          let neighbour = grid
+            .get_cell(&neighbour_ig)
+            .expect("neighbour coordinates came from inside the object grid");
+          entropy_index.update(neighbour);
+          propagation_stack.push(neighbour_ig);
         }
-      } else if neighbour
-        .verify(&cell, &connection.opposite(), is_failure_log_level_increased)
-        .is_err()
-      {
-        return IterationResult::Failure;
+        Ok(false) => {}
+        Err(_) => return IterationResult::Failure,
       }
     }
   }

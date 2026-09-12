@@ -11,6 +11,7 @@ mod tile_data;
 
 pub use cell::{Cell, CellRef};
 pub use connection::Connection;
+pub use connection::get_connection_points;
 pub use iteration_result::IterationResult;
 pub use object_data::ObjectData;
 pub use object_grid::ObjectGrid;
