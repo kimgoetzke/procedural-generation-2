@@ -2,6 +2,7 @@ use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::InternalGrid;
 use crate::generation::lib::{TerrainType, TileType};
+use crate::generation::object::lib::permitted_object_names::PermittedObjectNames;
 use crate::generation::object::lib::terrain_state::TerrainState;
 use crate::generation::object::lib::tile_below::TileBelow;
 use crate::generation::object::lib::{Connection, ObjectName};
@@ -11,31 +12,10 @@ use rand::RngExt;
 use rand::prelude::StdRng;
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
-use strum::{EnumCount, IntoEnumIterator};
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct PropagationFailure {}
-
-const OBJECT_NAME_SET_WORDS: usize = ObjectName::COUNT.div_ceil(u64::BITS as usize);
-
-#[derive(Clone, Copy, Debug, Default)]
-struct ObjectNameSet([u64; OBJECT_NAME_SET_WORDS]);
-
-impl ObjectNameSet {
-  fn insert(&mut self, name: ObjectName) {
-    let index = name as usize;
-    let word = index / u64::BITS as usize;
-    let bit = index % u64::BITS as usize;
-    self.0[word] |= 1 << bit;
-  }
-
-  fn contains(&self, name: ObjectName) -> bool {
-    let index = name as usize;
-    let word = index / u64::BITS as usize;
-    let bit = index % u64::BITS as usize;
-    self.0[word] & (1 << bit) != 0
-  }
-}
 
 pub type CellRef = Arc<Mutex<Cell>>;
 
@@ -484,8 +464,8 @@ impl Cell {
   }
 }
 
-fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> ObjectNameSet {
-  let mut permitted_name_set = ObjectNameSet::default();
+fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> PermittedObjectNames {
+  let mut permitted_names = PermittedObjectNames::default();
   for name in cell.possible_states.iter().flat_map(|state| {
     state
       .permitted_neighbours
@@ -493,9 +473,9 @@ fn get_permitted_state_names(cell: &Cell, connection: &Connection) -> ObjectName
       .filter(|(candidate, _)| candidate == connection)
       .flat_map(|(_, names)| names.iter().copied())
   }) {
-    permitted_name_set.insert(name);
+    permitted_names.insert(name);
   }
-  permitted_name_set
+  permitted_names
 }
 
 /// Returns `true` if the tile type is touching the edge of a chunk and is a fill type at the facing edge of the chunk
@@ -547,7 +527,7 @@ fn log_reduce_or_verify_result(
   result_type: ResultType,
   old_cell: &Cell,
   new_cell: &Cell,
-  new_permitted_states: &ObjectNameSet,
+  new_permitted_names: &PermittedObjectNames,
   reference_cell: &Cell,
   where_is_self_for_reference: &Connection,
   is_failure_log_level_increased: bool,
@@ -626,7 +606,7 @@ fn log_reduce_or_verify_result(
       }
     }
     let mut new_permitted_states = ObjectName::iter()
-      .filter(|name| new_permitted_states.contains(*name))
+      .filter(|name| new_permitted_names.contains(*name))
       .collect::<Vec<_>>();
     new_permitted_states.sort_by_key(|state| format!("{state:?}"));
     debug!(

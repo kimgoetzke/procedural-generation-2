@@ -5,6 +5,7 @@ mod object_data;
 mod object_grid;
 mod object_grid_snapshot;
 mod object_name;
+mod permitted_object_names;
 mod terrain_state;
 mod tile_below;
 mod tile_data;
