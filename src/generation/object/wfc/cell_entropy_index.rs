@@ -8,8 +8,12 @@ use rand::prelude::StdRng;
 /// Indexes uncollapsed cells by entropy for constant-time observation.
 #[derive(Debug)]
 pub(super) struct CellEntropyIndex {
+  /// Uncollapsed cell coordinates grouped by entropy; each vector index is an entropy value.
   buckets: Vec<Vec<Point<InternalGrid>>>,
+  /// Bucket location of each grid cell, indexed by its flattened coordinates. Collapsed and otherwise untracked cells
+  /// contain `None`.
   memberships: Vec<Option<Membership>>,
+  /// Lowest non-empty entropy bucket, or [`usize::MAX`] when no cells are tracked.
   lowest: usize,
 }
 
@@ -56,8 +60,10 @@ impl CellEntropyIndex {
     *self = Self::from_cells(cells);
   }
 
+  /// Adds an uncollapsed cell to its entropy bucket and records its bucket position. Expands the buckets when
+  /// necessary and updates the lowest tracked entropy.
   fn insert(&mut self, ig: Point<InternalGrid>, entropy: usize) {
-    debug_assert!(entropy > 0, "uncollapsed cells must have positive entropy");
+    debug_assert!(entropy > 0, "Uncollapsed cells must have positive entropy");
     if entropy >= self.buckets.len() {
       self.buckets.resize_with(entropy + 1, Vec::new);
     }
@@ -67,6 +73,8 @@ impl CellEntropyIndex {
     self.lowest = self.lowest.min(entropy);
   }
 
+  /// Removes a tracked cell while keeping bucket positions and the lowest entropy consistent. Updates the cell moved
+  /// by `swap_remove`. Does nothing when the cell is not tracked.
   fn remove(&mut self, ig: Point<InternalGrid>) {
     let Some(membership) = self.memberships[cell_index(ig)].take() else {
       return;
@@ -91,7 +99,10 @@ impl CellEntropyIndex {
 }
 
 fn cell_index(ig: Point<InternalGrid>) -> usize {
-  debug_assert!(ig.x >= 0 && ig.x < CHUNK_SIZE && ig.y >= 0 && ig.y < CHUNK_SIZE);
+  debug_assert!(
+    ig.x >= 0 && ig.x < CHUNK_SIZE && ig.y >= 0 && ig.y < CHUNK_SIZE,
+    "Point coordinates are outside the chunk"
+  );
   (ig.y * CHUNK_SIZE + ig.x) as usize
 }
 
