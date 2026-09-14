@@ -45,6 +45,7 @@ pub fn place_buildings_on_grid(object_grid: &mut ObjectGrid, settings: &Settings
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
   add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
   add_points_points_from_generated_path(&mut path_points, object_grid, settings, rng, &cg);
+  clean_up_path_points(&mut path_points, object_grid);
   if path_points.is_empty() {
     debug!(
       "Skipped generating buildings because there are no valid path points for {}",
@@ -106,12 +107,10 @@ fn add_points_points_from_generated_path(
   cg: &Point<ChunkGrid>,
 ) {
   let building_density = settings.object.building_density;
-  let mut points_from_generated_path_to_add: Vec<Point<InternalGrid>> = object_grid
-    .get_generated_path()
-    .iter()
-    .filter(|_| rng.random_range(0.0..1.0) <= building_density)
-    .cloned()
-    .collect();
+  let mut points_from_generated_path_to_add: Vec<Point<InternalGrid>> =
+    object_grid.get_generated_path().iter().copied().collect();
+  points_from_generated_path_to_add.sort_by_key(|point| (point.y, point.x));
+  points_from_generated_path_to_add.retain(|_| rng.random_range(0.0..1.0) <= building_density);
   trace!(
     "Adding [{}/{}] path points from the generated path for {} based on building density of [{:.2}]",
     points_from_generated_path_to_add.len(),
@@ -140,6 +139,17 @@ fn add_valid_connection_points(
     trace!("No valid connection points found for {}", cg);
   }
   proposed_points.append(&mut connection_points);
+}
+
+/// Metadata may include endpoints for paths that could not be generated.
+fn clean_up_path_points(path_points: &mut Vec<Point<InternalGrid>>, object_grid: &mut ObjectGrid) {
+  path_points.sort_by_key(|point| (point.y, point.x));
+  path_points.dedup();
+  path_points.retain(|point| {
+    object_grid.get_cell(point).is_some_and(|cell| {
+      cell.is_collapsed() && cell.get_possible_states().first().is_some_and(|state| state.name.is_path())
+    })
+  });
 }
 
 /// Returns a map of space available for placing buildings.
