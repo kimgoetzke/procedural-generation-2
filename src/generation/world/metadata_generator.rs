@@ -82,17 +82,18 @@ fn regenerate_metadata(mut metadata: ResMut<Metadata>, cg: Point<ChunkGrid>, set
   let settlement_perlin: BasicMulti<Perlin> = BasicMulti::new(settings.world.noise_seed)
     .set_octaves(1)
     .set_frequency(metadata_settings.settlement_noise_frequency);
-  metadata.index.clear();
+  let mut regenerated_metadata = Metadata::default(cg);
   (cg.x - METADATA_GRID_APOTHEM..=cg.x + METADATA_GRID_APOTHEM).for_each(|x| {
     (cg.y - METADATA_GRID_APOTHEM..=cg.y + METADATA_GRID_APOTHEM).for_each(|y| {
       let cg = Point::new_chunk_grid(x, y);
-      generate_elevation_metadata(&mut metadata, x, y, &metadata_settings);
-      generate_biome_metadata(&mut metadata, &biome_perlin, cg);
-      generate_connection_points(&mut metadata, settings, cg);
-      generate_settlement_metadata(&mut metadata, settings, &settlement_perlin, cg);
-      metadata.index.push(cg);
+      generate_elevation_metadata(&mut regenerated_metadata, x, y, &metadata_settings);
+      generate_biome_metadata(&mut regenerated_metadata, &biome_perlin, cg);
+      generate_connection_points(&mut regenerated_metadata, settings, cg);
+      generate_settlement_metadata(&mut regenerated_metadata, settings, &settlement_perlin, cg);
+      regenerated_metadata.index.push(cg);
     })
   });
+  *metadata = regenerated_metadata;
   debug!(
     "Updated metadata based on current chunk {} in {} ms on {}",
     cg,
@@ -159,7 +160,7 @@ fn step_size(range_start: f64, range_end: f64, grid_size: f64, is_positive: bool
   ((range_end - range_start) / grid_size) * modifier
 }
 
-fn generate_biome_metadata(metadata: &mut ResMut<Metadata>, perlin: &BasicMulti<Perlin>, cg: Point<ChunkGrid>) {
+fn generate_biome_metadata(metadata: &mut Metadata, perlin: &BasicMulti<Perlin>, cg: Point<ChunkGrid>) {
   let rainfall = (perlin.get([cg.x as f64, cg.y as f64]) + 1.) / 2.;
   let climate = Climate::from(rainfall);
   let bm = BiomeMetadata::new(cg, climate);
@@ -167,7 +168,7 @@ fn generate_biome_metadata(metadata: &mut ResMut<Metadata>, perlin: &BasicMulti<
   metadata.biome.insert(cg, bm);
 }
 
-fn generate_connection_points(metadata: &mut ResMut<Metadata>, settings: &Settings, cg: Point<ChunkGrid>) {
+fn generate_connection_points(metadata: &mut Metadata, settings: &Settings, cg: Point<ChunkGrid>) {
   let connection_points = calculate_connection_points_for_cg(settings, &cg);
   metadata.connection.insert(cg, connection_points);
 }
@@ -242,7 +243,7 @@ fn generate_hash(reference_cg: &Point<ChunkGrid>, neighbour_cg: &Point<ChunkGrid
 /// Determines whether a chunk should have a settlement based on its coordinates and the settings. If the chunk is
 /// considered to be settled, buildings can be generated on it.
 fn generate_settlement_metadata(
-  metadata: &mut ResMut<Metadata>,
+  metadata: &mut Metadata,
   settings: &Settings,
   perlin: &BasicMulti<Perlin>,
   cg: Point<ChunkGrid>,

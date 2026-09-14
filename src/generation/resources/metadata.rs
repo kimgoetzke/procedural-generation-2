@@ -45,6 +45,17 @@ pub struct Metadata {
 }
 
 impl Metadata {
+  pub fn default(current_chunk_cg: Point<ChunkGrid>) -> Self {
+    Self {
+      current_chunk_cg,
+      index: vec![],
+      elevation: HashMap::new(),
+      biome: HashMap::new(),
+      connection: HashMap::new(),
+      settlement: HashMap::new(),
+    }
+  }
+
   /// Returns the biome metadata for the given [`Point<ChunkGrid>`] which includes the biome metadata for the four
   /// adjacent chunks as well.
   pub fn get_biome_metadata_for(&self, cg: &Point<ChunkGrid>) -> BiomeMetadataSet<'_> {
@@ -305,19 +316,6 @@ impl Climate {
 #[cfg(test)]
 mod tests {
   use super::*;
-
-  impl Metadata {
-    pub fn default(current_chunk_cg: Point<ChunkGrid>) -> Self {
-      Self {
-        current_chunk_cg,
-        index: vec![],
-        elevation: HashMap::new(),
-        biome: HashMap::new(),
-        connection: HashMap::new(),
-        settlement: HashMap::new(),
-      }
-    }
-  }
 
   #[test]
   fn get_biome_metadata_for_retrieves_biome_metadata_for_all_directions() {

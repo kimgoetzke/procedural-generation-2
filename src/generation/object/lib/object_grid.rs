@@ -2,8 +2,9 @@ use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
+use crate::generation::object::lib::cell::PropagationFailure;
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, TerrainState};
+use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectGridSnapshot, TerrainState};
 use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
@@ -238,19 +239,19 @@ impl ObjectGrid {
   /// # Panics
   /// If a cell must be updated but the update fails, this method will panic.
   pub fn validate(&mut self) {
-    let mut collapsed_cells: VecDeque<Cell> = VecDeque::new();
-    let mut edge_cells: VecDeque<Cell> = VecDeque::new();
-    self.object_grid.iter().flatten().for_each(|c| {
-      if c.is_collapsed() {
-        collapsed_cells.push_back(c.clone());
-      } else if c.ig.is_touching_edge() {
-        edge_cells.push_back(c.clone());
+    let mut collapsed_cell_igs: VecDeque<Point<InternalGrid>> = VecDeque::new();
+    let mut edge_cell_igs: VecDeque<Point<InternalGrid>> = VecDeque::new();
+    self.object_grid.iter().flatten().for_each(|cell| {
+      if cell.is_collapsed() {
+        collapsed_cell_igs.push_back(cell.ig);
+      } else if cell.ig.is_touching_edge() {
+        edge_cell_igs.push_back(cell.ig);
       }
     });
     let cg = self.cg;
     let mut i = 0;
-    self.update_neighbours_of_collapsed_cells(&mut collapsed_cells, &cg, &mut i);
-    self.update_edge_cells(&mut edge_cells, &cg, &mut i);
+    self.update_neighbours_of_collapsed_cells(&mut collapsed_cell_igs, &cg, &mut i);
+    self.update_edge_cells(&mut edge_cell_igs, &cg, &mut i);
     debug!("Validated object grid {} and made [{}] updates to cells' states", cg, i);
   }
 
@@ -260,36 +261,32 @@ impl ObjectGrid {
   /// algorithm.
   fn update_neighbours_of_collapsed_cells(
     &mut self,
-    collapsed_cells: &mut VecDeque<Cell>,
+    collapsed_cell_igs: &mut VecDeque<Point<InternalGrid>>,
     cg: &Point<ChunkGrid>,
     i: &mut i32,
   ) {
-    while let Some(cell) = collapsed_cells.pop_front() {
-      for (connection, neighbour_ig) in get_connection_points(&cell.ig) {
-        if let Some(neighbour) = self.get_cell(&neighbour_ig) {
-          if neighbour.is_collapsed() {
-            continue;
+    while let Some(reference_ig) = collapsed_cell_igs.pop_front() {
+      for (connection, neighbour_ig) in get_connection_points(&reference_ig) {
+        if neighbour_ig.is_outside_grid() || self.get_cell(&neighbour_ig).is_none_or(Cell::is_collapsed) {
+          continue;
+        }
+        let previous_entropy = self.get_cell(&neighbour_ig).map(Cell::get_entropy).unwrap_or_default();
+        match self.reduce_neighbour(&reference_ig, &neighbour_ig, &connection, false) {
+          Ok(true) => {
+            let updated_entropy = self.get_cell(&neighbour_ig).map(Cell::get_entropy).unwrap_or_default();
+            trace!(
+              "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
+              cg, neighbour_ig, previous_entropy, updated_entropy,
+            );
+            collapsed_cell_igs.push_back(neighbour_ig);
+            *i += 1;
           }
-          match neighbour.clone_and_reduce(&cell, &connection.opposite(), false) {
-            Ok((true, updated_neighbour)) => {
-              trace!(
-                "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
-                cg,
-                neighbour_ig,
-                neighbour.get_possible_states().len(),
-                updated_neighbour.get_possible_states().len(),
-              );
-              self.set_cell(updated_neighbour.clone());
-              collapsed_cells.push_back(updated_neighbour);
-              *i += 1;
-            }
-            Ok((false, _)) => {}
-            Err(_) => {
-              panic!(
-                "Validating object grid {}: Failed to reduce neighbour at {:?} of collapsed cell at {:?}",
-                cg, neighbour_ig, cell.ig,
-              );
-            }
+          Ok(false) => {}
+          Err(_) => {
+            panic!(
+              "Validating object grid {}: Failed to reduce neighbour at {:?} of collapsed cell at {:?}",
+              cg, neighbour_ig, reference_ig,
+            );
           }
         }
       }
@@ -297,101 +294,131 @@ impl ObjectGrid {
   }
 
   /// Updates all cells that touch any edge of the grid to ensure their states are valid.
-  fn update_edge_cells(&mut self, edge_cells: &mut VecDeque<Cell>, cg: &Point<ChunkGrid>, i: &mut i32) {
-    while let Some(cell) = edge_cells.pop_front() {
-      let edge_connections: Vec<Connection> = get_connection_points(&cell.ig)
-        .iter()
-        .filter_map(|(c, p)| if p.is_outside_grid() { Some(c) } else { None })
-        .cloned()
-        .collect();
-      for connection in edge_connections {
-        match cell.clone_and_reduce(&self.no_neighbours_tile, &connection, false) {
-          Ok((true, updated_cell)) => {
+  fn update_edge_cells(&mut self, edge_cell_igs: &mut VecDeque<Point<InternalGrid>>, cg: &Point<ChunkGrid>, i: &mut i32) {
+    while let Some(cell_ig) = edge_cell_igs.pop_front() {
+      for (connection, _) in get_connection_points(&cell_ig)
+        .into_iter()
+        .filter(|(_, point)| point.is_outside_grid())
+      {
+        let no_neighbours_tile = &self.no_neighbours_tile;
+        let cell = self
+          .object_grid
+          .get_mut(cell_ig.y as usize)
+          .and_then(|row| row.get_mut(cell_ig.x as usize))
+          .expect("Failed to get edge cell coordinates that came from inside the object grid");
+        let previous_entropy = cell.get_entropy();
+        match cell.reduce(no_neighbours_tile, &connection, false) {
+          Ok(true) => {
             trace!(
               "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
               cg,
               cell.ig,
-              cell.get_possible_states().len(),
-              updated_cell.get_possible_states().len(),
+              previous_entropy,
+              cell.get_entropy(),
             );
-            self.set_cell(updated_cell.clone());
             *i += 1;
           }
-          Ok((false, _)) => {}
+          Ok(false) => {}
           Err(_) => {
-            panic!(
-              "Validating object grid {}: Failed to reduce edge cell at {:?} of collapsed cell at {:?}",
-              cg, cell, cell.ig,
-            );
+            panic!("Validating object grid {}: Failed to reduce edge cell at {:?}", cg, cell.ig,);
           }
         }
       }
     }
   }
 
-  pub fn get_neighbours(&mut self, cell: &Cell) -> Vec<(Connection, &Cell)> {
-    let points: Vec<(Connection, Point<InternalGrid>)> = get_connection_points(&cell.ig).into_iter().collect();
-    let mut neighbours = vec![];
-    for (connection, ig) in points {
-      if let Some(cell) = self.object_grid.iter().flatten().find(|cell| cell.ig == ig) {
-        neighbours.push((connection.opposite(), cell));
-      } else {
-        neighbours.push((connection.opposite(), &self.no_neighbours_tile));
-      }
+  /// Applies a reference cell's constraints directly to its neighbour.
+  pub(crate) fn reduce_neighbour(
+    &mut self,
+    reference_ig: &Point<InternalGrid>,
+    neighbour_ig: &Point<InternalGrid>,
+    where_is_neighbour_for_reference: &Connection,
+    is_failure_log_level_increased: bool,
+  ) -> Result<bool, PropagationFailure> {
+    let (reference, neighbour) = self
+      .get_cells_mut(reference_ig, neighbour_ig)
+      .expect("reference and neighbour coordinates are distinct and inside the object grid");
+    if neighbour.is_collapsed() {
+      neighbour.verify(reference, where_is_neighbour_for_reference, is_failure_log_level_increased)?;
+      Ok(false)
+    } else {
+      neighbour.reduce(reference, where_is_neighbour_for_reference, is_failure_log_level_increased)
+    }
+  }
+
+  /// Returns two mutable [`Cell`]s which requires a lot of silly stuff, so that we can use `split_at_mut` to prove that
+  /// they cannot overlap and therefore make the borrow checker happy.
+  fn get_cells_mut(
+    &mut self,
+    first_ig: &Point<InternalGrid>,
+    second_ig: &Point<InternalGrid>,
+  ) -> Option<(&mut Cell, &mut Cell)> {
+    if first_ig == second_ig || first_ig.is_outside_grid() || second_ig.is_outside_grid() {
+      return None;
     }
 
-    neighbours
+    let (first_x, first_y) = (first_ig.x as usize, first_ig.y as usize);
+    let (second_x, second_y) = (second_ig.x as usize, second_ig.y as usize);
+    if first_y == second_y {
+      let row = self.object_grid.get_mut(first_y)?;
+      return if first_x < second_x {
+        let (left, right) = row.split_at_mut(second_x);
+        Some((left.get_mut(first_x)?, right.first_mut()?))
+      } else {
+        let (left, right) = row.split_at_mut(first_x);
+        Some((right.first_mut()?, left.get_mut(second_x)?))
+      };
+    }
+
+    if first_y < second_y {
+      let (upper, lower) = self.object_grid.split_at_mut(second_y);
+      Some((
+        upper.get_mut(first_y)?.get_mut(first_x)?,
+        lower.first_mut()?.get_mut(second_x)?,
+      ))
+    } else {
+      let (upper, lower) = self.object_grid.split_at_mut(first_y);
+      Some((
+        lower.first_mut()?.get_mut(first_x)?,
+        upper.get_mut(second_y)?.get_mut(second_x)?,
+      ))
+    }
+  }
+
+  /// Iterates over all object cells.
+  pub(crate) fn iter(&self) -> impl Iterator<Item = &Cell> {
+    self.object_grid.iter().flatten()
   }
 
   pub fn get_cell(&self, ig: &Point<InternalGrid>) -> Option<&Cell> {
+    if ig.is_outside_grid() {
+      return None;
+    }
     self.object_grid.get(ig.y as usize).and_then(|row| row.get(ig.x as usize))
   }
 
   pub fn get_cell_mut(&mut self, ig: &Point<InternalGrid>) -> Option<&mut Cell> {
+    if ig.is_outside_grid() {
+      return None;
+    }
     self
       .object_grid
       .get_mut(ig.y as usize)
       .and_then(|row| row.get_mut(ig.x as usize))
   }
 
-  /// Replaces the [`Cell`] at the given point with the provided [`Cell`].
-  pub fn set_cell(&mut self, cell: Cell) {
-    if let Some(existing_cell) = self.object_grid.iter_mut().flatten().find(|c| c.ig == cell.ig) {
-      *existing_cell = cell;
-    } else {
-      error!("Failed to find cell to update at {:?}", cell.ig);
-    }
-  }
-
   pub fn calculate_total_entropy(&self) -> i32 {
     self.object_grid.iter().flatten().map(|cell| cell.get_entropy() as i32).sum()
   }
 
-  pub fn get_cells_with_lowest_entropy(&self) -> Vec<&Cell> {
-    let mut lowest_entropy = usize::MAX;
-    let mut lowest_entropy_cells = vec![];
-    for cell in self.object_grid.iter().flatten() {
-      if !cell.is_collapsed() {
-        let entropy = cell.get_entropy();
-        if entropy < lowest_entropy {
-          lowest_entropy = entropy;
-          lowest_entropy_cells = vec![cell];
-        } else if entropy == lowest_entropy {
-          lowest_entropy_cells.push(cell);
-        }
-      }
+  pub fn snapshot(&self) -> ObjectGridSnapshot {
+    ObjectGridSnapshot {
+      object_grid: self.object_grid.clone(),
     }
-    trace!(
-      "Found {} cell(s) with lowest entropy of {}",
-      lowest_entropy_cells.len(),
-      lowest_entropy
-    );
-
-    lowest_entropy_cells
   }
 
-  pub fn restore_from_snapshot(&mut self, other: &ObjectGrid) {
-    self.object_grid = other.object_grid.clone();
+  pub fn restore_from_snapshot(&mut self, snapshot: &ObjectGridSnapshot) {
+    self.object_grid = snapshot.object_grid.clone();
   }
 
   pub const fn is_failure_log_level_increased(&self) -> bool {
@@ -418,5 +445,57 @@ mod tests {
 
       grid
     }
+  }
+
+  #[test]
+  fn reduce_neighbour_updates_cells_in_every_cardinal_direction() {
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let reference_ig = Point::new_internal_grid(1, 1);
+    let mut reference = Cell::new(reference_ig.x, reference_ig.y);
+    reference.initialise(
+      TerrainType::Any,
+      TileType::Fill,
+      &[TerrainState::new_with_no_neighbours(
+        crate::generation::object::lib::ObjectName::Empty,
+        0,
+        1,
+      )],
+      vec![],
+      false,
+    );
+    *grid.get_cell_mut(&reference_ig).unwrap() = reference;
+
+    for (connection, target_ig) in get_connection_points(&reference_ig) {
+      let mut target = Cell::new(target_ig.x, target_ig.y);
+      target.initialise(
+        TerrainType::Any,
+        TileType::Fill,
+        &[
+          TerrainState::new_with_no_neighbours(crate::generation::object::lib::ObjectName::Empty, 0, 1),
+          TerrainState::new_with_no_neighbours(crate::generation::object::lib::ObjectName::Land1IndividualObject1, 1, 1),
+        ],
+        vec![],
+        false,
+      );
+      *grid.get_cell_mut(&target_ig).unwrap() = target;
+
+      let has_changed = grid.reduce_neighbour(&reference_ig, &target_ig, &connection, false).unwrap();
+
+      assert!(has_changed);
+      assert_eq!(grid.get_cell(&target_ig).unwrap().get_possible_states().len(), 1);
+    }
+  }
+
+  #[test]
+  fn restore_from_snapshot_only_restores_object_cells() {
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let snapshot = grid.snapshot();
+    let mut cell = Cell::new(2, 2);
+    cell.mark_as_collapsed(crate::generation::object::lib::ObjectName::PathTop);
+    *grid.get_cell_mut(&Point::new_internal_grid(2, 2)).unwrap() = cell;
+
+    grid.restore_from_snapshot(&snapshot);
+
+    assert!(!grid.get_cell(&Point::new_internal_grid(2, 2)).unwrap().is_collapsed());
   }
 }
