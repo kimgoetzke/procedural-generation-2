@@ -1,6 +1,6 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::Point;
-use crate::coords::point::InternalGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::InternalGrid;
 use crate::generation::object::lib::Cell;
 use rand::RngExt;
 use rand::prelude::StdRng;

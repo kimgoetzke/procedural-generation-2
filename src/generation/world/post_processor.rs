@@ -1,5 +1,5 @@
-use crate::coords::Point;
-use crate::coords::point::InternalGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::{Chunk, TerrainType, TileType, shared};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};

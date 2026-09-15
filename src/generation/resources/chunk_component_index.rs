@@ -1,5 +1,5 @@
-use crate::coords::Point;
-use crate::coords::point::World;
+use crate::coordinates::Point;
+use crate::coordinates::point::World;
 use crate::generation::lib::ChunkComponent;
 use bevy::app::{App, Plugin};
 use bevy::log::trace;

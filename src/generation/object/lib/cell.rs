@@ -1,6 +1,6 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::Point;
-use crate::coords::point::InternalGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::{TerrainType, TileType};
 use crate::generation::object::lib::permitted_object_names::PermittedObjectNames;
 use crate::generation::object::lib::terrain_state::TerrainState;

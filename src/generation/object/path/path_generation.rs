@@ -1,6 +1,6 @@
 use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::object::lib::{CellRef, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;

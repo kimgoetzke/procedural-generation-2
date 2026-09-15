@@ -1,6 +1,6 @@
 use crate::constants::*;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::coords::{Coords, Point};
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::{Coords, Point};
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};

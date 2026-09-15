@@ -1,6 +1,6 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::Point;
-use crate::coords::point::InternalGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::Direction;
 use crate::generation::object::buildings::registry::BuildingComponentRegistry;
 use crate::generation::object::lib::ObjectName;
@@ -291,7 +291,7 @@ pub fn get_building_templates() -> Vec<BuildingTemplate> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::coords::Point;
+  use crate::coordinates::Point;
   use crate::generation::lib::Direction;
   use bevy::platform::collections::HashSet;
   use rand::SeedableRng;

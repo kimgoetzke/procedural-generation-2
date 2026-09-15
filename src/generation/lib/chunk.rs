@@ -1,6 +1,6 @@
 use crate::constants::*;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::coords::{Coords, Point};
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::{Direction, DraftTile, LayeredPlane, TerrainType, shared};
 use crate::generation::resources::{BiomeMetadataSet, Climate, ElevationMetadata, Metadata};

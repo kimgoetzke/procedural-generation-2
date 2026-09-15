@@ -1,5 +1,5 @@
-use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::coords::{Coords, Point};
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::{Coords, Point};
 use crate::generation::lib::{Chunk, LayeredPlane, Tile};
 use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName};
 use bevy::prelude::{Component, Entity};

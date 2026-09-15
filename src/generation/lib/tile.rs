@@ -1,6 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
-use crate::coords::point::{InternalGrid, World};
-use crate::coords::{Coords, Point};
+use crate::coordinates::point::{InternalGrid, World};
+use crate::coordinates::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::{DraftTile, TerrainType, TileType};
 use crate::generation::resources::Climate;

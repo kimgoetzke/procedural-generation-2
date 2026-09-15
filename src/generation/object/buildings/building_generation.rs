@@ -1,7 +1,7 @@
 use super::{registry, templates};
 use crate::constants::CHUNK_SIZE;
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, shared};
 use crate::generation::object::lib::{Cell, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;

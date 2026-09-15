@@ -1,6 +1,6 @@
 use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
-use crate::coords::Point;
-use crate::coords::point::InternalGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::{DraftTile, Plane, TerrainType, Tile};
 use crate::resources::Settings;
 

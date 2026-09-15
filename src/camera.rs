@@ -1,5 +1,5 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
-use crate::coords::Point;
+use crate::coordinates::Point;
 use crate::messages::{ResetCameraMessage, UpdateWorldMessage};
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin, Startup};

@@ -1,6 +1,6 @@
 mod metadata_generator;
-mod world_generation;
 mod post_processor;
+mod world_generation;
 mod world_generator;
 
 pub use world_generation::WorldGenerationPlugin;

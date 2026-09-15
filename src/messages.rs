@@ -1,5 +1,5 @@
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use bevy::prelude::{App, Message, Plugin};
 
 /// A plugin that registers all shared messages used across multiple plugins and systems.

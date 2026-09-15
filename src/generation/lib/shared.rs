@@ -1,5 +1,5 @@
-use crate::coords::Point;
-use crate::coords::point::ChunkGrid;
+use crate::coordinates::Point;
+use crate::coordinates::point::ChunkGrid;
 use bevy::color::Color;
 use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;

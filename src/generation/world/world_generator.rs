@@ -1,7 +1,7 @@
 use crate::components::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::World;
+use crate::coordinates::Point;
+use crate::coordinates::point::World;
 use crate::generation::lib::{
   Chunk, ChunkComponent, GenerationResourcesCollection, Plane, TerrainType, Tile, TileMeshComponent, shared,
 };

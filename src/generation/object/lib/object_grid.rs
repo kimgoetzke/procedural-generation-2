@@ -1,6 +1,6 @@
 use crate::constants::CHUNK_SIZE;
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::cell::PropagationFailure;
 use crate::generation::object::lib::connection::get_connection_points;

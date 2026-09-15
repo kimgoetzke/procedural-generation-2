@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coords::Point;
+use crate::coordinates::Point;
 use crate::resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
 use bevy::gizmos::AppGizmoBuilder;

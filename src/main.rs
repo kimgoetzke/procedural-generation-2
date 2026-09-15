@@ -3,7 +3,7 @@ mod camera;
 mod components;
 mod constants;
 mod controls;
-mod coords;
+mod coordinates;
 mod generation;
 mod messages;
 mod resources;

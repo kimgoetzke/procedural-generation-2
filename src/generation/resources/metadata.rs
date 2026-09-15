@@ -1,5 +1,5 @@
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_direction_points};
 use crate::generation::object::lib::ObjectGrid;
 use bevy::app::{App, Plugin};

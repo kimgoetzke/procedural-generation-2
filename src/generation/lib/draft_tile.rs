@@ -1,5 +1,5 @@
-use crate::coords::point::{InternalGrid, TileGrid};
-use crate::coords::{Coords, Point};
+use crate::coordinates::point::{InternalGrid, TileGrid};
+use crate::coordinates::{Coords, Point};
 use crate::generation::lib::debug_data::DebugData;
 use crate::generation::lib::terrain_type::TerrainType;
 use crate::generation::resources::Climate;

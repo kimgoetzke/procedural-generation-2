@@ -1,6 +1,6 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, CoordType, InternalGrid, TileGrid, World};
 use cmp::Ordering;
 use std::any::TypeId;
 use std::cmp;
@@ -186,7 +186,7 @@ fn to_direction<T: CoordType>(other_world: &Point<T>, left: i32, right: i32, top
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::coords::Point;
+  use crate::coordinates::Point;
 
   #[test]
   fn from_points_returns_correct_direction_for_internal_grid_1() {

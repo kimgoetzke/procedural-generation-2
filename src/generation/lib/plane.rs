@@ -1,6 +1,6 @@
 use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
-use crate::coords::Point;
-use crate::coords::point::{CoordType, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{CoordType, InternalGrid};
 use crate::generation::lib::{DraftTile, NeighbourTile, NeighbourTiles, Settings, TerrainType, Tile, TileType};
 
 /// A 2D grid of [`Tile`]s that is created using [`DraftTile`]s. During it's creation, it determines the [`TileType`] of
@@ -210,7 +210,7 @@ fn get_draft_tile(x: i32, y: i32, from: &[Vec<Option<DraftTile>>]) -> Option<&Dr
 /// a plane is deliberately larger than the actual plane to allow for correct tile type determination on the edges
 /// (which requires knowledge about the tiles neighbours).
 /// ###### Important:
-/// For this to work, the [`Point<TileGrid>`] in [`crate::coords::Coords`] must be adjusted when creating a [`Tile`]
+/// For this to work, the [`Point<TileGrid>`] in [`crate::coordinates::Coords`] must be adjusted when creating a [`Tile`]
 /// from a [`DraftTile`].
 fn resize_grid(final_tiles: Vec<Vec<Option<Tile>>>) -> Vec<Vec<Option<Tile>>> {
   let cut_off = BUFFER_SIZE as usize;

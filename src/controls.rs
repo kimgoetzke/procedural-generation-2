@@ -1,5 +1,5 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
-use crate::coords::Point;
+use crate::coordinates::Point;
 use crate::messages::{
   MouseRightClickMessage, RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage,
 };

@@ -1,4 +1,4 @@
-use crate::coords::point::{ChunkGrid, InternalGrid, Point, TileGrid, World};
+use crate::coordinates::point::{ChunkGrid, InternalGrid, Point, TileGrid, World};
 use std::fmt;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
@@ -59,7 +59,7 @@ impl fmt::Debug for Coords {
 mod tests {
   use super::*;
   use crate::constants::TILE_SIZE;
-  use crate::coords::point::Point;
+  use crate::coordinates::point::Point;
 
   #[test]
   fn new_creates_correct_coords() {

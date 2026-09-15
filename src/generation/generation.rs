@@ -1,8 +1,8 @@
 use crate::constants::{
   CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
 };
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, World};
 use crate::generation::debug::DebugPlugin;
 use crate::generation::lib::shared;
 use crate::generation::lib::{

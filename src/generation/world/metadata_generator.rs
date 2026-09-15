@@ -1,6 +1,6 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, InternalGrid};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
 use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
 use crate::messages::{PruneWorldMessage, RefreshMetadataMessage, RegenerateWorldMessage};
@@ -261,7 +261,7 @@ fn generate_settlement_metadata(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::coords::Point;
+  use crate::coordinates::Point;
   use crate::generation::lib::Direction;
 
   #[test]

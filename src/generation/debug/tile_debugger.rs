@@ -1,6 +1,6 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use crate::generation::lib::{GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent};
 use crate::generation::resources::ChunkComponentIndex;
 use crate::messages::{MouseRightClickMessage, RegenerateWorldMessage, ToggleDebugInfoMessage};
