@@ -11,7 +11,7 @@ use bevy::platform::collections::HashSet;
 use rand::RngExt;
 use rand::prelude::StdRng;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub struct PathGenerationPlugin;
 
@@ -99,11 +99,12 @@ fn calculate_path_and_draft_object_names(
   let mut remaining_points = connection_points.to_vec();
   let start_index = rng.random_range(..remaining_points.len());
   let mut current_start = remaining_points.remove(start_index);
+  let path_grid = create_path_grid(object_grid);
 
   // Loop through the connection points to calculate the path segments
   while !remaining_points.is_empty() {
     // Make sure the path grid is populated and each cell's neighbours are set
-    object_grid.initialise_path_grid();
+    initialise_path_grid(&path_grid);
 
     // Identify the start and target points for the path segment
     let closest_index = remaining_points
@@ -118,8 +119,8 @@ fn calculate_path_and_draft_object_names(
       .map(|(index, _)| index)
       .expect("Failed to find closest point");
     let target_point = remaining_points.remove(closest_index);
-    let start_cell = object_grid.get_cell_ref(&current_start).expect("Failed to get start cell");
-    let target_cell = object_grid.get_cell_ref(&target_point).expect("Failed to get target cell");
+    let start_cell = get_cell_ref(&path_grid, &current_start).expect("Failed to get start cell");
+    let target_cell = get_cell_ref(&path_grid, &target_point).expect("Failed to get target cell");
 
     // Run the pathfinding algorithm
     trace!(
@@ -162,8 +163,70 @@ fn calculate_path_and_draft_object_names(
     );
 
     // Reset the grid and set the target as the new start for the next iteration
-    object_grid.reset_path_grid();
+    reset_path_grid(&path_grid);
     current_start = target_point;
+  }
+}
+
+fn create_path_grid(object_grid: &ObjectGrid) -> Vec<Vec<CellRef>> {
+  (0..CHUNK_SIZE)
+    .map(|y| {
+      (0..CHUNK_SIZE)
+        .map(|x| {
+          let point = Point::new_internal_grid(x, y);
+          let cell = object_grid
+            .get_cell(&point)
+            .expect("ObjectGrid always contains a cell for every internal grid point");
+          Arc::new(Mutex::new(cell.clone()))
+        })
+        .collect()
+    })
+    .collect()
+}
+
+/// Initialises the path finding grid by populating it with strong references to the respective [`Cell`]s, if
+/// it has not been initialised yet. Then, populates the neighbours for each cell.
+fn initialise_path_grid(grid: &[Vec<CellRef>]) {
+  for y in 0..grid.len() {
+    for x in 0..grid[y].len() {
+      let cell_ref = &grid[y][x];
+      let ig = cell_ref.lock().expect(CELL_LOCK_ERROR).ig;
+      let mut neighbours = Vec::new();
+
+      for (dx, dy) in [(0, 1), (-1, 0), (1, 0), (0, -1)] {
+        let nx = ig.x + dx;
+        let ny = ig.y + dy;
+        if nx >= 0
+          && ny >= 0
+          && let Some(row) = grid.get(ny as usize)
+          && let Some(neighbour_ref) = row.get(nx as usize)
+        {
+          neighbours.push(neighbour_ref.clone());
+        }
+      }
+
+      let mut cell = cell_ref.try_lock().expect(CELL_LOCK_ERROR);
+      cell.add_neighbours(neighbours);
+      cell.calculate_is_walkable();
+    }
+  }
+}
+
+fn get_cell_ref<'grid>(grid: &'grid [Vec<CellRef>], point: &Point<InternalGrid>) -> Option<&'grid CellRef> {
+  grid.get(point.y as usize).and_then(|row| row.get(point.x as usize))
+}
+
+/// Resets the path grid by clearing all references in each cell. This is required but not sufficient for the grid to
+/// be reused for a new pathfinding operation. The path finding grid will have to be re-initialised again.
+/// As long as [`Cell`] uses strong references to its neighbours of for any connections (both of which it should not)
+/// this method must also be called prior finishing the pathfinding operation to prevent memory leaks.
+fn reset_path_grid(grid: &[Vec<CellRef>]) {
+  for row in grid {
+    for cell_ref in row {
+      if let Ok(mut cell) = cell_ref.try_lock() {
+        cell.clear_references();
+      }
+    }
   }
 }
 

@@ -1,18 +1,16 @@
-use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
+use crate::constants::CHUNK_SIZE;
 use crate::coords::Point;
 use crate::coords::point::{ChunkGrid, InternalGrid};
 use crate::generation::lib::{LayeredPlane, TerrainType, TileType};
 use crate::generation::object::lib::cell::PropagationFailure;
 use crate::generation::object::lib::connection::get_connection_points;
-use crate::generation::object::lib::{Cell, CellRef, Connection, ObjectGridSnapshot, TerrainState};
+use crate::generation::object::lib::{Cell, Connection, ObjectGridSnapshot, TerrainState};
 use crate::generation::resources::Climate;
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
 use bevy::reflect::Reflect;
 use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
 
-// TODO: Refactor ObjectGrid to not require two separate grids e.g. only use `CellRef` for pathfinding and wave function collapse
 /// An [`ObjectGrid`] is a 2D grid of [`Cell`]s, each of which representing the possible states of objects that may be
 /// spawned for the corresponding tile. The [`ObjectGrid`] is used to keep track of the state of each tile during the
 /// object generation process and is discarded once the object generation process is complete as the outcome is
@@ -20,8 +18,6 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Clone, Reflect)]
 pub struct ObjectGrid {
   pub cg: Point<ChunkGrid>,
-  #[reflect(ignore)]
-  path_grid: Option<Vec<Vec<CellRef>>>,
   path: HashSet<Point<InternalGrid>>,
   object_grid: Vec<Vec<Cell>>,
   // TODO: Consider solving the below differently
@@ -39,7 +35,6 @@ impl ObjectGrid {
 
     Self {
       cg,
-      path_grid: None,
       path: HashSet::new(),
       object_grid,
       no_neighbours_tile: Cell::new(-1, -1),
@@ -143,83 +138,6 @@ impl ObjectGrid {
         }
       } else {
         error!("Failed to find cell to initialise at {:?}", ig);
-      }
-    }
-  }
-
-  /// Initialises the path finding grid by populating it with strong references to the respective [`Cell`]s, if
-  /// it has not been initialised yet. Then, populates the neighbours for each cell.
-  pub fn initialise_path_grid(&mut self) {
-    if self.path_grid.is_none() {
-      self.path_grid = Some(
-        (0..CHUNK_SIZE)
-          .map(|y| {
-            (0..CHUNK_SIZE)
-              .map(|x| {
-                if let Some(existing_cell) = self.object_grid.get(y as usize).and_then(|row| row.get(x as usize)) {
-                  return Arc::new(Mutex::new(existing_cell.clone()));
-                }
-
-                Arc::new(Mutex::new(Cell::new(x, y)))
-              })
-              .collect()
-          })
-          .collect(),
-      );
-    }
-    if let Some(grid) = &mut self.path_grid {
-      for y in 0..grid.len() {
-        for x in 0..grid[y].len() {
-          let cell_ref = &grid[y][x];
-          let ig = cell_ref.lock().expect(CELL_LOCK_ERROR).ig;
-          let mut neighbours: Vec<CellRef> = Vec::new();
-
-          for (dx, dy) in [(0, 1), (-1, 0), (1, 0), (0, -1)] {
-            let nx = ig.x + dx;
-            let ny = ig.y + dy;
-            if nx >= 0
-              && ny >= 0
-              && let Some(row) = grid.get(ny as usize)
-              && let Some(neighbour_ref) = row.get(nx as usize)
-            {
-              neighbours.push(neighbour_ref.clone());
-            }
-          }
-
-          let mut cell_guard = cell_ref.try_lock().expect(CELL_LOCK_ERROR);
-          cell_guard.add_neighbours(neighbours);
-          cell_guard.calculate_is_walkable();
-        }
-      }
-    }
-  }
-
-  pub fn get_cell_ref(&self, point: &Point<InternalGrid>) -> Option<&CellRef> {
-    if self.path_grid.is_none() {
-      error!("You're trying to get a cell reference from an uninitialised path grid - this is a bug!");
-      return None;
-    }
-    self
-      .path_grid
-      .as_ref()?
-      .iter()
-      .flatten()
-      .find(|cell| cell.lock().expect(CELL_LOCK_ERROR).ig == *point)
-  }
-
-  // TODO: Use weak references in Cell to make future memory leak less likely
-  /// Resets the path grid by clearing all references in each cell. This is required but not sufficient for the grid to
-  /// be reused for a new pathfinding operation. The path finding grid will have to be re-initialised again.
-  /// As long as [`Cell`] uses strong references to its neighbours of for any connections (both of which it should not)
-  /// this method must also be called prior finishing the pathfinding operation to prevent memory leaks.
-  pub fn reset_path_grid(&mut self) {
-    if let Some(grid) = &mut self.path_grid {
-      for row in grid {
-        for cell_ref in row {
-          if let Ok(mut cell) = cell_ref.try_lock() {
-            cell.clear_references();
-          }
-        }
       }
     }
   }
