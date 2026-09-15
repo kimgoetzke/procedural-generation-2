@@ -432,7 +432,7 @@ fn resolve_rules_to_terrain_states_map(
   for terrain in TerrainType::iter() {
     let relevant_terrain_rules = terrain_rules
       .get(&terrain)
-      .unwrap_or_else(|| panic!("Failed to find rule set for [{:?}] terrain", &terrain));
+      .unwrap_or_else(|| panic!("Failed to find rule set for [{:?}] terrain", terrain));
     let resolved_rules_for_terrain: HashMap<TileType, Vec<TerrainState>> = TileType::iter()
       .filter(|&t| t != TileType::Unknown)
       .map(|tile_type| {

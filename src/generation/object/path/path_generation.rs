@@ -381,7 +381,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
           if is_not_in_cells_to_search {
             "".to_string()
           } else {
-            format!(", H to [{}], plus adding it to cell to search", &distance_cost)
+            format!(", H to [{}], plus adding it to cell to search", distance_cost)
           }
         );
       }

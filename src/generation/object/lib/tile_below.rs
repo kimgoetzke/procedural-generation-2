@@ -1,5 +1,6 @@
 use crate::generation::lib::{TerrainType, TileType};
 use bevy::log::*;
+use std::cmp::Reverse;
 
 #[derive(Clone, Debug)]
 pub struct TileBelow {
@@ -20,7 +21,7 @@ impl Default for TileBelow {
 
 impl TileBelow {
   pub fn new(mut data: Vec<(TerrainType, TileType)>) -> Self {
-    data.sort_by(|a, b| b.0.cmp(&a.0));
+    data.sort_by_key(|item| Reverse(item.0));
     if data.is_empty() {
       unreachable!("You must not call TileBelow::new with an empty data vector");
     }

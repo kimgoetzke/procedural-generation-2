@@ -83,11 +83,11 @@ impl ObjectGrid {
           .unwrap_or_else(|| {
             panic!(
               "Failed to find rule set for [{:?}] terrain type and [{:?}] climate combination",
-              &terrain, &climate
+              terrain, climate
             )
           })
           .get(&tile_type)
-          .unwrap_or_else(|| panic!("Failed to find rule set for [{:?}] tile type", &tile_type))
+          .unwrap_or_else(|| panic!("Failed to find rule set for [{:?}] tile type", tile_type))
           .clone();
         let lower_tile_data = layered_plane
           .planes

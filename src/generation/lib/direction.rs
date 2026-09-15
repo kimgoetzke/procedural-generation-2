@@ -292,7 +292,7 @@ mod tests {
   fn from_chunk_w_returns_correct_direction_for_adjacent_negative_chunk_w() {
     let distance = CHUNK_SIZE * TILE_SIZE as i32;
     let chunk_world = Point::new_world(0, 0);
-    let other_world = Point::new_world(-distance, -1 * distance);
+    let other_world = Point::new_world(-distance, -distance);
     assert_eq!(Direction::from_chunk_w(&chunk_world, &other_world), Direction::BottomLeft);
   }
 

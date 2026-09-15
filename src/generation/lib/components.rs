@@ -96,19 +96,19 @@ pub enum GenerationStage {
 
 impl PartialEq for GenerationStage {
   fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
+    matches!(
+      (self, other),
       (GenerationStage::Stage1(_), GenerationStage::Stage1(_))
-      | (GenerationStage::Stage2(_), GenerationStage::Stage2(_))
-      | (GenerationStage::Stage3(_), GenerationStage::Stage3(_))
-      | (GenerationStage::Stage4(_), GenerationStage::Stage4(_))
-      | (GenerationStage::Stage5(_), GenerationStage::Stage5(_))
-      | (GenerationStage::Stage6(_), GenerationStage::Stage6(_))
-      | (GenerationStage::Stage7(_), GenerationStage::Stage7(_))
-      | (GenerationStage::Stage8(_), GenerationStage::Stage8(_))
-      | (GenerationStage::Stage9, GenerationStage::Stage9)
-      | (GenerationStage::Done, GenerationStage::Done) => true,
-      _ => false,
-    }
+        | (GenerationStage::Stage2(_), GenerationStage::Stage2(_))
+        | (GenerationStage::Stage3(_), GenerationStage::Stage3(_))
+        | (GenerationStage::Stage4(_), GenerationStage::Stage4(_))
+        | (GenerationStage::Stage5(_), GenerationStage::Stage5(_))
+        | (GenerationStage::Stage6(_), GenerationStage::Stage6(_))
+        | (GenerationStage::Stage7(_), GenerationStage::Stage7(_))
+        | (GenerationStage::Stage8(_), GenerationStage::Stage8(_))
+        | (GenerationStage::Stage9, GenerationStage::Stage9)
+        | (GenerationStage::Done, GenerationStage::Done)
+    )
   }
 }
 
