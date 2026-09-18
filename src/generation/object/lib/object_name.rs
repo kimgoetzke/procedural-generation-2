@@ -1,8 +1,8 @@
 use bevy::log::*;
 use bevy::reflect::Reflect;
-use strum::{EnumCount, EnumDiscriminants, EnumIter};
+use strum::{EnumCount, EnumIter};
 
-#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumCount, EnumIter, EnumDiscriminants)]
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumCount, EnumIter)]
 pub enum ObjectName {
   Empty,
   Land1Stone1,
@@ -153,33 +153,35 @@ pub enum ObjectName {
   HouseLargeWallMiddle2,
   HouseLargeDoorRight2,
   HouseLargeDoorMiddle2,
-  /// One of 13 modular field tiles: fill, four sides, four outer corners, or four inner corners.
-  WheatField(u8),
-  Pasture(u8),
+  WheatFieldFill,
+  WheatFieldSideTop,
+  WheatFieldSideRight,
+  WheatFieldSideBottom,
+  WheatFieldSideLeft,
+  WheatFieldOuterCornerTopLeft,
+  WheatFieldOuterCornerTopRight,
+  WheatFieldOuterCornerBottomRight,
+  WheatFieldOuterCornerBottomLeft,
+  WheatFieldInnerCornerTopLeft,
+  WheatFieldInnerCornerTopRight,
+  WheatFieldInnerCornerBottomRight,
+  WheatFieldInnerCornerBottomLeft,
+  PastureFill,
+  PastureSideTop,
+  PastureSideRight,
+  PastureSideBottom,
+  PastureSideLeft,
+  PastureOuterCornerTopLeft,
+  PastureOuterCornerTopRight,
+  PastureOuterCornerBottomRight,
+  PastureOuterCornerBottomLeft,
+  PastureInnerCornerTopLeft,
+  PastureInnerCornerTopRight,
+  PastureInnerCornerBottomRight,
+  PastureInnerCornerBottomLeft,
 }
 
 impl ObjectName {
-  // EnumCount counts variants, not payload values. Reserve one bit for each modular tile.
-  pub(super) const PERMISSION_COUNT: usize = Self::COUNT + 2 * 13;
-
-  /// Return a distinct permission bit for each object and modular field tile.
-  /// # Panics
-  /// For tile indices outside the 13-tile set.
-  pub(super) fn permission_index(self) -> usize {
-    let (tile, offset) = match self {
-      Self::WheatField(tile) => (tile, 0),
-      Self::Pasture(tile) => (tile, 13),
-      _ => return ObjectNameDiscriminants::from(self) as usize,
-    };
-    assert!(tile < 13, "Invalid settlement tile: {self:?}");
-    Self::COUNT + offset + tile as usize
-  }
-
-  /// Enumerates all modular field tiles.
-  pub fn field_tiles() -> impl Iterator<Item = Self> {
-    (0..13).flat_map(|sprite_index| [Self::WheatField(sprite_index), Self::Pasture(sprite_index)])
-  }
-
   pub const fn is_multi_tile(&self) -> bool {
     matches!(
       self,
@@ -286,8 +288,48 @@ impl ObjectName {
         | ObjectName::HouseLargeWallMiddle2
         | ObjectName::HouseLargeDoorRight2
         | ObjectName::HouseLargeDoorMiddle2
-        | ObjectName::WheatField(_)
-        | ObjectName::Pasture(_)
+    ) || self.is_field()
+  }
+
+  pub const fn is_field(&self) -> bool {
+    self.is_wheat_field() || self.is_pasture()
+  }
+
+  pub const fn is_wheat_field(&self) -> bool {
+    matches!(
+      self,
+      Self::WheatFieldFill
+        | Self::WheatFieldSideTop
+        | Self::WheatFieldSideRight
+        | Self::WheatFieldSideBottom
+        | Self::WheatFieldSideLeft
+        | Self::WheatFieldOuterCornerTopLeft
+        | Self::WheatFieldOuterCornerTopRight
+        | Self::WheatFieldOuterCornerBottomRight
+        | Self::WheatFieldOuterCornerBottomLeft
+        | Self::WheatFieldInnerCornerTopLeft
+        | Self::WheatFieldInnerCornerTopRight
+        | Self::WheatFieldInnerCornerBottomRight
+        | Self::WheatFieldInnerCornerBottomLeft
+    )
+  }
+
+  pub const fn is_pasture(&self) -> bool {
+    matches!(
+      self,
+      Self::PastureFill
+        | Self::PastureSideTop
+        | Self::PastureSideRight
+        | Self::PastureSideBottom
+        | Self::PastureSideLeft
+        | Self::PastureOuterCornerTopLeft
+        | Self::PastureOuterCornerTopRight
+        | Self::PastureOuterCornerBottomRight
+        | Self::PastureOuterCornerBottomLeft
+        | Self::PastureInnerCornerTopLeft
+        | Self::PastureInnerCornerTopRight
+        | Self::PastureInnerCornerBottomRight
+        | Self::PastureInnerCornerBottomLeft
     )
   }
 
@@ -380,8 +422,32 @@ impl ObjectName {
       ObjectName::HouseSmallRoofRight3 => 44,
       ObjectName::HouseSmallWallLeft2 => 52,
       ObjectName::HouseSmallWallRight2 => 53,
-      ObjectName::WheatField(index_offset) => 54 + *index_offset as i32,
-      ObjectName::Pasture(index_offset) => 67 + *index_offset as i32,
+      ObjectName::WheatFieldFill => 54,
+      ObjectName::WheatFieldSideTop => 55,
+      ObjectName::WheatFieldSideRight => 56,
+      ObjectName::WheatFieldSideBottom => 57,
+      ObjectName::WheatFieldSideLeft => 58,
+      ObjectName::WheatFieldOuterCornerTopLeft => 59,
+      ObjectName::WheatFieldOuterCornerTopRight => 60,
+      ObjectName::WheatFieldOuterCornerBottomRight => 61,
+      ObjectName::WheatFieldOuterCornerBottomLeft => 62,
+      ObjectName::WheatFieldInnerCornerTopLeft => 63,
+      ObjectName::WheatFieldInnerCornerTopRight => 64,
+      ObjectName::WheatFieldInnerCornerBottomRight => 65,
+      ObjectName::WheatFieldInnerCornerBottomLeft => 66,
+      ObjectName::PastureFill => 67,
+      ObjectName::PastureSideTop => 68,
+      ObjectName::PastureSideRight => 69,
+      ObjectName::PastureSideBottom => 70,
+      ObjectName::PastureSideLeft => 71,
+      ObjectName::PastureOuterCornerTopLeft => 72,
+      ObjectName::PastureOuterCornerTopRight => 73,
+      ObjectName::PastureOuterCornerBottomRight => 74,
+      ObjectName::PastureOuterCornerBottomLeft => 75,
+      ObjectName::PastureInnerCornerTopLeft => 76,
+      ObjectName::PastureInnerCornerTopRight => 77,
+      ObjectName::PastureInnerCornerBottomRight => 78,
+      ObjectName::PastureInnerCornerBottomLeft => 79,
       _ => 0,
     }
   }

@@ -441,10 +441,7 @@ mod tests {
   fn place_structures_on_grid_small_settlement_includes_a_field() {
     let (mut grid, settings, metadata) = settlement(8);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
-    let field_tiles = object_names(&grid)
-      .iter()
-      .filter(|name| matches!(name, ObjectName::WheatField(_) | ObjectName::Pasture(_)))
-      .count();
+    let field_tiles = object_names(&grid).iter().filter(|name| name.is_field()).count();
     assert!((12..=24).contains(&field_tiles));
   }
 
@@ -490,8 +487,8 @@ mod tests {
         ObjectName::HouseSmallWallLeft1
       );
       let names = object_names(&grid);
-      assert!(names.iter().any(|name| matches!(name, ObjectName::WheatField(_))));
-      assert!(names.iter().any(|name| matches!(name, ObjectName::Pasture(_))));
+      assert!(names.iter().any(ObjectName::is_wheat_field));
+      assert!(names.iter().any(ObjectName::is_pasture));
     }
   }
 
@@ -499,11 +496,7 @@ mod tests {
   fn place_structures_on_grid_cramped_site_never_places_partial_fields() {
     let (mut grid, settings, metadata) = settlement(3);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
-    assert!(
-      !object_names(&grid)
-        .iter()
-        .any(|name| ObjectName::field_tiles().any(|tile| tile == *name))
-    );
+    assert!(!object_names(&grid).iter().any(ObjectName::is_field));
   }
 
   #[test]
@@ -511,8 +504,8 @@ mod tests {
     let (mut grid, settings, metadata) = settlement(11);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
-    assert!(names.iter().any(|name| matches!(name, ObjectName::WheatField(_))));
-    assert!(names.iter().any(|name| matches!(name, ObjectName::Pasture(_))));
+    assert!(names.iter().any(ObjectName::is_wheat_field));
+    assert!(names.iter().any(ObjectName::is_pasture));
   }
 
   #[test]
@@ -520,8 +513,8 @@ mod tests {
     let (mut grid, settings, metadata) = settlement(16);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
-    assert!(names.iter().any(|name| matches!(name, ObjectName::WheatField(_))));
-    assert!(names.iter().any(|name| matches!(name, ObjectName::Pasture(_))));
+    assert!(names.iter().any(ObjectName::is_wheat_field));
+    assert!(names.iter().any(ObjectName::is_pasture));
     assert!(names.iter().any(|name| matches!(
       name,
       ObjectName::HouseMediumRoofMiddle1 | ObjectName::HouseMediumRoofMiddle2 | ObjectName::HouseMediumRoofMiddle3
@@ -558,11 +551,7 @@ mod tests {
       for y in 0..CHUNK_SIZE {
         for x in 0..CHUNK_SIZE {
           let cell = grid.get_cell(&Point::new_internal_grid(x, y)).unwrap();
-          if cell
-            .get_possible_states()
-            .first()
-            .is_some_and(|state| matches!(state.name, ObjectName::WheatField(_) | ObjectName::Pasture(_)))
-          {
+          if cell.get_possible_states().first().is_some_and(|state| state.name.is_field()) {
             field_count += 1;
             assert_eq!(cell.terrain(), TerrainType::Land2);
           }
@@ -583,25 +572,17 @@ mod tests {
       place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
       let is_wheat_field = object_names(&grid)
         .into_iter()
-        .find_map(|name| match name {
-          ObjectName::WheatField(_) => Some(true),
-          ObjectName::Pasture(_) => Some(false),
-          _ => None,
-        })
-        .unwrap();
+        .find(ObjectName::is_field)
+        .unwrap()
+        .is_wheat_field();
       let cells: Vec<_> = (0..CHUNK_SIZE)
         .flat_map(|y| (0..CHUNK_SIZE).map(move |x| Point::new_internal_grid(x, y)))
         .filter_map(|point| {
           let name = grid.get_cell(&point)?.get_possible_states().first()?.name;
-          match name {
-            ObjectName::WheatField(tile) if is_wheat_field => Some((point, tile)),
-            ObjectName::Pasture(tile) if !is_wheat_field => Some((point, tile)),
-            _ => None,
-          }
+          ((is_wheat_field && name.is_wheat_field()) || (!is_wheat_field && name.is_pasture())).then_some((point, name))
         })
         .collect();
       assert!((12..=24).contains(&cells.len()));
-      assert!(cells.iter().all(|(_, tile)| *tile < 13));
       areas.insert(cells.len());
       let positions: HashSet<_> = cells.iter().map(|(point, _)| *point).collect();
       let width =
@@ -623,7 +604,7 @@ mod tests {
 
       let entrances: Vec<_> = cells
         .iter()
-        .filter(|(_, tile)| *tile == 0)
+        .filter(|(_, name)| matches!(name, ObjectName::WheatFieldFill | ObjectName::PastureFill))
         .flat_map(|(point, _)| {
           sides.iter().enumerate().filter_map(|(side, (dx, dy))| {
             let neighbour = Point::new_internal_grid(point.x + dx, point.y + dy);

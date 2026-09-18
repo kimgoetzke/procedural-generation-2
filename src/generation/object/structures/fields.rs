@@ -11,7 +11,44 @@ use rand::prelude::StdRng;
 use rand::seq::SliceRandom;
 use rand::{RngExt, SeedableRng};
 
-type FieldType = fn(u8) -> ObjectName;
+#[derive(Clone, Copy, Debug)]
+enum FieldType {
+  Wheat,
+  Pasture,
+}
+
+impl FieldType {
+  const fn object_name(self, tile: FieldTile) -> ObjectName {
+    match (self, tile) {
+      (Self::Wheat, FieldTile::Fill) => ObjectName::WheatFieldFill,
+      (Self::Wheat, FieldTile::SideTop) => ObjectName::WheatFieldSideTop,
+      (Self::Wheat, FieldTile::SideRight) => ObjectName::WheatFieldSideRight,
+      (Self::Wheat, FieldTile::SideBottom) => ObjectName::WheatFieldSideBottom,
+      (Self::Wheat, FieldTile::SideLeft) => ObjectName::WheatFieldSideLeft,
+      (Self::Wheat, FieldTile::OuterCornerTopLeft) => ObjectName::WheatFieldOuterCornerTopLeft,
+      (Self::Wheat, FieldTile::OuterCornerTopRight) => ObjectName::WheatFieldOuterCornerTopRight,
+      (Self::Wheat, FieldTile::OuterCornerBottomRight) => ObjectName::WheatFieldOuterCornerBottomRight,
+      (Self::Wheat, FieldTile::OuterCornerBottomLeft) => ObjectName::WheatFieldOuterCornerBottomLeft,
+      (Self::Wheat, FieldTile::InnerCornerTopLeft) => ObjectName::WheatFieldInnerCornerTopLeft,
+      (Self::Wheat, FieldTile::InnerCornerTopRight) => ObjectName::WheatFieldInnerCornerTopRight,
+      (Self::Wheat, FieldTile::InnerCornerBottomRight) => ObjectName::WheatFieldInnerCornerBottomRight,
+      (Self::Wheat, FieldTile::InnerCornerBottomLeft) => ObjectName::WheatFieldInnerCornerBottomLeft,
+      (Self::Pasture, FieldTile::Fill) => ObjectName::PastureFill,
+      (Self::Pasture, FieldTile::SideTop) => ObjectName::PastureSideTop,
+      (Self::Pasture, FieldTile::SideRight) => ObjectName::PastureSideRight,
+      (Self::Pasture, FieldTile::SideBottom) => ObjectName::PastureSideBottom,
+      (Self::Pasture, FieldTile::SideLeft) => ObjectName::PastureSideLeft,
+      (Self::Pasture, FieldTile::OuterCornerTopLeft) => ObjectName::PastureOuterCornerTopLeft,
+      (Self::Pasture, FieldTile::OuterCornerTopRight) => ObjectName::PastureOuterCornerTopRight,
+      (Self::Pasture, FieldTile::OuterCornerBottomRight) => ObjectName::PastureOuterCornerBottomRight,
+      (Self::Pasture, FieldTile::OuterCornerBottomLeft) => ObjectName::PastureOuterCornerBottomLeft,
+      (Self::Pasture, FieldTile::InnerCornerTopLeft) => ObjectName::PastureInnerCornerTopLeft,
+      (Self::Pasture, FieldTile::InnerCornerTopRight) => ObjectName::PastureInnerCornerTopRight,
+      (Self::Pasture, FieldTile::InnerCornerBottomRight) => ObjectName::PastureInnerCornerBottomRight,
+      (Self::Pasture, FieldTile::InnerCornerBottomLeft) => ObjectName::PastureInnerCornerBottomLeft,
+    }
+  }
+}
 
 /// Tile offsets relative to the road connection, and the entrance offset.
 pub(super) struct FieldLayout {
@@ -21,7 +58,7 @@ pub(super) struct FieldLayout {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
-enum FarmTile {
+enum FieldTile {
   Fill,
   SideTop,
   SideRight,
@@ -96,7 +133,7 @@ pub(super) fn place_fields(
         occupied_grid_space.extend(tiles.iter().map(|(point, _)| *point));
         trace!(
           "Placed [{:?}] field with [{}] tiles beside {} on {}",
-          field_type(0),
+          field_type,
           tiles.len(),
           path_ig,
           grid.cg,
@@ -140,18 +177,18 @@ fn estimated_housing_capacity(
 /// Returns either `None`, a single random [`FieldType`], or both types - depending on whether there's enough capacity.   
 fn permitted_field_types(rng: &mut StdRng, capacity: usize) -> Option<Vec<FieldType>> {
   let field_type = if rng.random_bool(0.5) {
-    ObjectName::WheatField
+    FieldType::Wheat
   } else {
-    ObjectName::Pasture
+    FieldType::Pasture
   };
   Some(match capacity {
     0 => return None,
     0..=2 => vec![field_type],
-    _ => vec![ObjectName::WheatField, ObjectName::Pasture],
+    _ => vec![FieldType::Wheat, FieldType::Pasture],
   })
 }
 
-pub(super) fn layouts(field: fn(u8) -> ObjectName, rng: &mut StdRng) -> Vec<FieldLayout> {
+fn layouts(field_type: FieldType, rng: &mut StdRng) -> Vec<FieldLayout> {
   let mut shapes = vec![
     rectangle(4, 3),
     rectangle(5, 3),
@@ -191,13 +228,13 @@ pub(super) fn layouts(field: fn(u8) -> ObjectName, rng: &mut StdRng) -> Vec<Fiel
         .map(|&(x, y)| {
           let tile = if (x, y) == entrance {
             // The fill tile leaves a one-tile opening in the boundary fence
-            FarmTile::Fill
+            FieldTile::Fill
           } else {
             classify_tile(&shape, x, y)
           };
           (
             Point::new_internal_grid(x - entrance.0 - dx, y - entrance.1 - dy),
-            field(tile as u8),
+            field_type.object_name(tile),
           )
         })
         .collect();
@@ -210,7 +247,7 @@ pub(super) fn layouts(field: fn(u8) -> ObjectName, rng: &mut StdRng) -> Vec<Fiel
   layouts
 }
 
-fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> FarmTile {
+fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> FieldTile {
   let outside: Vec<_> = SIDES
     .iter()
     .enumerate()
@@ -221,22 +258,22 @@ fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> FarmTile {
     [] => {
       let missing_diagonal = DIAGONALS.iter().position(|(dx, dy)| !shape.contains(&(x + dx, y + dy)));
       match missing_diagonal {
-        Some(0) => FarmTile::InnerCornerTopLeft,
-        Some(1) => FarmTile::InnerCornerTopRight,
-        Some(2) => FarmTile::InnerCornerBottomRight,
-        Some(3) => FarmTile::InnerCornerBottomLeft,
-        None => FarmTile::Fill,
+        Some(0) => FieldTile::InnerCornerTopLeft,
+        Some(1) => FieldTile::InnerCornerTopRight,
+        Some(2) => FieldTile::InnerCornerBottomRight,
+        Some(3) => FieldTile::InnerCornerBottomLeft,
+        None => FieldTile::Fill,
         Some(_) => unreachable!(),
       }
     }
-    [0] => FarmTile::SideTop,
-    [1] => FarmTile::SideRight,
-    [2] => FarmTile::SideBottom,
-    [3] => FarmTile::SideLeft,
-    [0, 1] => FarmTile::OuterCornerTopRight,
-    [0, 3] => FarmTile::OuterCornerTopLeft,
-    [1, 2] => FarmTile::OuterCornerBottomRight,
-    [2, 3] => FarmTile::OuterCornerBottomLeft,
+    [0] => FieldTile::SideTop,
+    [1] => FieldTile::SideRight,
+    [2] => FieldTile::SideBottom,
+    [3] => FieldTile::SideLeft,
+    [0, 1] => FieldTile::OuterCornerTopRight,
+    [0, 3] => FieldTile::OuterCornerTopLeft,
+    [1, 2] => FieldTile::OuterCornerBottomRight,
+    [2, 3] => FieldTile::OuterCornerBottomLeft,
     _ => panic!("Farm shape has an unsupported one-tile-wide section at ({x}, {y})"),
   }
 }
@@ -261,41 +298,38 @@ mod tests {
   use rand::SeedableRng;
 
   #[test]
-  fn layouts_use_only_the_thirteen_modular_tiles() {
-    let layouts = layouts(ObjectName::WheatField, &mut StdRng::seed_from_u64(7));
-    let tile_indices: Vec<_> = layouts
-      .iter()
-      .flat_map(|layout| layout.tiles.iter())
-      .map(|(_, name)| match name {
-        ObjectName::WheatField(tile) => *tile,
-        _ => unreachable!(),
-      })
-      .collect();
+  fn layouts_use_only_wheat_field_tiles() {
+    let layouts = layouts(FieldType::Wheat, &mut StdRng::seed_from_u64(7));
 
-    assert!(tile_indices.iter().all(|&tile| tile < 13));
+    assert!(
+      layouts
+        .iter()
+        .flat_map(|layout| layout.tiles.iter())
+        .all(|(_, name)| name.is_wheat_field())
+    );
   }
 
   #[test]
   fn classify_tile_maps_fill_sides_and_outer_corners() {
     let shape = rectangle(4, 4);
-    assert_eq!(classify_tile(&shape, 1, 1), FarmTile::Fill);
-    assert_eq!(classify_tile(&shape, 1, 0), FarmTile::SideTop);
-    assert_eq!(classify_tile(&shape, 3, 1), FarmTile::SideRight);
-    assert_eq!(classify_tile(&shape, 1, 3), FarmTile::SideBottom);
-    assert_eq!(classify_tile(&shape, 0, 1), FarmTile::SideLeft);
-    assert_eq!(classify_tile(&shape, 0, 0), FarmTile::OuterCornerTopLeft);
-    assert_eq!(classify_tile(&shape, 3, 0), FarmTile::OuterCornerTopRight);
-    assert_eq!(classify_tile(&shape, 3, 3), FarmTile::OuterCornerBottomRight);
-    assert_eq!(classify_tile(&shape, 0, 3), FarmTile::OuterCornerBottomLeft);
+    assert_eq!(classify_tile(&shape, 1, 1), FieldTile::Fill);
+    assert_eq!(classify_tile(&shape, 1, 0), FieldTile::SideTop);
+    assert_eq!(classify_tile(&shape, 3, 1), FieldTile::SideRight);
+    assert_eq!(classify_tile(&shape, 1, 3), FieldTile::SideBottom);
+    assert_eq!(classify_tile(&shape, 0, 1), FieldTile::SideLeft);
+    assert_eq!(classify_tile(&shape, 0, 0), FieldTile::OuterCornerTopLeft);
+    assert_eq!(classify_tile(&shape, 3, 0), FieldTile::OuterCornerTopRight);
+    assert_eq!(classify_tile(&shape, 3, 3), FieldTile::OuterCornerBottomRight);
+    assert_eq!(classify_tile(&shape, 0, 3), FieldTile::OuterCornerBottomLeft);
   }
 
   #[test]
   fn classify_tile_maps_each_missing_diagonal_to_an_inner_corner() {
     let cases = [
-      ((0, 0), FarmTile::InnerCornerTopLeft),
-      ((2, 0), FarmTile::InnerCornerTopRight),
-      ((2, 2), FarmTile::InnerCornerBottomRight),
-      ((0, 2), FarmTile::InnerCornerBottomLeft),
+      ((0, 0), FieldTile::InnerCornerTopLeft),
+      ((2, 0), FieldTile::InnerCornerTopRight),
+      ((2, 2), FieldTile::InnerCornerBottomRight),
+      ((0, 2), FieldTile::InnerCornerBottomLeft),
     ];
     for (missing, expected) in cases {
       let mut shape = rectangle(3, 3);
