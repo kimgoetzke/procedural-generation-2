@@ -1,5 +1,5 @@
-mod building_generation;
 mod buildings;
+mod fields;
 mod registry;
 mod structure_generation;
 mod templates;

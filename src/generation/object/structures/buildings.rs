@@ -1,7 +1,9 @@
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::object::lib::ObjectGrid;
-use crate::generation::object::structures::structure_generation::{select_fitting_building, update_path_in_front_of_door};
+use crate::generation::object::structures::structure_generation::{
+  select_fitting_building, update_path_in_front_of_entrance,
+};
 use crate::generation::object::structures::{registry, templates};
 use bevy::log::*;
 use bevy::platform::collections::HashSet;
@@ -15,7 +17,7 @@ pub(super) fn place_buildings(
   occupied_grid_space: &mut HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
   cg: Point<ChunkGrid>,
-) -> i32 {
+) -> i8 {
   let component_registry = registry::BuildingComponentRegistry::new_initialised();
   let mut buildings_placed = 0;
   for &path_ig in path_points {
@@ -37,7 +39,7 @@ pub(super) fn place_buildings(
           "Placed [{}] with origin {:?} for path point {:?} on {}",
           building_template.name, building_origin_ig, path_ig, cg
         );
-        update_path_in_front_of_door(&path_ig, &absolute_door_ig, object_grid);
+        update_path_in_front_of_entrance(&path_ig, &absolute_door_ig, object_grid);
       } else {
         warn!(
           "Failed to place [{}] with origin {:?} on {}",

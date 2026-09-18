@@ -1,4 +1,4 @@
-use super::{buildings, templates};
+use super::{buildings, fields, templates};
 use crate::constants::CHUNK_SIZE;
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
@@ -25,7 +25,7 @@ impl Plugin for StructureGenerationPlugin {
 pub fn place_structures_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
   let start_time = shared::get_time();
   let cg = object_grid.cg;
-  if !settings.object.generate_paths || !settings.object.generate_buildings {
+  if !settings.object.generate_paths || !settings.object.generate_structures {
     debug!(
       "Skipped generating buildings for {} because it or path generation are disabled",
       cg
@@ -40,9 +40,10 @@ pub fn place_structures_on_grid(object_grid: &mut ObjectGrid, settings: &Setting
     return;
   }
 
+  // Determine path points along which we can generate settlement structures
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
   add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
-  add_points_points_from_generated_path(&mut path_points, object_grid, settings, rng, &cg);
+  add_points_from_generated_path(&mut path_points, object_grid, settings, rng, &cg);
   clean_up_path_points(&mut path_points, object_grid);
   if path_points.is_empty() {
     debug!(
@@ -52,10 +53,18 @@ pub fn place_structures_on_grid(object_grid: &mut ObjectGrid, settings: &Setting
     return;
   }
 
+  // Now place structures on the grid
   let available_grid_space = compute_available_space_map(object_grid);
   let building_templates = templates::get_building_templates();
   let mut occupied_grid_space = HashSet::new();
-
+  let fields_placed = fields::place_fields(
+    object_grid,
+    &path_points,
+    &available_grid_space,
+    &building_templates,
+    &mut occupied_grid_space,
+    rng,
+  );
   let buildings_placed = buildings::place_buildings(
     object_grid,
     &path_points,
@@ -67,14 +76,16 @@ pub fn place_structures_on_grid(object_grid: &mut ObjectGrid, settings: &Setting
   );
 
   debug!(
-    "Placed [{}] building(s) on grid for {} in {} ms on {}",
+    "Placed [{}] buildings(s) and [{}] field(s) on grid for {} in {} ms on {}",
     buildings_placed,
+    fields_placed,
     object_grid.cg,
     shared::get_time() - start_time,
     shared::thread_name()
   );
 }
 
+/// Fetches the connection points for this chunk from the [`Metadata`] and appends them to the list of proposed points.
 fn add_valid_connection_points(
   proposed_points: &mut Vec<Point<InternalGrid>>,
   object_grid: &mut ObjectGrid,
@@ -95,29 +106,31 @@ fn add_valid_connection_points(
   proposed_points.append(&mut connection_points);
 }
 
-fn add_points_points_from_generated_path(
+/// Appends points along the previously calculated path to the list of proposed path points. The density settings for
+/// structures determines the likelihood of a point being sampled out.
+fn add_points_from_generated_path(
   path_points: &mut Vec<Point<InternalGrid>>,
   object_grid: &mut ObjectGrid,
   settings: &Settings,
   rng: &mut StdRng,
   cg: &Point<ChunkGrid>,
 ) {
-  let building_density = settings.object.building_density;
+  let structure_density = settings.object.structure_density;
   let mut points_from_generated_path_to_add: Vec<Point<InternalGrid>> =
     object_grid.get_generated_path().iter().copied().collect();
   points_from_generated_path_to_add.sort_by_key(|point| (point.y, point.x));
-  points_from_generated_path_to_add.retain(|_| rng.random_range(0.0..1.0) <= building_density);
+  points_from_generated_path_to_add.retain(|_| rng.random_range(0.0..1.0) <= structure_density);
   trace!(
-    "Adding [{}/{}] path points from the generated path for {} based on building density of [{:.2}]",
+    "Adding [{}/{}] path points from the generated path for {} based on settlement structure density of [{:.2}]",
     points_from_generated_path_to_add.len(),
     object_grid.get_generated_path().len(),
     cg,
-    building_density
+    structure_density
   );
   path_points.append(&mut points_from_generated_path_to_add);
 }
 
-/// Metadata may include endpoints for paths that could not be generated.
+/// Metadata may include endpoints for paths that could not be generated, so they are removed here.
 fn clean_up_path_points(path_points: &mut Vec<Point<InternalGrid>>, object_grid: &mut ObjectGrid) {
   path_points.sort_by_key(|point| (point.y, point.x));
   path_points.dedup();
@@ -185,31 +198,31 @@ pub fn select_fitting_building(
   Some(fitting_building_templates[index].clone())
 }
 
-/// Updates the object name of the cell at the given connection point to ensure the path connects to the door
-/// correctly. Without this, there would be a gap in the path leading to the door.
-pub fn update_path_in_front_of_door(
+/// Updates the object name of the cell at the given connection point to ensure the path connects to the entrance
+/// correctly. Without this, there would be a gap in the path leading to the entrance.
+pub fn update_path_in_front_of_entrance(
   path_connection_ig: &Point<InternalGrid>,
-  absolute_door_ig: &Point<InternalGrid>,
+  absolute_entrance_ig: &Point<InternalGrid>,
   object_grid: &mut ObjectGrid,
 ) {
   let cg = object_grid.cg;
   if let Some(cell) = object_grid.get_cell_mut(path_connection_ig) {
-    let object_name = determine_updated_object_name(cell, path_connection_ig, absolute_door_ig, &cg);
+    let object_name = determine_updated_object_name(cell, path_connection_ig, absolute_entrance_ig, &cg);
     cell.mark_as_collapsed(object_name);
   } else {
     error!(
-      "Failed to get cell at connection point {:?} on {} to update path in front of door at {:?}",
-      path_connection_ig, cg, absolute_door_ig
+      "Failed to get cell at connection point {:?} on {} to update path in front of entrance at {:?}",
+      path_connection_ig, cg, absolute_entrance_ig
     );
   }
 }
 
 /// Returns the updated object name for a path object at the given connection point based on the location of and
-/// direction to the door.
+/// direction to the entrance.
 fn determine_updated_object_name(
   cell: &mut Cell,
   path_connection_ig: &Point<InternalGrid>,
-  absolute_door_ig: &Point<InternalGrid>,
+  absolute_entrance_ig: &Point<InternalGrid>,
   cg: &Point<ChunkGrid>,
 ) -> ObjectName {
   let terrain_states = cell.get_possible_states();
@@ -229,7 +242,7 @@ fn determine_updated_object_name(
     return ObjectName::PathUndefined;
   }
 
-  let missing_direction = Direction::from_points(path_connection_ig, absolute_door_ig);
+  let missing_direction = Direction::from_points(path_connection_ig, absolute_entrance_ig);
   let new_object_name = match (terrain_state.name, missing_direction) {
     (ObjectName::PathTop, Direction::Left) => ObjectName::PathTopLeft,
     (ObjectName::PathTop, Direction::Right) => ObjectName::PathTopRight,
@@ -276,14 +289,14 @@ fn determine_updated_object_name(
     | (ObjectName::PathRightVertical, Direction::Top | Direction::Bottom | Direction::Right)
     | (ObjectName::PathCross, Direction::Top | Direction::Right | Direction::Bottom | Direction::Left) => terrain_state.name,
     _ => panic!(
-      "Unsupported road connection: [{:?}] at {:?} on {} towards [{:?}], door at {}",
-      terrain_state.name, path_connection_ig, cg, missing_direction, absolute_door_ig
+      "Unsupported road connection: [{:?}] at {:?} on {} towards [{:?}], entrance at {}",
+      terrain_state.name, path_connection_ig, cg, missing_direction, absolute_entrance_ig
     ),
   };
 
   trace!(
-    "Updated object name of cell {} on {} from [{:?}] to [{:?}] because a building with a door at {} was placed",
-    path_connection_ig, cg, terrain_state.name, new_object_name, absolute_door_ig
+    "Updated object name of cell {} on {} from [{:?}] to [{:?}] because a building with a entrance at {} was placed",
+    path_connection_ig, cg, terrain_state.name, new_object_name, absolute_entrance_ig
   );
 
   new_object_name
@@ -319,7 +332,7 @@ mod tests {
     }
     grid.set_generated_path(path);
     let mut settings = Settings::default();
-    settings.object.building_density = 1.0;
+    settings.object.structure_density = 1.0;
     let mut metadata = Metadata::default(cg);
     metadata.settlement.insert(cg, true);
     metadata.connection.insert(cg, vec![]);
@@ -342,7 +355,7 @@ mod tests {
 
   #[test]
   #[should_panic(expected = "Unsupported road connection")]
-  fn road_connection_rejects_a_door_on_the_road_cell() {
+  fn road_connection_rejects_an_entrance_on_the_road_cell() {
     let point = Point::new_internal_grid(5, 5);
     let mut cell = Cell::new(5, 5);
     cell.mark_as_collapsed(ObjectName::PathCross);
@@ -351,7 +364,7 @@ mod tests {
 
   #[test]
   #[should_panic(expected = "Unsupported road connection")]
-  fn road_connection_rejects_a_diagonal_door() {
+  fn road_connection_rejects_a_diagonal_entrance() {
     let mut cell = Cell::new(5, 5);
     cell.mark_as_collapsed(ObjectName::PathCross);
     determine_updated_object_name(
@@ -401,9 +414,9 @@ mod tests {
       for (bit, dx, dy) in [(1, 0, -1), (2, 1, 0), (4, 0, 1), (8, -1, 0)] {
         let mut cell = Cell::new(5, 5);
         cell.mark_as_collapsed(paths[mask]);
-        let door = Point::new_internal_grid(point.x + dx, point.y + dy);
+        let entrance = Point::new_internal_grid(point.x + dx, point.y + dy);
         assert_eq!(
-          determine_updated_object_name(&mut cell, &point, &door, &Point::new_chunk_grid(0, 0)),
+          determine_updated_object_name(&mut cell, &point, &entrance, &Point::new_chunk_grid(0, 0)),
           paths[mask | bit],
           "Road {:?}, direction ({dx}, {dy})",
           paths[mask]
@@ -415,24 +428,24 @@ mod tests {
   #[test]
   fn connecting_an_already_connected_road_does_not_add_spurs() {
     let point = Point::new_internal_grid(5, 5);
-    let door = Point::new_internal_grid(5, 4);
+    let entrance = Point::new_internal_grid(5, 4);
     let cg = Point::new_chunk_grid(0, 0);
     for name in [ObjectName::PathTop, ObjectName::PathTopHorizontal, ObjectName::PathCross] {
       let mut cell = Cell::new(5, 5);
       cell.mark_as_collapsed(name);
-      assert_eq!(determine_updated_object_name(&mut cell, &point, &door, &cg), name);
+      assert_eq!(determine_updated_object_name(&mut cell, &point, &entrance, &cg), name);
     }
   }
 
   #[test]
-  fn place_structures_on_grid_small_settlement_includes_a_farm() {
+  fn place_structures_on_grid_small_settlement_includes_a_field() {
     let (mut grid, settings, metadata) = settlement(8);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
-    let farm_tiles = object_names(&grid)
+    let field_tiles = object_names(&grid)
       .iter()
       .filter(|name| matches!(name, ObjectName::WheatField(_) | ObjectName::Pasture(_)))
       .count();
-    assert!((12..=24).contains(&farm_tiles));
+    assert!((12..=24).contains(&field_tiles));
   }
 
   #[test]
@@ -440,7 +453,7 @@ mod tests {
     for disabled in 0..3 {
       let (mut grid, mut settings, mut metadata) = settlement(16);
       match disabled {
-        0 => settings.object.generate_buildings = false,
+        0 => settings.object.generate_structures = false,
         1 => settings.object.generate_paths = false,
         _ => {
           metadata.settlement.insert(grid.cg, false);
@@ -463,7 +476,7 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_preserves_existing_objects_with_farms() {
+  fn place_structures_on_grid_preserves_existing_objects_with_fields() {
     for seed in 0..20 {
       let (mut grid, settings, metadata) = settlement(16);
       let obstacle = Point::new_internal_grid(7, 4);
@@ -483,7 +496,7 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_cramped_site_never_places_partial_plots() {
+  fn place_structures_on_grid_cramped_site_never_places_partial_fields() {
     let (mut grid, settings, metadata) = settlement(3);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     assert!(
@@ -494,7 +507,7 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_medium_settlement_has_crops_and_livestock() {
+  fn place_structures_on_grid_medium_settlement_has_wheat_fields_and_pastures() {
     let (mut grid, settings, metadata) = settlement(11);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
@@ -503,7 +516,7 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_large_settlement_has_farms_and_housing() {
+  fn place_structures_on_grid_large_settlement_has_fields_and_buildings() {
     let (mut grid, settings, metadata) = settlement(16);
     place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
@@ -519,7 +532,7 @@ mod tests {
   }
 
   #[test]
-  fn farms_avoid_existing_objects_and_elevation_changes() {
+  fn fields_avoid_existing_objects_and_elevation_changes() {
     for seed in 0..20 {
       let (mut grid, settings, metadata) = settlement(16);
       let obstacle = Point::new_internal_grid(7, 4);
@@ -541,7 +554,7 @@ mod tests {
         grid.get_cell(&obstacle).unwrap().get_possible_states()[0].name,
         ObjectName::HouseSmallWallLeft1
       );
-      let mut farm_count = 0;
+      let mut field_count = 0;
       for y in 0..CHUNK_SIZE {
         for x in 0..CHUNK_SIZE {
           let cell = grid.get_cell(&Point::new_internal_grid(x, y)).unwrap();
@@ -550,17 +563,17 @@ mod tests {
             .first()
             .is_some_and(|state| matches!(state.name, ObjectName::WheatField(_) | ObjectName::Pasture(_)))
           {
-            farm_count += 1;
+            field_count += 1;
             assert_eq!(cell.terrain(), TerrainType::Land2);
           }
         }
       }
-      assert!(farm_count >= 12);
+      assert!(field_count >= 12);
     }
   }
 
   #[test]
-  fn farms_vary_large_footprints_and_have_one_road_entrance() {
+  fn fields_vary_in_size_and_have_one_road_entrance() {
     let sides = [(0, -1), (1, 0), (0, 1), (-1, 0)];
     let mut areas = HashSet::new();
     let mut entrance_sides = HashSet::new();
@@ -568,7 +581,7 @@ mod tests {
     for seed in 0..80 {
       let (mut grid, settings, metadata) = settlement(12);
       place_structures_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
-      let farm_kind = object_names(&grid)
+      let is_wheat_field = object_names(&grid)
         .into_iter()
         .find_map(|name| match name {
           ObjectName::WheatField(_) => Some(true),
@@ -581,8 +594,8 @@ mod tests {
         .filter_map(|point| {
           let name = grid.get_cell(&point)?.get_possible_states().first()?.name;
           match name {
-            ObjectName::WheatField(tile) if farm_kind => Some((point, tile)),
-            ObjectName::Pasture(tile) if !farm_kind => Some((point, tile)),
+            ObjectName::WheatField(tile) if is_wheat_field => Some((point, tile)),
+            ObjectName::Pasture(tile) if !is_wheat_field => Some((point, tile)),
             _ => None,
           }
         })
@@ -621,8 +634,8 @@ mod tests {
       assert_eq!(entrances.len(), 1);
       entrance_sides.insert(entrances[0]);
     }
-    assert!(areas.len() >= 3, "Expected several farm sizes, found {areas:?}");
-    assert!(has_non_rectangular, "Expected an L-shaped farm");
-    assert!(entrance_sides.len() >= 2, "Expected farms on both sides of the road");
+    assert!(areas.len() >= 3, "Expected several field sizes, found {areas:?}");
+    assert!(has_non_rectangular, "Expected an L-shaped field");
+    assert!(entrance_sides.len() >= 2, "Expected field on both sides of the road");
   }
 }

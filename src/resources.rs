@@ -185,13 +185,14 @@ pub struct ObjectGenerationSettings {
   pub generate_objects: bool,
   /// Whether to generate paths in the world. Will be ignored if `generate_objects` is `false`.
   pub generate_paths: bool,
-  /// Whether to generate buildings in the world. Will be ignored if `generate_paths` is `false` as buildings are
-  /// generated along paths. Will be ignored if `generate_objects` is `false`.
-  pub generate_buildings: bool,
-  /// The density of buildings within a settled chunk. The higher the value, the more buildings will be generated
+  /// Whether to generate structures - such as buildings and fields - in the world. Will be ignored if `generate_paths`
+  /// is `false` as structures are generated along paths. Will be ignored if `generate_objects` is `false` because the
+  /// term objects captures all non-terrain sprites.
+  pub generate_structures: bool,
+  /// The density of structures within a settled chunk. The higher the value, the more structures will be generated
   /// within a settled chunk.
   #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-  pub building_density: f64,
+  pub structure_density: f64,
   /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc. Will be ignored if
   /// `generate_objects` is `false`.
   pub generate_decoration: bool,
@@ -199,7 +200,7 @@ pub struct ObjectGenerationSettings {
   /// be generated and spawned. This can reduce wave function collapse error rates and improve performance because it
   /// reduces the number of possible object states.
   pub enable_animated_objects: bool,
-  /// Whether to enable random colour variations for decorative objects. Does not affect paths or buildings.
+  /// Whether to enable random colour variations for decorative objects. Does not affect paths or settlement structures.
   pub enable_colour_variations: bool,
 }
 
@@ -208,8 +209,8 @@ impl Default for ObjectGenerationSettings {
     Self {
       generate_objects: GENERATE_OBJECTS,
       generate_paths: GENERATE_PATHS,
-      generate_buildings: GENERATE_BUILDINGS,
-      building_density: BUILDING_DENSITY,
+      generate_structures: GENERATE_STRUCTURES,
+      structure_density: STRUCTURE_DENSITY,
       generate_decoration: GENERATE_DECORATION,
       enable_animated_objects: ENABLE_ANIMATED_OBJECTS,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,

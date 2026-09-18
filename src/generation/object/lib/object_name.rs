@@ -1,8 +1,8 @@
 use bevy::log::*;
 use bevy::reflect::Reflect;
-use strum::{EnumCount, EnumIter};
+use strum::{EnumCount, EnumDiscriminants, EnumIter};
 
-#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumCount, EnumIter)]
+#[derive(serde::Deserialize, PartialEq, Debug, Clone, Copy, Reflect, Eq, Hash, EnumCount, EnumIter, EnumDiscriminants)]
 pub enum ObjectName {
   Empty,
   Land1Stone1,
@@ -153,9 +153,33 @@ pub enum ObjectName {
   HouseLargeWallMiddle2,
   HouseLargeDoorRight2,
   HouseLargeDoorMiddle2,
+  /// One of 13 modular field tiles: fill, four sides, four outer corners, or four inner corners.
+  WheatField(u8),
+  Pasture(u8),
 }
 
 impl ObjectName {
+  // EnumCount counts variants, not payload values. Reserve one bit for each modular tile.
+  pub(super) const PERMISSION_COUNT: usize = Self::COUNT + 2 * 13;
+
+  /// Return a distinct permission bit for each object and modular field tile.
+  /// # Panics
+  /// For tile indices outside the 13-tile set.
+  pub(super) fn permission_index(self) -> usize {
+    let (tile, offset) = match self {
+      Self::WheatField(tile) => (tile, 0),
+      Self::Pasture(tile) => (tile, 13),
+      _ => return ObjectNameDiscriminants::from(self) as usize,
+    };
+    assert!(tile < 13, "Invalid settlement tile: {self:?}");
+    Self::COUNT + offset + tile as usize
+  }
+
+  /// Enumerates all modular field tiles.
+  pub fn field_tiles() -> impl Iterator<Item = Self> {
+    (0..13).flat_map(|sprite_index| [Self::WheatField(sprite_index), Self::Pasture(sprite_index)])
+  }
+
   pub const fn is_multi_tile(&self) -> bool {
     matches!(
       self,
@@ -209,7 +233,7 @@ impl ObjectName {
     )
   }
 
-  pub fn is_building(&self) -> bool {
+  pub fn is_structure(&self) -> bool {
     matches!(
       self,
       ObjectName::HouseSmallRoofLeft1
@@ -262,6 +286,8 @@ impl ObjectName {
         | ObjectName::HouseLargeWallMiddle2
         | ObjectName::HouseLargeDoorRight2
         | ObjectName::HouseLargeDoorMiddle2
+        | ObjectName::WheatField(_)
+        | ObjectName::Pasture(_)
     )
   }
 
@@ -354,6 +380,8 @@ impl ObjectName {
       ObjectName::HouseSmallRoofRight3 => 44,
       ObjectName::HouseSmallWallLeft2 => 52,
       ObjectName::HouseSmallWallRight2 => 53,
+      ObjectName::WheatField(index_offset) => 54 + *index_offset as i32,
+      ObjectName::Pasture(index_offset) => 67 + *index_offset as i32,
       _ => 0,
     }
   }
@@ -367,7 +395,7 @@ mod tests {
   #[test]
   fn get_index_for_building_variants_returns_nonzero_index() {
     for obj in ObjectName::iter() {
-      if obj.is_building() {
+      if obj.is_structure() {
         // If this fails, you probably forgot to update the index mapping in `get_index_for_building()`
         assert_ne!(obj.get_index(), 0, "[{:?}] returns 0 index", obj);
       }
