@@ -58,7 +58,7 @@ impl GenerationResourcesCollection {
     is_animated: bool,
   ) -> &AssetCollection {
     if is_building {
-      return &self.objects.buildings;
+      return &self.objects.structures;
     }
     if is_animated {
       return &self.objects.animated;

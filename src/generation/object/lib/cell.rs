@@ -269,6 +269,11 @@ impl Cell {
     })
   }
 
+  /// Returns the terrain type/layer supporting this cell.
+  pub const fn terrain(&self) -> TerrainType {
+    self.terrain
+  }
+
   pub fn log_tiles_below(&self) {
     if let Some(tile_below) = &self.tile_below {
       tile_below.log();

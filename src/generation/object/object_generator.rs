@@ -3,7 +3,6 @@ use crate::constants::*;
 use crate::generation::lib::shared::CommandQueueTask;
 use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
 use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
-use crate::generation::object::wfc::WfcPlugin;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
@@ -16,13 +15,13 @@ use bevy::tasks::{AsyncComputeTaskPool, Task, block_on};
 use rand::RngExt;
 use rand::prelude::StdRng;
 
+/// Responsible for providing the structures that are used during the object generation process and for spawning the
+/// resulting objects at the end of the process. Not specific to any particular type of object.
 pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app
-      .add_plugins(WfcPlugin)
-      .add_systems(Update, process_object_spawn_tasks_system);
+    app.add_systems(Update, process_object_spawn_tasks_system);
   }
 }
 
@@ -169,7 +168,7 @@ fn attach_object_spawn_task(
           tile_data.flat_tile.terrain,
           tile_data.flat_tile.climate,
           object_data.is_large_sprite,
-          object_name.is_building(),
+          object_name.is_structure(),
           is_animated,
         )
         .clone();

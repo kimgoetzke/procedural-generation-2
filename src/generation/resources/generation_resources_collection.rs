@@ -226,12 +226,12 @@ fn initialise_resources_system(
   asset_collection.objects.trees_humid.stat =
     AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
-  // Objects: Buildings
-  let static_buildings_layout =
-    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, BUILDINGS_OBJ_COLUMNS, BUILDINGS_OBJ_ROWS, None, None);
-  let static_buildings_atlas_layout = layouts.add(static_buildings_layout);
-  asset_collection.objects.buildings.stat =
-    AssetPack::new(asset_server.load(BUILDINGS_OBJ_PATH), static_buildings_atlas_layout);
+  // Objects: Structures
+  let static_structures_layout =
+    TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, STRUCTURES_OBJ_COLUMNS, STRUCTURES_OBJ_ROWS, None, None);
+  let static_structures_atlas_layout = layouts.add(static_structures_layout);
+  asset_collection.objects.structures.stat =
+    AssetPack::new(asset_server.load(STRUCTURES_OBJ_PATH), static_structures_atlas_layout);
 
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
@@ -579,7 +579,7 @@ fn check_for_asymmetric_rules(
             .iter()
             .any(|(c, neighbours)| *c == opposite_connection && neighbours.contains(&state.name))
         });
-      if !has_reciprocal && !neighbour_object_name.is_path() && !neighbour_object_name.is_building() {
+      if !has_reciprocal && !neighbour_object_name.is_path() && !neighbour_object_name.is_structure() {
         errors.insert(format!(
           "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
           terrain,

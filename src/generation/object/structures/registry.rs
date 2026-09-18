@@ -1,5 +1,5 @@
-use crate::generation::object::buildings::templates::{BuildingType, Level, StructureType};
 use crate::generation::object::lib::ObjectName;
+use crate::generation::object::structures::templates::{BuildingType, Level, StructureType};
 use bevy::platform::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
