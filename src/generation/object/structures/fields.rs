@@ -1,6 +1,7 @@
 use super::templates;
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
+use crate::generation::lib::Direction;
 use crate::generation::object::lib::{ObjectGrid, ObjectName};
 use crate::generation::object::structures::structure_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
@@ -11,59 +12,30 @@ use rand::prelude::StdRng;
 use rand::seq::SliceRandom;
 use rand::{RngExt, SeedableRng};
 
-#[derive(Clone, Copy, Debug)]
-enum FieldType {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FieldKind {
   Wheat,
   Pasture,
 }
 
-impl FieldType {
-  const fn object_name(self, tile: FieldTile) -> ObjectName {
-    match (self, tile) {
-      (Self::Wheat, FieldTile::Fill) => ObjectName::WheatFieldFill,
-      (Self::Wheat, FieldTile::SideTop) => ObjectName::WheatFieldSideTop,
-      (Self::Wheat, FieldTile::SideRight) => ObjectName::WheatFieldSideRight,
-      (Self::Wheat, FieldTile::SideBottom) => ObjectName::WheatFieldSideBottom,
-      (Self::Wheat, FieldTile::SideLeft) => ObjectName::WheatFieldSideLeft,
-      (Self::Wheat, FieldTile::OuterCornerTopLeft) => ObjectName::WheatFieldOuterCornerTopLeft,
-      (Self::Wheat, FieldTile::OuterCornerTopRight) => ObjectName::WheatFieldOuterCornerTopRight,
-      (Self::Wheat, FieldTile::OuterCornerBottomRight) => ObjectName::WheatFieldOuterCornerBottomRight,
-      (Self::Wheat, FieldTile::OuterCornerBottomLeft) => ObjectName::WheatFieldOuterCornerBottomLeft,
-      (Self::Wheat, FieldTile::InnerCornerTopLeft) => ObjectName::WheatFieldInnerCornerTopLeft,
-      (Self::Wheat, FieldTile::InnerCornerTopRight) => ObjectName::WheatFieldInnerCornerTopRight,
-      (Self::Wheat, FieldTile::InnerCornerBottomRight) => ObjectName::WheatFieldInnerCornerBottomRight,
-      (Self::Wheat, FieldTile::InnerCornerBottomLeft) => ObjectName::WheatFieldInnerCornerBottomLeft,
-      (Self::Pasture, FieldTile::Fill) => ObjectName::PastureFill,
-      (Self::Pasture, FieldTile::SideTop) => ObjectName::PastureSideTop,
-      (Self::Pasture, FieldTile::SideRight) => ObjectName::PastureSideRight,
-      (Self::Pasture, FieldTile::SideBottom) => ObjectName::PastureSideBottom,
-      (Self::Pasture, FieldTile::SideLeft) => ObjectName::PastureSideLeft,
-      (Self::Pasture, FieldTile::OuterCornerTopLeft) => ObjectName::PastureOuterCornerTopLeft,
-      (Self::Pasture, FieldTile::OuterCornerTopRight) => ObjectName::PastureOuterCornerTopRight,
-      (Self::Pasture, FieldTile::OuterCornerBottomRight) => ObjectName::PastureOuterCornerBottomRight,
-      (Self::Pasture, FieldTile::OuterCornerBottomLeft) => ObjectName::PastureOuterCornerBottomLeft,
-      (Self::Pasture, FieldTile::InnerCornerTopLeft) => ObjectName::PastureInnerCornerTopLeft,
-      (Self::Pasture, FieldTile::InnerCornerTopRight) => ObjectName::PastureInnerCornerTopRight,
-      (Self::Pasture, FieldTile::InnerCornerBottomRight) => ObjectName::PastureInnerCornerBottomRight,
-      (Self::Pasture, FieldTile::InnerCornerBottomLeft) => ObjectName::PastureInnerCornerBottomLeft,
+impl FieldKind {
+  /// Maps tile geometry to artwork for this field kind.
+  const fn object_name(self, tile_shape: TileShape) -> ObjectName {
+    match self {
+      Self::Wheat => WHEAT_TILES[tile_shape as usize],
+      Self::Pasture => PASTURE_TILES[tile_shape as usize],
     }
   }
 }
 
-/// Tile offsets relative to the road connection, and the entrance offset.
-pub(super) struct FieldLayout {
-  pub tiles: Vec<(Point<InternalGrid>, ObjectName)>,
-  pub entrance: Point<InternalGrid>,
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
-enum FieldTile {
+enum TileShape {
   Fill,
-  SideTop,
-  SideRight,
-  SideBottom,
-  SideLeft,
+  EdgeTop,
+  EdgeRight,
+  EdgeBottom,
+  EdgeLeft,
   OuterCornerTopLeft,
   OuterCornerTopRight,
   OuterCornerBottomRight,
@@ -74,9 +46,56 @@ enum FieldTile {
   InnerCornerBottomLeft,
 }
 
-const SIDES: [(i32, i32); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
-const DIAGONALS: [(i32, i32); 4] = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
+const WHEAT_TILES: [ObjectName; 13] = [
+  ObjectName::WheatFieldFill,
+  ObjectName::WheatFieldSideTop,
+  ObjectName::WheatFieldSideRight,
+  ObjectName::WheatFieldSideBottom,
+  ObjectName::WheatFieldSideLeft,
+  ObjectName::WheatFieldOuterCornerTopLeft,
+  ObjectName::WheatFieldOuterCornerTopRight,
+  ObjectName::WheatFieldOuterCornerBottomRight,
+  ObjectName::WheatFieldOuterCornerBottomLeft,
+  ObjectName::WheatFieldInnerCornerTopLeft,
+  ObjectName::WheatFieldInnerCornerTopRight,
+  ObjectName::WheatFieldInnerCornerBottomRight,
+  ObjectName::WheatFieldInnerCornerBottomLeft,
+];
 
+const PASTURE_TILES: [ObjectName; 13] = [
+  ObjectName::PastureFill,
+  ObjectName::PastureSideTop,
+  ObjectName::PastureSideRight,
+  ObjectName::PastureSideBottom,
+  ObjectName::PastureSideLeft,
+  ObjectName::PastureOuterCornerTopLeft,
+  ObjectName::PastureOuterCornerTopRight,
+  ObjectName::PastureOuterCornerBottomRight,
+  ObjectName::PastureOuterCornerBottomLeft,
+  ObjectName::PastureInnerCornerTopLeft,
+  ObjectName::PastureInnerCornerTopRight,
+  ObjectName::PastureInnerCornerBottomRight,
+  ObjectName::PastureInnerCornerBottomLeft,
+];
+
+const CARDINAL_DIRECTIONS: [Direction; 4] = [Direction::Top, Direction::Right, Direction::Bottom, Direction::Left];
+
+const DIAGONALS: [(Direction, TileShape); 4] = [
+  (Direction::TopLeft, TileShape::InnerCornerTopLeft),
+  (Direction::TopRight, TileShape::InnerCornerTopRight),
+  (Direction::BottomRight, TileShape::InnerCornerBottomRight),
+  (Direction::BottomLeft, TileShape::InnerCornerBottomLeft),
+];
+
+type Shape = Vec<(i32, i32)>;
+
+struct FieldLayout {
+  tiles: Vec<(Point<InternalGrid>, TileShape)>,
+  entrance: Point<InternalGrid>,
+}
+
+/// Generates fenced fields and places them beside settlement roads. Fields must stay on one elevation, and placement
+/// must leave space for at least one building because fields without buildings nearby wouldn't be very credible.
 pub(super) fn place_fields(
   grid: &mut ObjectGrid,
   path_points: &[Point<InternalGrid>],
@@ -85,71 +104,108 @@ pub(super) fn place_fields(
   occupied_grid_space: &mut HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
 ) -> i8 {
+  let capacity = estimated_housing_capacity(
+    path_points,
+    available_grid_space,
+    occupied_grid_space.clone(),
+    building_templates,
+  );
+  let field_kinds = permitted_field_kinds(rng, capacity);
+  let mut candidate_connection_igs = path_points.to_vec();
+  candidate_connection_igs.shuffle(rng);
   let mut fields_placed = 0;
-  let capacity = estimated_housing_capacity(path_points, available_grid_space, HashSet::new(), building_templates);
-  let permitted_field_types: Vec<FieldType> = match permitted_field_types(rng, capacity) {
-    Some(value) => value,
-    None => return fields_placed,
-  };
-  let mut candidates = path_points.to_vec();
-  candidates.shuffle(rng);
-  for field_type in permitted_field_types {
-    let layouts = layouts(field_type, rng);
-    // Try the preferred footprint at all road sites before falling back to a smaller one
-    'placement_loop: for layout in layouts {
-      for &path_ig in &candidates {
-        let tiles: Vec<(Point<InternalGrid>, ObjectName)> = layout
-          .tiles
-          .iter()
-          .map(|(offset, name)| (Point::new_internal_grid(path_ig.x + offset.x, path_ig.y + offset.y), *name))
-          .collect();
-        if !tiles
-          .iter()
-          .all(|(point, _)| available_grid_space.contains(point) && !occupied_grid_space.contains(point))
-        {
-          continue;
-        }
-        // Do not bridge elevation changes with a single field
-        let terrain = grid.get_cell(&tiles[0].0).map(|cell| cell.terrain());
-        if !tiles
-          .iter()
-          .all(|(point, _)| grid.get_cell(point).map(|cell| cell.terrain()) == terrain)
-        {
+
+  for field_kind in field_kinds {
+    // Try every shape, orientation, and entrance until one fits
+    'placement_loop: for layout in layouts(rng) {
+      for &connection_ig in &candidate_connection_igs {
+        let proposed_field = absolute_tiles(&layout, connection_ig, field_kind);
+        if !can_place_field(
+          grid,
+          &proposed_field,
+          path_points,
+          available_grid_space,
+          occupied_grid_space,
+          building_templates,
+        ) {
           continue;
         }
 
-        // A settlement must retain room for housing, even on a cramped site
-        let mut reserved_grid_space = occupied_grid_space.clone();
-        reserved_grid_space.extend(tiles.iter().map(|(point, _)| *point));
-        if estimated_housing_capacity(path_points, available_grid_space, reserved_grid_space, building_templates) == 0 {
-          continue;
-        }
-
-        for (point, name) in &tiles {
-          if let Some(cell) = grid.get_cell_mut(point) {
+        for (field_ig, name) in &proposed_field {
+          if let Some(cell) = grid.get_cell_mut(field_ig) {
             cell.mark_as_collapsed(*name);
           }
         }
-        occupied_grid_space.extend(tiles.iter().map(|(point, _)| *point));
+        occupied_grid_space.extend(proposed_field.iter().map(|(point, _)| *point));
+        let entrance = Point::new_internal_grid(connection_ig.x + layout.entrance.x, connection_ig.y + layout.entrance.y);
+        update_path_in_front_of_entrance(&connection_ig, &entrance, grid);
+        fields_placed += 1;
         trace!(
           "Placed [{:?}] field with [{}] tiles beside {} on {}",
-          field_type,
-          tiles.len(),
-          path_ig,
+          field_kind,
+          proposed_field.len(),
+          connection_ig,
           grid.cg,
         );
-        let entrance_ig = Point::new_internal_grid(path_ig.x + layout.entrance.x, path_ig.y + layout.entrance.y);
-        update_path_in_front_of_entrance(&path_ig, &entrance_ig, grid);
-        fields_placed += 1;
         break 'placement_loop;
       }
     }
   }
+
   fields_placed
 }
 
-/// Metadata only records settled/unsettled. Estimate local size from non-overlapping house sites, rather than road
-/// length (which also includes wilderness roads).
+/// Anchors layout offsets to a road point and selects the field artwork.
+fn absolute_tiles(
+  layout: &FieldLayout,
+  path_point: Point<InternalGrid>,
+  field_kind: FieldKind,
+) -> Vec<(Point<InternalGrid>, ObjectName)> {
+  layout
+    .tiles
+    .iter()
+    .map(|(offset, tile_shape)| {
+      (
+        Point::new_internal_grid(path_point.x + offset.x, path_point.y + offset.y),
+        field_kind.object_name(*tile_shape),
+      )
+    })
+    .collect()
+}
+
+/// Returns `false` for overlaps, elevation changes, and fields that take up too much space.
+fn can_place_field(
+  grid: &ObjectGrid,
+  proposed_field_tiles: &[(Point<InternalGrid>, ObjectName)],
+  path_points: &[Point<InternalGrid>],
+  available_grid_space: &HashSet<Point<InternalGrid>>,
+  occupied_grid_space: &HashSet<Point<InternalGrid>>,
+  building_templates: &[templates::BuildingTemplate],
+) -> bool {
+  if !proposed_field_tiles
+    .iter()
+    .all(|(point, _)| available_grid_space.contains(point) && !occupied_grid_space.contains(point))
+  {
+    return false;
+  }
+
+  let Some((first_point, _)) = proposed_field_tiles.first() else {
+    return false;
+  };
+  let terrain = grid.get_cell(first_point).map(|cell| cell.terrain());
+  if !proposed_field_tiles
+    .iter()
+    .all(|(point, _)| grid.get_cell(point).map(|cell| cell.terrain()) == terrain)
+  {
+    return false;
+  }
+
+  let mut reserved_grid_space = occupied_grid_space.clone();
+  reserved_grid_space.extend(proposed_field_tiles.iter().map(|(point, _)| *point));
+  estimated_housing_capacity(path_points, available_grid_space, reserved_grid_space, building_templates) > 0
+}
+
+/// Estimates settlement size from non-overlapping house sites because roads may extend into wilderness.
 fn estimated_housing_capacity(
   path_points: &[Point<InternalGrid>],
   available_grid_space: &HashSet<Point<InternalGrid>>,
@@ -158,11 +214,15 @@ fn estimated_housing_capacity(
 ) -> usize {
   let mut rng = StdRng::seed_from_u64(0);
   let mut estimated_building_count = 0;
-  for &ig in path_points {
-    if let Some(template) =
-      select_fitting_building(building_templates, ig, available_grid_space, &reserved_grid_space, &mut rng)
-    {
-      let origin = template.calculate_origin_ig_from_connection_point(ig);
+  for &point in path_points {
+    if let Some(template) = select_fitting_building(
+      building_templates,
+      point,
+      available_grid_space,
+      &reserved_grid_space,
+      &mut rng,
+    ) {
+      let origin = template.calculate_origin_ig_from_connection_point(point);
       for y in 0..template.height {
         for x in 0..template.width {
           reserved_grid_space.insert(Point::new_internal_grid(origin.x + x, origin.y + y));
@@ -174,22 +234,54 @@ fn estimated_housing_capacity(
   estimated_building_count
 }
 
-/// Returns either `None`, a single random [`FieldType`], or both types - depending on whether there's enough capacity.   
-fn permitted_field_types(rng: &mut StdRng, capacity: usize) -> Option<Vec<FieldType>> {
-  let field_type = if rng.random_bool(0.5) {
-    FieldType::Wheat
-  } else {
-    FieldType::Pasture
-  };
-  Some(match capacity {
-    0 => return None,
-    0..=2 => vec![field_type],
-    _ => vec![FieldType::Wheat, FieldType::Pasture],
-  })
+/// Limits field variety according to the estimated settlement size.
+fn permitted_field_kinds(rng: &mut StdRng, capacity: usize) -> Vec<FieldKind> {
+  match capacity {
+    0 => Vec::new(),
+    1..=2 => vec![if rng.random_bool(0.5) {
+      FieldKind::Wheat
+    } else {
+      FieldKind::Pasture
+    }],
+    _ => vec![FieldKind::Wheat, FieldKind::Pasture],
+  }
 }
 
-fn layouts(field_type: FieldType, rng: &mut StdRng) -> Vec<FieldLayout> {
-  let mut shapes = vec![
+/// Builds randomised candidates, trying one rotation per shape before fallback rotations.
+fn layouts(rng: &mut StdRng) -> Vec<FieldLayout> {
+  let mut shapes = field_shapes();
+  shapes.shuffle(rng);
+  let mut preferred_layouts = Vec::new();
+  let mut fallback_layouts = Vec::new();
+  for shape in shapes {
+    let mut rotated_shapes = rotations(&shape);
+    let first_rotation = rng.random_range(0..rotated_shapes.len());
+    rotated_shapes.rotate_left(first_rotation);
+
+    for (rotation_index, rotated_shape) in rotated_shapes.into_iter().enumerate() {
+      let mut shape_entrances = entrances(&rotated_shape);
+      if rotation_index == 0 {
+        shape_entrances.shuffle(rng);
+      }
+      let target = if rotation_index == 0 {
+        &mut preferred_layouts
+      } else {
+        &mut fallback_layouts
+      };
+      target.extend(
+        shape_entrances
+          .into_iter()
+          .map(|(entrance, outside)| layout_from_entrance(&rotated_shape, entrance, outside)),
+      );
+    }
+  }
+  preferred_layouts.extend(fallback_layouts);
+  preferred_layouts
+}
+
+/// Defines the permitted field sizes and proportions independently of placement.
+fn field_shapes() -> Vec<Shape> {
+  vec![
     rectangle(4, 3),
     rectangle(5, 3),
     rectangle(4, 4),
@@ -198,91 +290,112 @@ fn layouts(field_type: FieldType, rng: &mut StdRng) -> Vec<FieldLayout> {
     rectangle(6, 4),
     l_shape(5, 4, 2, 2),
     l_shape(6, 5, 3, 2),
-  ];
-  shapes.shuffle(rng);
-
-  let mut layouts = Vec::new();
-  for mut shape in shapes {
-    // Rotate footprints, not sprites
-    for _ in 0..rand::RngExt::random_range(rng, 0..4) {
-      shape = shape.into_iter().map(|(x, y)| (-y, x)).collect();
-    }
-
-    let mut entrances: Vec<((i32, i32), usize)> = shape
-      .iter()
-      .filter_map(|&(x, y)| {
-        let outside: Vec<_> = SIDES
-          .iter()
-          .enumerate()
-          .filter(|(_, (dx, dy))| !shape.contains(&(x + dx, y + dy)))
-          .collect();
-        (outside.len() == 1).then(|| ((x, y), outside[0].0))
-      })
-      .collect();
-    entrances.shuffle(rng);
-
-    for (entrance, entrance_side) in entrances {
-      let (dx, dy) = SIDES[entrance_side];
-      let tiles = shape
-        .iter()
-        .map(|&(x, y)| {
-          let tile = if (x, y) == entrance {
-            // The fill tile leaves a one-tile opening in the boundary fence
-            FieldTile::Fill
-          } else {
-            classify_tile(&shape, x, y)
-          };
-          (
-            Point::new_internal_grid(x - entrance.0 - dx, y - entrance.1 - dy),
-            field_type.object_name(tile),
-          )
-        })
-        .collect();
-      layouts.push(FieldLayout {
-        tiles,
-        entrance: Point::new_internal_grid(-dx, -dy),
-      });
-    }
-  }
-  layouts
+  ]
 }
 
-fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> FieldTile {
-  let outside: Vec<_> = SIDES
+/// Produces every orientation so a constrained site does not fail on one random rotation.
+fn rotations(shape: &[(i32, i32)]) -> Vec<Shape> {
+  let mut rotations = Vec::with_capacity(4);
+  let mut rotated = shape.to_vec();
+  for _ in 0..4 {
+    rotations.push(rotated.clone());
+    rotated = rotated.into_iter().map(|(x, y)| (-y, x)).collect();
+  }
+  rotations
+}
+
+/// Finds boundary tiles with exactly one exposed side suitable for a road connection.
+fn entrances(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
+  shape
     .iter()
-    .enumerate()
-    .filter_map(|(side, (dx, dy))| (!shape.contains(&(x + dx, y + dy))).then_some(side))
+    .filter_map(|&(x, y)| {
+      let outside: Vec<Direction> = outside(shape, &x, &y);
+      match outside.as_slice() {
+        [direction] => Some(((x, y), *direction)),
+        _ => None,
+      }
+    })
+    .collect()
+}
+
+/// Anchors a shape beside the road and removes the fence at its chosen entrance.
+fn layout_from_entrance(shape: &[(i32, i32)], entrance: (i32, i32), outside: Direction) -> FieldLayout {
+  let outside_offset: Point<InternalGrid> = outside.to_point();
+  let tiles = shape
+    .iter()
+    .map(|&(x, y)| {
+      let tile_shape = if (x, y) == entrance {
+        // Fill artwork leaves an opening in the boundary fence.
+        TileShape::Fill
+      } else {
+        classify_tile(shape, x, y)
+      };
+      (
+        Point::new_internal_grid(x - entrance.0 - outside_offset.x, y - entrance.1 - outside_offset.y),
+        tile_shape,
+      )
+    })
     .collect();
 
-  match outside.as_slice() {
-    [] => {
-      let missing_diagonal = DIAGONALS.iter().position(|(dx, dy)| !shape.contains(&(x + dx, y + dy)));
-      match missing_diagonal {
-        Some(0) => FieldTile::InnerCornerTopLeft,
-        Some(1) => FieldTile::InnerCornerTopRight,
-        Some(2) => FieldTile::InnerCornerBottomRight,
-        Some(3) => FieldTile::InnerCornerBottomLeft,
-        None => FieldTile::Fill,
-        Some(_) => unreachable!(),
-      }
-    }
-    [0] => FieldTile::SideTop,
-    [1] => FieldTile::SideRight,
-    [2] => FieldTile::SideBottom,
-    [3] => FieldTile::SideLeft,
-    [0, 1] => FieldTile::OuterCornerTopRight,
-    [0, 3] => FieldTile::OuterCornerTopLeft,
-    [1, 2] => FieldTile::OuterCornerBottomRight,
-    [2, 3] => FieldTile::OuterCornerBottomLeft,
-    _ => panic!("Farm shape has an unsupported one-tile-wide section at ({x}, {y})"),
+  FieldLayout {
+    tiles,
+    entrance: Point::new_internal_grid(-outside_offset.x, -outside_offset.y),
   }
 }
 
-fn rectangle(width: i32, height: i32) -> Vec<(i32, i32)> {
+/// Selects edge and corner geometry from a tile's missing neighbours.
+fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
+  let outside: Vec<Direction> = outside(shape, &x, &y);
+
+  match outside.as_slice() {
+    [] => classify_fill_or_inner_corner(shape, x, y),
+    [Direction::Top] => TileShape::EdgeTop,
+    [Direction::Right] => TileShape::EdgeRight,
+    [Direction::Bottom] => TileShape::EdgeBottom,
+    [Direction::Left] => TileShape::EdgeLeft,
+    [Direction::Top, Direction::Right] => TileShape::OuterCornerTopRight,
+    [Direction::Top, Direction::Left] => TileShape::OuterCornerTopLeft,
+    [Direction::Right, Direction::Bottom] => TileShape::OuterCornerBottomRight,
+    [Direction::Bottom, Direction::Left] => TileShape::OuterCornerBottomLeft,
+    _ => panic!("Field shape has an unsupported one-tile-wide section at ({x}, {y})"),
+  }
+}
+
+/// Distinguishes interior fill from concave corners using diagonal neighbours.
+fn classify_fill_or_inner_corner(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
+  let missing_diagonals: Vec<_> = DIAGONALS
+    .iter()
+    .filter_map(|&(direction, tile_shape)| {
+      let offset: Point<InternalGrid> = direction.to_point();
+      (!shape.contains(&(x + offset.x, y + offset.y))).then_some(tile_shape)
+    })
+    .collect();
+
+  match missing_diagonals.as_slice() {
+    [] => TileShape::Fill,
+    [tile_shape] => *tile_shape,
+    _ => panic!("Field shape has multiple missing diagonals at ({x}, {y})"),
+  }
+}
+
+/// Lists cardinal sides with no adjacent field tile.
+fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
+  CARDINAL_DIRECTIONS
+    .into_iter()
+    .filter(|direction| {
+      let offset: Point<InternalGrid> = direction.to_point();
+      !shape.contains(&(x + offset.x, y + offset.y))
+    })
+    .collect()
+}
+
+/// Builds a filled rectangle for the field-shape catalogue.
+fn rectangle(width: i32, height: i32) -> Shape {
   (0..height).flat_map(|y| (0..width).map(move |x| (x, y))).collect()
 }
 
-fn l_shape(width: i32, height: i32, vertical_width: i32, horizontal_height: i32) -> Vec<(i32, i32)> {
+/// Builds a concave field shape that exercises inner-corner artwork.
+fn l_shape(width: i32, height: i32, vertical_width: i32, horizontal_height: i32) -> Shape {
   (0..height)
     .flat_map(|y| {
       (0..width)
@@ -298,38 +411,89 @@ mod tests {
   use rand::SeedableRng;
 
   #[test]
-  fn layouts_use_only_wheat_field_tiles() {
-    let layouts = layouts(FieldType::Wheat, &mut StdRng::seed_from_u64(7));
+  fn rotations_include_all_four_orientations() {
+    let shape = vec![(0, 0), (1, 0), (0, 1)];
 
-    assert!(
-      layouts
-        .iter()
-        .flat_map(|layout| layout.tiles.iter())
-        .all(|(_, name)| name.is_wheat_field())
+    assert_eq!(
+      rotations(&shape),
+      vec![
+        vec![(0, 0), (1, 0), (0, 1)],
+        vec![(0, 0), (0, 1), (-1, 0)],
+        vec![(0, 0), (-1, 0), (0, -1)],
+        vec![(0, 0), (0, -1), (1, 0)],
+      ]
     );
   }
 
   #[test]
-  fn classify_tile_maps_fill_sides_and_outer_corners() {
+  fn layouts_mark_the_boundary_tile_next_to_the_road_as_the_entrance() {
+    for layout in layouts(&mut StdRng::seed_from_u64(7)) {
+      assert!(layout.tiles.contains(&(layout.entrance, TileShape::Fill)));
+      assert_eq!(layout.entrance.x.abs() + layout.entrance.y.abs(), 1);
+    }
+  }
+
+  #[test]
+  fn field_kind_maps_every_tile_shape_to_its_own_artwork() {
+    for tile_shape in [
+      TileShape::Fill,
+      TileShape::EdgeTop,
+      TileShape::EdgeRight,
+      TileShape::EdgeBottom,
+      TileShape::EdgeLeft,
+      TileShape::OuterCornerTopLeft,
+      TileShape::OuterCornerTopRight,
+      TileShape::OuterCornerBottomRight,
+      TileShape::OuterCornerBottomLeft,
+      TileShape::InnerCornerTopLeft,
+      TileShape::InnerCornerTopRight,
+      TileShape::InnerCornerBottomRight,
+      TileShape::InnerCornerBottomLeft,
+    ] {
+      assert!(FieldKind::Wheat.object_name(tile_shape).is_wheat_field());
+      assert!(FieldKind::Pasture.object_name(tile_shape).is_pasture());
+    }
+  }
+
+  #[test]
+  fn permitted_field_kinds_follow_housing_capacity() {
+    let mut rng = StdRng::seed_from_u64(7);
+
+    assert!(permitted_field_kinds(&mut rng, 0).is_empty());
+    assert_eq!(permitted_field_kinds(&mut rng, 1).len(), 1);
+    assert_eq!(permitted_field_kinds(&mut rng, 3), vec![FieldKind::Wheat, FieldKind::Pasture]);
+  }
+
+  #[test]
+  fn classify_tile_can_classify_every_field_shape() {
+    for shape in field_shapes() {
+      for &(x, y) in &shape {
+        classify_tile(&shape, x, y);
+      }
+    }
+  }
+
+  #[test]
+  fn classify_tile_maps_fill_edges_and_outer_corners() {
     let shape = rectangle(4, 4);
-    assert_eq!(classify_tile(&shape, 1, 1), FieldTile::Fill);
-    assert_eq!(classify_tile(&shape, 1, 0), FieldTile::SideTop);
-    assert_eq!(classify_tile(&shape, 3, 1), FieldTile::SideRight);
-    assert_eq!(classify_tile(&shape, 1, 3), FieldTile::SideBottom);
-    assert_eq!(classify_tile(&shape, 0, 1), FieldTile::SideLeft);
-    assert_eq!(classify_tile(&shape, 0, 0), FieldTile::OuterCornerTopLeft);
-    assert_eq!(classify_tile(&shape, 3, 0), FieldTile::OuterCornerTopRight);
-    assert_eq!(classify_tile(&shape, 3, 3), FieldTile::OuterCornerBottomRight);
-    assert_eq!(classify_tile(&shape, 0, 3), FieldTile::OuterCornerBottomLeft);
+    assert_eq!(classify_tile(&shape, 1, 1), TileShape::Fill);
+    assert_eq!(classify_tile(&shape, 1, 0), TileShape::EdgeTop);
+    assert_eq!(classify_tile(&shape, 3, 1), TileShape::EdgeRight);
+    assert_eq!(classify_tile(&shape, 1, 3), TileShape::EdgeBottom);
+    assert_eq!(classify_tile(&shape, 0, 1), TileShape::EdgeLeft);
+    assert_eq!(classify_tile(&shape, 0, 0), TileShape::OuterCornerTopLeft);
+    assert_eq!(classify_tile(&shape, 3, 0), TileShape::OuterCornerTopRight);
+    assert_eq!(classify_tile(&shape, 3, 3), TileShape::OuterCornerBottomRight);
+    assert_eq!(classify_tile(&shape, 0, 3), TileShape::OuterCornerBottomLeft);
   }
 
   #[test]
   fn classify_tile_maps_each_missing_diagonal_to_an_inner_corner() {
     let cases = [
-      ((0, 0), FieldTile::InnerCornerTopLeft),
-      ((2, 0), FieldTile::InnerCornerTopRight),
-      ((2, 2), FieldTile::InnerCornerBottomRight),
-      ((0, 2), FieldTile::InnerCornerBottomLeft),
+      ((0, 0), TileShape::InnerCornerTopLeft),
+      ((2, 0), TileShape::InnerCornerTopRight),
+      ((2, 2), TileShape::InnerCornerBottomRight),
+      ((0, 2), TileShape::InnerCornerBottomLeft),
     ];
     for (missing, expected) in cases {
       let mut shape = rectangle(3, 3);
