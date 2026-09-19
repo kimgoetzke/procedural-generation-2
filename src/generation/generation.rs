@@ -472,7 +472,7 @@ fn stage_7_schedule_generating_object_data(
           let task_pool = AsyncComputeTaskPool::get();
           let task = task_pool.spawn(async move {
             let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-            object::settlements::place_structures_on_grid(&mut object_grid, &settings, &metadata, &mut rng);
+            object::settlements::place_settlements_on_grid(&mut object_grid, &settings, &metadata, &mut rng);
             object::decoration::place_decorative_objects_on_grid(&mut object_grid, &settings, &mut rng);
             object::generate_object_data(&settings, object_grid, chunk, chunk_entity)
           });

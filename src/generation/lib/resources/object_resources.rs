@@ -23,7 +23,7 @@ pub struct ObjectResources {
   pub trees_dry: AssetCollection,
   pub trees_moderate: AssetCollection,
   pub trees_humid: AssetCollection,
-  pub structures: AssetCollection,
+  pub settlements: AssetCollection,
 }
 
 impl ObjectResources {

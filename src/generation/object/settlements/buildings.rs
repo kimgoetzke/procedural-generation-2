@@ -1,7 +1,7 @@
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::generation::object::lib::ObjectGrid;
-use crate::generation::object::settlements::structure_generation::{
+use crate::generation::object::settlements::settlement_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
 };
 use crate::generation::object::settlements::{building_component_registry, templates};

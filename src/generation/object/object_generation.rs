@@ -1,7 +1,7 @@
 use crate::generation::object::decoration::WfcPlugin;
 use crate::generation::object::object_generator::ObjectGeneratorPlugin;
 use crate::generation::object::path::PathGenerationPlugin;
-use crate::generation::object::settlements::StructureGenerationPlugin;
+use crate::generation::object::settlements::SettlementGenerationPlugin;
 use bevy::app::{App, Plugin};
 
 pub struct ObjectGenerationPlugin;
@@ -11,7 +11,7 @@ impl Plugin for ObjectGenerationPlugin {
     app.add_plugins((
       ObjectGeneratorPlugin,
       PathGenerationPlugin,
-      StructureGenerationPlugin,
+      SettlementGenerationPlugin,
       WfcPlugin,
     ));
   }
