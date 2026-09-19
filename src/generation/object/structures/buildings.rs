@@ -4,7 +4,7 @@ use crate::generation::object::lib::ObjectGrid;
 use crate::generation::object::structures::structure_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
 };
-use crate::generation::object::structures::{registry, templates};
+use crate::generation::object::structures::{building_component_registry, templates};
 use bevy::log::*;
 use bevy::platform::collections::HashSet;
 use rand::prelude::StdRng;
@@ -18,7 +18,7 @@ pub(super) fn place_buildings(
   rng: &mut StdRng,
   cg: Point<ChunkGrid>,
 ) -> i8 {
-  let component_registry = registry::BuildingComponentRegistry::new_initialised();
+  let component_registry = building_component_registry::BuildingComponentRegistry::new_initialised();
   let mut buildings_placed = 0;
   for &path_ig in path_points {
     if let Some(building_template) =
@@ -56,7 +56,7 @@ pub(super) fn place_buildings(
 
 fn place_building(
   building_template: &templates::BuildingTemplate,
-  component_registry: &registry::BuildingComponentRegistry,
+  component_registry: &building_component_registry::BuildingComponentRegistry,
   rng: &mut StdRng,
   building_origin_ig: Point<InternalGrid>,
   object_grid: &mut ObjectGrid,

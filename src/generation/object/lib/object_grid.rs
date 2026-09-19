@@ -405,6 +405,60 @@ mod tests {
   }
 
   #[test]
+  fn reduce_neighbour_keeps_the_correct_field_tile_in_each_direction() {
+    use crate::generation::object::lib::ObjectName;
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let reference_ig = Point::new_internal_grid(2, 2);
+    let permitted = [
+      (Connection::Top, ObjectName::WheatFieldFill),
+      (Connection::Right, ObjectName::WheatFieldInnerCornerBottomLeft),
+      (Connection::Bottom, ObjectName::PastureFill),
+      (Connection::Left, ObjectName::PastureInnerCornerBottomLeft),
+    ];
+    let reference_state = TerrainState {
+      name: ObjectName::Empty,
+      index: -1,
+      weight: 1,
+      permitted_neighbours: permitted.iter().map(|(side, name)| (*side, vec![*name])).collect(),
+    };
+    grid.get_cell_mut(&reference_ig).unwrap().initialise(
+      TerrainType::Any,
+      TileType::Fill,
+      &[reference_state],
+      vec![],
+      false,
+    );
+    let candidates: Vec<_> = permitted
+      .iter()
+      .map(|(_, name)| TerrainState::new_with_no_neighbours(*name, name.get_sprite_index(), 1))
+      .collect();
+    for (_, point) in get_connection_points(&reference_ig) {
+      grid
+        .get_cell_mut(&point)
+        .unwrap()
+        .initialise(TerrainType::Any, TileType::Fill, &candidates, vec![], false);
+    }
+    let snapshot = grid.snapshot();
+    for (side, point) in get_connection_points(&reference_ig) {
+      let expected = permitted.iter().find(|(connection, _)| *connection == side).unwrap().1;
+      assert!(grid.reduce_neighbour(&reference_ig, &point, &side, false).unwrap());
+      let neighbour = grid.get_cell(&point).unwrap();
+      assert_eq!(neighbour.get_entropy(), 1);
+      assert_eq!(neighbour.get_possible_states()[0].name, expected);
+      assert!(!grid.reduce_neighbour(&reference_ig, &point, &side, false).unwrap());
+    }
+    assert_eq!(
+      grid.get_cell(&reference_ig).unwrap().get_possible_states()[0].name,
+      ObjectName::Empty
+    );
+    grid.restore_from_snapshot(&snapshot);
+    for (_, point) in get_connection_points(&reference_ig) {
+      assert_eq!(grid.get_cell(&point).unwrap().get_entropy(), 4);
+      assert_eq!(grid.get_cell(&point).unwrap().get_possible_states().len(), 4);
+    }
+  }
+
+  #[test]
   fn restore_from_snapshot_only_restores_object_cells() {
     let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
     let snapshot = grid.snapshot();

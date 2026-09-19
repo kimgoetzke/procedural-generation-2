@@ -1,6 +1,6 @@
+mod building_component_registry;
 mod buildings;
 mod fields;
-mod registry;
 mod structure_generation;
 mod templates;
 
