@@ -54,10 +54,10 @@ impl GenerationResourcesCollection {
     terrain: TerrainType,
     climate: Climate,
     is_large_sprite: bool,
-    is_building: bool,
+    is_settlement_structure: bool,
     is_animated: bool,
   ) -> &AssetCollection {
-    if is_building {
+    if is_settlement_structure {
       return &self.objects.structures;
     }
     if is_animated {

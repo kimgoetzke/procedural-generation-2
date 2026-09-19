@@ -3,7 +3,7 @@ use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::Direction;
 use crate::generation::object::lib::ObjectName;
-use crate::generation::object::structures::building_component_registry::BuildingComponentRegistry;
+use crate::generation::object::settlements::building_component_registry::BuildingComponentRegistry;
 use bevy::platform::collections::HashSet;
 use rand::RngExt;
 use rand::prelude::StdRng;

@@ -235,7 +235,11 @@ impl ObjectName {
     )
   }
 
-  pub fn is_structure(&self) -> bool {
+  pub fn is_settlement_structure(&self) -> bool {
+    self.is_building() || self.is_field()
+  }
+
+  pub fn is_building(&self) -> bool {
     matches!(
       self,
       ObjectName::HouseSmallRoofLeft1
@@ -288,7 +292,7 @@ impl ObjectName {
         | ObjectName::HouseLargeWallMiddle2
         | ObjectName::HouseLargeDoorRight2
         | ObjectName::HouseLargeDoorMiddle2
-    ) || self.is_field()
+    )
   }
 
   pub const fn is_field(&self) -> bool {
@@ -461,7 +465,7 @@ mod tests {
   #[test]
   fn get_index_for_building_variants_returns_nonzero_index() {
     for obj in ObjectName::iter() {
-      if obj.is_structure() {
+      if obj.is_settlement_structure() {
         // If this fails, you probably forgot to update the index mapping in `get_index_for_building()`
         assert_ne!(obj.get_index(), 0, "[{:?}] returns 0 index", obj);
       }

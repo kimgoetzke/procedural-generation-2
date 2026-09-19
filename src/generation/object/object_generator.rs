@@ -168,7 +168,7 @@ fn attach_object_spawn_task(
           tile_data.flat_tile.terrain,
           tile_data.flat_tile.climate,
           object_data.is_large_sprite,
-          object_name.is_structure(),
+          object_name.is_settlement_structure(),
           is_animated,
         )
         .clone();

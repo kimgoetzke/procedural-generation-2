@@ -515,10 +515,7 @@ mod tests {
     let names = object_names(&grid);
     assert!(names.iter().any(ObjectName::is_wheat_field));
     assert!(names.iter().any(ObjectName::is_pasture));
-    assert!(names.iter().any(|name| matches!(
-      name,
-      ObjectName::HouseMediumRoofMiddle1 | ObjectName::HouseMediumRoofMiddle2 | ObjectName::HouseMediumRoofMiddle3
-    )));
+    assert!(names.iter().any(ObjectName::is_building));
     for point in grid.get_generated_path() {
       assert!(grid.get_cell(point).unwrap().get_possible_states()[0].name.is_path());
     }

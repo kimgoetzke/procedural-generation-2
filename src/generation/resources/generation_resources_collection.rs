@@ -579,7 +579,7 @@ fn check_for_asymmetric_rules(
             .iter()
             .any(|(c, neighbours)| *c == opposite_connection && neighbours.contains(&state.name))
         });
-      if !has_reciprocal && !neighbour_object_name.is_path() && !neighbour_object_name.is_structure() {
+      if !has_reciprocal && !neighbour_object_name.is_path() && !neighbour_object_name.is_settlement_structure() {
         errors.insert(format!(
           "Asymmetric [{:?}] neighbour rule: [{:?}] allows [{:?}] on its [{:?}], but [{:?}] doesn't allow [{:?}] on its [{:?}]",
           terrain,

@@ -2,8 +2,8 @@ use crate::constants::{CHUNK_SIZE, WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAV
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::shared;
+use crate::generation::object::decoration::cell_entropy_index::CellEntropyIndex;
 use crate::generation::object::lib::{IterationResult, ObjectGrid, ObjectGridSnapshot, get_connection_points};
-use crate::generation::object::wfc::cell_entropy_index::CellEntropyIndex;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
