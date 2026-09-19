@@ -19,7 +19,8 @@ enum FieldKind {
 }
 
 impl FieldKind {
-  /// Maps tile geometry to artwork for this field kind.
+  /// Returns the [`ObjectName`] for this field kind and tile shape. Different fields share the same shapes but use
+  /// different object names.
   const fn object_name(self, tile_shape: TileShape) -> ObjectName {
     match self {
       Self::Wheat => WHEAT_TILES[tile_shape as usize],
@@ -104,25 +105,25 @@ pub(super) fn place_fields(
   occupied_grid_space: &mut HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
 ) -> i8 {
-  let capacity = estimated_housing_capacity(
+  let capacity = estimated_building_capacity(
     path_points,
     available_grid_space,
     occupied_grid_space.clone(),
     building_templates,
   );
-  let field_kinds = permitted_field_kinds(rng, capacity);
   let mut candidate_connection_igs = path_points.to_vec();
   candidate_connection_igs.shuffle(rng);
   let mut fields_placed = 0;
 
-  for field_kind in field_kinds {
+  for field_kind in permitted_field_kinds(rng, capacity) {
     // Try every shape, orientation, and entrance until one fits
-    'placement_loop: for layout in layouts(rng) {
+    'placement_loop: for candidate_layout in layouts(rng) {
       for &connection_ig in &candidate_connection_igs {
-        let proposed_field = absolute_tiles(&layout, connection_ig, field_kind);
+        // Skip if the chosen field layout cannot be placed
+        let candidate_field = absolute_tiles(&candidate_layout, connection_ig, field_kind);
         if !can_place_field(
           grid,
-          &proposed_field,
+          &candidate_field,
           path_points,
           available_grid_space,
           occupied_grid_space,
@@ -131,19 +132,23 @@ pub(super) fn place_fields(
           continue;
         }
 
-        for (field_ig, name) in &proposed_field {
+        // ...otherwise place it
+        for (field_ig, name) in &candidate_field {
           if let Some(cell) = grid.get_cell_mut(field_ig) {
             cell.mark_as_collapsed(*name);
           }
         }
-        occupied_grid_space.extend(proposed_field.iter().map(|(point, _)| *point));
-        let entrance = Point::new_internal_grid(connection_ig.x + layout.entrance.x, connection_ig.y + layout.entrance.y);
+        occupied_grid_space.extend(candidate_field.iter().map(|(point, _)| *point));
+        let entrance = Point::new_internal_grid(
+          connection_ig.x + candidate_layout.entrance.x,
+          connection_ig.y + candidate_layout.entrance.y,
+        );
         update_path_in_front_of_entrance(&connection_ig, &entrance, grid);
         fields_placed += 1;
         trace!(
           "Placed [{:?}] field with [{}] tiles beside {} on {}",
           field_kind,
-          proposed_field.len(),
+          candidate_field.len(),
           connection_ig,
           grid.cg,
         );
@@ -155,7 +160,8 @@ pub(super) fn place_fields(
   fields_placed
 }
 
-/// Anchors layout offsets to a road point and selects the field artwork.
+/// Converts a layout relative to a path connection point into absolute internal grid points and object names. Both the
+/// placement checks and the [`ObjectGrid`] operate on absolute positions.
 fn absolute_tiles(
   layout: &FieldLayout,
   path_point: Point<InternalGrid>,
@@ -173,7 +179,8 @@ fn absolute_tiles(
     .collect()
 }
 
-/// Returns `false` for overlaps, elevation changes, and fields that take up too much space.
+/// Checks that all proposed field tiles are available, on the same elevation, and leave room for a building. This avoids
+/// partial fields, fields crossing terrain levels, and settlements containing fields but no buildings.
 fn can_place_field(
   grid: &ObjectGrid,
   proposed_field_tiles: &[(Point<InternalGrid>, ObjectName)],
@@ -188,7 +195,6 @@ fn can_place_field(
   {
     return false;
   }
-
   let Some((first_point, _)) = proposed_field_tiles.first() else {
     return false;
   };
@@ -199,14 +205,14 @@ fn can_place_field(
   {
     return false;
   }
-
   let mut reserved_grid_space = occupied_grid_space.clone();
   reserved_grid_space.extend(proposed_field_tiles.iter().map(|(point, _)| *point));
-  estimated_housing_capacity(path_points, available_grid_space, reserved_grid_space, building_templates) > 0
+  estimated_building_capacity(path_points, available_grid_space, reserved_grid_space, building_templates) > 0
 }
 
-/// Estimates settlement size from non-overlapping house sites because roads may extend into wilderness.
-fn estimated_housing_capacity(
+/// Estimates how many non-overlapping buildings fit along the available path points. Field selection and placement use
+/// this estimate to preserve space for buildings.
+fn estimated_building_capacity(
   path_points: &[Point<InternalGrid>],
   available_grid_space: &HashSet<Point<InternalGrid>>,
   mut reserved_grid_space: HashSet<Point<InternalGrid>>,
@@ -234,7 +240,8 @@ fn estimated_housing_capacity(
   estimated_building_count
 }
 
-/// Limits field variety according to the estimated settlement size.
+/// Returns which field kinds may be placed based on the estimated building capacity. Small settlements get at most one
+/// kind, while larger settlements can contain both.
 fn permitted_field_kinds(rng: &mut StdRng, capacity: usize) -> Vec<FieldKind> {
   match capacity {
     0 => Vec::new(),
@@ -247,40 +254,54 @@ fn permitted_field_kinds(rng: &mut StdRng, capacity: usize) -> Vec<FieldKind> {
   }
 }
 
-/// Builds randomised candidates, trying one rotation per shape before fallback rotations.
+/// Returns every supported field layout in randomised preference order. One random rotation per shape is tried first,
+/// while the remaining rotations allow placement where the preferred rotations do not fit.
 fn layouts(rng: &mut StdRng) -> Vec<FieldLayout> {
-  let mut shapes = field_shapes();
+  // Get pre-configured shape templates and shuffle them
+  let mut shapes: Vec<Shape> = field_shape_templates();
   shapes.shuffle(rng);
-  let mut preferred_layouts = Vec::new();
-  let mut fallback_layouts = Vec::new();
-  for shape in shapes {
-    let mut rotated_shapes = rotations(&shape);
-    let first_rotation = rng.random_range(0..rotated_shapes.len());
-    rotated_shapes.rotate_left(first_rotation);
 
+  // Keep preferred and fallback layouts separate for now
+  let mut preferred_layouts: Vec<FieldLayout> = Vec::new();
+  let mut fallback_layouts: Vec<FieldLayout> = Vec::new();
+
+  // Iterate through each shape
+  for shape in shapes {
+    // Generate every orientation, pick one as the preferred orientation, and make it the first in the list
+    let mut rotated_shapes = rotations(&shape);
+    let preferred_rotation = rng.random_range(0..rotated_shapes.len());
+    rotated_shapes.rotate_left(preferred_rotation);
+
+    // Iterate through each rotation of a shape
     for (rotation_index, rotated_shape) in rotated_shapes.into_iter().enumerate() {
-      let mut shape_entrances = entrances(&rotated_shape);
-      if rotation_index == 0 {
-        shape_entrances.shuffle(rng);
-      }
-      let target = if rotation_index == 0 {
+      // Determine possible entrances for the shape
+      let mut candidate_entrances = entrances(&rotated_shape);
+      candidate_entrances.shuffle(rng);
+
+      // Make sure we keep our preferred orientation layouts separate
+      let layouts = if rotation_index == 0 {
         &mut preferred_layouts
       } else {
         &mut fallback_layouts
       };
-      target.extend(
-        shape_entrances
+
+      // Now add a "fully-qualified" (shape + entrance) layout for each possible entrance to the list
+      layouts.extend(
+        candidate_entrances
           .into_iter()
           .map(|(entrance, outside)| layout_from_entrance(&rotated_shape, entrance, outside)),
       );
     }
   }
+
+  // Merge preferred and fallback layouts again in the correct order and return them
   preferred_layouts.extend(fallback_layouts);
   preferred_layouts
 }
 
-/// Defines the permitted field sizes and proportions independently of placement.
-fn field_shapes() -> Vec<Shape> {
+/// Returns the supported field shapes before rotation and path alignment. These shapes are the starting points. Think
+/// of them as templates. You can add other shapes here too, if you want.
+fn field_shape_templates() -> Vec<Shape> {
   vec![
     rectangle(4, 3),
     rectangle(5, 3),
@@ -293,7 +314,8 @@ fn field_shapes() -> Vec<Shape> {
   ]
 }
 
-/// Produces every orientation so a constrained site does not fail on one random rotation.
+/// Returns all four rotations of a field shape. Trying each rotation prevents a valid placement being missed because
+/// another orientation was selected first.
 fn rotations(shape: &[(i32, i32)]) -> Vec<Shape> {
   let mut rotations = Vec::with_capacity(4);
   let mut rotated = shape.to_vec();
@@ -304,7 +326,8 @@ fn rotations(shape: &[(i32, i32)]) -> Vec<Shape> {
   rotations
 }
 
-/// Finds boundary tiles with exactly one exposed side suitable for a road connection.
+/// Returns field tiles with exactly one side outside the shape. These tiles can face a path without creating two
+/// openings in the fence. The result is a list of candidate entrances to a field.
 fn entrances(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
   shape
     .iter()
@@ -318,14 +341,15 @@ fn entrances(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
     .collect()
 }
 
-/// Anchors a shape beside the road and removes the fence at its chosen entrance.
+// TODO: Consider if we need dedicated artwork for this
+/// Returns the full [`FieldLayout`]. Positions a field shape relative to a path connection point and marks the
+/// connected field tile as fill. The fill tile leaves an opening in the fence between the field and path.
 fn layout_from_entrance(shape: &[(i32, i32)], entrance: (i32, i32), outside: Direction) -> FieldLayout {
   let outside_offset: Point<InternalGrid> = outside.to_point();
   let tiles = shape
     .iter()
     .map(|&(x, y)| {
       let tile_shape = if (x, y) == entrance {
-        // Fill artwork leaves an opening in the boundary fence.
         TileShape::Fill
       } else {
         classify_tile(shape, x, y)
@@ -343,7 +367,8 @@ fn layout_from_entrance(shape: &[(i32, i32)], entrance: (i32, i32), outside: Dir
   }
 }
 
-/// Selects edge and corner geometry from a tile's missing neighbours.
+/// Returns the tile shape required by its neighbouring field tiles. The result determines which fence edges and corners
+/// appear at this position.
 fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
   let outside: Vec<Direction> = outside(shape, &x, &y);
 
@@ -361,7 +386,8 @@ fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
   }
 }
 
-/// Distinguishes interior fill from concave corners using diagonal neighbours.
+/// Checks diagonal neighbours when field tiles exist on every cardinal side. A missing diagonal requires an
+/// inner-corner fence instead of a fill tile.
 fn classify_fill_or_inner_corner(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
   let missing_diagonals: Vec<_> = DIAGONALS
     .iter()
@@ -378,7 +404,8 @@ fn classify_fill_or_inner_corner(shape: &[(i32, i32)], x: i32, y: i32) -> TileSh
   }
 }
 
-/// Lists cardinal sides with no adjacent field tile.
+/// Returns the cardinal directions without an adjacent field tile. Entrance detection and fence classification use this
+/// same neighbour rule.
 fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
   CARDINAL_DIRECTIONS
     .into_iter()
@@ -389,12 +416,12 @@ fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
     .collect()
 }
 
-/// Builds a filled rectangle for the field-shape catalogue.
+/// Creates every coordinate in a rectangular field shape. Rectangles provide most of the available field dimensions.
 fn rectangle(width: i32, height: i32) -> Shape {
   (0..height).flat_map(|y| (0..width).map(move |x| (x, y))).collect()
 }
 
-/// Builds a concave field shape that exercises inner-corner artwork.
+/// Creates every coordinate in an L-shaped field. L-shapes require an inner-corner fence at the bend.
 fn l_shape(width: i32, height: i32, vertical_width: i32, horizontal_height: i32) -> Shape {
   (0..height)
     .flat_map(|y| {
@@ -466,7 +493,7 @@ mod tests {
 
   #[test]
   fn classify_tile_can_classify_every_field_shape() {
-    for shape in field_shapes() {
+    for shape in field_shape_templates() {
       for &(x, y) in &shape {
         classify_tile(&shape, x, y);
       }
