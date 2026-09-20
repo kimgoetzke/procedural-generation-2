@@ -13,13 +13,13 @@ use rand::seq::SliceRandom;
 use rand::{RngExt, SeedableRng};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum FieldKind {
+enum FieldType {
   Wheat,
   Pasture,
 }
 
-impl FieldKind {
-  /// Returns the [`ObjectName`] for this field kind and tile shape. Different fields share the same shapes but use
+impl FieldType {
+  /// Returns the [`ObjectName`] for this field type and tile shape. Different fields share the same shapes but use
   /// different object names.
   const fn object_name(self, tile_shape: TileShape) -> ObjectName {
     match self {
@@ -115,12 +115,12 @@ pub(super) fn place_fields(
   candidate_connection_igs.shuffle(rng);
   let mut fields_placed = 0;
 
-  for field_kind in permitted_field_kinds(rng, capacity) {
+  for field_type in permitted_field_types(rng, capacity) {
     // Try every shape, orientation, and entrance until one fits
     'placement_loop: for candidate_layout in layouts(rng) {
       for &connection_ig in &candidate_connection_igs {
         // Skip if the chosen field layout cannot be placed
-        let candidate_field = absolute_tiles(&candidate_layout, connection_ig, field_kind);
+        let candidate_field = absolute_tiles(&candidate_layout, connection_ig, field_type);
         if !can_place_field(
           grid,
           &candidate_field,
@@ -147,7 +147,7 @@ pub(super) fn place_fields(
         fields_placed += 1;
         trace!(
           "Placed [{:?}] field with [{}] tiles beside {} on {}",
-          field_kind,
+          field_type,
           candidate_field.len(),
           connection_ig,
           grid.cg,
@@ -165,7 +165,7 @@ pub(super) fn place_fields(
 fn absolute_tiles(
   layout: &FieldLayout,
   path_point: Point<InternalGrid>,
-  field_kind: FieldKind,
+  field_type: FieldType,
 ) -> Vec<(Point<InternalGrid>, ObjectName)> {
   layout
     .tiles
@@ -173,7 +173,7 @@ fn absolute_tiles(
     .map(|(offset, tile_shape)| {
       (
         Point::new_internal_grid(path_point.x + offset.x, path_point.y + offset.y),
-        field_kind.object_name(*tile_shape),
+        field_type.object_name(*tile_shape),
       )
     })
     .collect()
@@ -240,17 +240,17 @@ fn estimated_building_capacity(
   estimated_building_count
 }
 
-/// Returns which field kinds may be placed based on the estimated building capacity. Small settlements get at most one
-/// kind, while larger settlements can contain both.
-fn permitted_field_kinds(rng: &mut StdRng, capacity: usize) -> Vec<FieldKind> {
+/// Returns which field type may be placed based on the estimated building capacity. Small settlements get at most one
+/// type, while larger settlements can contain both.
+fn permitted_field_types(rng: &mut StdRng, capacity: usize) -> Vec<FieldType> {
   match capacity {
     0 => Vec::new(),
     1..=2 => vec![if rng.random_bool(0.5) {
-      FieldKind::Wheat
+      FieldType::Wheat
     } else {
-      FieldKind::Pasture
+      FieldType::Pasture
     }],
-    _ => vec![FieldKind::Wheat, FieldKind::Pasture],
+    _ => vec![FieldType::Wheat, FieldType::Pasture],
   }
 }
 
@@ -461,7 +461,7 @@ mod tests {
   }
 
   #[test]
-  fn field_kind_maps_every_tile_shape_to_its_own_artwork() {
+  fn field_type_maps_every_tile_shape_to_its_own_artwork() {
     for tile_shape in [
       TileShape::Fill,
       TileShape::EdgeTop,
@@ -477,18 +477,18 @@ mod tests {
       TileShape::InnerCornerBottomRight,
       TileShape::InnerCornerBottomLeft,
     ] {
-      assert!(FieldKind::Wheat.object_name(tile_shape).is_wheat_field());
-      assert!(FieldKind::Pasture.object_name(tile_shape).is_pasture());
+      assert!(FieldType::Wheat.object_name(tile_shape).is_wheat_field());
+      assert!(FieldType::Pasture.object_name(tile_shape).is_pasture());
     }
   }
 
   #[test]
-  fn permitted_field_kinds_follow_housing_capacity() {
+  fn permitted_field_types_follow_housing_capacity() {
     let mut rng = StdRng::seed_from_u64(7);
 
-    assert!(permitted_field_kinds(&mut rng, 0).is_empty());
-    assert_eq!(permitted_field_kinds(&mut rng, 1).len(), 1);
-    assert_eq!(permitted_field_kinds(&mut rng, 3), vec![FieldKind::Wheat, FieldKind::Pasture]);
+    assert!(permitted_field_types(&mut rng, 0).is_empty());
+    assert_eq!(permitted_field_types(&mut rng, 1).len(), 1);
+    assert_eq!(permitted_field_types(&mut rng, 3), vec![FieldType::Wheat, FieldType::Pasture]);
   }
 
   #[test]
