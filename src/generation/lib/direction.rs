@@ -5,7 +5,7 @@ use cmp::Ordering;
 use std::any::TypeId;
 use std::cmp;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(serde::Deserialize, Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Direction {
   TopLeft,
   Top,

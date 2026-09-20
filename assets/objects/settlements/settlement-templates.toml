@@ -1,0 +1,149 @@
+[[field_shapes]]
+id = "rectangle_4x3"
+rows = [
+  "####",
+  "####",
+  "####",
+]
+
+[[field_shapes]]
+id = "rectangle_5x3"
+rows = [
+  "#####",
+  "#####",
+  "#####",
+]
+
+[[field_shapes]]
+id = "rectangle_4x4"
+rows = [
+  "####",
+  "####",
+  "####",
+  "####",
+]
+
+[[field_shapes]]
+id = "rectangle_6x3"
+rows = [
+  "######",
+  "######",
+  "######",
+]
+
+[[field_shapes]]
+id = "rectangle_5x4"
+rows = [
+  "#####",
+  "#####",
+  "#####",
+  "#####",
+]
+
+[[field_shapes]]
+id = "rectangle_6x4"
+rows = [
+  "######",
+  "######",
+  "######",
+  "######",
+]
+
+[[field_shapes]]
+id = "l_shape_5x4"
+rows = [
+  "#####",
+  "#####",
+  "##...",
+  "##...",
+]
+
+[[field_shapes]]
+id = "l_shape_6x5"
+rows = [
+  "######",
+  "######",
+  "###...",
+  "###...",
+  "###...",
+]
+
+[[building_templates]]
+id = "small_house_facing_east"
+building_type = "SmallHouse"
+door = [1, 1]
+connection_direction = "Right"
+levels = [
+  { level = "Roof", structures = ["Left", "Right"] },
+  { level = "GroundFloor", structures = ["Left", "RightDoor"] },
+]
+
+[[building_templates]]
+id = "small_house_facing_west"
+building_type = "SmallHouse"
+door = [0, 1]
+connection_direction = "Left"
+levels = [
+  { level = "Roof", structures = ["Left", "Right"] },
+  { level = "GroundFloor", structures = ["LeftDoor", "Right"] },
+]
+
+[[building_templates]]
+id = "medium_house_facing_north"
+building_type = "MediumHouse"
+door = [1, 1]
+connection_direction = "Bottom"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["Left", "MiddleDoor", "Right"] },
+]
+
+[[building_templates]]
+id = "medium_house_facing_east"
+building_type = "MediumHouse"
+door = [2, 1]
+connection_direction = "Right"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["Left", "Middle", "RightDoor"] },
+]
+
+[[building_templates]]
+id = "medium_house_facing_west"
+building_type = "MediumHouse"
+door = [0, 1]
+connection_direction = "Left"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["LeftDoor", "Middle", "Right"] },
+]
+
+[[building_templates]]
+id = "large_house_facing_north"
+building_type = "LargeHouse"
+door = [1, 1]
+connection_direction = "Bottom"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["Left", "MiddleDoor", "Right"] },
+]
+
+[[building_templates]]
+id = "large_house_facing_east"
+building_type = "LargeHouse"
+door = [2, 1]
+connection_direction = "Right"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["Left", "Middle", "RightDoor"] },
+]
+
+[[building_templates]]
+id = "large_house_facing_west"
+building_type = "LargeHouse"
+door = [0, 1]
+connection_direction = "Left"
+levels = [
+  { level = "Roof", structures = ["Left", "Middle", "Right"] },
+  { level = "GroundFloor", structures = ["LeftDoor", "Middle", "Right"] },
+]

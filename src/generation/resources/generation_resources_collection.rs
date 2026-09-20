@@ -1,3 +1,4 @@
+use super::settlement_assets::{BuildingComponentRegistry, SettlementTemplateAsset, resolve_settlement_resources};
 use crate::constants::*;
 use crate::generation::lib::{AssetCollection, AssetPack, GenerationResourcesCollection, TerrainType, TileType};
 use crate::generation::object::lib::{Connection, ObjectName, TerrainState};
@@ -25,7 +26,7 @@ use strum::IntoEnumIterator;
 ///
 /// In terms of process, it works as follows:
 /// 1. The plugin loads the rule sets for terrain and tile types from the file system. At this point, the application is
-///    in the [`AppState::Loading`] state. See [`load_rule_sets_system`].
+///    in the [`AppState::Loading`] state. See [`load_generation_assets_system`].
 /// 2. While in this state, it checks the loading state of these assets and waits until they are fully loaded, then
 ///    it transitions the state to [`AppState::Initialising`]. See [`check_loading_state_system`].
 /// 3. Upon transitioning to the initialising state (i.e. [`OnExit`] of [`AppState::Loading`]), it finally
@@ -40,8 +41,10 @@ impl Plugin for GenerationResourcesCollectionPlugin {
         TomlAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.toml"]),
         TomlAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.toml"]),
         TomlAssetPlugin::<ExclusionsRuleSet>::new(&["exclusions.ruleset.toml"]),
+        TomlAssetPlugin::<SettlementTemplateAsset>::new(&["settlement-templates.toml"]),
+        TomlAssetPlugin::<BuildingComponentRegistry>::new(&["building-components.toml"]),
       ))
-      .add_systems(Startup, load_rule_sets_system)
+      .add_systems(Startup, load_generation_assets_system)
       .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
       .add_systems(OnExit(AppState::Loading), initialise_resources_system);
   }
@@ -99,6 +102,12 @@ struct ExclusionsRuleSet {
   states: Vec<ExclusionsState>,
 }
 
+#[derive(Resource, Default, Debug, Clone)]
+struct SettlementTemplateAssetHandle(Handle<SettlementTemplateAsset>);
+
+#[derive(Resource, Default, Debug, Clone)]
+struct BuildingComponentRegistryHandle(Handle<BuildingComponentRegistry>);
+
 impl Display for ExclusionsRuleSet {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "Exclusions rule set with {} states", self.states.len())
@@ -112,7 +121,7 @@ struct ExclusionsState {
   pub excluded_objects: Vec<ObjectName>,
 }
 
-fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn load_generation_assets_system(mut commands: Commands, asset_server: Res<AssetServer>) {
   let mut rule_set_handles = Vec::new();
   for terrain_type in TerrainType::iter() {
     let path = format!("objects/{}.terrain.ruleset.toml", terrain_type.to_string().to_lowercase());
@@ -126,6 +135,10 @@ fn load_rule_sets_system(mut commands: Commands, asset_server: Res<AssetServer>)
   commands.insert_resource(TileTypeRuleSetHandle(all_handle));
   let exclusion_handle = asset_server.load("objects/all.exclusions.ruleset.toml");
   commands.insert_resource(ExclusionsRuleSetHandle(exclusion_handle));
+  let settlement_template_handle = asset_server.load("objects/settlements/settlement-templates.toml");
+  commands.insert_resource(SettlementTemplateAssetHandle(settlement_template_handle));
+  let building_component_handle = asset_server.load("objects/settlements/building-components.toml");
+  commands.insert_resource(BuildingComponentRegistryHandle(building_component_handle));
 }
 
 fn check_loading_state_system(
@@ -133,6 +146,8 @@ fn check_loading_state_system(
   terrain_handles: Res<TerrainRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
   exclusions_handle: Res<ExclusionsRuleSetHandle>,
+  settlement_template_handle: Res<SettlementTemplateAssetHandle>,
+  building_component_handle: Res<BuildingComponentRegistryHandle>,
   mut state: ResMut<NextState<AppState>>,
 ) {
   for handle in &terrain_handles.0 {
@@ -145,7 +160,10 @@ fn check_loading_state_system(
     info_once!("Waiting for assets to load...");
     return;
   }
-  if is_loading(asset_server.get_load_state(&exclusions_handle.0)) {
+  if is_loading(asset_server.get_load_state(&exclusions_handle.0))
+    || is_loading(asset_server.get_load_state(&settlement_template_handle.0))
+    || is_loading(asset_server.get_load_state(&building_component_handle.0))
+  {
     info_once!("Waiting for assets to load...");
     return;
   }
@@ -173,6 +191,10 @@ fn initialise_resources_system(
   mut tile_type_rule_set_assets: ResMut<Assets<TileTypeRuleSet>>,
   exclusions_rule_set_handle: Res<ExclusionsRuleSetHandle>,
   mut exclusions_rule_set_assets: ResMut<Assets<ExclusionsRuleSet>>,
+  settlement_template_handle: Res<SettlementTemplateAssetHandle>,
+  mut settlement_template_assets: ResMut<Assets<SettlementTemplateAsset>>,
+  building_component_handle: Res<BuildingComponentRegistryHandle>,
+  mut building_component_assets: ResMut<Assets<BuildingComponentRegistry>>,
 ) {
   // Placeholder tile set
   let default_layout = TextureAtlasLayout::from_grid(
@@ -232,6 +254,16 @@ fn initialise_resources_system(
   let static_settlements_atlas_layout = layouts.add(static_settlements_layout);
   asset_collection.objects.settlements.stat =
     AssetPack::new(asset_server.load(SETTLEMENTS_OBJ_PATH), static_settlements_atlas_layout);
+
+  // Objects: Templates and building components for settlements
+  let settlement_templates = settlement_template_assets
+    .remove(&settlement_template_handle.0)
+    .unwrap_or_else(|| panic!("Loaded settlement template asset is unavailable"));
+  let building_components = building_component_assets
+    .remove(&building_component_handle.0)
+    .unwrap_or_else(|| panic!("Loaded building component asset is unavailable"));
+  asset_collection.settlements = resolve_settlement_resources(settlement_templates, &building_components)
+    .unwrap_or_else(|error| panic!("Settlement configuration is invalid: {error}"));
 
   // Objects: Terrain
   asset_collection.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);

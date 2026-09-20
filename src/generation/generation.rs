@@ -204,9 +204,14 @@ fn world_generation_system(
       GenerationStage::Stage6(grid_generation_task) => {
         stage_6_schedule_path_generation(&mut commands, &settings, &metadata, grid_generation_task, component_cg)
       }
-      GenerationStage::Stage7(path_generation_task) => {
-        stage_7_schedule_generating_object_data(&mut commands, &settings, &metadata, path_generation_task, component_cg)
-      }
+      GenerationStage::Stage7(path_generation_task) => stage_7_schedule_generating_object_data(
+        &mut commands,
+        &settings,
+        &metadata,
+        &resources,
+        path_generation_task,
+        component_cg,
+      ),
       GenerationStage::Stage8(object_generation_tasks) => {
         stage_8_schedule_spawning_objects(&mut commands, &settings, object_generation_tasks, component_cg)
       }
@@ -459,6 +464,7 @@ fn stage_7_schedule_generating_object_data(
   commands: &mut Commands,
   settings: &Settings,
   metadata: &Metadata,
+  resources: &GenerationResourcesCollection,
   path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
@@ -469,10 +475,17 @@ fn stage_7_schedule_generating_object_data(
         if commands.get_entity(chunk_entity).is_ok() {
           let settings = *settings;
           let metadata = metadata.clone();
+          let settlement_resources = resources.settlements.clone();
           let task_pool = AsyncComputeTaskPool::get();
           let task = task_pool.spawn(async move {
             let mut rng = StdRng::seed_from_u64(shared::calculate_seed(chunk.coords.chunk_grid, settings.world.noise_seed));
-            object::settlements::place_settlements_on_grid(&mut object_grid, &settings, &metadata, &mut rng);
+            object::settlements::place_settlement_on_grid(
+              &mut object_grid,
+              &settings,
+              &metadata,
+              &settlement_resources,
+              &mut rng,
+            );
             object::decoration::place_decorative_objects_on_grid(&mut object_grid, &settings, &mut rng);
             object::generate_object_data(&settings, object_grid, chunk, chunk_entity)
           });

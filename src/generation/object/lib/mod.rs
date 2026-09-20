@@ -1,3 +1,4 @@
+mod building_template;
 mod cell;
 mod connection;
 mod iteration_result;
@@ -10,6 +11,7 @@ mod terrain_state;
 mod tile_below;
 mod tile_data;
 
+pub(crate) use building_template::BuildingTemplate;
 pub use cell::{Cell, CellRef};
 pub use connection::Connection;
 pub use connection::get_connection_points;

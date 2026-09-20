@@ -1,8 +1,7 @@
-use super::templates;
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
 use crate::generation::lib::Direction;
-use crate::generation::object::lib::{ObjectGrid, ObjectName};
+use crate::generation::object::lib::{BuildingTemplate, ObjectGrid, ObjectName};
 use crate::generation::object::settlements::settlement_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
 };
@@ -90,6 +89,22 @@ const DIAGONALS: [(Direction, TileShape); 4] = [
 
 type Shape = Vec<(i32, i32)>;
 
+/// A pre-configured field e.g. an L-shaped or rectangle layout. Similar to a building template but for fields.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FieldShape {
+  tiles: Shape,
+}
+
+impl FieldShape {
+  pub(crate) const fn new(tiles: Shape) -> Self {
+    Self { tiles }
+  }
+
+  pub(crate) fn tiles(&self) -> &[(i32, i32)] {
+    &self.tiles
+  }
+}
+
 struct FieldLayout {
   tiles: Vec<(Point<InternalGrid>, TileShape)>,
   entrance: Point<InternalGrid>,
@@ -101,7 +116,8 @@ pub(super) fn place_fields(
   grid: &mut ObjectGrid,
   path_points: &[Point<InternalGrid>],
   available_grid_space: &HashSet<Point<InternalGrid>>,
-  building_templates: &[templates::BuildingTemplate],
+  building_templates: &[BuildingTemplate],
+  field_shapes: &[FieldShape],
   occupied_grid_space: &mut HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
 ) -> i8 {
@@ -117,7 +133,7 @@ pub(super) fn place_fields(
 
   for field_type in permitted_field_types(rng, capacity) {
     // Try every shape, orientation, and entrance until one fits
-    'placement_loop: for candidate_layout in layouts(rng) {
+    'placement_loop: for candidate_layout in layouts(rng, field_shapes) {
       for &connection_ig in &candidate_connection_igs {
         // Skip if the chosen field layout cannot be placed
         let candidate_field = absolute_tiles(&candidate_layout, connection_ig, field_type);
@@ -187,7 +203,7 @@ fn can_place_field(
   path_points: &[Point<InternalGrid>],
   available_grid_space: &HashSet<Point<InternalGrid>>,
   occupied_grid_space: &HashSet<Point<InternalGrid>>,
-  building_templates: &[templates::BuildingTemplate],
+  building_templates: &[BuildingTemplate],
 ) -> bool {
   if !proposed_field_tiles
     .iter()
@@ -216,7 +232,7 @@ fn estimated_building_capacity(
   path_points: &[Point<InternalGrid>],
   available_grid_space: &HashSet<Point<InternalGrid>>,
   mut reserved_grid_space: HashSet<Point<InternalGrid>>,
-  building_templates: &[templates::BuildingTemplate],
+  building_templates: &[BuildingTemplate],
 ) -> usize {
   let mut rng = StdRng::seed_from_u64(0);
   let mut estimated_building_count = 0;
@@ -256,9 +272,9 @@ fn permitted_field_types(rng: &mut StdRng, capacity: usize) -> Vec<FieldType> {
 
 /// Returns every supported field layout in randomised preference order. One random rotation per shape is tried first,
 /// while the remaining rotations allow placement where the preferred rotations do not fit.
-fn layouts(rng: &mut StdRng) -> Vec<FieldLayout> {
-  // Get pre-configured shape templates and shuffle them
-  let mut shapes: Vec<Shape> = field_shape_templates();
+fn layouts(rng: &mut StdRng, field_shapes: &[FieldShape]) -> Vec<FieldLayout> {
+  // Get configured shape templates and shuffle them
+  let mut shapes: Vec<Shape> = field_shapes.iter().map(|shape| shape.tiles().to_vec()).collect();
   shapes.shuffle(rng);
 
   // Keep preferred and fallback layouts separate for now
@@ -297,21 +313,6 @@ fn layouts(rng: &mut StdRng) -> Vec<FieldLayout> {
   // Merge preferred and fallback layouts again in the correct order and return them
   preferred_layouts.extend(fallback_layouts);
   preferred_layouts
-}
-
-/// Returns the supported field shapes before rotation and path alignment. These shapes are the starting points. Think
-/// of them as templates. You can add other shapes here too, if you want.
-fn field_shape_templates() -> Vec<Shape> {
-  vec![
-    rectangle(4, 3),
-    rectangle(5, 3),
-    rectangle(4, 4),
-    rectangle(6, 3),
-    rectangle(5, 4),
-    rectangle(6, 4),
-    l_shape(5, 4, 2, 2),
-    l_shape(6, 5, 3, 2),
-  ]
 }
 
 /// Returns all four rotations of a field shape. Trying each rotation prevents a valid placement being missed because
@@ -416,26 +417,15 @@ fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
     .collect()
 }
 
-/// Creates every coordinate in a rectangular field shape. Rectangles provide most of the available field dimensions.
-fn rectangle(width: i32, height: i32) -> Shape {
-  (0..height).flat_map(|y| (0..width).map(move |x| (x, y))).collect()
-}
-
-/// Creates every coordinate in an L-shaped field. L-shapes require an inner-corner fence at the bend.
-fn l_shape(width: i32, height: i32, vertical_width: i32, horizontal_height: i32) -> Shape {
-  (0..height)
-    .flat_map(|y| {
-      (0..width)
-        .filter(move |&x| x < vertical_width || y < horizontal_height)
-        .map(move |x| (x, y))
-    })
-    .collect()
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::generation::resources::test_settlement_resources;
   use rand::SeedableRng;
+
+  fn rectangle(width: i32, height: i32) -> Shape {
+    (0..height).flat_map(|y| (0..width).map(move |x| (x, y))).collect()
+  }
 
   #[test]
   fn rotations_include_all_four_orientations() {
@@ -454,7 +444,8 @@ mod tests {
 
   #[test]
   fn layouts_mark_the_boundary_tile_next_to_the_road_as_the_entrance() {
-    for layout in layouts(&mut StdRng::seed_from_u64(7)) {
+    let resources = test_settlement_resources();
+    for layout in layouts(&mut StdRng::seed_from_u64(7), resources.field_shapes()) {
       assert!(layout.tiles.contains(&(layout.entrance, TileShape::Fill)));
       assert_eq!(layout.entrance.x.abs() + layout.entrance.y.abs(), 1);
     }
@@ -493,9 +484,10 @@ mod tests {
 
   #[test]
   fn classify_tile_can_classify_every_field_shape() {
-    for shape in field_shape_templates() {
-      for &(x, y) in &shape {
-        classify_tile(&shape, x, y);
+    let resources = test_settlement_resources();
+    for shape in resources.field_shapes() {
+      for &(x, y) in shape.tiles() {
+        classify_tile(shape.tiles(), x, y);
       }
     }
   }

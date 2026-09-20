@@ -2,6 +2,7 @@ use crate::generation::lib::TerrainType;
 use crate::generation::lib::resources::asset_collection::AssetCollection;
 use crate::generation::lib::resources::asset_pack::AssetPack;
 use crate::generation::lib::resources::object_resources::ObjectResources;
+use crate::generation::lib::resources::settlement_resources::SettlementResources;
 use crate::generation::resources::Climate;
 use bevy::prelude::Resource;
 
@@ -11,9 +12,8 @@ use bevy::prelude::Resource;
 /// Each terrain layer and climate combination has its own [`AssetCollection`], which contains a static and optional
 /// animated [`AssetPack`].
 ///
-/// It also stores [`ObjectResources`] which contain [`AssetCollection`]s for all objects as well as the terrain state
-/// map which describes the rules for placing objects on tiles (used by the
-/// [`crate::generation::object::lib::ObjectGrid`]).
+/// It also stores object assets, wave function collapse terrain states, and resolved settlement templates used during
+/// object generation.
 #[derive(Resource, Default, Debug, Clone)]
 pub struct GenerationResourcesCollection {
   pub placeholder: AssetPack,
@@ -29,6 +29,7 @@ pub struct GenerationResourcesCollection {
   pub land_humid_l2: AssetCollection,
   pub land_humid_l3: AssetCollection,
   pub objects: ObjectResources,
+  pub settlements: SettlementResources,
 }
 
 impl GenerationResourcesCollection {

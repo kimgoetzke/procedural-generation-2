@@ -1,9 +1,9 @@
-use super::{buildings, fields, templates};
+use super::{buildings, fields};
 use crate::constants::CHUNK_SIZE;
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Direction, shared};
-use crate::generation::object::lib::{Cell, ObjectGrid, ObjectName};
+use crate::generation::lib::{Direction, SettlementResources, shared};
+use crate::generation::object::lib::{BuildingTemplate, Cell, ObjectGrid, ObjectName};
 use crate::generation::resources::Metadata;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
@@ -20,9 +20,14 @@ impl Plugin for SettlementGenerationPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-// TODO: Consider moving template and registry values to resource file (after moving away from RON files)
-/// The entry point for determining settlements in the object grid.
-pub fn place_settlements_on_grid(object_grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
+/// The entry point for generating a settlement and placing it on the [`ObjectGrid`].
+pub fn place_settlement_on_grid(
+  object_grid: &mut ObjectGrid,
+  settings: &Settings,
+  metadata: &Metadata,
+  settlement_resources: &SettlementResources,
+  rng: &mut StdRng,
+) {
   let start_time = shared::get_time();
   let cg = object_grid.cg;
   if !settings.object.generate_paths || !settings.object.generate_settlements {
@@ -55,13 +60,14 @@ pub fn place_settlements_on_grid(object_grid: &mut ObjectGrid, settings: &Settin
 
   // Now place settlement structures on the grid
   let available_grid_space = compute_available_space_map(object_grid);
-  let building_templates = templates::get_building_templates();
+  let building_templates = settlement_resources.building_templates();
   let mut occupied_grid_space = HashSet::new();
   let fields_placed = fields::place_fields(
     object_grid,
     &path_points,
     &available_grid_space,
-    &building_templates,
+    building_templates,
+    settlement_resources.field_shapes(),
     &mut occupied_grid_space,
     rng,
   );
@@ -69,7 +75,7 @@ pub fn place_settlements_on_grid(object_grid: &mut ObjectGrid, settings: &Settin
     object_grid,
     &path_points,
     &available_grid_space,
-    &building_templates,
+    building_templates,
     &mut occupied_grid_space,
     rng,
     cg,
@@ -162,12 +168,12 @@ pub fn compute_available_space_map(object_grid: &mut ObjectGrid) -> HashSet<Poin
 /// Selects a building template that fits at the given path connection point without overlapping any occupied space.
 /// If multiple templates fit, one is chosen at random. If none fit, `None` is returned.
 pub fn select_fitting_building(
-  building_templates: &[templates::BuildingTemplate],
+  building_templates: &[BuildingTemplate],
   path_connection_ig: Point<InternalGrid>,
   available_space: &HashSet<Point<InternalGrid>>,
   occupied_space: &HashSet<Point<InternalGrid>>,
   rng: &mut StdRng,
-) -> Option<templates::BuildingTemplate> {
+) -> Option<BuildingTemplate> {
   let mut fitting_building_templates = Vec::new();
   for template in building_templates {
     if template.is_placeable_at_path(path_connection_ig, available_space) {
@@ -306,9 +312,10 @@ fn determine_updated_object_name(
 mod tests {
   use super::*;
   use crate::generation::lib::{TerrainType, TileType};
+  use crate::generation::resources::test_settlement_resources;
   use rand::SeedableRng;
 
-  fn settlement(width: i32) -> (ObjectGrid, Settings, Metadata) {
+  fn test_settlement(width: i32) -> (ObjectGrid, Settings, Metadata) {
     let cg = Point::new_chunk_grid(0, 0);
     let mut grid = ObjectGrid::default(cg);
     for y in 2..10 {
@@ -351,6 +358,11 @@ mod tests {
           .map(|state| state.name)
       })
       .collect()
+  }
+
+  fn place_test_settlement(grid: &mut ObjectGrid, settings: &Settings, metadata: &Metadata, rng: &mut StdRng) {
+    let resources = test_settlement_resources();
+    place_settlement_on_grid(grid, settings, metadata, &resources, rng);
   }
 
   #[test]
@@ -438,17 +450,17 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_small_settlement_includes_a_field() {
-    let (mut grid, settings, metadata) = settlement(8);
-    place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
+  fn place_settlement_on_grid_small_settlement_includes_a_field() {
+    let (mut grid, settings, metadata) = test_settlement(8);
+    place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let field_tiles = object_names(&grid).iter().filter(|name| name.is_field()).count();
     assert!((12..=24).contains(&field_tiles));
   }
 
   #[test]
-  fn place_structures_on_grid_respects_generation_switches_and_unsettled_chunks() {
+  fn place_settlement_on_grid_respects_generation_switches_and_unsettled_chunks() {
     for disabled in 0..3 {
-      let (mut grid, mut settings, mut metadata) = settlement(16);
+      let (mut grid, mut settings, mut metadata) = test_settlement(16);
       match disabled {
         0 => settings.object.generate_settlements = false,
         1 => settings.object.generate_paths = false,
@@ -457,31 +469,31 @@ mod tests {
         }
       }
       let before = object_names(&grid);
-      place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
+      place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
       assert_eq!(object_names(&grid), before);
     }
   }
 
   #[test]
-  fn place_structures_on_grid_is_repeatable_despite_path_insertion_order() {
-    let (mut first, settings, metadata) = settlement(16);
-    let (mut second, _, _) = settlement(16);
+  fn place_settlement_on_grid_is_repeatable_despite_path_insertion_order() {
+    let (mut first, settings, metadata) = test_settlement(16);
+    let (mut second, _, _) = test_settlement(16);
     second.set_generated_path((1..16).rev().map(|x| Point::new_internal_grid(x, 6)).collect());
-    place_settlements_on_grid(&mut first, &settings, &metadata, &mut StdRng::seed_from_u64(42));
-    place_settlements_on_grid(&mut second, &settings, &metadata, &mut StdRng::seed_from_u64(42));
+    place_test_settlement(&mut first, &settings, &metadata, &mut StdRng::seed_from_u64(42));
+    place_test_settlement(&mut second, &settings, &metadata, &mut StdRng::seed_from_u64(42));
     assert_eq!(object_names(&first), object_names(&second));
   }
 
   #[test]
-  fn place_structures_on_grid_preserves_existing_objects_with_fields() {
+  fn place_settlement_on_grid_preserves_existing_objects_with_fields() {
     for seed in 0..20 {
-      let (mut grid, settings, metadata) = settlement(16);
+      let (mut grid, settings, metadata) = test_settlement(16);
       let obstacle = Point::new_internal_grid(7, 4);
       grid
         .get_cell_mut(&obstacle)
         .unwrap()
         .mark_as_collapsed(ObjectName::HouseSmallWallLeft1);
-      place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
+      place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
       assert_eq!(
         grid.get_cell(&obstacle).unwrap().get_possible_states()[0].name,
         ObjectName::HouseSmallWallLeft1
@@ -493,25 +505,25 @@ mod tests {
   }
 
   #[test]
-  fn place_structures_on_grid_cramped_site_never_places_partial_fields() {
-    let (mut grid, settings, metadata) = settlement(3);
-    place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
+  fn place_settlement_on_grid_cramped_site_never_places_partial_fields() {
+    let (mut grid, settings, metadata) = test_settlement(3);
+    place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     assert!(!object_names(&grid).iter().any(ObjectName::is_field));
   }
 
   #[test]
-  fn place_structures_on_grid_medium_settlement_has_wheat_fields_and_pastures() {
-    let (mut grid, settings, metadata) = settlement(11);
-    place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
+  fn place_settlement_on_grid_medium_settlement_has_wheat_fields_and_pastures() {
+    let (mut grid, settings, metadata) = test_settlement(11);
+    place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
     assert!(names.iter().any(ObjectName::is_wheat_field));
     assert!(names.iter().any(ObjectName::is_pasture));
   }
 
   #[test]
-  fn place_structures_on_grid_large_settlement_has_fields_and_buildings() {
-    let (mut grid, settings, metadata) = settlement(16);
-    place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
+  fn place_settlement_on_grid_large_settlement_has_fields_and_buildings() {
+    let (mut grid, settings, metadata) = test_settlement(16);
+    place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(7));
     let names = object_names(&grid);
     assert!(names.iter().any(ObjectName::is_wheat_field));
     assert!(names.iter().any(ObjectName::is_pasture));
@@ -524,7 +536,7 @@ mod tests {
   #[test]
   fn fields_avoid_existing_objects_and_elevation_changes() {
     for seed in 0..20 {
-      let (mut grid, settings, metadata) = settlement(16);
+      let (mut grid, settings, metadata) = test_settlement(16);
       let obstacle = Point::new_internal_grid(7, 4);
       grid
         .get_cell_mut(&obstacle)
@@ -539,7 +551,7 @@ mod tests {
         vec![(TerrainType::Land1, TileType::Fill)],
         false,
       );
-      place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
+      place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
       assert_eq!(
         grid.get_cell(&obstacle).unwrap().get_possible_states()[0].name,
         ObjectName::HouseSmallWallLeft1
@@ -565,8 +577,8 @@ mod tests {
     let mut entrance_sides = HashSet::new();
     let mut has_non_rectangular = false;
     for seed in 0..80 {
-      let (mut grid, settings, metadata) = settlement(12);
-      place_settlements_on_grid(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
+      let (mut grid, settings, metadata) = test_settlement(12);
+      place_test_settlement(&mut grid, &settings, &metadata, &mut StdRng::seed_from_u64(seed));
       let is_wheat_field = object_names(&grid)
         .into_iter()
         .find(ObjectName::is_field)
