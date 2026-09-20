@@ -66,11 +66,11 @@ pub struct GeneralGenerationSettings {
   /// terrain and tile type combination). If set to `false`, terrain sprites will be drawn as static images. If set to
   /// `true`, water sprites, for example, will be animated.
   pub animate_terrain_sprites: bool,
-  /// The lowest terrain layer for which terrain meshes will be spawned. See [`crate::generation::lib::TerrainType`].
+  /// The lowest terrain layer for which terrain meshes will be spawned. See [`crate::generation::model::TerrainType`].
   /// Setting this to a value higher than `0` is only useful for debugging purposes.
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_from_layer: usize,
-  /// The highest terrain layer for which terrain meshes will be spawned. See [`crate::generation::lib::TerrainType`].
+  /// The highest terrain layer for which terrain meshes will be spawned. See [`crate::generation::model::TerrainType`].
   /// Setting this to a value lower than the maximum is only useful for debugging purposes.
   #[inspector(min = 0, max = 4, display = NumberDisplay::Slider)]
   pub spawn_up_to_layer: usize,
@@ -145,7 +145,7 @@ pub struct WorldGenerationSettings {
   pub noise_seed: u32,
   /// The overall impact of the noise function on the terrain generation. A simple multiplier for the final output of
   /// the Perlin noise function. The lower the value, the higher the impact of other parameters such as the elevation
-  /// offset from the [`crate::generation::resources::ElevationMetadata`].
+  /// offset from the [`crate::generation::model::ElevationMetadata`].
   #[inspector(min = 0., max = 1., display = NumberDisplay::Slider)]
   pub noise_strength: f64,
   /// The amount of detail: The higher the octaves, the more detailed the terrain. A parameter of [`noise::BasicMulti`].

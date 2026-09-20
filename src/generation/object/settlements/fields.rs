@@ -1,7 +1,6 @@
-use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
-use crate::generation::lib::Direction;
-use crate::generation::object::lib::{BuildingTemplate, ObjectGrid, ObjectName};
+use crate::coordinates::{Direction, Point};
+use crate::generation::object::model::{BuildingTemplate, ObjectGrid, ObjectName};
 use crate::generation::object::settlements::settlement_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
 };
@@ -420,7 +419,7 @@ fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::generation::resources::test_settlement_resources;
+  use crate::generation::object::settlements::test_settlement_resources;
   use rand::SeedableRng;
 
   fn rectangle(width: i32, height: i32) -> Shape {

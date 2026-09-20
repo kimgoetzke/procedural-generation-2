@@ -1,11 +1,12 @@
 use crate::components::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
-use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
-use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
+use crate::generation::model::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile};
+use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};
+use crate::generation::shared;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
+use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
 use bevy::log::*;
 use bevy::prelude::{Commands, Component, Entity, Name, Query, TextureAtlas, Transform};
@@ -23,6 +24,10 @@ impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(Update, process_object_spawn_tasks_system);
   }
+}
+
+trait CommandQueueTask {
+  fn poll_once(&mut self) -> Option<CommandQueue>;
 }
 
 #[derive(Component)]
@@ -267,6 +272,18 @@ fn sprite(
   )
 }
 
-fn process_object_spawn_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
-  shared::process_tasks(commands, object_spawn_tasks);
+fn process_object_spawn_tasks_system(mut commands: Commands, mut object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+  process_tasks(&mut commands, &mut object_spawn_tasks);
+}
+
+fn process_tasks<T: CommandQueueTask + Component<Mutability = Mutable>>(
+  commands: &mut Commands,
+  query: &mut Query<(Entity, &mut T)>,
+) {
+  for (entity, mut task) in query.iter_mut() {
+    if let Some(mut commands_queue) = task.poll_once() {
+      commands.append(&mut commands_queue);
+      commands.entity(entity).despawn();
+    }
+  }
 }

@@ -1,9 +1,9 @@
 use crate::constants::{CHUNK_SIZE, WAVE_FUNCTION_COLLAPSE_SNAPSHOT_INTERVAL, WAVE_FUNCTION_COLLAPSE_WARNING_FREQUENCY};
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
-use crate::generation::lib::shared;
 use crate::generation::object::decoration::cell_entropy_index::CellEntropyIndex;
-use crate::generation::object::lib::{IterationResult, ObjectGrid, ObjectGridSnapshot, get_connection_points};
+use crate::generation::object::model::{ObjectGrid, ObjectGridSnapshot, get_connection_points};
+use crate::generation::shared;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -14,6 +14,14 @@ pub struct WfcPlugin;
 
 impl Plugin for WfcPlugin {
   fn build(&self, _app: &mut App) {}
+}
+
+/// Expresses the result of a wave function collapse iteration.
+#[derive(PartialEq, Eq)]
+enum IterationResult {
+  Ok,
+  Incomplete,
+  Failure,
 }
 
 /// The entry point for running the wave function collapse algorithm to determine the object sprites in the grid.

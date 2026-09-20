@@ -1,5 +1,5 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE};
-use crate::generation::lib::Direction;
+use crate::coordinates::direction::Direction;
 use bevy::prelude::Vec2;
 use bevy::reflect::{Reflect, reflect_trait};
 use std::fmt;

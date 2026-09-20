@@ -1,10 +1,10 @@
 use super::{buildings, fields};
 use crate::constants::CHUNK_SIZE;
-use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Direction, SettlementResources, shared};
-use crate::generation::object::lib::{BuildingTemplate, Cell, ObjectGrid, ObjectName};
-use crate::generation::resources::Metadata;
+use crate::coordinates::{Direction, Point};
+use crate::generation::model::{Metadata, SettlementResources};
+use crate::generation::object::model::{BuildingTemplate, Cell, ObjectGrid, ObjectName};
+use crate::generation::shared;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -311,8 +311,8 @@ fn determine_updated_object_name(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::generation::lib::{TerrainType, TileType};
-  use crate::generation::resources::test_settlement_resources;
+  use crate::generation::model::{TerrainType, TileType};
+  use crate::generation::object::settlements::test_settlement_resources;
   use rand::SeedableRng;
 
   fn test_settlement(width: i32) -> (ObjectGrid, Settings, Metadata) {

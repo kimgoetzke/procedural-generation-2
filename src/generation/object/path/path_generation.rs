@@ -1,9 +1,9 @@
 use crate::constants::{CELL_LOCK_ERROR, CHUNK_SIZE};
-use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
-use crate::generation::object::lib::{CellRef, ObjectGrid, ObjectName};
-use crate::generation::resources::Metadata;
+use crate::coordinates::{Direction, Point, get_cardinal_direction_points};
+use crate::generation::model::Metadata;
+use crate::generation::object::model::{CellRef, ObjectGrid, ObjectName};
+use crate::generation::shared;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
@@ -456,7 +456,7 @@ fn determine_path_object_name_from_neighbours(
   mut neighbour_directions: HashSet<Direction>,
   ig: &Point<InternalGrid>,
 ) -> ObjectName {
-  use crate::generation::lib::Direction::*;
+  use crate::coordinates::Direction::*;
   // If we have two or fewer directions and the cell is an edge connection point, then we may need to add the direction
   // to the expected connection point in the neighbouring chunk
   if neighbour_directions.len() <= 2 && ig.is_touching_edge() {
@@ -505,7 +505,7 @@ const fn determine_path_object_name_from_two_directions(
   previous_cell_direction: &Direction,
   next_cell_direction: &Direction,
 ) -> ObjectName {
-  use crate::generation::lib::Direction::*;
+  use crate::coordinates::Direction::*;
   match (previous_cell_direction, next_cell_direction) {
     (Top, Right) | (Right, Top) => ObjectName::PathTopRight,
     (Top, Bottom) | (Bottom, Top) => ObjectName::PathVertical,

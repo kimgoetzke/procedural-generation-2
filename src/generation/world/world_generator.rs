@@ -2,10 +2,10 @@ use crate::components::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
 use crate::coordinates::Point;
 use crate::coordinates::point::World;
-use crate::generation::lib::{
-  Chunk, ChunkComponent, GenerationResourcesCollection, Plane, TerrainType, Tile, TileMeshComponent, shared,
+use crate::generation::model::{
+  Chunk, ChunkComponent, GenerationResourcesCollection, Metadata, Plane, TerrainType, Tile, TileMeshComponent,
 };
-use crate::generation::resources::Metadata;
+use crate::generation::shared;
 use crate::generation::world::post_processor;
 use crate::resources::Settings;
 use bevy::app::{App, Plugin};

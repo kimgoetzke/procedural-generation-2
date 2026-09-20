@@ -1,6 +1,6 @@
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::generation::object::lib::{BuildingTemplate, ObjectGrid};
+use crate::generation::object::model::{BuildingTemplate, ObjectGrid};
 use crate::generation::object::settlements::settlement_generation::{
   select_fitting_building, update_path_in_front_of_entrance,
 };

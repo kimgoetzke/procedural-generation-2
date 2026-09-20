@@ -1,13 +1,13 @@
 use crate::constants::CHUNK_SIZE;
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
-use crate::generation::object::lib::Cell;
+use crate::generation::object::model::Cell;
 use rand::RngExt;
 use rand::prelude::StdRng;
 
 /// Indexes uncollapsed cells by entropy for constant-time observation.
 #[derive(Debug)]
-pub(super) struct CellEntropyIndex {
+pub(in crate::generation::object::decoration) struct CellEntropyIndex {
   /// Uncollapsed cell coordinates grouped by entropy; each vector index is an entropy value.
   buckets: Vec<Vec<Point<InternalGrid>>>,
   /// Bucket location of each grid cell, indexed by its flattened coordinates. Collapsed and otherwise untracked cells
@@ -25,7 +25,7 @@ struct Membership {
 
 impl CellEntropyIndex {
   /// Builds an index from the current grid state.
-  pub(super) fn from_cells<'cell>(cells: impl Iterator<Item = &'cell Cell>) -> Self {
+  pub(in crate::generation::object::decoration) fn from_cells<'cell>(cells: impl Iterator<Item = &'cell Cell>) -> Self {
     let cells = cells.filter(|cell| !cell.is_collapsed()).collect::<Vec<_>>();
     let maximum_entropy = cells.iter().map(|cell| cell.get_entropy()).max().unwrap_or_default();
     let mut index = Self {
@@ -41,14 +41,17 @@ impl CellEntropyIndex {
   }
 
   /// Chooses a random cell from the lowest non-empty entropy bucket.
-  pub(super) fn choose_lowest_entropy_cell(&self, rng: &mut StdRng) -> Option<Point<InternalGrid>> {
+  pub(in crate::generation::object::decoration) fn choose_lowest_entropy_cell(
+    &self,
+    rng: &mut StdRng,
+  ) -> Option<Point<InternalGrid>> {
     let bucket = self.buckets.get(self.lowest)?;
     let index = rng.random_range(0..bucket.len());
     bucket.get(index).copied()
   }
 
   /// Updates membership after a cell changes.
-  pub(super) fn update(&mut self, cell: &Cell) {
+  pub(in crate::generation::object::decoration) fn update(&mut self, cell: &Cell) {
     self.remove(cell.ig);
     if !cell.is_collapsed() {
       self.insert(cell.ig, cell.get_entropy());
@@ -56,7 +59,7 @@ impl CellEntropyIndex {
   }
 
   /// Rebuilds membership after restoring a grid snapshot.
-  pub(super) fn rebuild<'cell>(&mut self, cells: impl Iterator<Item = &'cell Cell>) {
+  pub(in crate::generation::object::decoration) fn rebuild<'cell>(&mut self, cells: impl Iterator<Item = &'cell Cell>) {
     *self = Self::from_cells(cells);
   }
 
@@ -109,8 +112,8 @@ fn cell_index(ig: Point<InternalGrid>) -> usize {
 #[cfg(test)]
 mod tests {
   use super::CellEntropyIndex;
-  use crate::generation::lib::{TerrainType, TileType};
-  use crate::generation::object::lib::{Cell, ObjectName, TerrainState};
+  use crate::generation::model::{TerrainType, TileType};
+  use crate::generation::object::model::{Cell, ObjectName, TerrainState};
   use rand::SeedableRng;
   use rand::prelude::StdRng;
 

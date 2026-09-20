@@ -1,8 +1,9 @@
 use crate::constants::*;
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, TileGrid, World};
-use crate::generation::lib::{GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent};
-use crate::generation::resources::ChunkComponentIndex;
+use crate::generation::model::{
+  ChunkComponentIndex, GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent,
+};
 use crate::messages::{MouseRightClickMessage, RegenerateWorldMessage, ToggleDebugInfoMessage};
 use crate::resources::Settings;
 use bevy::app::{App, Plugin, Startup, Update};

@@ -1,8 +1,8 @@
 use crate::constants::*;
-use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::generation::lib::{Direction, get_cardinal_direction_points, shared};
-use crate::generation::resources::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
+use crate::coordinates::{Direction, Point, get_cardinal_direction_points};
+use crate::generation::model::{BiomeMetadata, Climate, ElevationMetadata, Metadata};
+use crate::generation::shared;
 use crate::messages::{PruneWorldMessage, RefreshMetadataMessage, RegenerateWorldMessage};
 use crate::resources::{CurrentChunk, GenerationMetadataSettings, Settings};
 use crate::states::AppState;
@@ -120,8 +120,8 @@ fn generate_elevation_metadata(metadata: &mut Metadata, x: i32, y: i32, metadata
 
 // TODO: Consider improving this range calculation because it's too easy for a user to "break" it via the UI
 /// Returns a range and the step size for the given coordinate. The range expresses the maximum and minimum values for
-/// the elevation offset. The step size is the amount of elevation change per [`crate::generation::lib::Tile`]
-/// (not per [`crate::generation::lib::Chunk`]).
+/// the elevation offset. The step size is the amount of elevation change per [`crate::generation::model::Tile`]
+/// (not per [`crate::generation::model::Chunk`]).
 fn calculate_range_and_step_size(
   coordinate: i32,
   grid_size: f64,
@@ -261,8 +261,7 @@ fn generate_settlement_metadata(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::coordinates::Point;
-  use crate::generation::lib::Direction;
+  use crate::coordinates::{Direction, Point};
 
   #[test]
   fn calculate_connection_points_in_matching_pairs_1() {

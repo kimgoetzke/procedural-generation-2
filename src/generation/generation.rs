@@ -2,18 +2,19 @@ use crate::constants::{
   CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
 };
 use crate::coordinates::Point;
+use crate::coordinates::direction::{Direction, get_direction_points};
 use crate::coordinates::point::{ChunkGrid, World};
 use crate::generation::debug::DebugPlugin;
-use crate::generation::lib::shared;
-use crate::generation::lib::{
-  Chunk, ChunkComponent, Direction, GenerationResourcesCollection, GenerationStage, WorldComponent,
-  WorldGenerationComponent, get_direction_points,
+use crate::generation::generation_resources::GenerationResourcesPlugin;
+use crate::generation::model::WorldComponent;
+use crate::generation::model::{
+  Chunk, ChunkComponent, ChunkComponentIndex, GenerationResourcesCollection, GenerationStage, Metadata,
+  WorldGenerationComponent,
 };
-use crate::generation::object::lib::{ObjectData, ObjectGrid};
+use crate::generation::object::model::{ObjectData, ObjectGrid};
 use crate::generation::object::path;
 use crate::generation::object::{self, ObjectGenerationPlugin};
-use crate::generation::resources::GenerationResourcesPlugin;
-use crate::generation::resources::{ChunkComponentIndex, Metadata};
+use crate::generation::shared;
 use crate::generation::world::{self, WorldGenerationPlugin};
 use crate::messages::{PruneWorldMessage, RegenerateWorldMessage, UpdateWorldMessage};
 use crate::resources::{CurrentChunk, Settings};

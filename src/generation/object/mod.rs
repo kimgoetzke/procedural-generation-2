@@ -1,5 +1,5 @@
 pub mod decoration;
-pub mod lib;
+pub mod model;
 mod object_generation;
 mod object_generator;
 pub mod path;

@@ -1,9 +1,9 @@
 mod debug;
 mod generation;
-pub(crate) mod lib;
+pub mod generation_resources;
+pub(crate) mod model;
 mod object;
-pub mod resources;
+pub(crate) mod shared;
 mod world;
 
-#[allow(unused_imports)]
-pub use generation::{GenerationPlugin, prune_world_message};
+pub use generation::GenerationPlugin;
