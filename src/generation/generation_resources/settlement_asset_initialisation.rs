@@ -1,9 +1,10 @@
 use crate::coordinates::{Direction, Point};
-use crate::generation::model::SettlementResources;
+use crate::generation::model::{GenerationResourcesCollection, SettlementResources};
 use crate::generation::object::model::{BuildingTemplate, ObjectName};
 use crate::generation::object::settlements::FieldShape;
-use bevy::asset::Asset;
+use bevy::asset::{Asset, Assets, Handle};
 use bevy::platform::collections::{HashMap, HashSet};
+use bevy::prelude::{Res, ResMut, Resource};
 use bevy::reflect::TypePath;
 
 /// Maps building components to their sprite variants while settlement resources are initialised.
@@ -80,7 +81,32 @@ pub(in crate::generation) struct SettlementTemplateAsset {
   building_templates: Vec<BuildingTemplateDefinition>,
 }
 
-pub(in crate::generation) fn resolve_settlement_resources(
+#[derive(Resource, Default, Debug, Clone)]
+pub(in crate::generation::generation_resources) struct SettlementTemplateAssetHandle(pub Handle<SettlementTemplateAsset>);
+
+#[derive(Resource, Default, Debug, Clone)]
+pub(in crate::generation::generation_resources) struct BuildingComponentRegistryHandle(
+  pub Handle<BuildingComponentRegistry>,
+);
+
+pub(in crate::generation::generation_resources) fn populate_settlement_resources(
+  generation_resources_collection: &mut ResMut<GenerationResourcesCollection>,
+  settlement_template_handle: &Res<SettlementTemplateAssetHandle>,
+  settlement_template_assets: &mut ResMut<Assets<SettlementTemplateAsset>>,
+  building_component_handle: &Res<BuildingComponentRegistryHandle>,
+  building_component_assets: &mut ResMut<Assets<BuildingComponentRegistry>>,
+) {
+  let settlement_templates = settlement_template_assets
+    .remove(&settlement_template_handle.0)
+    .unwrap_or_else(|| panic!("Loaded settlement template asset is unavailable"));
+  let building_components = building_component_assets
+    .remove(&building_component_handle.0)
+    .unwrap_or_else(|| panic!("Loaded building component asset is unavailable"));
+  generation_resources_collection.settlements = resolve_settlement_resources(settlement_templates, &building_components)
+    .unwrap_or_else(|error| panic!("Settlement configuration is invalid: {error}"));
+}
+
+fn resolve_settlement_resources(
   templates: SettlementTemplateAsset,
   components: &BuildingComponentRegistry,
 ) -> Result<SettlementResources, String> {
@@ -215,14 +241,10 @@ fn resolve_building_template(
 
 #[cfg(test)]
 pub(crate) fn test_settlement_resources() -> SettlementResources {
-  let templates: SettlementTemplateAsset = toml::from_str(include_str!(
-    "../../../assets/objects/settlements/settlement-templates.toml"
-  ))
-  .unwrap();
-  let components: BuildingComponentRegistry = toml::from_str(include_str!(
-    "../../../assets/objects/settlements/building-components.toml"
-  ))
-  .unwrap();
+  let templates: SettlementTemplateAsset =
+    toml::from_str(include_str!("../../../assets/objects/settlements/settlement-templates.toml")).unwrap();
+  let components: BuildingComponentRegistry =
+    toml::from_str(include_str!("../../../assets/objects/settlements/building-components.toml")).unwrap();
 
   resolve_settlement_resources(templates, &components).unwrap()
 }
