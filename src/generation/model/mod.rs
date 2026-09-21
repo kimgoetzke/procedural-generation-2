@@ -2,7 +2,6 @@ mod pipeline;
 mod resources;
 mod world;
 
-pub use crate::resources::Settings;
 pub use pipeline::{
   ChunkComponent, GenerationStage, ObjectComponent, TileMeshComponent, WorldComponent, WorldGenerationComponent,
 };
