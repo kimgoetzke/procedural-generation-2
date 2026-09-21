@@ -1,9 +1,9 @@
 use crate::constants::*;
-use crate::generation::model::{AssetCollection, AssetPack, Climate, GenerationResourcesCollection, TerrainType, TileType};
-use crate::generation::object::model::{Connection, ObjectName, TerrainState};
-use crate::generation::object::settlements::settlement_assets::{
+use crate::generation::generation_resources::settlement_asset_initialisation::{
   BuildingComponentRegistry, SettlementTemplateAsset, resolve_settlement_resources,
 };
+use crate::generation::model::{AssetCollection, AssetPack, Climate, GenerationResourcesCollection, TerrainType, TileType};
+use crate::generation::object::model::{Connection, ObjectName, TerrainState};
 use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{Asset, AssetServer, Assets, Handle, LoadState};

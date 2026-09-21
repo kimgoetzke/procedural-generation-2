@@ -216,11 +216,11 @@ fn resolve_building_template(
 #[cfg(test)]
 pub(crate) fn test_settlement_resources() -> SettlementResources {
   let templates: SettlementTemplateAsset = toml::from_str(include_str!(
-    "../../../../assets/objects/settlements/settlement-templates.toml"
+    "../../../assets/objects/settlements/settlement-templates.toml"
   ))
   .unwrap();
   let components: BuildingComponentRegistry = toml::from_str(include_str!(
-    "../../../../assets/objects/settlements/building-components.toml"
+    "../../../assets/objects/settlements/building-components.toml"
   ))
   .unwrap();
 
