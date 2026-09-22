@@ -14,7 +14,7 @@ use crate::animations::AnimationsPlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
-use crate::generation::GenerationPlugin;
+use crate::generation::GenerationPipelinePlugin;
 use crate::messages::SharedMessagesPlugin;
 use crate::resources::SharedResourcesPlugin;
 use crate::states::AppStatePlugin;
@@ -54,7 +54,7 @@ fn main() {
     .add_plugins((
       CameraPlugin,
       AppStatePlugin,
-      GenerationPlugin,
+      GenerationPipelinePlugin,
       AnimationsPlugin,
       SharedMessagesPlugin,
       SharedResourcesPlugin,

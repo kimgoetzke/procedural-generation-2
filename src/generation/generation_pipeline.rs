@@ -30,9 +30,9 @@ use bevy::tasks::{AsyncComputeTaskPool, Task, block_on, poll_once};
 use rand::SeedableRng;
 use rand::prelude::StdRng;
 
-pub struct GenerationPlugin;
+pub struct GenerationPipelinePlugin;
 
-impl Plugin for GenerationPlugin {
+impl Plugin for GenerationPipelinePlugin {
   fn build(&self, app: &mut App) {
     app
       .add_plugins((
