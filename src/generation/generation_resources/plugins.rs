@@ -1,3 +1,4 @@
+use crate::generation::generation_resources::current_chunk::CurrentChunkPlugin;
 use crate::generation::generation_resources::{
   ChunkComponentIndexPlugin, GenerationResourcesCollectionPlugin, MetadataPlugin,
 };
@@ -7,6 +8,11 @@ pub struct GenerationResourcesPlugins;
 
 impl Plugin for GenerationResourcesPlugins {
   fn build(&self, app: &mut App) {
-    app.add_plugins((GenerationResourcesCollectionPlugin, ChunkComponentIndexPlugin, MetadataPlugin));
+    app.add_plugins((
+      GenerationResourcesCollectionPlugin,
+      ChunkComponentIndexPlugin,
+      CurrentChunkPlugin,
+      MetadataPlugin,
+    ));
   }
 }

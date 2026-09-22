@@ -2,7 +2,7 @@ use crate::constants::CHUNK_SIZE_PLUS_BUFFER;
 use crate::coordinates::Point;
 use crate::coordinates::point::InternalGrid;
 use crate::generation::model::{DraftTile, Plane, TerrainType, Tile};
-use crate::shared_resources::Settings;
+use crate::settings::Settings;
 
 /// A [`LayeredPlane`] contains all relevant information about the [`Tile`]s in a
 /// [`crate::generation::model::Chunk`]. It contains a [`Vec<Plane>`] with an [`Plane`] for each [`TerrainType`] and, for

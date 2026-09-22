@@ -1,17 +1,14 @@
 use crate::constants::*;
-use crate::coordinates::point::{ChunkGrid, TileGrid, World};
-use crate::coordinates::{Coords, Point};
 use bevy::app::{App, Plugin};
-use bevy::log::*;
 use bevy::prelude::{Reflect, ReflectResource, Resource};
 use bevy_inspector_egui::InspectorOptions;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
 
-/// A plugin that registers and initialises shared resources used across the entire application such as [`Settings`].
-pub struct SharedResourcesPlugin;
+/// A plugin that registers and initialises [`Settings`] and the resources that it encompasses.
+pub struct SettingsPlugin;
 
-impl Plugin for SharedResourcesPlugin {
+impl Plugin for SettingsPlugin {
   fn build(&self, app: &mut App) {
     app
       .init_resource::<Settings>()
@@ -28,8 +25,7 @@ impl Plugin for SharedResourcesPlugin {
       .insert_resource(WorldGenerationSettings::default())
       .init_resource::<GenerationMetadataSettings>()
       .register_type::<GenerationMetadataSettings>()
-      .insert_resource(GenerationMetadataSettings::default())
-      .insert_resource(CurrentChunk::default());
+      .insert_resource(GenerationMetadataSettings::default());
   }
 }
 
@@ -215,66 +211,6 @@ impl Default for ObjectGenerationSettings {
       generate_decoration: GENERATE_DECORATION,
       enable_animated_objects: ENABLE_ANIMATED_OBJECTS,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,
-    }
-  }
-}
-
-#[derive(Resource, Debug, Clone)]
-pub struct CurrentChunk {
-  center_w: Point<World>,
-  coords: Coords,
-}
-
-impl CurrentChunk {
-  pub const fn get_center_world(&self) -> Point<World> {
-    self.center_w
-  }
-
-  pub const fn get_world(&self) -> Point<World> {
-    self.coords.world
-  }
-
-  pub const fn get_tile_grid(&self) -> Point<TileGrid> {
-    self.coords.tile_grid
-  }
-
-  pub const fn get_chunk_grid(&self) -> Point<ChunkGrid> {
-    self.coords.chunk_grid
-  }
-
-  pub const fn contains(&self, tg: Point<TileGrid>) -> bool {
-    tg.x >= self.coords.tile_grid.x
-      && tg.x < (self.coords.tile_grid.x + CHUNK_SIZE)
-      && tg.y >= self.coords.tile_grid.y
-      && tg.y < (self.coords.tile_grid.y - CHUNK_SIZE)
-  }
-
-  pub fn update(&mut self, w: Point<World>) {
-    let old_value = self.coords.chunk_grid;
-    let cg = Point::new_chunk_grid_from_world(w);
-    self.coords.world = w;
-    self.coords.chunk_grid = cg;
-    self.coords.tile_grid = Point::new_tile_grid_from_world(w);
-    self.center_w = Point::new_world(
-      w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-      w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-    );
-    debug!("Current chunk updated from {} to {}", old_value, cg);
-  }
-}
-
-impl Default for CurrentChunk {
-  fn default() -> Self {
-    Self {
-      center_w: Point::new_world(
-        ORIGIN_WORLD_SPAWN_POINT.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-        ORIGIN_WORLD_SPAWN_POINT.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
-      ),
-      coords: Coords::new(
-        ORIGIN_WORLD_SPAWN_POINT,
-        ORIGIN_CHUNK_GRID_SPAWN_POINT,
-        ORIGIN_TILE_GRID_SPAWN_POINT,
-      ),
     }
   }
 }

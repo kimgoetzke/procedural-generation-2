@@ -1,5 +1,5 @@
+use crate::settings::Settings;
 use crate::shared_messages::ToggleDiagnosticsMessage;
-use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 use iyes_perf_ui::PerfUiPlugin;

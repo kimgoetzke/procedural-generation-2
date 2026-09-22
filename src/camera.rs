@@ -1,7 +1,8 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
 use crate::coordinates::Point;
+use crate::generation::generation_resources::CurrentChunk;
+use crate::settings::Settings;
 use crate::shared_messages::{ResetCameraMessage, UpdateWorldMessage};
-use crate::shared_resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin, Startup};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera_controller::pan_camera::{PanCamera, PanCameraPlugin};

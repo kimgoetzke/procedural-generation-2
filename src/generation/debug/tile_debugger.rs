@@ -4,8 +4,8 @@ use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use crate::generation::model::{
   ChunkComponentIndex, GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent,
 };
+use crate::settings::Settings;
 use crate::shared_messages::{MouseRightClickMessage, RegenerateWorldMessage, ToggleDebugInfoMessage};
-use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};

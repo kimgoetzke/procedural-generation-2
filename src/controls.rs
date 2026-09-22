@@ -1,9 +1,10 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
 use crate::coordinates::Point;
+use crate::generation::generation_resources::CurrentChunk;
+use crate::settings::{GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use crate::shared_messages::{
   MouseRightClickMessage, RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage,
 };
-use crate::shared_resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 use bevy_inspector_egui::bevy_egui::EguiContexts;
