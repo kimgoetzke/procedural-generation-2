@@ -1,4 +1,4 @@
-use crate::components::{AnimationSpriteComponent, AnimationType};
+use crate::animation::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
 use crate::generation::model::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile};
 use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};

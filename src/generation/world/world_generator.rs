@@ -1,4 +1,4 @@
-use crate::components::{AnimationMeshComponent, AnimationType};
+use crate::animation::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
 use crate::coordinates::Point;
 use crate::coordinates::point::World;

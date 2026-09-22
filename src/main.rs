@@ -1,6 +1,5 @@
-mod animations;
+mod animation;
 mod camera;
-mod components;
 mod constants;
 mod controls;
 mod coordinates;
@@ -10,7 +9,6 @@ mod resources;
 mod states;
 mod ui;
 
-use crate::animations::AnimationsPlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlPlugin;
@@ -19,6 +17,7 @@ use crate::messages::SharedMessagesPlugin;
 use crate::resources::SharedResourcesPlugin;
 use crate::states::AppStatePlugin;
 use crate::ui::UiPlugin;
+use animation::SpriteAnimationsPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
@@ -55,7 +54,7 @@ fn main() {
       CameraPlugin,
       AppStatePlugin,
       GenerationPipelinePlugin,
-      AnimationsPlugin,
+      SpriteAnimationsPlugin,
       SharedMessagesPlugin,
       SharedResourcesPlugin,
       ControlPlugin,

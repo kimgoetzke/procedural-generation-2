@@ -1,13 +1,13 @@
-use crate::components::{AnimationMeshComponent, AnimationSpriteComponent, AnimationType};
+use crate::animation::{AnimationMeshComponent, AnimationSpriteComponent, AnimationType};
 use crate::constants::ANIMATION_FRAME_DURATION;
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::mesh::VertexAttributeValues;
 use bevy::prelude::{Mesh, Mesh2d, Mut, Query, Res, ResMut, Resource, Sprite, Time, Timer, TimerMode, Update};
 
-pub struct AnimationsPlugin;
+pub struct SpriteAnimationsPlugin;
 
-impl Plugin for AnimationsPlugin {
+impl Plugin for SpriteAnimationsPlugin {
   fn build(&self, app: &mut App) {
     app
       .insert_resource(GlobalAnimationState::new())
