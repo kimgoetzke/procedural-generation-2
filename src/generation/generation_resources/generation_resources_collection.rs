@@ -1,3 +1,4 @@
+use crate::app_states::AppState;
 use crate::generation::generation_resources::settlement_asset_initialisation::{
   BuildingComponentRegistry, BuildingComponentRegistryHandle, SettlementTemplateAsset, SettlementTemplateAssetHandle,
   populate_settlement_resources,
@@ -9,7 +10,6 @@ use crate::generation::generation_resources::{
   object_asset_initialisation, terrain_asset_initialisation, terrain_state_initialisation, terrain_state_validation,
 };
 use crate::generation::model::{GenerationResourcesCollection, TerrainType};
-use crate::states::AppState;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::log::*;

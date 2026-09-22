@@ -1,5 +1,5 @@
-mod debug;
 mod gizmos;
+mod plugins;
 pub mod tile_debugger;
 
-pub use debug::DebugPlugin;
+pub use plugins::DebugPlugins;

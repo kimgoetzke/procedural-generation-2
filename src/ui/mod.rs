@@ -1,5 +1,5 @@
 mod diagnostics_ui;
+mod plugins;
 mod settings_ui;
-mod ui;
 
-pub use ui::UiPlugin;
+pub use plugins::UiPlugins;

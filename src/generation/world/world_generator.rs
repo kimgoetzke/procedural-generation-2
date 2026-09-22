@@ -7,7 +7,7 @@ use crate::generation::model::{
 };
 use crate::generation::shared;
 use crate::generation::world::post_processor;
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::relationship::RelatedSpawnerCommands;

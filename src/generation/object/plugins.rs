@@ -4,9 +4,9 @@ use crate::generation::object::path::PathGenerationPlugin;
 use crate::generation::object::settlements::SettlementGenerationPlugin;
 use bevy::app::{App, Plugin};
 
-pub struct ObjectGenerationPlugin;
+pub struct ObjectGenerationPlugins;
 
-impl Plugin for ObjectGenerationPlugin {
+impl Plugin for ObjectGenerationPlugins {
   fn build(&self, app: &mut App) {
     app.add_plugins((
       ObjectGeneratorPlugin,

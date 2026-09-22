@@ -6,7 +6,7 @@ use crate::generation::model::{
   BiomeMetadataSet, Climate, DraftTile, ElevationMetadata, LayeredPlane, Metadata, TerrainType,
 };
 use crate::generation::shared;
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 use bevy::log::*;
 use noise::{BasicMulti, MultiFractal, NoiseFn, Perlin};
 use rand::rngs::StdRng;

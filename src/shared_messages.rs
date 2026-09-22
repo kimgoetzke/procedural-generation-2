@@ -28,7 +28,7 @@ pub struct RefreshMetadataMessage {
 }
 
 /// A message that triggers the regeneration of the world. It will cause the world entity and all its descendants to be
-/// removed before generating an entirely new world based on the current [`crate::resources::Settings`].
+/// removed before generating an entirely new world based on the current [`crate::shared_resources::Settings`].
 #[derive(Message)]
 pub struct RegenerateWorldMessage {}
 

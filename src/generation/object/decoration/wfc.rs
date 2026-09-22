@@ -4,7 +4,7 @@ use crate::coordinates::point::InternalGrid;
 use crate::generation::object::decoration::cell_entropy_index::CellEntropyIndex;
 use crate::generation::object::model::{ObjectGrid, ObjectGridSnapshot, get_connection_points};
 use crate::generation::shared;
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use rand::prelude::StdRng;

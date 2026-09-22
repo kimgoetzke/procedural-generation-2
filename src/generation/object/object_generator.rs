@@ -3,7 +3,7 @@ use crate::constants::*;
 use crate::generation::model::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile};
 use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};
 use crate::generation::shared;
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
 use bevy::ecs::component::Mutable;

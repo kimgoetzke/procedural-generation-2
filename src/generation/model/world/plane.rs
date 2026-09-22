@@ -3,7 +3,7 @@ use crate::coordinates::Point;
 use crate::coordinates::point::{CoordType, InternalGrid};
 use crate::generation::model::world::neighbours::{NeighbourTile, NeighbourTiles};
 use crate::generation::model::{DraftTile, TerrainType, Tile, TileType};
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 
 /// A 2D grid of [`Tile`]s that is created using [`DraftTile`]s. During it's creation, it determines the [`TileType`] of
 /// each [`Tile`] based on the [`TerrainType`] of its neighbours and resizes the grid by cutting off [`BUFFER_SIZE`]

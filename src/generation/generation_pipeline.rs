@@ -1,11 +1,12 @@
+use crate::app_states::{AppState, GenerationState};
 use crate::constants::{
   CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
 };
 use crate::coordinates::Point;
 use crate::coordinates::direction::{Direction, get_direction_points};
 use crate::coordinates::point::{ChunkGrid, World};
-use crate::generation::debug::DebugPlugin;
-use crate::generation::generation_resources::GenerationResourcesPlugin;
+use crate::generation::debug::DebugPlugins;
+use crate::generation::generation_resources::GenerationResourcesPlugins;
 use crate::generation::model::WorldComponent;
 use crate::generation::model::{
   Chunk, ChunkComponent, ChunkComponentIndex, GenerationResourcesCollection, GenerationStage, Metadata,
@@ -13,12 +14,11 @@ use crate::generation::model::{
 };
 use crate::generation::object::model::{ObjectData, ObjectGrid};
 use crate::generation::object::path;
-use crate::generation::object::{self, ObjectGenerationPlugin};
+use crate::generation::object::{self, ObjectGenerationPlugins};
 use crate::generation::shared;
-use crate::generation::world::{self, WorldGenerationPlugin};
-use crate::messages::{PruneWorldMessage, RegenerateWorldMessage, UpdateWorldMessage};
-use crate::resources::{CurrentChunk, Settings};
-use crate::states::{AppState, GenerationState};
+use crate::generation::world::{self, WorldGenerationPlugins};
+use crate::shared_messages::{PruneWorldMessage, RegenerateWorldMessage, UpdateWorldMessage};
+use crate::shared_resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::log::*;
@@ -36,10 +36,10 @@ impl Plugin for GenerationPipelinePlugin {
   fn build(&self, app: &mut App) {
     app
       .add_plugins((
-        GenerationResourcesPlugin,
-        WorldGenerationPlugin,
-        ObjectGenerationPlugin,
-        DebugPlugin,
+        GenerationResourcesPlugins,
+        WorldGenerationPlugins,
+        ObjectGenerationPlugins,
+        DebugPlugins,
       ))
       .add_systems(OnExit(AppState::Initialising), initiate_world_generation_system)
       .add_systems(Update, world_generation_system.run_if(in_state(GenerationState::Generating)))

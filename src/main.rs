@@ -1,22 +1,22 @@
 mod animation;
+mod app_states;
 mod camera;
 mod constants;
 mod controls;
 mod coordinates;
 mod generation;
-mod messages;
-mod resources;
-mod states;
+mod shared_messages;
+mod shared_resources;
 mod ui;
 
+use crate::app_states::AppStatePlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
-use crate::controls::ControlPlugin;
+use crate::controls::ControlsPlugin;
 use crate::generation::GenerationPipelinePlugin;
-use crate::messages::SharedMessagesPlugin;
-use crate::resources::SharedResourcesPlugin;
-use crate::states::AppStatePlugin;
-use crate::ui::UiPlugin;
+use crate::shared_messages::SharedMessagesPlugin;
+use crate::shared_resources::SharedResourcesPlugin;
+use crate::ui::UiPlugins;
 use animation::SpriteAnimationsPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::input::common_conditions::input_toggle_active;
@@ -57,8 +57,8 @@ fn main() {
       SpriteAnimationsPlugin,
       SharedMessagesPlugin,
       SharedResourcesPlugin,
-      ControlPlugin,
-      UiPlugin,
+      ControlsPlugin,
+      UiPlugins,
     ))
     .add_plugins(DefaultInspectorConfigPlugin)
     .add_plugins(EguiPlugin::default())

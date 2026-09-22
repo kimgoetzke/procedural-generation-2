@@ -3,9 +3,9 @@ use crate::generation::world::post_processor::PostProcessorPlugin;
 use crate::generation::world::world_generator::WorldGeneratorPlugin;
 use bevy::app::{App, Plugin};
 
-pub struct WorldGenerationPlugin;
+pub struct WorldGenerationPlugins;
 
-impl Plugin for WorldGenerationPlugin {
+impl Plugin for WorldGenerationPlugins {
   fn build(&self, app: &mut App) {
     app.add_plugins((MetadataGeneratorPlugin, WorldGeneratorPlugin, PostProcessorPlugin));
   }

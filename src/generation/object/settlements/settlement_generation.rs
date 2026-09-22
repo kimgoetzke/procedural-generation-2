@@ -5,7 +5,7 @@ use crate::coordinates::{Direction, Point};
 use crate::generation::model::{Metadata, SettlementResources};
 use crate::generation::object::model::{BuildingTemplate, Cell, ObjectGrid, ObjectName};
 use crate::generation::shared;
-use crate::resources::Settings;
+use crate::shared_resources::Settings;
 use bevy::app::{App, Plugin};
 use bevy::log::*;
 use bevy::platform::collections::HashSet;

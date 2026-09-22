@@ -1,10 +1,10 @@
+use crate::app_states::{AppState, GenerationState};
 use crate::constants::*;
-use crate::messages::{RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage};
-use crate::resources::{
+use crate::shared_messages::{RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage};
+use crate::shared_resources::{
   CurrentChunk, GeneralGenerationSettings, GenerationMetadataSettings, ObjectGenerationSettings, Settings,
   WorldGenerationSettings,
 };
-use crate::states::{AppState, GenerationState};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonInput;
 use bevy::prelude::{KeyCode, Local, MessageWriter, Res, ResMut, Resource, With, World};

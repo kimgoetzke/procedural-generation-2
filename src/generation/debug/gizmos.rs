@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::coordinates::Point;
-use crate::resources::{CurrentChunk, Settings};
+use crate::shared_resources::{CurrentChunk, Settings};
 use bevy::app::{App, Plugin};
 use bevy::gizmos::AppGizmoBuilder;
 use bevy::math::{UVec2, Vec2};
