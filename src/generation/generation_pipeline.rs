@@ -9,8 +9,7 @@ use crate::generation::debug::DebugPlugins;
 use crate::generation::generation_resources::{CurrentChunk, GenerationResourcesPlugins};
 use crate::generation::model::WorldComponent;
 use crate::generation::model::{
-  Chunk, ChunkComponent, ChunkComponentIndex, GenerationResourcesCollection, GenerationStage, Metadata,
-  WorldGenerationComponent,
+  Chunk, ChunkComponent, ChunkComponentIndex, GenerationResources, GenerationStage, Metadata, WorldGenerationComponent,
 };
 use crate::generation::object::model::{ObjectData, ObjectGrid};
 use crate::generation::object::path;
@@ -164,7 +163,7 @@ fn world_generation_system(
   mut world_generation_components: Query<(Entity, &mut WorldGenerationComponent), With<WorldGenerationComponent>>,
   settings: Res<Settings>,
   metadata: Res<Metadata>,
-  resources: Res<GenerationResourcesCollection>,
+  resources: Res<GenerationResources>,
   existing_chunks: Res<ChunkComponentIndex>,
   mut prune_world_message: MessageWriter<PruneWorldMessage>,
   mut meshes: ResMut<Assets<Mesh>>,
@@ -358,7 +357,7 @@ fn stage_3_spawn_chunks(
 fn stage_4_spawn_tile_meshes(
   commands: &mut Commands,
   settings: &Res<Settings>,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   chunk_entity_pairs: Vec<(Chunk, Entity)>,
   meshes: &mut ResMut<Assets<Mesh>>,
   materials: &mut ResMut<Assets<ColorMaterial>>,
@@ -390,7 +389,7 @@ fn stage_4_spawn_tile_meshes(
 fn stage_5_schedule_object_grid_generation(
   commands: &mut Commands,
   settings: &Settings,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   mut chunk_entity_pairs: Vec<(Chunk, Entity)>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {
@@ -465,7 +464,7 @@ fn stage_7_schedule_generating_object_data(
   commands: &mut Commands,
   settings: &Settings,
   metadata: &Metadata,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   path_generation_task: Task<Vec<(Chunk, Entity, ObjectGrid)>>,
   cg: &Point<ChunkGrid>,
 ) -> GenerationStage {

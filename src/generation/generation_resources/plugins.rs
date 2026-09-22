@@ -1,7 +1,5 @@
 use crate::generation::generation_resources::current_chunk::CurrentChunkPlugin;
-use crate::generation::generation_resources::{
-  ChunkComponentIndexPlugin, GenerationResourcesCollectionPlugin, MetadataPlugin,
-};
+use crate::generation::generation_resources::{ChunkComponentIndexPlugin, GenerationResourcesPlugin, MetadataPlugin};
 use bevy::app::{App, Plugin};
 
 pub struct GenerationResourcesPlugins;
@@ -9,7 +7,7 @@ pub struct GenerationResourcesPlugins;
 impl Plugin for GenerationResourcesPlugins {
   fn build(&self, app: &mut App) {
     app.add_plugins((
-      GenerationResourcesCollectionPlugin,
+      GenerationResourcesPlugin,
       ChunkComponentIndexPlugin,
       CurrentChunkPlugin,
       MetadataPlugin,

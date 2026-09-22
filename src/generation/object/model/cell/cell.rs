@@ -17,6 +17,7 @@ use strum::IntoEnumIterator;
 #[derive(Debug)]
 pub(in crate::generation::object) struct PropagationFailure {}
 
+// TODO: Decompose Cell and remove CellRef by extracting path finding concerns and stop cloning
 pub type CellRef = Arc<Mutex<Cell>>;
 
 /// A [`Cell`] is a "placeholder" for an object. It is used in the [`ObjectGrid`][og]. This struct is used to represent

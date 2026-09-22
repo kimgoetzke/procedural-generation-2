@@ -5,46 +5,46 @@ use crate::constants::{
   STRUCTURES_OBJ_ROWS, TREES_DRY_OBJ_PATH, TREES_HUMID_OBJ_PATH, TREES_MODERATE_OBJ_PATH, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS,
   TREES_OBJ_SIZE, WATER_OBJ_PATH,
 };
-use crate::generation::model::{AssetCollection, AssetPack, GenerationResourcesCollection};
+use crate::generation::model::{AssetCollection, AssetPack, GenerationResources};
 use bevy::asset::{AssetServer, Assets};
 use bevy::image::TextureAtlasLayout;
 use bevy::platform::collections::HashSet;
 use bevy::prelude::{Res, ResMut};
 
-/// Populates all object related art asset resources of the provided [`GenerationResourcesCollection`] by loading the
+/// Populates all object related art asset resources of the provided [`GenerationResources`] by loading the
 /// relevant sprite assets and creating [`AssetCollection`]s or [`AssetPack`]s.
 pub(in crate::generation::generation_resources) fn populate_object_resources(
-  grp: &mut ResMut<GenerationResourcesCollection>,
+  gr: &mut ResMut<GenerationResources>,
   asset_server: &Res<AssetServer>,
   mut layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
 ) {
   // Objects sprites: Trees
   let static_trees_layout = TextureAtlasLayout::from_grid(TREES_OBJ_SIZE, TREES_OBJ_COLUMNS, TREES_OBJ_ROWS, None, None);
   let static_trees_atlas_layout = layouts.add(static_trees_layout);
-  grp.objects.trees_dry.stat = AssetPack::new(asset_server.load(TREES_DRY_OBJ_PATH), static_trees_atlas_layout.clone());
-  grp.objects.trees_moderate.stat =
+  gr.objects.trees_dry.stat = AssetPack::new(asset_server.load(TREES_DRY_OBJ_PATH), static_trees_atlas_layout.clone());
+  gr.objects.trees_moderate.stat =
     AssetPack::new(asset_server.load(TREES_MODERATE_OBJ_PATH), static_trees_atlas_layout.clone());
-  grp.objects.trees_humid.stat = AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
+  gr.objects.trees_humid.stat = AssetPack::new(asset_server.load(TREES_HUMID_OBJ_PATH), static_trees_atlas_layout);
 
   // Object sprites: Settlements
   let static_settlements_layout =
     TextureAtlasLayout::from_grid(DEFAULT_OBJ_SIZE, STRUCTURES_OBJ_COLUMNS, STRUCTURES_OBJ_ROWS, None, None);
   let static_settlements_atlas_layout = layouts.add(static_settlements_layout);
-  grp.objects.settlements.stat = AssetPack::new(asset_server.load(SETTLEMENTS_OBJ_PATH), static_settlements_atlas_layout);
+  gr.objects.settlements.stat = AssetPack::new(asset_server.load(SETTLEMENTS_OBJ_PATH), static_settlements_atlas_layout);
 
   // Objects sprites: Decorative terrain overlays
-  grp.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
-  grp.objects.shore = object_assets_static(&asset_server, &mut layouts, SHORE_OBJ_PATH);
-  grp.objects.l1_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L1_DRY_PATH);
-  grp.objects.l1_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L1_MODERATE_PATH);
-  grp.objects.l1_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L1_HUMID_PATH);
-  grp.objects.l2_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L2_DRY_PATH);
-  grp.objects.l2_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L2_MODERATE_PATH);
-  grp.objects.l2_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L2_HUMID_PATH);
-  grp.objects.l3_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L3_DRY_PATH);
-  grp.objects.l3_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L3_MODERATE_PATH);
-  grp.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
-  grp.objects.animated = object_assets_animated(&asset_server, &mut layouts, OBJ_ANIMATED_PATH);
+  gr.objects.water = object_assets_static(&asset_server, &mut layouts, WATER_OBJ_PATH);
+  gr.objects.shore = object_assets_static(&asset_server, &mut layouts, SHORE_OBJ_PATH);
+  gr.objects.l1_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L1_DRY_PATH);
+  gr.objects.l1_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L1_MODERATE_PATH);
+  gr.objects.l1_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L1_HUMID_PATH);
+  gr.objects.l2_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L2_DRY_PATH);
+  gr.objects.l2_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L2_MODERATE_PATH);
+  gr.objects.l2_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L2_HUMID_PATH);
+  gr.objects.l3_dry = object_assets_static(&asset_server, &mut layouts, OBJ_L3_DRY_PATH);
+  gr.objects.l3_moderate = object_assets_static(&asset_server, &mut layouts, OBJ_L3_MODERATE_PATH);
+  gr.objects.l3_humid = object_assets_static(&asset_server, &mut layouts, OBJ_L3_HUMID_PATH);
+  gr.objects.animated = object_assets_animated(&asset_server, &mut layouts, OBJ_ANIMATED_PATH);
 }
 
 fn object_assets_static(

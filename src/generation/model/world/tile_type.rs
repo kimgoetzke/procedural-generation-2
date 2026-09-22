@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::generation::model::{Climate, GenerationResourcesCollection, TerrainType};
+use crate::generation::model::{Climate, GenerationResources, TerrainType};
 use bevy::reflect::Reflect;
 use strum::EnumIter;
 
@@ -25,12 +25,7 @@ pub enum TileType {
 }
 
 impl TileType {
-  pub fn calculate_sprite_index(
-    &self,
-    terrain: &TerrainType,
-    climate: &Climate,
-    resources: &GenerationResourcesCollection,
-  ) -> usize {
+  pub fn calculate_sprite_index(&self, terrain: &TerrainType, climate: &Climate, resources: &GenerationResources) -> usize {
     get_sprite_index_from(self, terrain, climate, resources)
   }
 }
@@ -39,7 +34,7 @@ fn get_sprite_index_from(
   tile_type: &TileType,
   terrain: &TerrainType,
   climate: &Climate,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
 ) -> usize {
   match (terrain, climate) {
     (TerrainType::Water, _) => get_sprite_index(tile_type, resources.water.index_offset()),

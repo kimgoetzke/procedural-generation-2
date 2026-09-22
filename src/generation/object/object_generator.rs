@@ -1,6 +1,6 @@
 use crate::animation::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
-use crate::generation::model::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile};
+use crate::generation::model::{AssetCollection, Chunk, GenerationResources, ObjectComponent, Tile};
 use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};
 use crate::generation::shared;
 use crate::settings::Settings;
@@ -43,7 +43,7 @@ impl CommandQueueTask for ObjectSpawnTask {
 /// [`crate::generation::object`] when running various algorithms to determine which objects should be spawned in
 /// the world.
 pub fn generate_object_grid(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   settings: &Settings,
   chunk: Chunk,
   chunk_entity: Entity,
@@ -167,8 +167,8 @@ fn attach_object_spawn_task(
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
       let asset_collection = world
-        .get_resource::<GenerationResourcesCollection>()
-        .expect("Failed to fetch GenerationResourcesCollection")
+        .get_resource::<GenerationResources>()
+        .expect("Failed to fetch GenerationResources")
         .get_object_collection(
           tile_data.flat_tile.terrain,
           tile_data.flat_tile.climate,

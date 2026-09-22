@@ -6,7 +6,7 @@ use crate::generation::model::{Climate, TerrainType};
 use bevy::prelude::Resource;
 
 /// A collection of all assets, rules, and other data that is used when spawning terrain and object sprites in the
-/// world. Initialised in the [`crate::generation::generation_resources::GenerationResourcesCollectionPlugin`] on startup.
+/// world. Initialised in the [`crate::generation::generation_resources::GenerationResourcesPlugin`] on startup.
 ///
 /// Each terrain layer and climate combination has its own [`AssetCollection`], which contains a static and optional
 /// animated [`AssetPack`].
@@ -14,7 +14,7 @@ use bevy::prelude::Resource;
 /// It also stores object assets, wave function collapse terrain states, and resolved settlement templates used during
 /// object generation.
 #[derive(Resource, Default, Debug, Clone)]
-pub struct GenerationResourcesCollection {
+pub struct GenerationResources {
   pub placeholder: AssetPack,
   pub water: AssetCollection,
   pub shore: AssetCollection,
@@ -31,7 +31,7 @@ pub struct GenerationResourcesCollection {
   pub settlements: SettlementResources,
 }
 
-impl GenerationResourcesCollection {
+impl GenerationResources {
   pub fn get_terrain_collection(&self, terrain: &TerrainType, climate: &Climate) -> &AssetCollection {
     match (terrain, climate) {
       (TerrainType::Water, _) => &self.water,

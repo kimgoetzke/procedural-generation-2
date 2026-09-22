@@ -1,9 +1,7 @@
 use crate::constants::*;
 use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, TileGrid, World};
-use crate::generation::model::{
-  ChunkComponentIndex, GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent,
-};
+use crate::generation::model::{ChunkComponentIndex, GenerationResources, ObjectComponent, Tile, TileMeshComponent};
 use crate::messages::{MouseRightClickMessage, RegenerateWorldMessage, ToggleDebugInfoMessage};
 use crate::settings::Settings;
 use bevy::app::{App, Plugin, Startup, Update};
@@ -137,7 +135,7 @@ fn on_right_mouse_click_message(
   object_index: Res<ObjectComponentIndex>,
   tile_index: Res<TileMeshComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
-  resources: Res<GenerationResourcesCollection>,
+  resources: Res<GenerationResources>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
@@ -175,7 +173,7 @@ fn on_right_mouse_click_message(
 }
 
 fn tile_info(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   tile: &Tile,
   spawn_point: Point<World>,
   settings: &Res<Settings>,

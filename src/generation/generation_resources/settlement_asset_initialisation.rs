@@ -1,5 +1,5 @@
 use crate::coordinates::{Direction, Point};
-use crate::generation::model::{GenerationResourcesCollection, SettlementResources};
+use crate::generation::model::{GenerationResources, SettlementResources};
 use crate::generation::object::model::{BuildingTemplate, ObjectName};
 use crate::generation::object::settlements::FieldShape;
 use bevy::asset::{Asset, Assets, Handle};
@@ -91,7 +91,7 @@ pub(in crate::generation::generation_resources) struct BuildingComponentRegistry
 );
 
 pub(in crate::generation::generation_resources) fn populate_settlement_resources(
-  generation_resources_collection: &mut ResMut<GenerationResourcesCollection>,
+  generation_resources: &mut ResMut<GenerationResources>,
   settlement_template_handle: &Res<SettlementTemplateAssetHandle>,
   settlement_template_assets: &mut ResMut<Assets<SettlementTemplateAsset>>,
   building_component_handle: &Res<BuildingComponentRegistryHandle>,
@@ -103,7 +103,7 @@ pub(in crate::generation::generation_resources) fn populate_settlement_resources
   let building_components = building_component_assets
     .remove(&building_component_handle.0)
     .unwrap_or_else(|| panic!("Loaded building component asset is unavailable"));
-  generation_resources_collection.settlements = resolve_settlement_resources(settlement_templates, &building_components)
+  generation_resources.settlements = resolve_settlement_resources(settlement_templates, &building_components)
     .unwrap_or_else(|error| panic!("Settlement configuration is invalid: {error}"));
 }
 

@@ -1,6 +1,6 @@
 mod chunk_component_index;
 mod current_chunk;
-mod generation_resources_collection;
+mod generation_resources;
 mod metadata;
 mod object_asset_initialisation;
 mod plugins;
@@ -11,6 +11,6 @@ mod terrain_state_validation;
 
 pub use chunk_component_index::ChunkComponentIndexPlugin;
 pub use current_chunk::CurrentChunk;
-pub use generation_resources_collection::GenerationResourcesCollectionPlugin;
+pub use generation_resources::GenerationResourcesPlugin;
 pub use metadata::MetadataPlugin;
 pub use plugins::GenerationResourcesPlugins;

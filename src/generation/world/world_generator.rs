@@ -3,7 +3,7 @@ use crate::constants::*;
 use crate::coordinates::Point;
 use crate::coordinates::point::World;
 use crate::generation::model::{
-  Chunk, ChunkComponent, GenerationResourcesCollection, Metadata, Plane, TerrainType, Tile, TileMeshComponent,
+  Chunk, ChunkComponent, GenerationResources, Metadata, Plane, TerrainType, Tile, TileMeshComponent,
 };
 use crate::generation::shared;
 use crate::generation::world::post_processor;
@@ -65,7 +65,7 @@ pub fn spawn_tiles(
   chunk_entity: Entity,
   chunk: Chunk,
   settings: &Settings,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   meshes: &mut ResMut<Assets<Mesh>>,
   materials: &mut ResMut<Assets<ColorMaterial>>,
 ) {
@@ -117,7 +117,7 @@ pub fn spawn_tiles(
 /// The purpose of this function is to group tiles by their texture and whether they will be animated so that we can
 /// spawn a single mesh for each texture.
 fn prepare_texture_groups<'a>(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   plane: &'a Plane,
   is_drawing_terrain_sprites_disabled: bool,
 ) -> HashMap<(Handle<Image>, bool, bool), Vec<&'a Tile>> {
@@ -151,7 +151,7 @@ fn prepare_texture_groups<'a>(
 
 fn spawn_tile_mesh(
   commands: &mut Commands,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   meshes: &mut ResMut<Assets<Mesh>>,
   materials: &mut ResMut<Assets<ColorMaterial>>,
   tiles: Vec<&Tile>,
@@ -203,7 +203,7 @@ fn spawn_tile_mesh(
 }
 
 fn calculate_mesh_attributes(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   tiles: Vec<&Tile>,
   layer: f32,
   has_animated_sprites: bool,
@@ -274,11 +274,7 @@ const fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
 /// Determines the sprite index for a tile based on its terrain, climate, and type. If drawing terrain sprites
 /// is disabled, it simply returns the terrain type as the sprite index which corresponds to the placeholder sprite
 /// sheet.
-fn resolve_sprite_index(
-  resources: &GenerationResourcesCollection,
-  tile: &Tile,
-  is_drawing_terrain_sprites_disabled: bool,
-) -> usize {
+fn resolve_sprite_index(resources: &GenerationResources, tile: &Tile, is_drawing_terrain_sprites_disabled: bool) -> usize {
   if is_drawing_terrain_sprites_disabled {
     return tile.terrain as usize;
   }

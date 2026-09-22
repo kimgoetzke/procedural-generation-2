@@ -4,17 +4,17 @@ use crate::constants::{
   TS_LAND_HUMID_L2_PATH, TS_LAND_HUMID_L3_PATH, TS_LAND_MODERATE_L1_PATH, TS_LAND_MODERATE_L2_PATH,
   TS_LAND_MODERATE_L3_PATH, TS_PLACEHOLDER_PATH, TS_SHORE_PATH, TS_WATER_PATH,
 };
-use crate::generation::model::{AssetCollection, AssetPack, GenerationResourcesCollection, TileType};
+use crate::generation::model::{AssetCollection, AssetPack, GenerationResources, TileType};
 use bevy::asset::{AssetServer, Assets};
 use bevy::image::TextureAtlasLayout;
 use bevy::math::UVec2;
 use bevy::platform::collections::HashSet;
 use bevy::prelude::{Res, ResMut};
 
-/// Populates all terrain related resources of the provided [`GenerationResourcesCollection`] by loading the relevant
+/// Populates all terrain related resources of the provided [`GenerationResources`] by loading the relevant
 /// assets and creating [`AssetCollection`]s for each terrain layer/type.
 pub(crate) fn populate_terrain_assets(
-  grc: &mut ResMut<GenerationResourcesCollection>,
+  gr: &mut ResMut<GenerationResources>,
   asset_server: &Res<AssetServer>,
   mut layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
 ) {
@@ -27,38 +27,38 @@ pub(crate) fn populate_terrain_assets(
     None,
   );
   let default_texture_atlas_layout = layouts.add(default_layout);
-  grc.placeholder = AssetPack::new(asset_server.load(TS_PLACEHOLDER_PATH), default_texture_atlas_layout);
+  gr.placeholder = AssetPack::new(asset_server.load(TS_PLACEHOLDER_PATH), default_texture_atlas_layout);
 
   // Detailed tile sets
-  grc.water = tile_set_animated(&asset_server, &mut layouts, TS_WATER_PATH, true, ANIMATED_TILE_SET_COLUMNS);
-  grc.shore = tile_set_animated(&asset_server, &mut layouts, TS_SHORE_PATH, true, ANIMATED_TILE_SET_COLUMNS);
-  grc.land_dry_l1 = tile_set_animated(
+  gr.water = tile_set_animated(&asset_server, &mut layouts, TS_WATER_PATH, true, ANIMATED_TILE_SET_COLUMNS);
+  gr.shore = tile_set_animated(&asset_server, &mut layouts, TS_SHORE_PATH, true, ANIMATED_TILE_SET_COLUMNS);
+  gr.land_dry_l1 = tile_set_animated(
     &asset_server,
     &mut layouts,
     TS_LAND_DRY_L1_PATH,
     false,
     ANIMATED_TILE_SET_COLUMNS,
   );
-  grc.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
-  grc.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
-  grc.land_moderate_l1 = tile_set_animated(
+  gr.land_dry_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L2_PATH);
+  gr.land_dry_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_DRY_L3_PATH);
+  gr.land_moderate_l1 = tile_set_animated(
     &asset_server,
     &mut layouts,
     TS_LAND_MODERATE_L1_PATH,
     false,
     ANIMATED_TILE_SET_COLUMNS,
   );
-  grc.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
-  grc.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
-  grc.land_humid_l1 = tile_set_animated(
+  gr.land_moderate_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L2_PATH);
+  gr.land_moderate_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_MODERATE_L3_PATH);
+  gr.land_humid_l1 = tile_set_animated(
     &asset_server,
     &mut layouts,
     TS_LAND_HUMID_L1_PATH,
     false,
     ANIMATED_TILE_SET_COLUMNS,
   );
-  grc.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
-  grc.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
+  gr.land_humid_l2 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L2_PATH);
+  gr.land_humid_l3 = tile_set_static(&asset_server, &mut layouts, TS_LAND_HUMID_L3_PATH);
 }
 
 fn tile_set_static(

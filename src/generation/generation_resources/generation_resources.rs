@@ -1,15 +1,15 @@
 use crate::app_states::AppState;
 use crate::generation::generation_resources::settlement_asset_initialisation::{
   BuildingComponentRegistry, BuildingComponentRegistryHandle, SettlementTemplateAsset, SettlementTemplateAssetHandle,
-  populate_settlement_resources,
 };
 use crate::generation::generation_resources::terrain_state_initialisation::{
   ExclusionsRuleSet, ExclusionsRuleSetHandle, TerrainRuleSet, TerrainRuleSetHandle, TileTypeRuleSet, TileTypeRuleSetHandle,
 };
 use crate::generation::generation_resources::{
-  object_asset_initialisation, terrain_asset_initialisation, terrain_state_initialisation, terrain_state_validation,
+  object_asset_initialisation, settlement_asset_initialisation, terrain_asset_initialisation, terrain_state_initialisation,
+  terrain_state_validation,
 };
-use crate::generation::model::{GenerationResourcesCollection, TerrainType};
+use crate::generation::model::{GenerationResources, TerrainType};
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::asset::{AssetServer, Assets, LoadState};
 use bevy::log::*;
@@ -21,7 +21,7 @@ use strum::IntoEnumIterator;
 /// generation process. The purpose of this plugin is to ensure that all necessary assets are loaded, preprocessed, and
 /// initialised before the generation process starts.
 ///
-/// At its core, this plugin adds the [`GenerationResourcesCollection`] resource, making it available to the rest of the
+/// At its core, this plugin adds the [`GenerationResources`] resource, making it available to the rest of the
 /// application.
 ///
 /// In terms of process, it works as follows:
@@ -30,13 +30,13 @@ use strum::IntoEnumIterator;
 /// 2. While in this state, it checks the loading state of these assets and waits until they are fully loaded, then
 ///    it transitions the state to [`AppState::Initialising`]. See [`check_loading_state_system`].
 /// 3. Upon transitioning to the initialising state (i.e. [`OnExit`] of [`AppState::Loading`]), it finally
-///    initialises the [`GenerationResourcesCollection`] resource. See [`initialise_resources_system`].
-pub struct GenerationResourcesCollectionPlugin;
+///    initialises the [`GenerationResources`] resource. See [`initialise_resources_system`].
+pub struct GenerationResourcesPlugin;
 
-impl Plugin for GenerationResourcesCollectionPlugin {
+impl Plugin for GenerationResourcesPlugin {
   fn build(&self, app: &mut App) {
     app
-      .init_resource::<GenerationResourcesCollection>()
+      .init_resource::<GenerationResources>()
       .add_plugins((
         TomlAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.toml"]),
         TomlAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.toml"]),
@@ -113,7 +113,7 @@ fn is_loading(loading_state: Option<LoadState>) -> bool {
 fn initialise_resources_system(
   asset_server: Res<AssetServer>,
   mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-  mut generation_resources_collection: ResMut<GenerationResourcesCollection>,
+  mut generation_resources: ResMut<GenerationResources>,
   terrain_rule_set_handle: Res<TerrainRuleSetHandle>,
   mut terrain_rule_set_assets: ResMut<Assets<TerrainRuleSet>>,
   tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
@@ -126,11 +126,11 @@ fn initialise_resources_system(
   mut building_component_assets: ResMut<Assets<BuildingComponentRegistry>>,
 ) {
   // Terrain sprites
-  terrain_asset_initialisation::populate_terrain_assets(&mut generation_resources_collection, &asset_server, &mut layouts);
+  terrain_asset_initialisation::populate_terrain_assets(&mut generation_resources, &asset_server, &mut layouts);
 
   // Objects: Templates and building components for settlements
-  populate_settlement_resources(
-    &mut generation_resources_collection,
+  settlement_asset_initialisation::populate_settlement_resources(
+    &mut generation_resources,
     &settlement_template_handle,
     &mut settlement_template_assets,
     &building_component_handle,
@@ -138,7 +138,7 @@ fn initialise_resources_system(
   );
 
   // Object sprites
-  object_asset_initialisation::populate_object_resources(&mut generation_resources_collection, &asset_server, &mut layouts);
+  object_asset_initialisation::populate_object_resources(&mut generation_resources, &asset_server, &mut layouts);
 
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_state_initialisation::terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
@@ -149,7 +149,7 @@ fn initialise_resources_system(
   let terrain_state_map = terrain_state_initialisation::resolve_rules_to_terrain_states_map(terrain_rules, tile_type_rules);
   terrain_state_validation::validate_terrain_state_map(&terrain_state_map);
   let terrain_climate_state_map = terrain_state_initialisation::apply_exclusions(exclusion_rules, terrain_state_map);
-  generation_resources_collection
+  generation_resources
     .objects
     .set_terrain_state_climate_map(terrain_climate_state_map);
 }
