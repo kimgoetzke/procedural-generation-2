@@ -2,10 +2,12 @@ use crate::coordinates::Point;
 use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use bevy::prelude::{App, Message, Plugin};
 
-/// A plugin that registers all shared messages used across multiple plugins and systems.
-pub struct SharedMessagesPlugin;
+/// A plugin that registers all shared messages used across multiple plugins and systems. It is currently much more
+/// convenient to keep all messages in a single place but if we need more messages, we should strongly consider moving
+/// each message into the relevant feature or owning code.
+pub struct MessagesPlugin;
 
-impl Plugin for SharedMessagesPlugin {
+impl Plugin for MessagesPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_message::<RefreshMetadataMessage>()

@@ -5,8 +5,8 @@ mod constants;
 mod controls;
 mod coordinates;
 mod generation;
+mod messages;
 mod settings;
-mod shared_messages;
 mod ui;
 
 use crate::app_states::AppStatePlugin;
@@ -14,8 +14,8 @@ use crate::camera::CameraPlugin;
 use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::controls::ControlsPlugin;
 use crate::generation::GenerationPipelinePlugin;
+use crate::messages::MessagesPlugin;
 use crate::settings::SettingsPlugin;
-use crate::shared_messages::SharedMessagesPlugin;
 use crate::ui::UiPlugins;
 use animation::SpriteAnimationsPlugin;
 use bevy::asset::AssetMetaCheck;
@@ -55,7 +55,7 @@ fn main() {
       AppStatePlugin,
       GenerationPipelinePlugin,
       SpriteAnimationsPlugin,
-      SharedMessagesPlugin,
+      MessagesPlugin,
       SettingsPlugin,
       ControlsPlugin,
       UiPlugins,
