@@ -224,7 +224,7 @@ impl ObjectGrid {
           .and_then(|row| row.get_mut(cell_ig.x as usize))
           .expect("Failed to get edge cell coordinates that came from inside the object grid");
         let previous_entropy = cell.get_entropy();
-        match cell.reduce(no_neighbours_tile, &connection, false) {
+        match cell.reduce(no_neighbours_tile, &connection.opposite(), false) {
           Ok(true) => {
             trace!(
               "Validating object grid {}: Reduced possible states of {:?} from {:?} to {:?}",
