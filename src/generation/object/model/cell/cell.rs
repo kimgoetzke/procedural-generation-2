@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use strum::IntoEnumIterator;
 
 #[derive(Debug)]
-pub struct PropagationFailure {}
+pub(in crate::generation::object) struct PropagationFailure {}
 
 pub type CellRef = Arc<Mutex<Cell>>;
 
@@ -329,7 +329,7 @@ impl Cell {
   /// Reduces possible states in place using the reference cell's constraints.
   /// # Errors
   /// Returns an error without modifying the cell if no possible states would remain.
-  pub fn reduce(
+  pub(in crate::generation::object) fn reduce(
     &mut self,
     reference_cell: &Self,
     where_is_self_for_reference: &Connection,
@@ -448,7 +448,7 @@ impl Cell {
   /// invalid states that would not be allowed by the rules defined in the reference cell.
   /// # Errors
   /// If the current state of this [`Cell`] is not valid.
-  pub fn verify(
+  pub(in crate::generation::object) fn verify(
     &self,
     reference_cell: &Self,
     where_is_self_for_reference: &Connection,

@@ -245,7 +245,7 @@ impl ObjectGrid {
   }
 
   /// Applies a reference cell's constraints directly to its neighbour.
-  pub(crate) fn reduce_neighbour(
+  pub(in crate::generation::object) fn reduce_neighbour(
     &mut self,
     reference_ig: &Point<InternalGrid>,
     neighbour_ig: &Point<InternalGrid>,

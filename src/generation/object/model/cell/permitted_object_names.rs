@@ -7,7 +7,7 @@ const OBJECT_NAME_SET_WORDS: usize = ObjectName::COUNT.div_ceil(u64::BITS as usi
 /// determining the permitted states of a cell. This struct only exists as a performance optimisation. This bitset
 /// implementation uses fixed memory, performs no hashing (unlike `HashSet<ObjectName>`), and needs no heap allocation.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct PermittedObjectNames([u64; OBJECT_NAME_SET_WORDS]);
+pub(in crate::generation::object::model) struct PermittedObjectNames([u64; OBJECT_NAME_SET_WORDS]);
 
 impl PermittedObjectNames {
   pub fn insert(&mut self, name: ObjectName) {
