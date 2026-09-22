@@ -1,6 +1,6 @@
 use crate::animation::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
-use crate::generation::model::{AssetCollection, Chunk, GenerationResources, ObjectComponent, Tile};
+use crate::generation::model::{Chunk, GenerationResources, ObjectComponent, SpriteSheetSet, Tile};
 use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};
 use crate::generation::shared;
 use crate::settings::Settings;
@@ -59,7 +59,7 @@ pub fn generate_object_grid(
   let start_time = shared::get_time();
   let terrain_climate_state_map = resources
     .objects
-    .get_terrain_state_collection(settings.object.enable_animated_objects);
+    .terrain_state_collection(settings.object.enable_animated_objects);
   let grid = ObjectGrid::new_initialised(cg, chunk.climate, &terrain_climate_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
@@ -166,10 +166,11 @@ fn attach_object_spawn_task(
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let asset_collection = world
+      let sprite_sheet_set = world
         .get_resource::<GenerationResources>()
         .expect("Failed to fetch GenerationResources")
-        .get_object_collection(
+        .objects
+        .sprite_sheet_set(
           tile_data.flat_tile.terrain,
           tile_data.flat_tile.climate,
           object_data.is_large_sprite,
@@ -182,7 +183,7 @@ fn attach_object_spawn_task(
           let mut entity = parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
-            &asset_collection,
+            &sprite_sheet_set,
             object_name,
             offset_x,
             offset_y,
@@ -236,7 +237,7 @@ fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) 
 fn sprite(
   tile: &Tile,
   index: i32,
-  asset_collection: &AssetCollection,
+  sprite_sheet_set: &SpriteSheetSet,
   object_name: ObjectName,
   offset_x: f32,
   offset_y: f32,
@@ -250,10 +251,10 @@ fn sprite(
     Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {
       texture_atlas: Option::from(TextureAtlas {
-        layout: asset_collection.stat.texture_atlas_layout.clone(),
+        layout: sprite_sheet_set.static_sheet.texture_atlas_layout.clone(),
         index: index as usize,
       }),
-      image: asset_collection.stat.texture.clone(),
+      image: sprite_sheet_set.static_sheet.texture.clone(),
       color: colour,
       ..Default::default()
     },

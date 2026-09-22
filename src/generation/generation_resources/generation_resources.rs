@@ -126,11 +126,11 @@ fn initialise_resources_system(
   mut building_component_assets: ResMut<Assets<BuildingComponentRegistry>>,
 ) {
   // Terrain sprites
-  terrain_asset_initialisation::populate_terrain_assets(&mut generation_resources, &asset_server, &mut layouts);
+  terrain_asset_initialisation::populate_terrain_assets(&mut generation_resources.world, &asset_server, &mut layouts);
 
   // Objects: Templates and building components for settlements
   settlement_asset_initialisation::populate_settlement_resources(
-    &mut generation_resources,
+    &mut generation_resources.settlements,
     &settlement_template_handle,
     &mut settlement_template_assets,
     &building_component_handle,
@@ -138,7 +138,7 @@ fn initialise_resources_system(
   );
 
   // Object sprites
-  object_asset_initialisation::populate_object_resources(&mut generation_resources, &asset_server, &mut layouts);
+  object_asset_initialisation::populate_object_resources(&mut generation_resources.objects, &asset_server, &mut layouts);
 
   // Objects: Rule sets for wave function collapse
   let terrain_rules = terrain_state_initialisation::terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);

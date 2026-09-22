@@ -124,19 +124,19 @@ fn prepare_texture_groups<'a>(
   let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
   for row in plane.data.iter() {
     for tile in row.iter().flatten() {
-      let asset_collection = resources.get_terrain_collection(&tile.terrain, &tile.climate);
-      let has_animated_sprites = asset_collection.anim.is_some();
-      let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
+      let sprite_sheet_set = resources.world.sprite_sheet_set(&tile.terrain, &tile.climate);
+      let has_animated_sprites = sprite_sheet_set.animated_sheet.is_some();
+      let is_animated = sprite_sheet_set.animated_tile_types.contains(&tile.tile_type);
       let texture = match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
         (false, true) => {
-          &asset_collection
-            .anim
+          &sprite_sheet_set
+            .animated_sheet
             .as_ref()
-            .expect("Failed to get animated asset pack from resource collection")
+            .expect("Animated sprite sheet exists")
             .texture
         }
-        (false, false) => &asset_collection.stat.texture,
-        (true, _) => &resources.placeholder.texture,
+        (false, false) => &sprite_sheet_set.static_sheet.texture,
+        (true, _) => &resources.world.placeholder.texture,
       };
 
       texture_groups
@@ -279,5 +279,7 @@ fn resolve_sprite_index(resources: &GenerationResources, tile: &Tile, is_drawing
     return tile.terrain as usize;
   }
 
-  tile.tile_type.calculate_sprite_index(&tile.terrain, &tile.climate, resources)
+  tile
+    .tile_type
+    .calculate_sprite_index(&tile.terrain, &tile.climate, &resources.world)
 }
