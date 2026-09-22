@@ -3,7 +3,7 @@ use bevy::log::*;
 use std::cmp::Reverse;
 
 #[derive(Clone, Debug)]
-pub struct TileBelow {
+pub(in crate::generation) struct TileBelow {
   pub(crate) terrain: TerrainType,
   pub(crate) tile_type: TileType,
   pub(crate) below: Option<Box<Self>>,

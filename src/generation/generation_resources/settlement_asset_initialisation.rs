@@ -9,7 +9,7 @@ use bevy::reflect::TypePath;
 
 /// Maps building components to their sprite variants while settlement resources are initialised.
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone, Default, PartialEq, Eq)]
-pub(in crate::generation) struct BuildingComponentRegistry {
+pub(in crate::generation::generation_resources) struct BuildingComponentRegistry {
   components: HashMap<BuildingType, HashMap<Level, HashMap<StructureType, Vec<ObjectName>>>>,
 }
 
@@ -74,9 +74,10 @@ struct FieldShapeDefinition {
   rows: Vec<String>,
 }
 
-/// Raw settlement templates loaded from TOML.
+/// Raw settlement templates loaded from TOML. Describes the shapes fields can have (excluding rotations and entrances)
+/// as well as the buildings templates (sprite components).
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone, Default)]
-pub(in crate::generation) struct SettlementTemplateAsset {
+pub(in crate::generation::generation_resources) struct SettlementTemplateAsset {
   field_shapes: Vec<FieldShapeDefinition>,
   building_templates: Vec<BuildingTemplateDefinition>,
 }

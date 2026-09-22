@@ -36,7 +36,7 @@ pub struct Cell {
   terrain: TerrainType,
   tile_type: TileType,
   #[reflect(ignore)]
-  pub tile_below: Option<TileBelow>,
+  tile_below: Option<TileBelow>,
   // Pathfinding specific fields
   #[reflect(ignore)]
   neighbours: Vec<CellRef>,
@@ -79,6 +79,10 @@ impl Cell {
       entropy: usize::MAX,
       possible_states: vec![],
     }
+  }
+
+  pub(in crate::generation) fn tile_below(&self) -> &Option<TileBelow> {
+    &self.tile_below
   }
 
   /// Initialises an uninitialised [`Cell`] i.e. one created with [`Cell::new`].

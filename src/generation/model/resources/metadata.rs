@@ -99,7 +99,7 @@ impl Metadata {
             cell.is_walkable(),
             cell.is_valid_connection_point()
           );
-          if let Some(tile_below) = &cell.tile_below {
+          if let Some(tile_below) = cell.tile_below() {
             tile_below.log();
           } else {
             trace!("- No tile below for connection point {:?}", p);
