@@ -123,7 +123,7 @@ impl<T: CoordType> Point<T> {
       Direction::Top => (0, 1),
       Direction::TopRight => (1, 1),
       Direction::Left => (-1, 0),
-      Direction::Center => (0, 0),
+      Direction::Centre => (0, 0),
       Direction::Right => (1, 0),
       Direction::BottomLeft => (-1, -1),
       Direction::Bottom => (0, -1),
@@ -492,8 +492,8 @@ mod tests {
   }
 
   #[test]
-  fn from_direction_center_for_internal_and_world() {
-    let direction = Direction::Center;
+  fn from_direction_centre_for_internal_and_world() {
+    let direction = Direction::Centre;
     let ig: Point<InternalGrid> = Point::from_direction(&direction);
     assert_eq!(ig, Point::new(0, 0));
 

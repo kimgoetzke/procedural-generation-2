@@ -11,7 +11,7 @@ pub enum Direction {
   Top,
   TopRight,
   Left,
-  Center,
+  Centre,
   Right,
   BottomLeft,
   Bottom,
@@ -28,7 +28,7 @@ impl Direction {
         (Ordering::Less, Ordering::Equal) => Self::Right,
         (Ordering::Less, Ordering::Greater) => Self::TopRight,
         (Ordering::Equal, Ordering::Less) => Self::Bottom,
-        (Ordering::Equal, Ordering::Equal) => Self::Center,
+        (Ordering::Equal, Ordering::Equal) => Self::Centre,
         (Ordering::Equal, Ordering::Greater) => Self::Top,
         (Ordering::Greater, Ordering::Less) => Self::BottomLeft,
         (Ordering::Greater, Ordering::Equal) => Self::Left,
@@ -39,7 +39,7 @@ impl Direction {
         (Ordering::Less, Ordering::Equal) => Self::Right,
         (Ordering::Less, Ordering::Greater) => Self::BottomRight,
         (Ordering::Equal, Ordering::Less) => Self::Top,
-        (Ordering::Equal, Ordering::Equal) => Self::Center,
+        (Ordering::Equal, Ordering::Equal) => Self::Centre,
         (Ordering::Equal, Ordering::Greater) => Self::Bottom,
         (Ordering::Greater, Ordering::Less) => Self::TopLeft,
         (Ordering::Greater, Ordering::Equal) => Self::Left,
@@ -73,7 +73,7 @@ impl Direction {
       Self::Top => Self::Bottom,
       Self::TopRight => Self::BottomLeft,
       Self::Left => Self::Right,
-      Self::Center => Self::Center,
+      Self::Centre => Self::Centre,
       Self::Right => Self::Left,
       Self::BottomLeft => Self::TopRight,
       Self::Bottom => Self::Top,
@@ -90,7 +90,7 @@ impl Direction {
       (id, Self::TopRight) if id == TypeId::of::<InternalGrid>() => Point::new(1, -1),
       (_, Self::TopRight) => Point::new(1, 1),
       (_, Self::Left) => Point::new(-1, 0),
-      (_, Self::Center) => Point::new(0, 0),
+      (_, Self::Centre) => Point::new(0, 0),
       (_, Self::Right) => Point::new(1, 0),
       (id, Self::BottomLeft) if id == TypeId::of::<InternalGrid>() => Point::new(-1, 1),
       (_, Self::BottomLeft) => Point::new(-1, -1),
@@ -116,7 +116,7 @@ pub fn get_direction_points<T: CoordType + 'static>(point: &Point<T>) -> [(Direc
     (Direction::Top, Point::new(p.x, p.y + y_offset)),
     (Direction::TopRight, Point::new(p.x + x_offset, p.y + y_offset)),
     (Direction::Left, Point::new(p.x - x_offset, p.y)),
-    (Direction::Center, Point::new(p.x, p.y)),
+    (Direction::Centre, Point::new(p.x, p.y)),
     (Direction::Right, Point::new(p.x + x_offset, p.y)),
     (Direction::BottomLeft, Point::new(p.x - x_offset, p.y - y_offset)),
     (Direction::Bottom, Point::new(p.x, p.y - y_offset)),
@@ -174,7 +174,7 @@ fn to_direction<T: CoordType>(other_world: &Point<T>, left: i32, right: i32, top
     (0, 1) => Direction::Top,
     (1, 1) => Direction::TopRight,
     (-1, 0) => Direction::Left,
-    (0, 0) => Direction::Center,
+    (0, 0) => Direction::Centre,
     (1, 0) => Direction::Right,
     (-1, -1) => Direction::BottomLeft,
     (0, -1) => Direction::Bottom,
@@ -200,7 +200,7 @@ mod tests {
 
     let e = Point::new_internal_grid(0, 0);
     let f = Point::new_internal_grid(0, 0);
-    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Centre);
   }
 
   #[test]
@@ -223,7 +223,7 @@ mod tests {
 
     let e = Point::new_tile_grid(0, 0);
     let f = Point::new_tile_grid(0, 0);
-    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Centre);
   }
 
   #[test]
@@ -246,7 +246,7 @@ mod tests {
 
     let e = Point::new_chunk_grid(0, 0);
     let f = Point::new_chunk_grid(0, 0);
-    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Centre);
   }
 
   #[test]
@@ -269,7 +269,7 @@ mod tests {
 
     let e = Point::new_world(0, 0);
     let f = Point::new_world(0, 0);
-    assert_eq!(Direction::from_points(&e, &f), Direction::Center);
+    assert_eq!(Direction::from_points(&e, &f), Direction::Centre);
   }
 
   #[test]
@@ -339,7 +339,7 @@ mod tests {
     let point = Point::new_internal_grid(0, 0);
     let points = get_direction_points(&point);
     assert_eq!(points[0], (Direction::TopLeft, Point::new(-1, -1)));
-    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[4], (Direction::Centre, Point::new(0, 0)));
     assert_eq!(points[8], (Direction::BottomRight, Point::new(1, 1)));
   }
 
@@ -348,7 +348,7 @@ mod tests {
     let point = Point::new_tile_grid(0, 0);
     let points = get_direction_points(&point);
     assert_eq!(points[0], (Direction::TopLeft, Point::new(-16, 16)));
-    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[4], (Direction::Centre, Point::new(0, 0)));
     assert_eq!(points[8], (Direction::BottomRight, Point::new(16, -16)));
   }
 
@@ -357,7 +357,7 @@ mod tests {
     let point = Point::new_chunk_grid(0, 0);
     let points = get_direction_points(&point);
     assert_eq!(points[0], (Direction::TopLeft, Point::new(-1, 1)));
-    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[4], (Direction::Centre, Point::new(0, 0)));
     assert_eq!(points[8], (Direction::BottomRight, Point::new(1, -1)));
   }
 
@@ -366,7 +366,7 @@ mod tests {
     let point = Point::new_world(0, 0);
     let points = get_direction_points(&point);
     assert_eq!(points[0], (Direction::TopLeft, Point::new(-512, 512)));
-    assert_eq!(points[4], (Direction::Center, Point::new(0, 0)));
+    assert_eq!(points[4], (Direction::Centre, Point::new(0, 0)));
     assert_eq!(points[8], (Direction::BottomRight, Point::new(512, -512)));
   }
 
@@ -425,8 +425,8 @@ mod tests {
   }
 
   #[test]
-  fn to_point_returns_correct_point_for_center() {
-    let direction = Direction::Center;
+  fn to_point_returns_correct_point_for_centre() {
+    let direction = Direction::Centre;
     let point: Point<InternalGrid> = direction.to_point();
     assert_eq!(point, Point::new(0, 0));
   }

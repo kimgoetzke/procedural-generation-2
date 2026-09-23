@@ -75,7 +75,7 @@ fn generate_terrain_data(
   let strength = settings.world.noise_strength;
   let start = Point::new_tile_grid(tg.x - BUFFER_SIZE, tg.y + BUFFER_SIZE);
   let end = Point::new_tile_grid(start.x + CHUNK_SIZE_PLUS_BUFFER - 1, start.y - CHUNK_SIZE_PLUS_BUFFER + 1);
-  let center = Point::new_tile_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
+  let centre = Point::new_tile_grid((start.x + end.x) / 2, (start.y + end.y) / 2);
   let max_distance = (CHUNK_SIZE_PLUS_BUFFER as f64) / 2.;
   let mut tiles = vec![vec![None; CHUNK_SIZE_PLUS_BUFFER as usize]; CHUNK_SIZE_PLUS_BUFFER as usize];
   let mut ix = 0;
@@ -96,8 +96,8 @@ fn generate_terrain_data(
       let normalised_noise = ((normalised_noise * strength) + elevation_offset).clamp(0., 1.);
 
       // Calculate if this tile is a biome edge
-      let distance_from_center = calculate_distance_from_center(center, max_distance, tx, ty);
-      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_center, biome_metadata_set, &mut rng);
+      let distance_from_centre = calculate_distance_from_centre(centre, max_distance, tx, ty);
+      let is_biome_edge = is_tile_at_edge_of_biome(ix, iy, distance_from_centre, biome_metadata_set, &mut rng);
 
       // Create debug data for troubleshooting
       let debug_data = DebugData {
@@ -132,15 +132,15 @@ fn generate_terrain_data(
   tiles
 }
 
-fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx: i32, ty: i32) -> f64 {
-  let distance_x = (tx - center.x).abs() as f64 / max_distance;
-  let distance_y = (ty - center.y).abs() as f64 / max_distance;
+fn calculate_distance_from_centre(centre: Point<TileGrid>, max_distance: f64, tx: i32, ty: i32) -> f64 {
+  let distance_x = (tx - centre.x).abs() as f64 / max_distance;
+  let distance_y = (ty - centre.y).abs() as f64 / max_distance;
 
   distance_x.max(distance_y)
 }
 
 /// Calculates if a tile [`TerrainType`] should be adjusted by checking if:
-/// 1. The tile is "far enough" from the center (otherwise it cannot be an edge)
+/// 1. The tile is "far enough" from the centre (otherwise it cannot be an edge)
 /// 2. The tile is at any of the edges of the chunk (direction match statement arms using `INSIDE` and/or `OUTSIDE`)
 /// 3. The tile is at the randomly determined, expanded edges of the chunk (arms using `EXPANDED_INSIDE`,
 ///    `EXPANDED_OUTSIDE`) - this introduces some randomness (vs having perfectly straight edges around chunks)
@@ -153,11 +153,11 @@ fn calculate_distance_from_center(center: Point<TileGrid>, max_distance: f64, tx
 fn is_tile_at_edge_of_biome(
   ix: i32,
   iy: i32,
-  distance_from_center: f64,
+  distance_from_centre: f64,
   biome_metadata: &BiomeMetadataSet,
   rng: &mut StdRng,
 ) -> bool {
-  if distance_from_center <= 0.6 {
+  if distance_from_centre <= 0.6 {
     return false;
   }
 
@@ -175,8 +175,8 @@ fn is_tile_at_edge_of_biome(
     (EXPANDED_INSIDE..EXPANDED_OUTSIDE, EXPANDED_OUTSIDE.., true) => Direction::Bottom,
     (EXPANDED_OUTSIDE.., EXPANDED_INSIDE..EXPANDED_OUTSIDE, true) => Direction::Right,
     (..EXPANDED_INSIDE, EXPANDED_INSIDE..EXPANDED_OUTSIDE, true) => Direction::Left,
-    _ => Direction::Center,
+    _ => Direction::Centre,
   };
 
-  direction != Direction::Center && !biome_metadata.is_same_climate(&direction)
+  direction != Direction::Centre && !biome_metadata.is_same_climate(&direction)
 }

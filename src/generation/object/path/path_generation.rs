@@ -135,7 +135,7 @@ fn calculate_path_and_draft_object_names(
       let prev_direction = if i > 0 {
         path_segment[i - 1].1.to_opposite()
       } else {
-        Direction::Center
+        Direction::Centre
       };
       let object_name = determine_path_object_name(&prev_direction, next_direction, point);
       trace!(
@@ -326,7 +326,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
 
           (cell.ig, cell.get_connection().as_ref().cloned())
         };
-        let direction_to_next = next_cell.as_ref().map_or(Direction::Center, |next_cell| {
+        let direction_to_next = next_cell.as_ref().map_or(Direction::Centre, |next_cell| {
           let next_cell_ig = next_cell.try_lock().expect("Failed to lock next cell").ig;
           Direction::from_points(&current_ig, &next_cell_ig)
         });
@@ -398,7 +398,7 @@ pub fn run_algorithm(start_cell: &CellRef, target_cell: &CellRef) -> Vec<(Point<
 fn push_path_if_valid(cell: &CellRef, result: &mut Vec<(Point<InternalGrid>, Direction)>) {
   let ig = get_cell_ig(cell);
   if ig.is_touching_edge() {
-    result.push((ig, Direction::Center));
+    result.push((ig, Direction::Centre));
   }
 }
 
@@ -435,16 +435,16 @@ fn determine_path_object_name(
 
 /// Updates the direction if the point is at an edge of the internal grid. This is required because a point at the edge
 /// signifies a connection point, meaning that the path does not end here but continues in the next chunk. Leaving the
-/// direction as [`Direction::Center`] means that the path starts/ends here, which is never the case for a connection
+/// direction as [`Direction::Centre`] means that the path starts/ends here, which is never the case for a connection
 /// point.
 fn update_if_edge_connection<'a>(point: &Point<InternalGrid>, direction: &'a Direction) -> &'a Direction {
-  if direction == Direction::Center {
+  if direction == Direction::Centre {
     match point {
       point if point.x == 0 => &Direction::Left,
       point if point.x == CHUNK_SIZE - 1 => &Direction::Right,
       point if point.y == 0 => &Direction::Top,
       point if point.y == CHUNK_SIZE - 1 => &Direction::Bottom,
-      _ => &Direction::Center,
+      _ => &Direction::Centre,
     }
   } else {
     direction
@@ -461,7 +461,7 @@ fn determine_path_object_name_from_neighbours(
   // to the expected connection point in the neighbouring chunk
   if neighbour_directions.len() <= 2 && ig.is_touching_edge() {
     let direction = direction_to_neighbour_chunk(ig);
-    if direction != Center {
+    if direction != Centre {
       neighbour_directions.insert(direction);
     }
   }
@@ -513,10 +513,10 @@ const fn determine_path_object_name_from_two_directions(
     (Bottom, Left) | (Left, Bottom) => ObjectName::PathBottomLeft,
     (Bottom, Right) | (Right, Bottom) => ObjectName::PathBottomRight,
     (Top, Left) | (Left, Top) => ObjectName::PathTopLeft,
-    (Top, Center) | (Center, Top) | (Top, Top) => ObjectName::PathTop,
-    (Right, Center) | (Center, Right) | (Right, Right) => ObjectName::PathRight,
-    (Bottom, Center) | (Center, Bottom) | (Bottom, Bottom) => ObjectName::PathBottom,
-    (Left, Center) | (Center, Left) | (Left, Left) => ObjectName::PathLeft,
+    (Top, Centre) | (Centre, Top) | (Top, Top) => ObjectName::PathTop,
+    (Right, Centre) | (Centre, Right) | (Right, Right) => ObjectName::PathRight,
+    (Bottom, Centre) | (Centre, Bottom) | (Bottom, Bottom) => ObjectName::PathBottom,
+    (Left, Centre) | (Centre, Left) | (Left, Left) => ObjectName::PathLeft,
     _ => ObjectName::PathUndefined,
   }
 }
@@ -527,7 +527,7 @@ const fn direction_to_neighbour_chunk(ig: &Point<InternalGrid>) -> Direction {
     point if point.x == CHUNK_SIZE - 1 => Direction::Right,
     point if point.y == 0 => Direction::Top,
     point if point.y == CHUNK_SIZE - 1 => Direction::Bottom,
-    _ => Direction::Center,
+    _ => Direction::Centre,
   }
 }
 
@@ -563,10 +563,10 @@ mod tests {
   }
 
   #[test]
-  fn determine_path_object_name_top_for_top_and_center_directions() {
+  fn determine_path_object_name_top_for_top_and_centre_directions() {
     let ig = Point::new_internal_grid(5, 0); // i.e. top edge connection
     assert_eq!(
-      determine_path_object_name(&Direction::Bottom, &Direction::Center, &ig),
+      determine_path_object_name(&Direction::Bottom, &Direction::Centre, &ig),
       ObjectName::PathVertical
     );
   }
@@ -575,7 +575,7 @@ mod tests {
   fn determine_path_object_name_undefined_for_unexpected_directions() {
     let ig = Point::new_internal_grid(5, 5);
     assert_eq!(
-      determine_path_object_name(&Direction::Center, &Direction::Center, &ig),
+      determine_path_object_name(&Direction::Centre, &Direction::Centre, &ig),
       ObjectName::PathUndefined
     );
   }

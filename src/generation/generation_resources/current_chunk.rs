@@ -18,13 +18,13 @@ impl Plugin for CurrentChunkPlugin {
 
 #[derive(Resource, Debug, Clone)]
 pub struct CurrentChunk {
-  center_w: Point<World>,
+  centre_w: Point<World>,
   coords: Coords,
 }
 
 impl CurrentChunk {
-  pub const fn get_center_world(&self) -> Point<World> {
-    self.center_w
+  pub const fn get_centre_world(&self) -> Point<World> {
+    self.centre_w
   }
 
   pub const fn get_world(&self) -> Point<World> {
@@ -52,7 +52,7 @@ impl CurrentChunk {
     self.coords.world = w;
     self.coords.chunk_grid = cg;
     self.coords.tile_grid = Point::new_tile_grid_from_world(w);
-    self.center_w = Point::new_world(
+    self.centre_w = Point::new_world(
       w.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       w.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
     );
@@ -63,7 +63,7 @@ impl CurrentChunk {
 impl Default for CurrentChunk {
   fn default() -> Self {
     Self {
-      center_w: Point::new_world(
+      centre_w: Point::new_world(
         ORIGIN_WORLD_SPAWN_POINT.x + (CHUNK_SIZE * TILE_SIZE as i32 / 2),
         ORIGIN_WORLD_SPAWN_POINT.y - (CHUNK_SIZE * TILE_SIZE as i32 / 2),
       ),

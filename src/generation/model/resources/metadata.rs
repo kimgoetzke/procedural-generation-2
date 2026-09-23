@@ -65,7 +65,7 @@ impl Metadata {
       bottom: bm[&Direction::Bottom],
       bottom_left: bm[&Direction::BottomLeft],
       left: bm[&Direction::Left],
-      this: bm[&Direction::Center],
+      this: bm[&Direction::Centre],
       top_left: bm[&Direction::TopLeft],
     };
     trace!("Biome metadata for {}: {}", cg, biome_metadata_set);
@@ -248,7 +248,7 @@ impl BiomeMetadataSet<'_> {
       Direction::Top => self.top,
       Direction::TopRight => self.top_right,
       Direction::Left => self.left,
-      Direction::Center => self.this,
+      Direction::Centre => self.this,
       Direction::Right => self.right,
       Direction::BottomLeft => self.bottom_left,
       Direction::Bottom => self.bottom,
