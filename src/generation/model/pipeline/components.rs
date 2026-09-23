@@ -1,4 +1,4 @@
-use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::point::{ChunkGrid, TileGrid};
 use crate::coordinates::{Coords, Point};
 use crate::generation::model::{GenerationStage, LayeredPlane, Tile};
 use crate::generation::object::model::ObjectName;
@@ -61,17 +61,15 @@ pub struct ObjectComponent {
 pub struct WorldGenerationComponent {
   pub created_at: u128,
   pub stage: GenerationStage,
-  pub w: Point<World>,
   pub cg: Point<ChunkGrid>,
   pub suppress_pruning_world: bool,
 }
 
 impl WorldGenerationComponent {
-  pub const fn new(w: Point<World>, cg: Point<ChunkGrid>, suppress_pruning_world: bool, created_at: u128) -> Self {
+  pub const fn new(cg: Point<ChunkGrid>, suppress_pruning_world: bool, created_at: u128) -> Self {
     Self {
       created_at,
       stage: GenerationStage::Stage1(false),
-      w,
       cg,
       suppress_pruning_world,
     }

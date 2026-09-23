@@ -34,18 +34,26 @@ impl Chunk {
   /// Creates a new chunk from a draft chunk by converting the flat terrain data from the draft chunk into a
   /// [`LayeredPlane`]. As a result, a chunk has multiple layers of terrain data, each of which contains information
   /// about the [`crate::generation::model::Tile`]s that make up the terrain including their types.
-  pub fn new(w: Point<World>, tg: Point<TileGrid>, metadata: &Metadata, settings: &Settings) -> Self {
-    let coords = Coords::new_for_chunk(w, tg);
+  pub fn new(coords: Coords, metadata: &Metadata, settings: &Settings) -> Self {
     let biome_metadata_set = metadata.get_biome_metadata_for(&coords.chunk_grid);
     let elevation_metadata = metadata
       .elevation
       .get(&coords.chunk_grid)
       .unwrap_or_else(|| panic!("Failed to get elevation metadata for {}", coords.chunk_grid));
-    let data = generate_terrain_data(&tg, &coords.chunk_grid, &biome_metadata_set, elevation_metadata, settings);
+    let data = generate_terrain_data(
+      &coords.tile_grid,
+      &coords.chunk_grid,
+      &biome_metadata_set,
+      elevation_metadata,
+      settings,
+    );
     let layered_plane = LayeredPlane::new(data, settings);
     Self {
       coords,
-      center: Point::new_world(tg.x + (CHUNK_SIZE_PLUS_BUFFER / 2), tg.y + (CHUNK_SIZE_PLUS_BUFFER / 2)),
+      center: Point::new_world(
+        coords.tile_grid.x + (CHUNK_SIZE_PLUS_BUFFER / 2),
+        coords.tile_grid.y + (CHUNK_SIZE_PLUS_BUFFER / 2),
+      ),
       climate: biome_metadata_set.this.climate,
       layered_plane,
     }

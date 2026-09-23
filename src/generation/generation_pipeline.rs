@@ -2,7 +2,7 @@ use crate::app_states::{AppState, GenerationState};
 use crate::constants::{DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT};
 use crate::coordinates::Point;
 use crate::coordinates::direction::{Direction, get_direction_points};
-use crate::coordinates::point::{ChunkGrid, World};
+use crate::coordinates::point::ChunkGrid;
 use crate::generation::debug::DebugPlugins;
 use crate::generation::generation_resources::{CurrentChunk, GenerationResourcesPlugins};
 use crate::generation::model::WorldComponent;
@@ -59,12 +59,11 @@ impl Plugin for GenerationPipelinePlugin {
 
 /// Generates the world and all its objects. Called once before entering [`AppState::Running`].
 fn initiate_world_generation_system(mut commands: Commands, mut next_state: ResMut<NextState<GenerationState>>) {
-  let w = ORIGIN_WORLD_SPAWN_POINT;
   let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
-  debug!("Generating world with origin {} {}", w, cg);
+  debug!("Generating world with origin {} {}", ORIGIN_WORLD_SPAWN_POINT, cg);
   commands.spawn((
     Name::new(format!("World Generation Component {}", cg)),
-    WorldGenerationComponent::new(w, cg, false, shared::get_time()),
+    WorldGenerationComponent::new(cg, false, shared::get_time()),
   ));
   commands.spawn((
     Name::new("World"),
@@ -87,13 +86,12 @@ fn regenerate_world_message(
   let message_count = messages.read().count();
   if message_count > 0 {
     let world = existing_world.single().expect("Failed to get existing world entity");
-    let w = ORIGIN_WORLD_SPAWN_POINT;
     let cg = ORIGIN_CHUNK_GRID_SPAWN_POINT;
-    debug!("Regenerating world with origin {} {}", w, cg);
+    debug!("Regenerating world with origin {} {}", ORIGIN_WORLD_SPAWN_POINT, cg);
     commands.entity(world).despawn();
     commands.spawn((
       Name::new(format!("World Generation Component {}", cg)),
-      WorldGenerationComponent::new(w, cg, false, shared::get_time()),
+      WorldGenerationComponent::new(cg, false, shared::get_time()),
     ));
     commands.spawn((
       Name::new("World"),
@@ -124,7 +122,7 @@ fn update_world_message(
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("World Generation Component {}", new_parent_cg)),
-      WorldGenerationComponent::new(new_parent_w, new_parent_cg, message.is_forced_update, shared::get_time()),
+      WorldGenerationComponent::new(new_parent_cg, message.is_forced_update, shared::get_time()),
     ));
     current_chunk.update(new_parent_w);
     next_state.set(GenerationState::Generating);
@@ -252,7 +250,7 @@ fn stage_1_prune_world_and_schedule_chunk_generation(
 
     let settings = *settings;
     let metadata = metadata.clone();
-    let spawn_points = calculate_chunk_spawn_points(existing_chunks, &settings, &component.w);
+    let spawn_points = calculate_chunk_spawn_points(existing_chunks, &settings, &component.cg);
     let task_pool = AsyncComputeTaskPool::get();
     let task = task_pool.spawn(async move { world::generate_chunks(spawn_points, metadata, &settings) });
     return GenerationStage::Stage2(task);
@@ -264,24 +262,24 @@ fn stage_1_prune_world_and_schedule_chunk_generation(
 fn calculate_chunk_spawn_points(
   existing_chunks: &Res<ChunkComponentIndex>,
   settings: &Settings,
-  new_parent_chunk_w: &Point<World>,
-) -> Vec<Point<World>> {
+  new_parent_chunk_cg: &Point<ChunkGrid>,
+) -> Vec<Point<ChunkGrid>> {
   let mut spawn_points = Vec::new();
-  get_direction_points(new_parent_chunk_w)
+  get_direction_points(new_parent_chunk_cg)
     .iter()
-    .for_each(|(direction, chunk_w)| {
-      if existing_chunks.get(&Point::new_chunk_grid_from_world(*chunk_w)).is_some() {
-        trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
+    .for_each(|(direction, chunk_cg)| {
+      if existing_chunks.get(chunk_cg).is_some() {
+        trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_cg);
       } else {
-        if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
+        if !settings.general.generate_neighbour_chunks && chunk_cg != new_parent_chunk_cg {
           trace!(
             "❎  [{:?}] chunk at {:?} skipped because generating neighbours is disabled",
-            direction, chunk_w
+            direction, chunk_cg
           );
           return;
         }
-        trace!("🚫 [{:?}] chunk at {:?} needs to be generated", direction, chunk_w);
-        spawn_points.push(*chunk_w);
+        trace!("🚫 [{:?}] chunk at {:?} needs to be generated", direction, chunk_cg);
+        spawn_points.push(*chunk_cg);
       }
     });
 

@@ -1,7 +1,7 @@
 use crate::animation::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
-use crate::coordinates::Point;
-use crate::coordinates::point::World;
+use crate::coordinates::point::ChunkGrid;
+use crate::coordinates::{Coords, Point};
 use crate::generation::model::{
   Chunk, ChunkComponent, GenerationResources, Metadata, Plane, TerrainType, Tile, TileMeshComponent,
 };
@@ -23,12 +23,12 @@ impl Plugin for WorldGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
+pub fn generate_chunks(spawn_points: Vec<Point<ChunkGrid>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
   let start_time = shared::get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
-  for chunk_w in spawn_points {
-    let chunk_tg = Point::new_tile_grid_from_world(chunk_w);
-    let mut chunk = Chunk::new(chunk_w, chunk_tg, &metadata, settings);
+  for chunk_cg in spawn_points {
+    let coords = Coords::new_for_chunk(chunk_cg);
+    let mut chunk = Chunk::new(coords, &metadata, settings);
     chunk = post_processor::process(chunk, settings);
     chunks.push(chunk);
   }

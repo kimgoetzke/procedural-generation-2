@@ -29,17 +29,14 @@ impl Coords {
     }
   }
 
-  pub fn new_for_chunk(w: Point<World>, tg: Point<TileGrid>) -> Self {
-    let cg = Point::new_chunk_grid_from_world(w);
-    let world = Point::new_world_from_tile_grid(tg);
-    assert_eq!(
-      w, world,
-      "World coordinates do not match the tile grid coordinates - provided {w} vs expected {world} based on provided {tg}"
-    );
+  pub fn new_for_chunk(cg: Point<ChunkGrid>) -> Self {
+    let world = Point::new_world_from_chunk_grid(cg);
+    let tile_grid = Point::new_tile_grid_from_world(world);
+
     Self {
       world,
       chunk_grid: cg,
-      tile_grid: tg,
+      tile_grid,
       internal_grid: Point::new_internal_grid(0, 0),
     }
   }
@@ -87,21 +84,14 @@ mod tests {
 
   #[test]
   fn new_for_chunk_creates_correct_coords() {
-    let w = Point::new_world(3 * TILE_SIZE as i32, 4 * TILE_SIZE as i32);
-    let tg = Point::new_tile_grid(3, 4);
-    let coords = Coords::new_for_chunk(w, tg);
+    let cg = Point::new_chunk_grid(3, 4);
+    let coords = Coords::new_for_chunk(cg);
+    let w = Point::new_world_from_chunk_grid(cg);
+    let tg = Point::new_tile_grid_from_world(w);
     assert_eq!(coords.world, w);
-    assert_eq!(coords.chunk_grid, Point::new_chunk_grid_from_world(w));
+    assert_eq!(coords.chunk_grid, cg);
     assert_eq!(coords.tile_grid, tg);
     assert_eq!(coords.internal_grid, Point::new_internal_grid(0, 0));
-  }
-
-  #[test]
-  #[should_panic(expected = "World coordinates do not match the tile grid coordinates")]
-  fn new_for_chunk_panics_on_mismatched_world_coords() {
-    let w = Point::new(30, 40);
-    let tg = Point::new(5, 6);
-    Coords::new_for_chunk(w, tg);
   }
 
   #[test]
