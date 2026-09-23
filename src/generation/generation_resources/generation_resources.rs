@@ -64,9 +64,9 @@ fn load_generation_assets_system(mut commands: Commands, asset_server: Res<Asset
   commands.insert_resource(TileTypeRuleSetHandle(all_handle));
   let exclusion_handle = asset_server.load("objects/all.exclusions.ruleset.toml");
   commands.insert_resource(ExclusionsRuleSetHandle(exclusion_handle));
-  let settlement_template_handle = asset_server.load("objects/settlements/settlement-templates.toml");
+  let settlement_template_handle = asset_server.load("objects/settlement-templates.toml");
   commands.insert_resource(SettlementTemplateAssetHandle(settlement_template_handle));
-  let building_component_handle = asset_server.load("objects/settlements/building-components.toml");
+  let building_component_handle = asset_server.load("objects/building-components.toml");
   commands.insert_resource(BuildingComponentRegistryHandle(building_component_handle));
 }
 
