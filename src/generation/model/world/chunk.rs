@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::point::{ChunkGrid, TileGrid};
 use crate::coordinates::{Coords, Direction, Point};
 use crate::generation::model::world::debug_data::DebugData;
 use crate::generation::model::{
@@ -25,7 +25,6 @@ const EXPANDED_OUTSIDE: i32 = CHUNK_SIZE;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Chunk {
   pub coords: Coords,
-  pub center: Point<World>,
   pub climate: Climate,
   pub layered_plane: LayeredPlane,
 }
@@ -50,10 +49,6 @@ impl Chunk {
     let layered_plane = LayeredPlane::new(data, settings);
     Self {
       coords,
-      center: Point::new_world(
-        coords.tile_grid.x + (CHUNK_SIZE_PLUS_BUFFER / 2),
-        coords.tile_grid.y + (CHUNK_SIZE_PLUS_BUFFER / 2),
-      ),
       climate: biome_metadata_set.this.climate,
       layered_plane,
     }
