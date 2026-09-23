@@ -350,6 +350,7 @@ impl ObjectGrid {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::generation::object::model::ObjectName;
 
   impl ObjectGrid {
     pub fn default_walkable(cg: Point<ChunkGrid>) -> Self {
@@ -454,6 +455,69 @@ mod tests {
     for (_, point) in get_connection_points(&reference_ig) {
       assert_eq!(grid.get_cell(&point).unwrap().get_entropy(), 4);
       assert_eq!(grid.get_cell(&point).unwrap().get_possible_states().len(), 4);
+    }
+  }
+
+  #[test]
+  fn validate_keeps_objects_closed_at_chunk_edges() {
+    let mut grid = ObjectGrid::default(Point::new_chunk_grid(0, 0));
+    let empty_state = TerrainState::default(ObjectName::Empty, vec![ObjectName::Empty]);
+    for cell in grid.object_grid.iter_mut().flatten() {
+      cell.initialise(
+        TerrainType::Any,
+        TileType::Fill,
+        std::slice::from_ref(&empty_state),
+        vec![],
+        false,
+      );
+    }
+
+    let mut outside = Cell::new(-1, -1);
+    outside.initialise(
+      TerrainType::Any,
+      TileType::Fill,
+      &[TerrainState {
+        name: ObjectName::Empty,
+        index: 0,
+        weight: 1,
+        permitted_neighbours: vec![
+          (Connection::Top, vec![ObjectName::Empty, ObjectName::SwampTopFill]),
+          (Connection::Right, vec![ObjectName::Empty, ObjectName::SwampRightFill]),
+          (Connection::Bottom, vec![ObjectName::Empty, ObjectName::SwampBottomFill]),
+          (Connection::Left, vec![ObjectName::Empty, ObjectName::SwampLeftFill]),
+        ],
+      }],
+      vec![],
+      false,
+    );
+    grid.no_neighbours_tile = outside;
+
+    let edge_states = [
+      ObjectName::SwampTopFill,
+      ObjectName::SwampRightFill,
+      ObjectName::SwampBottomFill,
+      ObjectName::SwampLeftFill,
+    ]
+    .map(|name| TerrainState::new_with_no_neighbours(name, 1, 1));
+    let middle = CHUNK_SIZE / 2;
+    let expected = [
+      (Point::new_internal_grid(middle, 0), ObjectName::SwampBottomFill),
+      (Point::new_internal_grid(CHUNK_SIZE - 1, middle), ObjectName::SwampLeftFill),
+      (Point::new_internal_grid(middle, CHUNK_SIZE - 1), ObjectName::SwampTopFill),
+      (Point::new_internal_grid(0, middle), ObjectName::SwampRightFill),
+    ];
+    for (point, _) in expected {
+      let mut cell = Cell::new(point.x, point.y);
+      cell.initialise(TerrainType::Any, TileType::Fill, &edge_states, vec![], false);
+      *grid.get_cell_mut(&point).unwrap() = cell;
+    }
+
+    grid.validate();
+
+    for (point, expected_name) in expected {
+      let states = grid.get_cell(&point).unwrap().get_possible_states();
+      assert_eq!(states.len(), 1, "Expected one closing state at {point}");
+      assert_eq!(states[0].name, expected_name, "Wrong closing state at {point}");
     }
   }
 
