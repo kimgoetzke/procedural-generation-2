@@ -1,5 +1,5 @@
 use crate::coordinates::Point;
-use crate::coordinates::point::World;
+use crate::coordinates::point::ChunkGrid;
 use crate::generation::model::pipeline::ChunkComponent;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::Resource;
@@ -8,12 +8,12 @@ use bevy::prelude::Resource;
 /// kept up-to-date by the [`crate::generation::generation_resources::ChunkComponentIndexPlugin`].
 #[derive(Resource, Default)]
 pub struct ChunkComponentIndex {
-  map: HashMap<Point<World>, ChunkComponent>,
+  map: HashMap<Point<ChunkGrid>, ChunkComponent>,
 }
 
 impl ChunkComponentIndex {
-  pub fn get(&self, w: &Point<World>) -> Option<&ChunkComponent> {
-    self.map.get(w)
+  pub fn get(&self, cg: &Point<ChunkGrid>) -> Option<&ChunkComponent> {
+    self.map.get(cg)
   }
 
   pub fn size(&self) -> usize {
@@ -21,10 +21,10 @@ impl ChunkComponentIndex {
   }
 
   pub(in crate::generation) fn insert(&mut self, component: ChunkComponent) {
-    self.map.insert(component.coords.world, component);
+    self.map.insert(component.coords.chunk_grid, component);
   }
 
-  pub(in crate::generation) fn remove(&mut self, world: &Point<World>) {
-    self.map.remove(world);
+  pub(in crate::generation) fn remove(&mut self, cg: &Point<ChunkGrid>) {
+    self.map.remove(cg);
   }
 }

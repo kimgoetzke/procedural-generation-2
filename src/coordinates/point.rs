@@ -159,8 +159,13 @@ impl Point<World> {
     Self::new(w.x.round() as i32, w.y.round() as i32)
   }
 
+  /// Returns a [`Point`] of type [`World`] marking the "start" of the chunk.
   pub const fn new_world_from_chunk_grid(cg: Point<ChunkGrid>) -> Self {
-    Self::new(cg.x * CHUNK_SIZE * TILE_SIZE as i32, cg.y * CHUNK_SIZE * TILE_SIZE as i32)
+    let chunk_in_tiles = CHUNK_SIZE * TILE_SIZE as i32;
+    Self::new(
+      cg.x * chunk_in_tiles - chunk_in_tiles / 2,
+      cg.y * chunk_in_tiles + chunk_in_tiles / 2,
+    )
   }
 
   pub const fn new_world_from_tile_grid(tg: Point<TileGrid>) -> Self {
@@ -454,9 +459,13 @@ mod tests {
   fn new_world_from_chunk_grid_conversion() {
     let cg = Point::new_chunk_grid(2, 3);
     let w = Point::new_world_from_chunk_grid(cg);
+    let chunk_in_tiles = CHUNK_SIZE * TILE_SIZE as i32;
     assert_eq!(
       w,
-      Point::new_world(cg.x * CHUNK_SIZE * TILE_SIZE as i32, cg.y * CHUNK_SIZE * TILE_SIZE as i32)
+      Point::new_world(
+        cg.x * chunk_in_tiles - chunk_in_tiles / 2,
+        cg.y * chunk_in_tiles + chunk_in_tiles / 2
+      )
     );
   }
 

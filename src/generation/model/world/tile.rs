@@ -1,5 +1,5 @@
-use crate::constants::{BUFFER_SIZE, CHUNK_SIZE, TILE_SIZE};
-use crate::coordinates::point::{InternalGrid, World};
+use crate::constants::{BUFFER_SIZE, CHUNK_SIZE};
+use crate::coordinates::point::InternalGrid;
 use crate::coordinates::{Coords, Point};
 use crate::generation::model::world::debug_data::DebugData;
 use crate::generation::model::{Climate, DraftTile, TerrainType, TileType};
@@ -46,13 +46,6 @@ impl Tile {
       tile_type,
       debug_data: draft_tile.debug_data,
     }
-  }
-
-  pub fn get_parent_chunk_w(&self) -> Point<World> {
-    Point::new_world(
-      (self.coords.tile_grid.x - self.coords.internal_grid.x) * TILE_SIZE as i32,
-      (self.coords.tile_grid.y + self.coords.internal_grid.y) * TILE_SIZE as i32,
-    )
   }
 
   pub const fn update_to(&mut self, tile_type: TileType, terrain: TerrainType) {

@@ -1,7 +1,5 @@
 use crate::app_states::{AppState, GenerationState};
-use crate::constants::{
-  CHUNK_SIZE, DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT, TILE_SIZE,
-};
+use crate::constants::{DESPAWN_DISTANCE, MAX_CHUNKS, ORIGIN_CHUNK_GRID_SPAWN_POINT, ORIGIN_WORLD_SPAWN_POINT};
 use crate::coordinates::Point;
 use crate::coordinates::direction::{Direction, get_direction_points};
 use crate::coordinates::point::{ChunkGrid, World};
@@ -121,8 +119,8 @@ fn update_world_message(
       debug!("{} is inside current chunk, ignoring message...", message.tg);
       return;
     }
-    let new_parent_w = calculate_new_current_chunk_w(&mut current_chunk, message);
-    let new_parent_cg = Point::new_chunk_grid_from_world(new_parent_w);
+    let new_parent_cg = calculate_new_current_chunk_cg(&current_chunk, message);
+    let new_parent_w = Point::new_world_from_chunk_grid(new_parent_cg);
     debug!("Updating world with new current chunk at {} {}", new_parent_w, new_parent_cg);
     commands.spawn((
       Name::new(format!("World Generation Component {}", new_parent_cg)),
@@ -133,21 +131,16 @@ fn update_world_message(
   }
 }
 
-// TODO: Refactor this and ChunkComponentIndex to use cg instead of w
-fn calculate_new_current_chunk_w(current_chunk: &mut CurrentChunk, message: &UpdateWorldMessage) -> Point<World> {
-  let current_chunk_w = current_chunk.get_world();
-  let direction = Direction::from_chunk_w(&current_chunk_w, &message.w);
-  let direction_point_w = Point::<World>::from_direction(&direction);
-  let new_parent_chunk_w = Point::new_world(
-    current_chunk_w.x + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.x),
-    current_chunk_w.y + (CHUNK_SIZE * TILE_SIZE as i32 * direction_point_w.y),
-  );
+fn calculate_new_current_chunk_cg(current_chunk: &CurrentChunk, message: &UpdateWorldMessage) -> Point<ChunkGrid> {
+  let current_chunk_cg = current_chunk.get_chunk_grid();
+  let direction = Direction::from_points(&current_chunk_cg, &message.cg);
+  let new_parent_chunk_cg = current_chunk_cg + Point::from_direction(&direction);
   trace!(
     "Update world message at {} {} will change the current chunk to be at [{:?}] of {} i.e. {}",
-    message.w, message.tg, direction, current_chunk_w, new_parent_chunk_w
+    message.w, message.tg, direction, current_chunk_cg, new_parent_chunk_cg
   );
 
-  new_parent_chunk_w
+  new_parent_chunk_cg
 }
 
 /// The system that actually orchestrates the modification of the world and all its objects. This is the core system
@@ -277,7 +270,7 @@ fn calculate_chunk_spawn_points(
   get_direction_points(new_parent_chunk_w)
     .iter()
     .for_each(|(direction, chunk_w)| {
-      if existing_chunks.get(chunk_w).is_some() {
+      if existing_chunks.get(&Point::new_chunk_grid_from_world(*chunk_w)).is_some() {
         trace!("✅  [{:?}] chunk at {:?} already exists", direction, chunk_w);
       } else {
         if !settings.general.generate_neighbour_chunks && chunk_w != new_parent_chunk_w {
@@ -309,7 +302,7 @@ fn stage_2_await_chunk_generation_task_completion(
 
       GenerationStage::Stage9
     }, |mut chunks| {
-      chunks.retain_mut(|chunk| existing_chunks.get(&chunk.coords.world).is_none());
+      chunks.retain_mut(|chunk| existing_chunks.get(&chunk.coords.chunk_grid).is_none());
       trace!(
         "World generation component {cg} - Stage 2 | {} new chunks need to be spawned",
         chunks.len()
@@ -333,7 +326,7 @@ fn stage_3_spawn_chunks(
   if !chunks.is_empty() {
     let mut chunk_entity_pairs = Vec::new();
     for chunk in chunks.into_iter() {
-      if existing_chunks.get(&chunk.coords.world).is_none() {
+      if existing_chunks.get(&chunk.coords.chunk_grid).is_none() {
         commands.entity(world_entity).with_children(|parent| {
           let chunk_entity = world::spawn_chunk(parent, &chunk);
           chunk_entity_pairs.push((chunk, chunk_entity));
@@ -609,6 +602,7 @@ pub fn prune_world_message(
     if message.update_world_after {
       *delayed_update_world_message = Some(UpdateWorldMessage {
         is_forced_update: true,
+        cg: current_chunk.get_chunk_grid(),
         tg: current_chunk.get_tile_grid(),
         w: current_chunk.get_world(),
       });

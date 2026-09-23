@@ -147,9 +147,8 @@ fn on_right_mouse_click_message(
       debug!("You are debugging {} {} {}", message.tile_w, message.cg, message.tg);
       let object_component = object_index.get(message.tg);
       commands.spawn(tile_info(&resources, tile, message.tile_w, &settings, &object_component));
-      let parent_w = tile.get_parent_chunk_w();
-      if let Some(parent_chunk) = chunk_index.get(&parent_w) {
-        debug!("Parent of {} is chunk {}/{}", message.tg, parent_w, message.cg);
+      if let Some(parent_chunk) = chunk_index.get(&message.cg) {
+        debug!("Parent of {} is chunk {}", message.tg, message.cg);
         for plane in &parent_chunk.layered_plane.planes {
           if let Some(tile) = plane.get_tile(tile.coords.internal_grid) {
             let neighbours = plane.get_neighbours(tile);
@@ -158,7 +157,7 @@ fn on_right_mouse_click_message(
         }
         debug!("{:?}", tile.debug_data);
       } else {
-        error!("Failed to find parent chunk at {} for tile at {:?}", parent_w, tile.coords);
+        error!("Failed to find parent chunk at {} for tile at {:?}", message.cg, tile.coords);
       }
       if let Some(oc) = object_index.get(message.tg) {
         debug!("{:?}", oc);

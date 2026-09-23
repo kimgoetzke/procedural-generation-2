@@ -43,6 +43,7 @@ pub struct UpdateWorldMessage {
   /// updating the world via the UI when the [`CurrentChunk`][crate::resources::CurrentChunk] has not changed.
   pub is_forced_update: bool,
   pub w: Point<World>,
+  pub cg: Point<ChunkGrid>,
   pub tg: Point<TileGrid>,
 }
 

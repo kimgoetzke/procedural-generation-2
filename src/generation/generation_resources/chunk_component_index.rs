@@ -27,7 +27,7 @@ fn on_add_chunk_component_trigger(
 ) {
   let cc = query.get(trigger.entity).expect("Failed to get ChunkComponent");
   index.insert(cc.clone());
-  trace!("ChunkComponentIndex <- Added ChunkComponent key {:?}", cc.coords.world);
+  trace!("ChunkComponentIndex <- Added ChunkComponent key {:?}", cc.coords.chunk_grid);
 }
 
 fn on_remove_chunk_component_trigger(
@@ -36,6 +36,9 @@ fn on_remove_chunk_component_trigger(
   mut index: ResMut<ChunkComponentIndex>,
 ) {
   let cc = query.get(trigger.entity).expect("Failed to get ChunkComponent");
-  index.remove(&cc.coords.world);
-  trace!("ChunkComponentIndex -> Removed ChunkComponent with key {:?}", cc.coords.world);
+  index.remove(&cc.coords.chunk_grid);
+  trace!(
+    "ChunkComponentIndex -> Removed ChunkComponent with key {:?}",
+    cc.coords.chunk_grid
+  );
 }

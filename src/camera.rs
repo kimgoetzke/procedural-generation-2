@@ -101,8 +101,9 @@ fn camera_movement_system(
   if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
     message.write(UpdateWorldMessage {
       is_forced_update: false,
-      tg: Point::new_tile_grid_from_world(current_world),
       w: current_world,
+      cg: Point::new_chunk_grid_from_world(current_world),
+      tg: Point::new_tile_grid_from_world(current_world),
     });
   };
 }
