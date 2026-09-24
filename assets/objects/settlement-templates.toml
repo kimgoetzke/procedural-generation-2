@@ -74,8 +74,8 @@ building_type = "SmallHouse"
 door = [1, 1]
 connection_direction = "Right"
 levels = [
-  { level = "Roof", structures = ["Left", "Right"] },
-  { level = "GroundFloor", structures = ["Left", "RightDoor"] },
+  { building_level = "Roof", building_parts = ["Left", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["Left", "RightDoor"] },
 ]
 
 [[building_templates]]
@@ -84,8 +84,8 @@ building_type = "SmallHouse"
 door = [0, 1]
 connection_direction = "Left"
 levels = [
-  { level = "Roof", structures = ["Left", "Right"] },
-  { level = "GroundFloor", structures = ["LeftDoor", "Right"] },
+  { building_level = "Roof", building_parts = ["Left", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["LeftDoor", "Right"] },
 ]
 
 [[building_templates]]
@@ -94,8 +94,8 @@ building_type = "MediumHouse"
 door = [1, 1]
 connection_direction = "Bottom"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["Left", "MiddleDoor", "Right"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["Left", "MiddleDoor", "Right"] },
 ]
 
 [[building_templates]]
@@ -104,8 +104,8 @@ building_type = "MediumHouse"
 door = [2, 1]
 connection_direction = "Right"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["Left", "Middle", "RightDoor"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["Left", "Middle", "RightDoor"] },
 ]
 
 [[building_templates]]
@@ -114,8 +114,8 @@ building_type = "MediumHouse"
 door = [0, 1]
 connection_direction = "Left"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["LeftDoor", "Middle", "Right"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["LeftDoor", "Middle", "Right"] },
 ]
 
 [[building_templates]]
@@ -124,8 +124,8 @@ building_type = "LargeHouse"
 door = [1, 1]
 connection_direction = "Bottom"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["Left", "MiddleDoor", "Right"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["Left", "MiddleDoor", "Right"] },
 ]
 
 [[building_templates]]
@@ -134,8 +134,8 @@ building_type = "LargeHouse"
 door = [2, 1]
 connection_direction = "Right"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["Left", "Middle", "RightDoor"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["Left", "Middle", "RightDoor"] },
 ]
 
 [[building_templates]]
@@ -144,6 +144,6 @@ building_type = "LargeHouse"
 door = [0, 1]
 connection_direction = "Left"
 levels = [
-  { level = "Roof", structures = ["Left", "Middle", "Right"] },
-  { level = "GroundFloor", structures = ["LeftDoor", "Middle", "Right"] },
+  { building_level = "Roof", building_parts = ["Left", "Middle", "Right"] },
+  { building_level = "GroundFloor", building_parts = ["LeftDoor", "Middle", "Right"] },
 ]

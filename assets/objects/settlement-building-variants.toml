@@ -1,10 +1,10 @@
-[components.SmallHouse.GroundFloor]
+[registry.SmallHouse.GroundFloor]
 Left = ["HouseSmallWallLeft1", "HouseSmallWallLeft2"]
 Right = ["HouseSmallWallRight1", "HouseSmallWallRight2"]
 LeftDoor = ["HouseSmallDoorLeft"]
 RightDoor = ["HouseSmallDoorRight"]
 
-[components.SmallHouse.Roof]
+[registry.SmallHouse.Roof]
 Left = [
   "HouseSmallRoofLeft1",
   "HouseSmallRoofLeft2",
@@ -16,7 +16,7 @@ Right = [
   "HouseSmallRoofRight3",
 ]
 
-[components.MediumHouse.GroundFloor]
+[registry.MediumHouse.GroundFloor]
 Left = ["HouseMediumWallLeft"]
 Middle = ["HouseMediumWallMiddle1", "HouseMediumWallMiddle2"]
 Right = ["HouseMediumWallRight"]
@@ -24,7 +24,7 @@ LeftDoor = ["HouseMediumDoorLeft1", "HouseMediumDoorLeft2"]
 MiddleDoor = ["HouseMediumDoorMiddle1", "HouseMediumDoorMiddle2"]
 RightDoor = ["HouseMediumDoorRight1", "HouseMediumDoorRight2"]
 
-[components.MediumHouse.Roof]
+[registry.MediumHouse.Roof]
 Left = [
   "HouseMediumRoofLeft1",
   "HouseMediumRoofLeft2",
@@ -41,7 +41,7 @@ Right = [
   "HouseMediumRoofRight3",
 ]
 
-[components.LargeHouse.GroundFloor]
+[registry.LargeHouse.GroundFloor]
 Left = ["HouseLargeWallLeft"]
 Middle = ["HouseLargeWallMiddle1", "HouseLargeWallMiddle2"]
 Right = ["HouseLargeWallRight"]
@@ -49,7 +49,7 @@ LeftDoor = ["HouseLargeDoorLeft1", "HouseLargeDoorLeft2"]
 MiddleDoor = ["HouseLargeDoorMiddle1", "HouseLargeDoorMiddle2"]
 RightDoor = ["HouseLargeDoorRight1", "HouseLargeDoorRight2"]
 
-[components.LargeHouse.Roof]
+[registry.LargeHouse.Roof]
 Left = [
   "HouseLargeRoofLeft1",
   "HouseLargeRoofLeft2",

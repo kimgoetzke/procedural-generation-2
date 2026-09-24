@@ -27,7 +27,7 @@
 4. Add the object name(s) to the `is_building()` or `is_path()` function in `object_name.rs`
 5. Add the object name(s) to the `get_index()` function in `object_name.rs`
 6. Add the object name(s) to the `any.terrain.ruleset.toml` file where appropriate (top, right, bottom, left)
-7. If building sprite: Add the object name(s) to relevant `BuildingType` in the `BuildingComponentRegistry`
+7. If building sprite: Add the object name (s) to relevant `BuildingType` in the `BuildingVariantRegistry`
 
 You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects
 and therefore don't need to be considered in the wave function collapse algorithm which uses these rulesets. However,

@@ -9,15 +9,15 @@ use std::fmt::{Display, Formatter};
 use strum::IntoEnumIterator;
 
 #[derive(Resource, Default, Debug, Clone)]
-pub(in crate::generation::generation_resources) struct TerrainRuleSetHandle(pub Vec<Handle<TerrainRuleSet>>);
+pub(in crate::generation::generation_resources) struct TerrainObjectRuleSetHandle(pub Vec<Handle<TerrainObjectRuleSet>>);
 
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone)]
-pub(in crate::generation::generation_resources) struct TerrainRuleSet {
+pub(in crate::generation::generation_resources) struct TerrainObjectRuleSet {
   terrain: TerrainType,
   states: Vec<TerrainState>,
 }
 
-impl Default for TerrainRuleSet {
+impl Default for TerrainObjectRuleSet {
   fn default() -> Self {
     Self {
       terrain: TerrainType::Any,
@@ -26,7 +26,7 @@ impl Default for TerrainRuleSet {
   }
 }
 
-impl Display for TerrainRuleSet {
+impl Display for TerrainObjectRuleSet {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "[{:?}] terrain rule set with {} states", self.terrain, self.states.len())
   }
@@ -74,12 +74,12 @@ struct ExclusionsState {
 }
 
 pub(in crate::generation::generation_resources) fn terrain_rules(
-  terrain_rule_set_handle: Res<TerrainRuleSetHandle>,
-  terrain_rule_set_assets: &mut ResMut<Assets<TerrainRuleSet>>,
+  terrain_object_rule_set_handle: Res<TerrainObjectRuleSetHandle>,
+  terrain_object_rule_set_assets: &mut ResMut<Assets<TerrainObjectRuleSet>>,
 ) -> HashMap<TerrainType, Vec<TerrainState>> {
   let mut rule_sets = HashMap::new();
-  for handle in terrain_rule_set_handle.0.iter() {
-    if let Some(rule_set) = terrain_rule_set_assets.remove(handle) {
+  for handle in terrain_object_rule_set_handle.0.iter() {
+    if let Some(rule_set) = terrain_object_rule_set_assets.remove(handle) {
       debug!("Loaded: {}", rule_set);
       rule_sets.insert(rule_set.terrain, rule_set.states);
     }

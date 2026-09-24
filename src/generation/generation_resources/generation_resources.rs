@@ -1,9 +1,11 @@
 use crate::app_states::AppState;
 use crate::generation::generation_resources::settlement_asset_initialisation::{
-  BuildingComponentRegistry, BuildingComponentRegistryHandle, SettlementTemplateAsset, SettlementTemplateAssetHandle,
+  BuildingComponentRegistryHandle, BuildingVariantRegistry, SettlementTemplateDefinitions,
+  SettlementTemplateDefinitionsHandle,
 };
 use crate::generation::generation_resources::terrain_state_initialisation::{
-  ExclusionsRuleSet, ExclusionsRuleSetHandle, TerrainRuleSet, TerrainRuleSetHandle, TileTypeRuleSet, TileTypeRuleSetHandle,
+  ExclusionsRuleSet, ExclusionsRuleSetHandle, TerrainObjectRuleSet, TerrainObjectRuleSetHandle, TileTypeRuleSet,
+  TileTypeRuleSetHandle,
 };
 use crate::generation::generation_resources::{
   object_asset_initialisation, settlement_asset_initialisation, terrain_asset_initialisation, terrain_state_initialisation,
@@ -38,11 +40,11 @@ impl Plugin for GenerationResourcesPlugin {
     app
       .init_resource::<GenerationResources>()
       .add_plugins((
-        TomlAssetPlugin::<TerrainRuleSet>::new(&["terrain.ruleset.toml"]),
+        TomlAssetPlugin::<TerrainObjectRuleSet>::new(&["terrain.ruleset.toml"]),
         TomlAssetPlugin::<TileTypeRuleSet>::new(&["tile-type.ruleset.toml"]),
         TomlAssetPlugin::<ExclusionsRuleSet>::new(&["exclusions.ruleset.toml"]),
-        TomlAssetPlugin::<SettlementTemplateAsset>::new(&["settlement-templates.toml"]),
-        TomlAssetPlugin::<BuildingComponentRegistry>::new(&["building-components.toml"]),
+        TomlAssetPlugin::<SettlementTemplateDefinitions>::new(&["settlement-templates.toml"]),
+        TomlAssetPlugin::<BuildingVariantRegistry>::new(&["building-components.toml"]),
       ))
       .add_systems(Startup, load_generation_assets_system)
       .add_systems(Update, check_loading_state_system.run_if(in_state(AppState::Loading)))
@@ -59,23 +61,23 @@ fn load_generation_assets_system(mut commands: Commands, asset_server: Res<Asset
   }
   let any_handle = asset_server.load("objects/any.terrain.ruleset.toml");
   rule_set_handles.push(any_handle);
-  commands.insert_resource(TerrainRuleSetHandle(rule_set_handles));
+  commands.insert_resource(TerrainObjectRuleSetHandle(rule_set_handles));
   let all_handle = asset_server.load("objects/all.tile-type.ruleset.toml");
   commands.insert_resource(TileTypeRuleSetHandle(all_handle));
   let exclusion_handle = asset_server.load("objects/all.exclusions.ruleset.toml");
   commands.insert_resource(ExclusionsRuleSetHandle(exclusion_handle));
   let settlement_template_handle = asset_server.load("objects/settlement-templates.toml");
-  commands.insert_resource(SettlementTemplateAssetHandle(settlement_template_handle));
-  let building_component_handle = asset_server.load("objects/building-components.toml");
-  commands.insert_resource(BuildingComponentRegistryHandle(building_component_handle));
+  commands.insert_resource(SettlementTemplateDefinitionsHandle(settlement_template_handle));
+  let building_variant_registry = asset_server.load("objects/settlement-building-variants.toml");
+  commands.insert_resource(BuildingComponentRegistryHandle(building_variant_registry));
 }
 
 fn check_loading_state_system(
   asset_server: Res<AssetServer>,
-  terrain_handles: Res<TerrainRuleSetHandle>,
+  terrain_handles: Res<TerrainObjectRuleSetHandle>,
   tile_type_handle: Res<TileTypeRuleSetHandle>,
   exclusions_handle: Res<ExclusionsRuleSetHandle>,
-  settlement_template_handle: Res<SettlementTemplateAssetHandle>,
+  settlement_template_handle: Res<SettlementTemplateDefinitionsHandle>,
   building_component_handle: Res<BuildingComponentRegistryHandle>,
   mut state: ResMut<NextState<AppState>>,
 ) {
@@ -114,16 +116,16 @@ fn initialise_resources_system(
   asset_server: Res<AssetServer>,
   mut layouts: ResMut<Assets<TextureAtlasLayout>>,
   mut generation_resources: ResMut<GenerationResources>,
-  terrain_rule_set_handle: Res<TerrainRuleSetHandle>,
-  mut terrain_rule_set_assets: ResMut<Assets<TerrainRuleSet>>,
+  terrain_object_rule_set_handle: Res<TerrainObjectRuleSetHandle>,
+  mut terrain_object_rule_set_assets: ResMut<Assets<TerrainObjectRuleSet>>,
   tile_type_rule_set_handle: Res<TileTypeRuleSetHandle>,
   mut tile_type_rule_set_assets: ResMut<Assets<TileTypeRuleSet>>,
   exclusions_rule_set_handle: Res<ExclusionsRuleSetHandle>,
   mut exclusions_rule_set_assets: ResMut<Assets<ExclusionsRuleSet>>,
-  settlement_template_handle: Res<SettlementTemplateAssetHandle>,
-  mut settlement_template_assets: ResMut<Assets<SettlementTemplateAsset>>,
+  settlement_template_handle: Res<SettlementTemplateDefinitionsHandle>,
+  mut settlement_template_assets: ResMut<Assets<SettlementTemplateDefinitions>>,
   building_component_handle: Res<BuildingComponentRegistryHandle>,
-  mut building_component_assets: ResMut<Assets<BuildingComponentRegistry>>,
+  mut building_component_assets: ResMut<Assets<BuildingVariantRegistry>>,
 ) {
   // Terrain sprites
   terrain_asset_initialisation::populate_terrain_assets(&mut generation_resources.world, &asset_server, &mut layouts);
@@ -141,7 +143,8 @@ fn initialise_resources_system(
   object_asset_initialisation::populate_object_resources(&mut generation_resources.objects, &asset_server, &mut layouts);
 
   // Objects: Rule sets for wave function collapse
-  let terrain_rules = terrain_state_initialisation::terrain_rules(terrain_rule_set_handle, &mut terrain_rule_set_assets);
+  let terrain_rules =
+    terrain_state_initialisation::terrain_rules(terrain_object_rule_set_handle, &mut terrain_object_rule_set_assets);
   let tile_type_rules =
     terrain_state_initialisation::tile_type_rules(tile_type_rule_set_handle, &mut tile_type_rule_set_assets);
   let exclusion_rules =

@@ -9,17 +9,22 @@ use bevy::reflect::TypePath;
 
 /// Maps building components to their sprite variants while settlement resources are initialised.
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone, Default, PartialEq, Eq)]
-pub(in crate::generation::generation_resources) struct BuildingComponentRegistry {
-  components: HashMap<BuildingType, HashMap<Level, HashMap<StructureType, Vec<ObjectName>>>>,
+pub(in crate::generation::generation_resources) struct BuildingVariantRegistry {
+  registry: HashMap<BuildingType, HashMap<BuildingLevel, HashMap<BuildingPart, Vec<ObjectName>>>>,
 }
 
-impl BuildingComponentRegistry {
-  fn variants_for(&self, building_type: BuildingType, level: Level, structure_type: StructureType) -> Option<&[ObjectName]> {
+impl BuildingVariantRegistry {
+  fn variants_for(
+    &self,
+    building_type: BuildingType,
+    building_level: BuildingLevel,
+    building_part: BuildingPart,
+  ) -> Option<&[ObjectName]> {
     self
-      .components
+      .registry
       .get(&building_type)?
-      .get(&level)?
-      .get(&structure_type)
+      .get(&building_level)?
+      .get(&building_part)
       .map(Vec::as_slice)
   }
 }
@@ -32,13 +37,13 @@ enum BuildingType {
 }
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Level {
+enum BuildingLevel {
   GroundFloor,
   Roof,
 }
 
 #[derive(serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum StructureType {
+enum BuildingPart {
   Left,
   Middle,
   Right,
@@ -47,7 +52,7 @@ enum StructureType {
   RightDoor,
 }
 
-impl StructureType {
+impl BuildingPart {
   const fn is_door(self) -> bool {
     matches!(self, Self::LeftDoor | Self::MiddleDoor | Self::RightDoor)
   }
@@ -55,8 +60,8 @@ impl StructureType {
 
 #[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 struct BuildingLevelDefinition {
-  level: Level,
-  structures: Vec<StructureType>,
+  building_level: BuildingLevel,
+  building_parts: Vec<BuildingPart>,
 }
 
 #[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -77,25 +82,25 @@ struct FieldShapeDefinition {
 /// Raw settlement templates loaded from TOML. Describes the shapes fields can have (excluding rotations and entrances)
 /// as well as the buildings templates (sprite components).
 #[derive(serde::Deserialize, Asset, TypePath, Debug, Clone, Default)]
-pub(in crate::generation::generation_resources) struct SettlementTemplateAsset {
+pub(in crate::generation::generation_resources) struct SettlementTemplateDefinitions {
   field_shapes: Vec<FieldShapeDefinition>,
   building_templates: Vec<BuildingTemplateDefinition>,
 }
 
 #[derive(Resource, Default, Debug, Clone)]
-pub(in crate::generation::generation_resources) struct SettlementTemplateAssetHandle(pub Handle<SettlementTemplateAsset>);
+pub(in crate::generation::generation_resources) struct SettlementTemplateDefinitionsHandle(
+  pub Handle<SettlementTemplateDefinitions>,
+);
 
 #[derive(Resource, Default, Debug, Clone)]
-pub(in crate::generation::generation_resources) struct BuildingComponentRegistryHandle(
-  pub Handle<BuildingComponentRegistry>,
-);
+pub(in crate::generation::generation_resources) struct BuildingComponentRegistryHandle(pub Handle<BuildingVariantRegistry>);
 
 pub(in crate::generation::generation_resources) fn populate_settlement_resources(
   settlement_resources: &mut SettlementResources,
-  settlement_template_handle: &Res<SettlementTemplateAssetHandle>,
-  settlement_template_assets: &mut ResMut<Assets<SettlementTemplateAsset>>,
+  settlement_template_handle: &Res<SettlementTemplateDefinitionsHandle>,
+  settlement_template_assets: &mut ResMut<Assets<SettlementTemplateDefinitions>>,
   building_component_handle: &Res<BuildingComponentRegistryHandle>,
-  building_component_assets: &mut ResMut<Assets<BuildingComponentRegistry>>,
+  building_component_assets: &mut ResMut<Assets<BuildingVariantRegistry>>,
 ) {
   let settlement_templates = settlement_template_assets
     .remove(&settlement_template_handle.0)
@@ -108,21 +113,21 @@ pub(in crate::generation::generation_resources) fn populate_settlement_resources
 }
 
 fn resolve_settlement_resources(
-  templates: SettlementTemplateAsset,
-  components: &BuildingComponentRegistry,
+  template_definitions: SettlementTemplateDefinitions,
+  building_variant_registry: &BuildingVariantRegistry,
 ) -> Result<SettlementResources, String> {
   let mut ids = HashSet::new();
-  let field_shapes = templates
+  let field_shapes = template_definitions
     .field_shapes
     .iter()
     .map(|definition| resolve_field_shape(definition, &mut ids))
     .collect::<Result<Vec<FieldShape>, _>>()?;
 
   ids.clear();
-  let building_templates = templates
+  let building_templates = template_definitions
     .building_templates
     .into_iter()
-    .map(|definition| resolve_building_template(definition, components, &mut ids))
+    .map(|definition| resolve_building_template(definition, building_variant_registry, &mut ids))
     .collect::<Result<Vec<BuildingTemplate>, _>>()?;
 
   if field_shapes.is_empty() {
@@ -165,7 +170,7 @@ fn resolve_field_shape(definition: &FieldShapeDefinition, ids: &mut HashSet<Stri
 
 fn resolve_building_template(
   definition: BuildingTemplateDefinition,
-  components: &BuildingComponentRegistry,
+  building_variant_registry: &BuildingVariantRegistry,
   ids: &mut HashSet<String>,
 ) -> Result<BuildingTemplate, String> {
   if !ids.insert(definition.id.clone()) {
@@ -181,10 +186,10 @@ fn resolve_building_template(
     ));
   }
 
-  let Some(width) = definition.levels.first().map(|level| level.structures.len()) else {
+  let Some(width) = definition.levels.first().map(|level| level.building_parts.len()) else {
     return Err(format!("Building template [{}] has no levels", definition.id));
   };
-  if width == 0 || definition.levels.iter().any(|level| level.structures.len() != width) {
+  if width == 0 || definition.levels.iter().any(|level| level.building_parts.len() != width) {
     return Err(format!(
       "Building template [{}] levels must have the same non-zero width",
       definition.id
@@ -195,7 +200,7 @@ fn resolve_building_template(
   if door_x < 0 || door_y < 0 || door_x as usize >= width || door_y as usize >= height {
     return Err(format!("Building template [{}] door is outside its layout", definition.id));
   }
-  if !definition.levels[door_y as usize].structures[door_x as usize].is_door() {
+  if !definition.levels[door_y as usize].building_parts[door_x as usize].is_door() {
     return Err(format!(
       "Building template [{}] door position does not contain a door component",
       definition.id
@@ -207,21 +212,21 @@ fn resolve_building_template(
     .iter()
     .map(|level| {
       level
-        .structures
+        .building_parts
         .iter()
-        .map(|structure_type| {
-          let variants = components
-            .variants_for(definition.building_type, level.level, *structure_type)
+        .map(|building_part| {
+          let variants = building_variant_registry
+            .variants_for(definition.building_type, level.building_level, *building_part)
             .ok_or_else(|| {
               format!(
                 "Building template [{}] has no variants for [{:?}] [{:?}] [{:?}]",
-                definition.id, definition.building_type, level.level, structure_type
+                definition.id, definition.building_type, level.building_level, building_part
               )
             })?;
           if variants.is_empty() || variants.iter().any(|name| !name.is_building()) {
             return Err(format!(
               "Building template [{}] has invalid variants for [{:?}] [{:?}] [{:?}]",
-              definition.id, definition.building_type, level.level, structure_type
+              definition.id, definition.building_type, level.building_level, building_part
             ));
           }
           Ok(variants.to_vec())
@@ -242,10 +247,10 @@ fn resolve_building_template(
 
 #[cfg(test)]
 pub(crate) fn test_settlement_resources() -> SettlementResources {
-  let templates: SettlementTemplateAsset =
+  let templates: SettlementTemplateDefinitions =
     toml::from_str(include_str!("../../../assets/objects/settlement-templates.toml")).unwrap();
-  let components: BuildingComponentRegistry =
-    toml::from_str(include_str!("../../../assets/objects/building-components.toml")).unwrap();
+  let components: BuildingVariantRegistry =
+    toml::from_str(include_str!("../../../assets/objects/settlement-building-variants.toml")).unwrap();
 
   resolve_settlement_resources(templates, &components).unwrap()
 }
