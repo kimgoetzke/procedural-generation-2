@@ -45,4 +45,19 @@ impl DraftTile {
       debug_data: self.debug_data,
     }
   }
+
+  #[cfg(test)]
+  pub(crate) fn new_test(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType, climate: Climate) -> Self {
+    Self::new(
+      ig,
+      tg,
+      terrain,
+      climate,
+      DebugData {
+        noise: 0.0,
+        noise_elevation_offset: 0.0,
+        is_biome_edge: false,
+      },
+    )
+  }
 }
