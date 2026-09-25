@@ -571,10 +571,10 @@ mod tests {
   }
 
   #[test]
-  fn fields_vary_in_size_and_have_one_road_entrance() {
+  fn fields_vary_in_size_and_are_fenced_beside_the_path() {
     let sides = [(0, -1), (1, 0), (0, 1), (-1, 0)];
     let mut areas = HashSet::new();
-    let mut entrance_sides = HashSet::new();
+    let mut field_sides = HashSet::new();
     let mut has_non_rectangular = false;
     for seed in 0..80 {
       let (mut grid, settings, metadata) = test_settlement(12);
@@ -611,21 +611,25 @@ mod tests {
       }
       assert_eq!(reached, positions);
 
-      let entrances: Vec<_> = cells
+      let path_edges: Vec<_> = cells
         .iter()
-        .filter(|(_, name)| matches!(name, ObjectName::WheatFieldFill | ObjectName::PastureFill))
-        .flat_map(|(point, _)| {
+        .flat_map(|(point, name)| {
           sides.iter().enumerate().filter_map(|(side, (dx, dy))| {
             let neighbour = Point::new_internal_grid(point.x + dx, point.y + dy);
-            grid.get_generated_path().contains(&neighbour).then_some(side)
+            grid.get_generated_path().contains(&neighbour).then_some((side, *name))
           })
         })
         .collect();
-      assert_eq!(entrances.len(), 1);
-      entrance_sides.insert(entrances[0]);
+      assert!(!path_edges.is_empty());
+      assert!(
+        path_edges
+          .iter()
+          .all(|(_, name)| !matches!(name, ObjectName::WheatFieldFill | ObjectName::PastureFill))
+      );
+      field_sides.extend(path_edges.into_iter().map(|(side, _)| side));
     }
     assert!(areas.len() >= 3, "Expected several field sizes, found {areas:?}");
     assert!(has_non_rectangular, "Expected an L-shaped field");
-    assert!(entrance_sides.len() >= 2, "Expected field on both sides of the road");
+    assert!(field_sides.len() >= 2, "Expected fields on both sides of the road");
   }
 }

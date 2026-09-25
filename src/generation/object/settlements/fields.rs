@@ -1,9 +1,7 @@
 use crate::coordinates::point::InternalGrid;
 use crate::coordinates::{Direction, Point};
 use crate::generation::object::model::{BuildingTemplate, ObjectGrid, ObjectName};
-use crate::generation::object::settlements::settlement_generation::{
-  select_fitting_building, update_path_in_front_of_entrance,
-};
+use crate::generation::object::settlements::settlement_generation::select_fitting_building;
 use bevy::log::*;
 use bevy::platform::collections::HashSet;
 use rand::prelude::StdRng;
@@ -106,10 +104,9 @@ impl FieldShape {
 
 struct FieldLayout {
   tiles: Vec<(Point<InternalGrid>, TileShape)>,
-  entrance: Point<InternalGrid>,
 }
 
-/// Generates fenced fields and places them beside settlement roads. Fields must stay on one elevation, and placement
+/// Generates fenced fields and places them beside settlement paths. Fields must stay on one elevation, and placement
 /// must leave space for at least one building because fields without buildings nearby wouldn't be very credible.
 pub(super) fn place_fields(
   grid: &mut ObjectGrid,
@@ -131,7 +128,7 @@ pub(super) fn place_fields(
   let mut fields_placed = 0;
 
   for field_type in permitted_field_types(rng, capacity) {
-    // Try every shape, orientation, and entrance until one fits
+    // Try every shape, orientation, and path-facing edge until one fits
     'placement_loop: for candidate_layout in layouts(rng, field_shapes) {
       for &connection_ig in &candidate_connection_igs {
         // Skip if the chosen field layout cannot be placed
@@ -154,11 +151,6 @@ pub(super) fn place_fields(
           }
         }
         occupied_grid_space.extend(candidate_field.iter().map(|(point, _)| *point));
-        let entrance = Point::new_internal_grid(
-          connection_ig.x + candidate_layout.entrance.x,
-          connection_ig.y + candidate_layout.entrance.y,
-        );
-        update_path_in_front_of_entrance(&connection_ig, &entrance, grid);
         fields_placed += 1;
         trace!(
           "Placed [{:?}] field with [{}] tiles beside {} on {}",
@@ -175,8 +167,8 @@ pub(super) fn place_fields(
   fields_placed
 }
 
-/// Converts a layout relative to a path connection point into absolute internal grid points and object names. Both the
-/// placement checks and the [`ObjectGrid`] operate on absolute positions.
+/// Converts a layout relative to a path point into absolute internal grid points and object names. Both the placement
+/// checks and the [`ObjectGrid`] operate on absolute positions.
 fn absolute_tiles(
   layout: &FieldLayout,
   path_point: Point<InternalGrid>,
@@ -289,9 +281,9 @@ fn layouts(rng: &mut StdRng, field_shapes: &[FieldShape]) -> Vec<FieldLayout> {
 
     // Iterate through each rotation of a shape
     for (rotation_index, rotated_shape) in rotated_shapes.into_iter().enumerate() {
-      // Determine possible entrances for the shape
-      let mut candidate_entrances = entrances(&rotated_shape);
-      candidate_entrances.shuffle(rng);
+      // Determine which field edges can face the path
+      let mut candidate_edges = path_edges(&rotated_shape);
+      candidate_edges.shuffle(rng);
 
       // Make sure we keep our preferred orientation layouts separate
       let layouts = if rotation_index == 0 {
@@ -300,11 +292,11 @@ fn layouts(rng: &mut StdRng, field_shapes: &[FieldShape]) -> Vec<FieldLayout> {
         &mut fallback_layouts
       };
 
-      // Now add a "fully-qualified" (shape + entrance) layout for each possible entrance to the list
+      // Now add a "fully-qualified" layout for each possible entrance to the list
       layouts.extend(
-        candidate_entrances
+        candidate_edges
           .into_iter()
-          .map(|(entrance, outside)| layout_from_entrance(&rotated_shape, entrance, outside)),
+          .map(|(field_tile, path_direction)| layout_beside_path(&rotated_shape, field_tile, path_direction)),
       );
     }
   }
@@ -326,9 +318,9 @@ fn rotations(shape: &[(i32, i32)]) -> Vec<Shape> {
   rotations
 }
 
-/// Returns field tiles with exactly one side outside the shape. These tiles can face a path without creating two
-/// openings in the fence. The result is a list of candidate entrances to a field.
-fn entrances(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
+/// Returns field tiles with exactly one side outside the shape. These edges can face a path while keeping the field one
+/// tile away from it.
+fn path_edges(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
   shape
     .iter()
     .filter_map(|&(x, y)| {
@@ -341,39 +333,29 @@ fn entrances(shape: &[(i32, i32)]) -> Vec<((i32, i32), Direction)> {
     .collect()
 }
 
-// TODO: Consider if we need dedicated artwork for this
-/// Returns the full [`FieldLayout`]. Positions a field shape relative to a path connection point and marks the
-/// connected field tile as fill. The fill tile leaves an opening in the fence between the field and path.
-fn layout_from_entrance(shape: &[(i32, i32)], entrance: (i32, i32), outside: Direction) -> FieldLayout {
-  let outside_offset: Point<InternalGrid> = outside.to_point();
+/// Returns the full [`FieldLayout`]. Positions a field shape beside a path point and classifies every fence tile.
+fn layout_beside_path(shape: &[(i32, i32)], field_tile: (i32, i32), path_direction: Direction) -> FieldLayout {
+  let path_offset: Point<InternalGrid> = path_direction.to_point();
   let tiles = shape
     .iter()
     .map(|&(x, y)| {
-      let tile_shape = if (x, y) == entrance {
-        TileShape::Fill
-      } else {
-        classify_tile(shape, x, y)
-      };
       (
-        Point::new_internal_grid(x - entrance.0 - outside_offset.x, y - entrance.1 - outside_offset.y),
-        tile_shape,
+        Point::new_internal_grid(x - field_tile.0 - path_offset.x, y - field_tile.1 - path_offset.y),
+        determine_tile_shape(shape, x, y),
       )
     })
     .collect();
 
-  FieldLayout {
-    tiles,
-    entrance: Point::new_internal_grid(-outside_offset.x, -outside_offset.y),
-  }
+  FieldLayout { tiles }
 }
 
 /// Returns the tile shape required by its neighbouring field tiles. The result determines which fence edges and corners
 /// appear at this position.
-fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
+fn determine_tile_shape(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
   let outside: Vec<Direction> = outside(shape, &x, &y);
 
   match outside.as_slice() {
-    [] => classify_fill_or_inner_corner(shape, x, y),
+    [] => determine_fill_or_inner_corner_shape(shape, x, y),
     [Direction::Top] => TileShape::EdgeTop,
     [Direction::Right] => TileShape::EdgeRight,
     [Direction::Bottom] => TileShape::EdgeBottom,
@@ -388,7 +370,7 @@ fn classify_tile(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
 
 /// Checks diagonal neighbours when field tiles exist on every cardinal side. A missing diagonal requires an
 /// inner-corner fence instead of a fill tile.
-fn classify_fill_or_inner_corner(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
+fn determine_fill_or_inner_corner_shape(shape: &[(i32, i32)], x: i32, y: i32) -> TileShape {
   let missing_diagonals: Vec<_> = DIAGONALS
     .iter()
     .filter_map(|&(direction, tile_shape)| {
@@ -404,8 +386,8 @@ fn classify_fill_or_inner_corner(shape: &[(i32, i32)], x: i32, y: i32) -> TileSh
   }
 }
 
-/// Returns the cardinal directions without an adjacent field tile. Entrance detection and fence classification use this
-/// same neighbour rule.
+/// Returns the cardinal directions without an adjacent field tile. Path edge detection and fence classification use
+/// this same neighbour rule.
 fn outside(shape: &[(i32, i32)], x: &i32, y: &i32) -> Vec<Direction> {
   CARDINAL_DIRECTIONS
     .into_iter()
@@ -442,11 +424,15 @@ mod tests {
   }
 
   #[test]
-  fn layouts_mark_the_boundary_tile_next_to_the_road_as_the_entrance() {
+  fn layouts_fence_the_boundary_tile_next_to_the_path() {
     let resources = test_settlement_resources();
     for layout in layouts(&mut StdRng::seed_from_u64(7), resources.field_shapes()) {
-      assert!(layout.tiles.contains(&(layout.entrance, TileShape::Fill)));
-      assert_eq!(layout.entrance.x.abs() + layout.entrance.y.abs(), 1);
+      let path_edge = layout
+        .tiles
+        .iter()
+        .find(|(point, _)| point.x.abs() + point.y.abs() == 1)
+        .expect("each field layout has a tile beside the path");
+      assert_ne!(path_edge.1, TileShape::Fill);
     }
   }
 
@@ -486,7 +472,7 @@ mod tests {
     let resources = test_settlement_resources();
     for shape in resources.field_shapes() {
       for &(x, y) in shape.tiles() {
-        classify_tile(shape.tiles(), x, y);
+        determine_tile_shape(shape.tiles(), x, y);
       }
     }
   }
@@ -494,15 +480,15 @@ mod tests {
   #[test]
   fn classify_tile_maps_fill_edges_and_outer_corners() {
     let shape = rectangle(4, 4);
-    assert_eq!(classify_tile(&shape, 1, 1), TileShape::Fill);
-    assert_eq!(classify_tile(&shape, 1, 0), TileShape::EdgeTop);
-    assert_eq!(classify_tile(&shape, 3, 1), TileShape::EdgeRight);
-    assert_eq!(classify_tile(&shape, 1, 3), TileShape::EdgeBottom);
-    assert_eq!(classify_tile(&shape, 0, 1), TileShape::EdgeLeft);
-    assert_eq!(classify_tile(&shape, 0, 0), TileShape::OuterCornerTopLeft);
-    assert_eq!(classify_tile(&shape, 3, 0), TileShape::OuterCornerTopRight);
-    assert_eq!(classify_tile(&shape, 3, 3), TileShape::OuterCornerBottomRight);
-    assert_eq!(classify_tile(&shape, 0, 3), TileShape::OuterCornerBottomLeft);
+    assert_eq!(determine_tile_shape(&shape, 1, 1), TileShape::Fill);
+    assert_eq!(determine_tile_shape(&shape, 1, 0), TileShape::EdgeTop);
+    assert_eq!(determine_tile_shape(&shape, 3, 1), TileShape::EdgeRight);
+    assert_eq!(determine_tile_shape(&shape, 1, 3), TileShape::EdgeBottom);
+    assert_eq!(determine_tile_shape(&shape, 0, 1), TileShape::EdgeLeft);
+    assert_eq!(determine_tile_shape(&shape, 0, 0), TileShape::OuterCornerTopLeft);
+    assert_eq!(determine_tile_shape(&shape, 3, 0), TileShape::OuterCornerTopRight);
+    assert_eq!(determine_tile_shape(&shape, 3, 3), TileShape::OuterCornerBottomRight);
+    assert_eq!(determine_tile_shape(&shape, 0, 3), TileShape::OuterCornerBottomLeft);
   }
 
   #[test]
@@ -516,7 +502,7 @@ mod tests {
     for (missing, expected) in cases {
       let mut shape = rectangle(3, 3);
       shape.retain(|point| *point != missing);
-      assert_eq!(classify_tile(&shape, 1, 1), expected);
+      assert_eq!(determine_tile_shape(&shape, 1, 1), expected);
     }
   }
 }
