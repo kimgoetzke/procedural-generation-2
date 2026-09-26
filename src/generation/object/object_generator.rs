@@ -1,12 +1,12 @@
-use crate::components::{AnimationSpriteComponent, AnimationType};
+use crate::animation::{AnimationSpriteComponent, AnimationType};
 use crate::constants::*;
-use crate::generation::lib::shared::CommandQueueTask;
-use crate::generation::lib::{AssetCollection, Chunk, GenerationResourcesCollection, ObjectComponent, Tile, shared};
-use crate::generation::object::lib::{ObjectData, ObjectGrid, ObjectName, TileData};
-use crate::generation::object::wfc::WfcPlugin;
-use crate::resources::Settings;
+use crate::generation::model::{Chunk, GenerationResources, ObjectComponent, SpriteSheetSet, Tile};
+use crate::generation::object::model::{ObjectData, ObjectGrid, ObjectName, TileData};
+use crate::generation::shared;
+use crate::settings::Settings;
 use bevy::app::{App, Plugin, Update};
 use bevy::color::{Color, Luminance};
+use bevy::ecs::component::Mutable;
 use bevy::ecs::world::CommandQueue;
 use bevy::log::*;
 use bevy::prelude::{Commands, Component, Entity, Name, Query, TextureAtlas, Transform};
@@ -16,14 +16,18 @@ use bevy::tasks::{AsyncComputeTaskPool, Task, block_on};
 use rand::RngExt;
 use rand::prelude::StdRng;
 
+/// Responsible for providing the structures that are used during the object generation process and for spawning the
+/// resulting objects at the end of the process. Not specific to any particular type of object.
 pub struct ObjectGeneratorPlugin;
 
 impl Plugin for ObjectGeneratorPlugin {
   fn build(&self, app: &mut App) {
-    app
-      .add_plugins(WfcPlugin)
-      .add_systems(Update, process_object_spawn_tasks_system);
+    app.add_systems(Update, process_object_spawn_tasks_system);
   }
+}
+
+trait CommandQueueTask {
+  fn poll_once(&mut self) -> Option<CommandQueue>;
 }
 
 #[derive(Component)]
@@ -39,7 +43,7 @@ impl CommandQueueTask for ObjectSpawnTask {
 /// [`crate::generation::object`] when running various algorithms to determine which objects should be spawned in
 /// the world.
 pub fn generate_object_grid(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   settings: &Settings,
   chunk: Chunk,
   chunk_entity: Entity,
@@ -55,7 +59,7 @@ pub fn generate_object_grid(
   let start_time = shared::get_time();
   let terrain_climate_state_map = resources
     .objects
-    .get_terrain_state_collection(settings.object.enable_animated_objects);
+    .terrain_state_collection(settings.object.enable_animated_objects);
   let grid = ObjectGrid::new_initialised(cg, chunk.climate, &terrain_climate_state_map, &chunk.layered_plane);
   debug!(
     "Generated object grid for chunk {} in {} ms on {}",
@@ -162,14 +166,15 @@ fn attach_object_spawn_task(
   let task = task_pool.spawn(async move {
     let mut command_queue = CommandQueue::default();
     command_queue.push(move |world: &mut bevy::prelude::World| {
-      let asset_collection = world
-        .get_resource::<GenerationResourcesCollection>()
-        .expect("Failed to fetch GenerationResourcesCollection")
-        .get_object_collection(
+      let sprite_sheet_set = world
+        .get_resource::<GenerationResources>()
+        .expect("Failed to fetch GenerationResources")
+        .objects
+        .sprite_sheet_set(
           tile_data.flat_tile.terrain,
           tile_data.flat_tile.climate,
           object_data.is_large_sprite,
-          object_name.is_building(),
+          object_name.is_settlement_structure(),
           is_animated,
         )
         .clone();
@@ -178,7 +183,7 @@ fn attach_object_spawn_task(
           let mut entity = parent.spawn(sprite(
             &tile_data.flat_tile,
             sprite_index,
-            &asset_collection,
+            &sprite_sheet_set,
             object_name,
             offset_x,
             offset_y,
@@ -232,7 +237,7 @@ fn get_sprite_offsets(rng: &mut StdRng, object_data: &ObjectData) -> (f32, f32) 
 fn sprite(
   tile: &Tile,
   index: i32,
-  asset_collection: &AssetCollection,
+  sprite_sheet_set: &SpriteSheetSet,
   object_name: ObjectName,
   offset_x: f32,
   offset_y: f32,
@@ -246,10 +251,10 @@ fn sprite(
     Name::new(format!("{} {:?} Object Sprite", tile.coords.tile_grid, object_name)),
     Sprite {
       texture_atlas: Option::from(TextureAtlas {
-        layout: asset_collection.stat.texture_atlas_layout.clone(),
+        layout: sprite_sheet_set.static_sheet.texture_atlas_layout.clone(),
         index: index as usize,
       }),
-      image: asset_collection.stat.texture.clone(),
+      image: sprite_sheet_set.static_sheet.texture.clone(),
       color: colour,
       ..Default::default()
     },
@@ -268,6 +273,18 @@ fn sprite(
   )
 }
 
-fn process_object_spawn_tasks_system(commands: Commands, object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
-  shared::process_tasks(commands, object_spawn_tasks);
+fn process_object_spawn_tasks_system(mut commands: Commands, mut object_spawn_tasks: Query<(Entity, &mut ObjectSpawnTask)>) {
+  process_tasks(&mut commands, &mut object_spawn_tasks);
+}
+
+fn process_tasks<T: CommandQueueTask + Component<Mutability = Mutable>>(
+  commands: &mut Commands,
+  query: &mut Query<(Entity, &mut T)>,
+) {
+  for (entity, mut task) in query.iter_mut() {
+    if let Some(mut commands_queue) = task.poll_once() {
+      commands.append(&mut commands_queue);
+      commands.entity(entity).despawn();
+    }
+  }
 }

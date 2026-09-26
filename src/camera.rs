@@ -1,7 +1,8 @@
 use crate::constants::{CHUNK_SIZE, TILE_SIZE, WATER_BLUE};
-use crate::coords::Point;
+use crate::coordinates::Point;
+use crate::generation::generation_resources::CurrentChunk;
 use crate::messages::{ResetCameraMessage, UpdateWorldMessage};
-use crate::resources::{CurrentChunk, Settings};
+use crate::settings::Settings;
 use bevy::app::{App, Plugin, Startup};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera_controller::pan_camera::{PanCamera, PanCameraPlugin};
@@ -88,9 +89,9 @@ fn camera_movement_system(
 ) {
   let translation = camera.single().expect("Failed to find camera").1.translation();
   let current_world = Point::new_world_from_world_vec2(translation.truncate());
-  let chunk_center_world = current_chunk.get_center_world();
-  let distance_x = (current_world.x - chunk_center_world.x).abs();
-  let distance_y = (current_world.y - chunk_center_world.y).abs();
+  let chunk_centre_world = current_chunk.get_centre_world();
+  let distance_x = (current_world.x - chunk_centre_world.x).abs();
+  let distance_y = (current_world.y - chunk_centre_world.y).abs();
   let trigger_distance = ((CHUNK_SIZE * TILE_SIZE as i32) / 2) + 1;
   trace!(
     "Camera moved to {:?} with distance x={:?}, y={:?} (trigger distance {})",
@@ -100,8 +101,9 @@ fn camera_movement_system(
   if (distance_x >= trigger_distance) || (distance_y >= trigger_distance) {
     message.write(UpdateWorldMessage {
       is_forced_update: false,
-      tg: Point::new_tile_grid_from_world(current_world),
       w: current_world,
+      cg: Point::new_chunk_grid_from_world(current_world),
+      tg: Point::new_tile_grid_from_world(current_world),
     });
   };
 }

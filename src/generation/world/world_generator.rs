@@ -1,13 +1,13 @@
-use crate::components::{AnimationMeshComponent, AnimationType};
+use crate::animation::{AnimationMeshComponent, AnimationType};
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::World;
-use crate::generation::lib::{
-  Chunk, ChunkComponent, GenerationResourcesCollection, Plane, TerrainType, Tile, TileMeshComponent, shared,
+use crate::coordinates::point::ChunkGrid;
+use crate::coordinates::{Coords, Point};
+use crate::generation::model::{
+  Chunk, ChunkComponent, GenerationResources, Metadata, Plane, TerrainType, Tile, TileMeshComponent,
 };
-use crate::generation::resources::Metadata;
+use crate::generation::shared;
 use crate::generation::world::post_processor;
-use crate::resources::Settings;
+use crate::settings::Settings;
 use bevy::app::{App, Plugin};
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
@@ -23,12 +23,12 @@ impl Plugin for WorldGeneratorPlugin {
   fn build(&self, _app: &mut App) {}
 }
 
-pub fn generate_chunks(spawn_points: Vec<Point<World>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
+pub fn generate_chunks(spawn_points: Vec<Point<ChunkGrid>>, metadata: Metadata, settings: &Settings) -> Vec<Chunk> {
   let start_time = shared::get_time();
   let mut chunks: Vec<Chunk> = Vec::new();
-  for chunk_w in spawn_points {
-    let chunk_tg = Point::new_tile_grid_from_world(chunk_w);
-    let mut chunk = Chunk::new(chunk_w, chunk_tg, &metadata, settings);
+  for chunk_cg in spawn_points {
+    let coords = Coords::new_for_chunk(chunk_cg);
+    let mut chunk = Chunk::new(coords, &metadata, settings);
     chunk = post_processor::process(chunk, settings);
     chunks.push(chunk);
   }
@@ -65,7 +65,7 @@ pub fn spawn_tiles(
   chunk_entity: Entity,
   chunk: Chunk,
   settings: &Settings,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   meshes: &mut ResMut<Assets<Mesh>>,
   materials: &mut ResMut<Assets<ColorMaterial>>,
 ) {
@@ -117,26 +117,26 @@ pub fn spawn_tiles(
 /// The purpose of this function is to group tiles by their texture and whether they will be animated so that we can
 /// spawn a single mesh for each texture.
 fn prepare_texture_groups<'a>(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   plane: &'a Plane,
   is_drawing_terrain_sprites_disabled: bool,
 ) -> HashMap<(Handle<Image>, bool, bool), Vec<&'a Tile>> {
   let mut texture_groups: HashMap<(Handle<Image>, bool, bool), Vec<&Tile>> = HashMap::new();
   for row in plane.data.iter() {
     for tile in row.iter().flatten() {
-      let asset_collection = resources.get_terrain_collection(&tile.terrain, &tile.climate);
-      let has_animated_sprites = asset_collection.anim.is_some();
-      let is_animated = asset_collection.animated_tile_types.contains(&tile.tile_type);
+      let sprite_sheet_set = resources.world.sprite_sheet_set(&tile.terrain, &tile.climate);
+      let has_animated_sprites = sprite_sheet_set.animated_sheet.is_some();
+      let is_animated = sprite_sheet_set.animated_tile_types.contains(&tile.tile_type);
       let texture = match (is_drawing_terrain_sprites_disabled, has_animated_sprites) {
         (false, true) => {
-          &asset_collection
-            .anim
+          &sprite_sheet_set
+            .animated_sheet
             .as_ref()
-            .expect("Failed to get animated asset pack from resource collection")
+            .expect("Animated sprite sheet exists")
             .texture
         }
-        (false, false) => &asset_collection.stat.texture,
-        (true, _) => &resources.placeholder.texture,
+        (false, false) => &sprite_sheet_set.static_sheet.texture,
+        (true, _) => &resources.world.placeholder.texture,
       };
 
       texture_groups
@@ -151,7 +151,7 @@ fn prepare_texture_groups<'a>(
 
 fn spawn_tile_mesh(
   commands: &mut Commands,
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   meshes: &mut ResMut<Assets<Mesh>>,
   materials: &mut ResMut<Assets<ColorMaterial>>,
   tiles: Vec<&Tile>,
@@ -203,7 +203,7 @@ fn spawn_tile_mesh(
 }
 
 fn calculate_mesh_attributes(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   tiles: Vec<&Tile>,
   layer: f32,
   has_animated_sprites: bool,
@@ -274,14 +274,12 @@ const fn resolve_rows(is_drawing_terrain_sprites_disabled: bool) -> f32 {
 /// Determines the sprite index for a tile based on its terrain, climate, and type. If drawing terrain sprites
 /// is disabled, it simply returns the terrain type as the sprite index which corresponds to the placeholder sprite
 /// sheet.
-fn resolve_sprite_index(
-  resources: &GenerationResourcesCollection,
-  tile: &Tile,
-  is_drawing_terrain_sprites_disabled: bool,
-) -> usize {
+fn resolve_sprite_index(resources: &GenerationResources, tile: &Tile, is_drawing_terrain_sprites_disabled: bool) -> usize {
   if is_drawing_terrain_sprites_disabled {
     return tile.terrain as usize;
   }
 
-  tile.tile_type.calculate_sprite_index(&tile.terrain, &tile.climate, resources)
+  tile
+    .tile_type
+    .calculate_sprite_index(&tile.terrain, &tile.climate, &resources.world)
 }

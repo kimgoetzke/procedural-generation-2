@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use bevy::color::Color;
 use bevy::math::UVec2;
 use std::ops::Range;
@@ -39,8 +39,8 @@ pub const NOISE_AMPLITUDE: f64 = 4.5;
 // Settings: Objects
 pub const GENERATE_OBJECTS: bool = true;
 pub const GENERATE_PATHS: bool = true;
-pub const GENERATE_BUILDINGS: bool = true;
-pub const BUILDING_DENSITY: f64 = 0.5;
+pub const GENERATE_SETTLEMENTS: bool = true;
+pub const SETTLEMENT_DENSITY: f64 = 0.5;
 pub const GENERATE_DECORATION: bool = true;
 pub const ENABLE_ANIMATED_OBJECTS: bool = true;
 pub const ENABLE_COLOUR_VARIATIONS: bool = false;
@@ -50,7 +50,7 @@ pub const MAX_CHUNKS: usize = 9;
 /// The size of a buffer around a chunk that is generated but not rendered. Must be 1, always.
 pub const BUFFER_SIZE: i32 = 1;
 /// The size of a chunk, including a border that will not be rendered. This is to ensure that the
-/// [`crate::generation::lib::TileType`]s of outermost tiles are known. Must not be modified directly. Change
+/// [`crate::generation::model::TileType`]s of outermost tiles are known. Must not be modified directly. Change
 /// [`CHUNK_SIZE`] instead.
 pub const CHUNK_SIZE_PLUS_BUFFER: i32 = CHUNK_SIZE + 2 * BUFFER_SIZE;
 /// The length and width of a chunk that is rendered on the screen, in pixels.
@@ -122,14 +122,14 @@ pub const OBJ_ANIMATED_PATH: &str = "objects/objects-animated.png";
 pub const TREES_HUMID_OBJ_PATH: &str = "objects/trees-humid.png";
 pub const TREES_MODERATE_OBJ_PATH: &str = "objects/trees-moderate.png";
 pub const TREES_DRY_OBJ_PATH: &str = "objects/trees-dry.png";
-pub const BUILDINGS_OBJ_PATH: &str = "objects/buildings.png";
+pub const SETTLEMENTS_OBJ_PATH: &str = "objects/settlements.png";
 pub const DEFAULT_OBJ_COLUMNS: u32 = 16;
 pub const DEFAULT_OBJ_ROWS: u32 = 3;
 pub const DEFAULT_OBJ_SIZE: UVec2 = UVec2::new(32, 32);
 pub const ANIMATED_OBJ_COLUMNS: u32 = 6;
 pub const ANIMATED_OBJ_ROWS: u32 = 15;
-pub const BUILDINGS_OBJ_COLUMNS: u32 = 9;
-pub const BUILDINGS_OBJ_ROWS: u32 = 6;
+pub const STRUCTURES_OBJ_COLUMNS: u32 = 9;
+pub const STRUCTURES_OBJ_ROWS: u32 = 9;
 pub const TREES_OBJ_COLUMNS: u32 = 6;
 pub const TREES_OBJ_ROWS: u32 = 1;
 pub const TREES_OBJ_SIZE: UVec2 = UVec2::new(64, 128);
