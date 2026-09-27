@@ -26,6 +26,9 @@ iyes_perf_ui = { git = "https://github.com/kimgoetzke/iyes_perf_ui" }
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.dev.build-override]
+debug = true
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
