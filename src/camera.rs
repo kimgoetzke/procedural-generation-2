@@ -6,9 +6,12 @@ use crate::settings::Settings;
 use bevy::app::{App, Plugin, Startup};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera_controller::pan_camera::{PanCamera, PanCameraPlugin};
+use bevy::input::mouse::AccumulatedMouseScroll;
 use bevy::input::touch::Touch;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
+use bevy_inspector_egui::bevy_egui::EguiPreUpdateSet;
+use bevy_inspector_egui::bevy_egui::input::EguiWantsInput;
 
 const WORLD_LAYER: RenderLayers = RenderLayers::layer(0);
 const CAMERA_TRANSFORM_Z: f32 = 100000.;
@@ -25,6 +28,10 @@ impl Plugin for CameraPlugin {
       .insert_resource(ClearColor(WATER_BLUE))
       .init_resource::<TouchState>()
       .add_systems(Startup, setup_camera_system)
+      .add_systems(
+        PreUpdate,
+        block_camera_scroll_over_ui_system.after(EguiPreUpdateSet::ProcessInput),
+      )
       .add_systems(
         Update,
         (camera_movement_system, touch_camera_system, pan_cam_speed_boost_system),
@@ -80,6 +87,13 @@ fn setup_camera_system(mut commands: Commands, settings: Res<Settings>) {
       max_scale: 10.0,
     },
   ));
+}
+
+/// Stops the mouse wheel from acting on the world (e.g. zooming in/out) while it's being used in the menu.
+fn block_camera_scroll_over_ui_system(egui_input: Res<EguiWantsInput>, mut scroll: ResMut<AccumulatedMouseScroll>) {
+  if egui_input.wants_any_pointer_input() {
+    scroll.delta = Vec2::ZERO;
+  }
 }
 
 fn camera_movement_system(
