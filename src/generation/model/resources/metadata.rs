@@ -1,5 +1,5 @@
 use crate::coordinates::point::{ChunkGrid, InternalGrid};
-use crate::coordinates::{Direction, Point, get_direction_points};
+use crate::coordinates::{Direction, Point, get_cardinal_direction_points, get_direction_points};
 use crate::generation::object::model::ObjectGrid;
 use bevy::log::*;
 use bevy::platform::collections::HashMap;
@@ -126,8 +126,17 @@ impl Metadata {
 
   /// Returns whether the given [`Point<ChunkGrid>`] is considered to be settled or not. Defaults to `false` if no
   /// data is available.
-  pub fn get_settlement_status_for(&self, cg: &Point<ChunkGrid>) -> bool {
+  pub fn get_settlement_status(&self, cg: &Point<ChunkGrid>) -> bool {
     *self.settlement.get(cg).unwrap_or(&false)
+  }
+
+  /// Returns whether the cardinal neighbours of a given [`Point<ChunkGrid>`] are considered to be settled or not.
+  /// Defaults to `false` if no data is available.
+  pub fn get_neighbour_settlement_statuses(&self, cg: &Point<ChunkGrid>) -> Vec<(Direction, bool)> {
+    get_cardinal_direction_points(cg)
+      .iter()
+      .map(|(direction, p)| (*direction, self.get_settlement_status(p)))
+      .collect()
   }
 }
 
@@ -382,6 +391,56 @@ mod tests {
     metadata.connection.insert(cg, vec![expected_point1, expected_point2]);
     let result = metadata.get_connection_points_for(&cg, &mut object_grid);
     assert_eq!(result, vec![expected_point1, expected_point2]);
+  }
+
+  #[test]
+  fn get_neighbour_settlement_statuses_returns_only_cardinal_neighbour_statuses() {
+    let cg = Point::new_chunk_grid(3, -2);
+    let mut metadata = Metadata::default(Point::new_chunk_grid(0, 0));
+
+    // Populate cardinal neighbours, the queried chunk and diagonals.
+    metadata.settlement.extend([
+      (Point::new_chunk_grid(3, -1), true),
+      (Point::new_chunk_grid(2, -2), false),
+      (Point::new_chunk_grid(4, -2), true),
+      (Point::new_chunk_grid(3, -3), false),
+      (cg, true),
+      (Point::new_chunk_grid(2, -1), true),
+      (Point::new_chunk_grid(4, -1), true),
+      (Point::new_chunk_grid(2, -3), true),
+      (Point::new_chunk_grid(4, -3), true),
+    ]);
+
+    let result = metadata.get_neighbour_settlement_statuses(&cg);
+
+    assert_eq!(
+      result,
+      vec![
+        (Direction::Top, true),
+        (Direction::Left, false),
+        (Direction::Right, true),
+        (Direction::Bottom, false),
+      ]
+    );
+  }
+
+  #[test]
+  fn get_neighbour_settlement_statuses_defaults_missing_neighbours_to_false() {
+    let cg = Point::new_chunk_grid(-4, 5);
+    let mut metadata = Metadata::default(cg);
+    metadata.settlement.insert(Point::new_chunk_grid(-5, 5), true);
+
+    let result = metadata.get_neighbour_settlement_statuses(&cg);
+
+    assert_eq!(
+      result,
+      vec![
+        (Direction::Top, false),
+        (Direction::Left, true),
+        (Direction::Right, false),
+        (Direction::Bottom, false),
+      ]
+    );
   }
 
   #[test]

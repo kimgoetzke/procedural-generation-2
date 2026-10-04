@@ -4,6 +4,7 @@ use crate::coordinates::point::{ChunkGrid, InternalGrid};
 use crate::coordinates::{Direction, Point};
 use crate::generation::model::{Metadata, SettlementResources};
 use crate::generation::object::model::{BuildingTemplate, Cell, ObjectGrid, ObjectName};
+use crate::generation::object::settlements::target_structure_density::TargetedStructureDensity;
 use crate::generation::shared;
 use crate::settings::Settings;
 use bevy::app::{App, Plugin};
@@ -37,13 +38,16 @@ pub fn place_settlement_on_grid(
     );
     return;
   }
-  if !metadata.get_settlement_status_for(&cg) {
+  if !metadata.get_settlement_status(&cg) {
     debug!(
       "Skipped generating settlements for {} because it is not marked as settled in metadata",
       cg
     );
     return;
   }
+
+  // Determine the density of structures the generation should target
+  let target_density = TargetedStructureDensity::from(&cg, &metadata);
 
   // Determine path points along which we can generate settlement structures
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
@@ -82,10 +86,11 @@ pub fn place_settlement_on_grid(
   );
 
   debug!(
-    "Placed [{}] buildings(s) and [{}] field(s) on grid for {} in {} ms on {}",
+    "Placed [{}] buildings(s) and [{}] field(s) on grid for {} (target density: [{:?}]) in {} ms on {}",
     buildings_placed,
     fields_placed,
     object_grid.cg,
+    target_density,
     shared::get_time() - start_time,
     shared::thread_name()
   );
