@@ -186,10 +186,6 @@ pub struct ObjectGenerationSettings {
   /// `generate_paths` is `false` as structures are generated along paths. Will be ignored if `generate_objects` is
   /// `false` because the term objects captures all non-terrain sprites.
   pub generate_settlements: bool,
-  /// The density of structures within a settled chunk. The higher the value, the more settlement structures will be
-  /// generated within a settled chunk.
-  #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-  pub settlement_density: f64,
   /// Whether to generate decorative objects in the world, such as trees, stones, flowers, etc. Will be ignored if
   /// `generate_objects` is `false`.
   pub generate_decoration: bool,
@@ -207,7 +203,6 @@ impl Default for ObjectGenerationSettings {
       generate_objects: GENERATE_OBJECTS,
       generate_paths: GENERATE_PATHS,
       generate_settlements: GENERATE_SETTLEMENTS,
-      settlement_density: SETTLEMENT_DENSITY,
       generate_decoration: GENERATE_DECORATION,
       enable_animated_objects: ENABLE_ANIMATED_OBJECTS,
       enable_colour_variations: ENABLE_COLOUR_VARIATIONS,

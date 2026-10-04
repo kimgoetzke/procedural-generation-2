@@ -25,6 +25,16 @@ impl TargetedStructureDensity {
       4.. => TargetedStructureDensity::VeryHigh,
     }
   }
+
+  pub fn to_f64(&self) -> f64 {
+    match self {
+      TargetedStructureDensity::VeryLow => 0.3,
+      TargetedStructureDensity::Low => 0.4,
+      TargetedStructureDensity::Medium => 0.6,
+      TargetedStructureDensity::High => 0.8,
+      TargetedStructureDensity::VeryHigh => 1.0,
+    }
+  }
 }
 
 #[cfg(test)]

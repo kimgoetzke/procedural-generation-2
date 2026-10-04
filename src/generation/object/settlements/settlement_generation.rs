@@ -52,7 +52,7 @@ pub fn place_settlement_on_grid(
   // Determine path points along which we can generate settlement structures
   let mut path_points: Vec<Point<InternalGrid>> = vec![];
   add_valid_connection_points(&mut path_points, object_grid, metadata, &cg);
-  add_points_from_generated_path(&mut path_points, object_grid, settings, rng, &cg);
+  add_points_from_generated_path(&mut path_points, object_grid, rng, &cg, &target_density);
   clean_up_path_points(&mut path_points, object_grid);
   if path_points.is_empty() {
     debug!(
@@ -122,21 +122,21 @@ fn add_valid_connection_points(
 fn add_points_from_generated_path(
   path_points: &mut Vec<Point<InternalGrid>>,
   object_grid: &mut ObjectGrid,
-  settings: &Settings,
   rng: &mut StdRng,
   cg: &Point<ChunkGrid>,
+  target_density: &TargetedStructureDensity,
 ) {
-  let structure_density = settings.object.settlement_density;
+  let target_density = target_density.to_f64();
   let mut points_from_generated_path_to_add: Vec<Point<InternalGrid>> =
     object_grid.get_generated_path().iter().copied().collect();
   points_from_generated_path_to_add.sort_by_key(|point| (point.y, point.x));
-  points_from_generated_path_to_add.retain(|_| rng.random_range(0.0..1.0) <= structure_density);
+  points_from_generated_path_to_add.retain(|_| rng.random_range(0.0..1.0) <= target_density);
   trace!(
     "Adding [{}/{}] path points from the generated path for {} based on settlement structure density of [{:.2}]",
     points_from_generated_path_to_add.len(),
     object_grid.get_generated_path().len(),
     cg,
-    structure_density
+    target_density
   );
   path_points.append(&mut points_from_generated_path_to_add);
 }
@@ -343,12 +343,19 @@ mod tests {
         .mark_as_collapsed(ObjectName::PathHorizontal);
     }
     grid.set_generated_path(path);
-    let mut settings = Settings::default();
-    settings.object.settlement_density = 1.0;
     let mut metadata = Metadata::default(cg);
     metadata.settlement.insert(cg, true);
+    // Field-placement tests require full density so every path point is available
+    for neighbour in [
+      Point::new_chunk_grid(cg.x, cg.y + 1),
+      Point::new_chunk_grid(cg.x - 1, cg.y),
+      Point::new_chunk_grid(cg.x + 1, cg.y),
+      Point::new_chunk_grid(cg.x, cg.y - 1),
+    ] {
+      metadata.settlement.insert(neighbour, true);
+    }
     metadata.connection.insert(cg, vec![]);
-    (grid, settings, metadata)
+    (grid, Settings::default(), metadata)
   }
 
   fn object_names(grid: &ObjectGrid) -> Vec<ObjectName> {
