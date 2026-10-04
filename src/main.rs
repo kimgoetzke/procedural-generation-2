@@ -5,6 +5,7 @@ mod constants;
 mod controls;
 mod coordinates;
 mod generation;
+mod logging;
 mod messages;
 mod settings;
 mod ui;
@@ -20,6 +21,7 @@ use crate::ui::UiPlugins;
 use animation::SpriteAnimationsPlugin;
 use bevy::asset::AssetMetaCheck;
 use bevy::input::common_conditions::input_toggle_active;
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
 use bevy_framepace::FramepacePlugin;
@@ -31,6 +33,10 @@ fn main() {
   App::new()
     .add_plugins(
       DefaultPlugins
+        .set(LogPlugin {
+          fmt_layer: logging::fmt_layer,
+          ..default()
+        })
         .set(AssetPlugin {
           // This is a workaround for https://github.com/bevyengine/bevy/issues/10157
           meta_check: AssetMetaCheck::Never,
