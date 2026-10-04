@@ -1,0 +1,63 @@
+use crate::coordinates::point::{InternalGrid, TileGrid};
+use crate::coordinates::{Coords, Point};
+use crate::generation::model::Climate;
+use crate::generation::model::world::debug_data::DebugData;
+use crate::generation::model::world::terrain_type::TerrainType;
+
+/// Contains the key information to generate a [`Tile`][t] and is therefore only an intermediate representation.
+/// While the [`Coords`] and [`TerrainType`] of a tile will remain the same after the conversion, the
+/// `layer` will be modified when creating a `Tile` from a [`DraftTile`] by adding the y-coordinate of the world grid
+/// [`Coords`] to the layer.
+///
+/// [t]: crate::generation::model::Tile
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct DraftTile {
+  pub coords: Coords,
+  pub terrain: TerrainType,
+  pub layer: i32,
+  pub climate: Climate,
+  pub debug_data: DebugData,
+}
+
+impl DraftTile {
+  pub fn new(
+    ig: Point<InternalGrid>,
+    tg: Point<TileGrid>,
+    terrain: TerrainType,
+    climate: Climate,
+    debug_data: DebugData,
+  ) -> Self {
+    Self {
+      coords: Coords::new_for_tile(ig, tg),
+      terrain,
+      climate,
+      layer: terrain as i32,
+      debug_data,
+    }
+  }
+
+  pub const fn clone_with_modified_terrain(&self, terrain: TerrainType) -> Self {
+    Self {
+      coords: self.coords,
+      terrain,
+      climate: self.climate,
+      layer: terrain as i32,
+      debug_data: self.debug_data,
+    }
+  }
+
+  #[cfg(test)]
+  pub(crate) fn new_test(ig: Point<InternalGrid>, tg: Point<TileGrid>, terrain: TerrainType, climate: Climate) -> Self {
+    Self::new(
+      ig,
+      tg,
+      terrain,
+      climate,
+      DebugData {
+        noise: 0.0,
+        noise_elevation_offset: 0.0,
+        is_biome_edge: false,
+      },
+    )
+  }
+}

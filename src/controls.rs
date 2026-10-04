@@ -1,16 +1,17 @@
 use crate::constants::ORIGIN_TILE_GRID_SPAWN_POINT;
-use crate::coords::Point;
+use crate::coordinates::Point;
+use crate::generation::generation_resources::CurrentChunk;
 use crate::messages::{
   MouseRightClickMessage, RefreshMetadataMessage, ResetCameraMessage, ToggleDebugInfoMessage, ToggleDiagnosticsMessage,
 };
-use crate::resources::{CurrentChunk, GeneralGenerationSettings, ObjectGenerationSettings, Settings};
+use crate::settings::{GeneralGenerationSettings, ObjectGenerationSettings, Settings};
 use bevy::app::{App, Plugin};
 use bevy::prelude::*;
 use bevy_inspector_egui::bevy_egui::EguiContexts;
 
-pub struct ControlPlugin;
+pub struct ControlsPlugin;
 
-impl Plugin for ControlPlugin {
+impl Plugin for ControlsPlugin {
   fn build(&self, app: &mut App) {
     app.add_systems(
       Update,

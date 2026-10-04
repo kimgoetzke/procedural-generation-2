@@ -1,10 +1,9 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
-use crate::generation::lib::{GenerationResourcesCollection, ObjectComponent, Tile, TileMeshComponent};
-use crate::generation::resources::ChunkComponentIndex;
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
+use crate::generation::model::{ChunkComponentIndex, GenerationResources, ObjectComponent, Tile, TileMeshComponent};
 use crate::messages::{MouseRightClickMessage, RegenerateWorldMessage, ToggleDebugInfoMessage};
-use crate::resources::Settings;
+use crate::settings::Settings;
 use bevy::app::{App, Plugin, Startup, Update};
 use bevy::log::*;
 use bevy::platform::collections::{HashMap, HashSet};
@@ -136,7 +135,7 @@ fn on_right_mouse_click_message(
   object_index: Res<ObjectComponentIndex>,
   tile_index: Res<TileMeshComponentIndex>,
   chunk_index: Res<ChunkComponentIndex>,
-  resources: Res<GenerationResourcesCollection>,
+  resources: Res<GenerationResources>,
   settings: Res<Settings>,
   mut commands: Commands,
 ) {
@@ -148,9 +147,8 @@ fn on_right_mouse_click_message(
       debug!("You are debugging {} {} {}", message.tile_w, message.cg, message.tg);
       let object_component = object_index.get(message.tg);
       commands.spawn(tile_info(&resources, tile, message.tile_w, &settings, &object_component));
-      let parent_w = tile.get_parent_chunk_w();
-      if let Some(parent_chunk) = chunk_index.get(&parent_w) {
-        debug!("Parent of {} is chunk {}/{}", message.tg, parent_w, message.cg);
+      if let Some(parent_chunk) = chunk_index.get(&message.cg) {
+        debug!("Parent of {} is chunk {}", message.tg, message.cg);
         for plane in &parent_chunk.layered_plane.planes {
           if let Some(tile) = plane.get_tile(tile.coords.internal_grid) {
             let neighbours = plane.get_neighbours(tile);
@@ -159,7 +157,7 @@ fn on_right_mouse_click_message(
         }
         debug!("{:?}", tile.debug_data);
       } else {
-        error!("Failed to find parent chunk at {} for tile at {:?}", parent_w, tile.coords);
+        error!("Failed to find parent chunk at {} for tile at {:?}", message.cg, tile.coords);
       }
       if let Some(oc) = object_index.get(message.tg) {
         debug!("{:?}", oc);
@@ -174,7 +172,7 @@ fn on_right_mouse_click_message(
 }
 
 fn tile_info(
-  resources: &GenerationResourcesCollection,
+  resources: &GenerationResources,
   tile: &Tile,
   spawn_point: Point<World>,
   settings: &Res<Settings>,
@@ -204,7 +202,9 @@ fn tile_info(
   } else {
     Visibility::Hidden
   };
-  let sprite_index = tile.tile_type.calculate_sprite_index(&tile.terrain, &tile.climate, resources);
+  let sprite_index = tile
+    .tile_type
+    .calculate_sprite_index(&tile.terrain, &tile.climate, &resources.world);
   (
     Name::new(format!("Tile {:?} Debug Info", tile.coords.tile_grid)),
     Anchor::TOP_LEFT,

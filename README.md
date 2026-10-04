@@ -72,101 +72,14 @@ techniques.
 
 ### Looking at the codebase for the first time or haven't looked at it in a while?
 
-- Start with the `GenerationStage` enum in conjunction with the `world_generation_system` in `GenerationPlugin` which is
-  driving the generation process
+- Start with the `GenerationStage` enum in conjunction with the `world_generation_system` in `GenerationPipelinePlugin`
+- which is driving the generation process
 - The terrain/world generation which generates chunks and tiles sits in `crate::generation::world`
-- The object generation which generates paths and decorative objects placed on the terrain lives in
+- The object generation which generates paths, settlements, and decorative objects placed on the terrain lives in
   `crate::generation::object`
-- Resources used for both of the above can be found in `crate::generation::resources`
-- Structs and enums used across multiple modules sit in `crate::generation::lib`
+- Resources used for both of the above can be found in `crate::generation::generation_resources`
+- Structs and enums used across multiple modules sit in `crate::generation::model`
 
-### Using Nix Flakes, JetBrains RustRover & Direnv
+### Want to know more?
 
-You can run this project in any way you like, but I have set things up to make it easy to develop using JetBrains
-RustRover. For this, you'll need:
-
-- `direnv`
-- Any Direnv integration plugin e.g. https://plugins.jetbrains.com/plugin/15285-direnv-integration
-- `nix`
-
-This way, you'll just need to `direnv allow` in the project directory after which all prerequisites (incl. Rust, Cargo,
-all Bevy dependencies, etc.) will be available to you. The JetBrains plugin will ensure that the environment is
-available to your IDE and you can run the project from there (vs `cargo build` and `cargo run` in the terminal).
-
-##### How to deal with RustRover making problems again
-
-RustRover forgetting where the Rust standard library is?
-
-```
-find /nix/store -type d -name rust_lib_src
-```
-
-### Using Nix Flakes
-
-Without `direnv`, you can use the Nix Flake by running `nix develop` in the project directory. If you want to use an IDE
-such as JetBrains RustRover, you'll have to set up the environment manually. You'll most likely have to make
-`LD_LIBRARY_PATH` available to your IDE.
-
-Upgrade the flake by running `nix flake update` in the repository's base directory.
-
-### Reminders
-
-#### How to add decorative object sprite assets
-
-1. Add the sprite to the relevant sprite sheet in `assets/objects/`
-2. Add a new option to the `ObjectName` enum
-3. Optional: Add the object name to the `any.terrain.ruleset.toml` file (top, right, bottom, left) if it can be placed
-   next to
-   a tile that contains no object (i.e. `ObjectName::Empty`)
-4. Add the object name to the `all.tile-type.ruleset.toml` file (like just `Fill`) to the relevant `TileType`s on which
-   the object can be placed
-5. Add a new state to the relevant `{terrain}.terrain.ruleset.toml` file using the index from the sprite sheet
-    - Make sure provide of permitted neighbours (even if just `Empty` on all sides)
-    - Make sure the permitted neighbours themselves list the new object name as a neighbour, too
-    - The application will run some validations and prevent startup with clear error messages if the configured state is
-      unresolvable
-6. Optional: Add the object name to any terrain-climate combination in `all.exclusions.ruleset.toml` if it shouldn't
-   be placed in those terrains and/or climates
-7. Optional: If this is a large asset, make sure to add it to `ObjectName.is_multi_tile()`
-8. Optional: If this is an animated asset, add it to `ObjectName.is_animated()`
-
-#### How to add building or path sprite assets
-
-1. Add the sprite to the relevant sprite sheet in `assets/objects/`
-2. Update the column and row values in `constants.rs` for buildings/paths, if necessary
-3. Add the new option(s) to the `ObjectName` enum
-4. Add the object name(s) to the `is_building()` or `is_path()` function in `object_name.rs`
-5. Add the object name(s) to the `get_index_for_building()` or `get_index_for_path()` function in `object_name.rs`
-6. Add the object name(s) to the `any.terrain.ruleset.toml` file where appropriate (top, right, bottom, left)
-7. If building sprite: Add the object name(s) to relevant `BuildingType` in the `BuildingComponentRegistry`
-
-You can but don't need to update any other ruleset files as buildings and paths are placed prior to decorative objects
-and therefore don't need to be considered in the wave function collapse algorithm which uses these rulesets. However,
-the addition to the "any ruleset" file results in the neighbouring tile of the new sprite to be empty
-(`ObjectName::Empty`). Without this, you'll see errors in the wave function collapse algorithm.
-
-#### How to use cargo-flamegraph
-
-- Run the command below to generate a flame graph
-    - Linux:
-      ```shell
-      CARGO_PROFILE_RELEASE_DEBUG=true RUSTFLAGS='-C force-frame-pointers=y' cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
-      ```
-    - Windows:
-      ```pwsh
-      $env:CARGO_PROFILE_RELEASE_DEBUG = "true"; $env:RUSTFLAGS = "-C force-frame-pointers=y"; cargo flamegraph -c "record -g" --package=procedural-generation-2 --bin=procedural-generation-2
-      ````
-- This should run the application - once you close it, a `flamegraph.svg` will be generated at the root of the
-  repository
-- Open it in your browser to see the flame graph
-
-#### Run configurations
-
-The `.run` folder contains a few run configurations for RustRover. Alternatively, you may want to consider creating:
-
-- A run configuration with environment variable `RUST_LOG=procedural_generation_2=debug` for debug logs
-- A run configuration that also appends
-  `,procedural_generation_2::generation::object=trace,procedural_generation_2::generation::path=trace` to `RUST_LOG` for
-  WFC and pathfinding trace logs
-- A run configuration with environment variable `RUST_LOG=bevy_ecs=debug` to see Bevy ECS logs (e.g. which system
-  caused an `error[B0003]`)
+See the [/docs](/docs) folder.

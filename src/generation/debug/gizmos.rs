@@ -1,6 +1,7 @@
 use crate::constants::*;
-use crate::coords::Point;
-use crate::resources::{CurrentChunk, Settings};
+use crate::coordinates::Point;
+use crate::generation::generation_resources::CurrentChunk;
+use crate::settings::Settings;
 use bevy::app::{App, Plugin};
 use bevy::gizmos::AppGizmoBuilder;
 use bevy::math::{UVec2, Vec2};
@@ -27,7 +28,7 @@ fn draw_gizmos_system(
     return;
   }
 
-  let current_chunk_center_world = current_chunk.get_center_world();
+  let current_chunk_centre_world = current_chunk.get_centre_world();
   let current_chunk_world = current_chunk.get_world();
   let chunk_size = TILE_SIZE as f32 * CHUNK_SIZE as f32;
   let cam_position = camera.single().expect("Camera not found").1.translation();
@@ -36,7 +37,7 @@ fn draw_gizmos_system(
   // Tile grid
   gizmos
     .grid_2d(
-      current_chunk_center_world.to_vec2(),
+      current_chunk_centre_world.to_vec2(),
       UVec2::new(CHUNK_SIZE as u32, CHUNK_SIZE as u32),
       Vec2::new(TILE_SIZE as f32, TILE_SIZE as f32),
       DARK,
@@ -46,19 +47,19 @@ fn draw_gizmos_system(
   // Chunk grid
   gizmos
     .grid_2d(
-      current_chunk_center_world.to_vec2(),
+      current_chunk_centre_world.to_vec2(),
       UVec2::new(3, 3),
       Vec2::new(chunk_size, chunk_size),
       DARK,
     )
     .outer_edges();
 
-  // Center of the current chunk and view port
-  gizmos.circle_2d(current_chunk_center_world.to_vec2(), TILE_SIZE as f32, RED);
+  // Centre of the current chunk and view port
+  gizmos.circle_2d(current_chunk_centre_world.to_vec2(), TILE_SIZE as f32, RED);
 
-  // Line from the current world position to the center of the current chunk
+  // Line from the current world position to the centre of the current chunk
   gizmos.line_2d(camera_world.to_vec2(), current_chunk_world.to_vec2(), DARK);
 
-  // Arrow from the center of the current chunk to the current world position
-  gizmos.arrow_2d(current_chunk_center_world.to_vec2(), camera_world.to_vec2(), YELLOW);
+  // Arrow from the centre of the current chunk to the current world position
+  gizmos.arrow_2d(current_chunk_centre_world.to_vec2(), camera_world.to_vec2(), YELLOW);
 }
