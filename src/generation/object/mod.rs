@@ -1,20 +1,9 @@
-pub mod buildings;
-pub mod lib;
+pub mod decoration;
+pub mod model;
 mod object_generator;
 pub mod path;
-pub mod wfc;
+mod plugins;
+pub mod settlements;
 
-use crate::generation::object::buildings::BuildingGenerationPlugin;
-use crate::generation::object::object_generator::ObjectGeneratorPlugin;
-use crate::generation::object::path::PathGenerationPlugin;
-use bevy::app::{App, Plugin};
-
-pub struct ObjectGenerationPlugin;
-
-impl Plugin for ObjectGenerationPlugin {
-  fn build(&self, app: &mut App) {
-    app.add_plugins((PathGenerationPlugin, ObjectGeneratorPlugin, BuildingGenerationPlugin));
-  }
-}
-
-pub use crate::generation::object::object_generator::*;
+pub use object_generator::*;
+pub use plugins::ObjectGenerationPlugins;

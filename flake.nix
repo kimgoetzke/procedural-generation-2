@@ -52,6 +52,7 @@
             pkgs.libGL
             pkgs.audacity
             pkgs.cargo-flamegraph
+            pkgs.cargo-sweep
             pkgs.clippy
           ];
         };
@@ -128,7 +129,6 @@
                 LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath rustInfo.drvs;
                 buildInputs = rustInfo.drvs;
                 shellHook = ''
-                  export CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG=true
                   export PATH=$PATH:''${CARGO_HOME:-~/.cargo}/bin
                   export PATH=$PATH:''${RUSTUP_HOME:-~/.rustup}/toolchains/$RUSTC_VERSION-x86_64-unknown-linux-gnu/bin/
                   echo ""

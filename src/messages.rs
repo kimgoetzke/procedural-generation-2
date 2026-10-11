@@ -1,11 +1,13 @@
-use crate::coords::Point;
-use crate::coords::point::{ChunkGrid, TileGrid, World};
+use crate::coordinates::Point;
+use crate::coordinates::point::{ChunkGrid, TileGrid, World};
 use bevy::prelude::{App, Message, Plugin};
 
-/// A plugin that registers all shared messages used across multiple plugins and systems.
-pub struct SharedMessagesPlugin;
+/// A plugin that registers all shared messages used across multiple plugins and systems. It is currently much more
+/// convenient to keep all messages in a single place but if we need more messages, we should strongly consider moving
+/// each message into the relevant feature or owning code.
+pub struct MessagesPlugin;
 
-impl Plugin for SharedMessagesPlugin {
+impl Plugin for MessagesPlugin {
   fn build(&self, app: &mut App) {
     app
       .add_message::<RefreshMetadataMessage>()
@@ -28,7 +30,7 @@ pub struct RefreshMetadataMessage {
 }
 
 /// A message that triggers the regeneration of the world. It will cause the world entity and all its descendants to be
-/// removed before generating an entirely new world based on the current [`crate::resources::Settings`].
+/// removed before generating an entirely new world based on the current [`crate::settings::Settings`].
 #[derive(Message)]
 pub struct RegenerateWorldMessage {}
 
@@ -41,6 +43,7 @@ pub struct UpdateWorldMessage {
   /// updating the world via the UI when the [`CurrentChunk`][crate::resources::CurrentChunk] has not changed.
   pub is_forced_update: bool,
   pub w: Point<World>,
+  pub cg: Point<ChunkGrid>,
   pub tg: Point<TileGrid>,
 }
 
